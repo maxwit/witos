@@ -1,0 +1,295 @@
+#include <g-bios.h>
+#include <timer.h>
+#include <net/net.h>
+#include <net/mii.h>
+#include <irq.h>
+
+#define EMAC_MPE       (1 << 4)
+#define EMAC_IDLE      (1 << 2)
+
+#define RX_BUFF_LEN  128
+#define RX_BUFF_NUM  8
+
+// #define TX_BUFF_LEN  128
+#define TX_BUFF_NUM  8
+
+#define EMAC_SOF  (1 << 14)
+#define EMAC_EOF  (1 << 15)
+
+
+#define at91_emac_readl(reg) \
+	readl(VA(AT91SAM9263_PA_EMAC + (reg)))
+
+#define at91_emac_writel(reg, val) \
+	writel(VA(AT91SAM9263_PA_EMAC + (reg)), (val))
+
+
+struct emac_buff_desc
+{
+	u32 addr;
+	u32 stat;
+};
+
+struct at91_emac
+{
+	struct emac_buff_desc *rx_queue, *rx_head;
+	struct emac_buff_desc *tx_queue, *tx_rear;
+};
+
+
+static int at91_emac_recv(struct net_device *);
+static int at91_emac_send(struct net_device *, struct sock_buff *);
+static int at91_emac_isr(u32, void *);
+static int at91_emac_set_mac(struct net_device *, const u8 []);
+
+
+static int at91_emac_isr(u32 irq, void *dev)
+{
+	u32 stat;
+	struct net_device *ndev = dev;
+
+	stat = at91_emac_readl(EMAC_ISR);
+
+#ifdef CONFIG_DEBUG
+	printf("%s(), isr = 0x%08x\n", __FUNCTION__, stat);
+#endif
+
+	if (stat & 0x2)
+		at91_emac_recv(ndev);
+
+	return 0;
+}
+
+
+#ifndef CONFIG_IRQ_SUPPORT
+static int at91_emac_poll(struct net_device *ndev)
+{
+	return at91_emac_isr(0, ndev);
+}
+#endif
+
+
+static int at91_emac_send(struct net_device *ndev, struct sock_buff *skb)
+{
+	u32 val;
+	volatile struct emac_buff_desc *tx_rear;
+	u32 ulFlag;
+	struct at91_emac *emac = ndev->chip;
+
+	lock_irq_psr(ulFlag);
+
+	tx_rear = emac->tx_rear++;
+
+	tx_rear->addr = (u32)skb->data;
+	tx_rear->stat = (1 << 15) | skb->size;
+
+	if (emac->tx_rear == emac->tx_queue + TX_BUFF_NUM)
+	{
+		tx_rear->stat |= 1 << 30;
+		emac->tx_rear = emac->tx_queue;
+	}
+
+	val = at91_emac_readl(EMAC_NCR);
+	val |= 1 << 9;
+	at91_emac_writel(EMAC_NCR, val);
+
+	while (!(tx_rear->stat & (1 << 31))); // fixme
+
+	unlock_irq_psr(ulFlag);
+}
+
+static int at91_emac_recv(struct net_device * ndev)
+{
+	u8 *pBufPtr = NULL;
+	struct sock_buff *skb;
+	struct emac_buff_desc *rx_head, *pRxRear;
+	struct at91_emac *emac = ndev->chip;
+#ifdef CONFIG_DEBUG
+	u32 count = 0;
+#endif
+
+	rx_head = emac->rx_head;
+	pRxRear = (struct emac_buff_desc *)at91_emac_readl(EMAC_RBQP);
+
+	BUG_ON(!(rx_head->stat & EMAC_SOF)); // fixme
+
+	while (rx_head != pRxRear)
+	{
+		if (rx_head->stat & EMAC_SOF)
+		{
+			skb = skb_alloc(0, MAX_ETH_LEN);
+			// if NULL
+			pBufPtr = skb->data;
+#ifdef CONFIG_DEBUG
+			count++;
+#endif
+		}
+
+		BUG_ON(pBufPtr == NULL); // fixme
+		memcpy(pBufPtr, (u8*)(rx_head->addr & ~0x3), RX_BUFF_LEN);
+		pBufPtr += RX_BUFF_LEN;
+
+		rx_head->addr &= ~1;
+
+		if (rx_head->stat & EMAC_EOF)
+		{
+			skb->size = rx_head->stat & 0xfff;
+			netif_rx(skb);
+			pBufPtr = NULL;
+		}
+
+		rx_head++;
+		if (rx_head == emac->rx_queue + RX_BUFF_NUM)
+			rx_head = emac->rx_queue;
+	}
+
+#ifdef CONFIG_DEBUG
+	if (count > 1)
+		printf("%s(): RX frames = %d\n", __FUNCTION__, count);
+#endif
+
+	emac->rx_head = rx_head;
+
+	return 0;
+}
+
+static u16 at91_emac_mdio_read(struct net_device *ndev, u8 mii_id, u8 reg)
+{
+	u32 frame;
+
+	frame = (1 << 30) | (2 << 28) | (mii_id << 23) | (reg << 18) | (2 << 16);
+	at91_emac_writel(EMAC_MAN, frame);
+
+	while (!(at91_emac_readl(EMAC_NSR) & EMAC_IDLE));
+
+	frame = at91_emac_readl(EMAC_MAN);
+
+	return (u16)(frame & 0xffff);
+}
+
+static void at91_emac_mdio_write(struct net_device *ndev, u8 mii_id, u8 reg, u16 val)
+{
+	at91_emac_writel(EMAC_MAN, (1 << 30) | (1 << 28) | (mii_id << 23) | (reg << 18) | (2 << 16) | val);
+
+	while (!(at91_emac_readl(EMAC_NSR) & EMAC_IDLE));
+}
+
+static int __INIT__ at91_emac_init_ring(struct at91_emac *emac)
+{
+	int i;
+	u32 dma_buff_base;
+
+
+	// init RX ring buffer
+	dma_buff_base = (u32)malloc(RX_BUFF_LEN * RX_BUFF_NUM);
+	// if 0
+
+	emac->rx_head = emac->rx_queue = (struct emac_buff_desc *)malloc(8 * RX_BUFF_NUM);
+	// if null
+
+	for (i = 0; i < RX_BUFF_NUM; i++)
+	{
+		emac->rx_queue[i].addr = dma_buff_base;
+		emac->rx_queue[i].stat = 0;
+
+		dma_buff_base += RX_BUFF_LEN;
+	}
+
+	emac->rx_queue[RX_BUFF_NUM - 1].addr |= 0x2;
+
+	// init TX ring buffer
+	emac->tx_rear = emac->tx_queue = (struct emac_buff_desc *)malloc(8 * TX_BUFF_NUM);
+
+	for (i = 0; i < TX_BUFF_NUM; i++)
+	{
+		emac->tx_queue[i].addr = 0;
+		emac->tx_queue[i].stat = 1 << 31;
+	}
+
+	emac->tx_queue[TX_BUFF_NUM - 1].stat |= 1 << 30;
+
+	at91_emac_writel(EMAC_RBQP, (u32)emac->rx_queue);
+	at91_emac_writel(EMAC_TBQP, (u32)emac->tx_queue);
+
+	DPRINT("RX buff = 0x%08x, TX buff = 0x%08x\n",
+		emac->rx_queue, emac->tx_queue);
+
+	return 0;
+}
+
+static void __INIT__ at91_emac_init(struct at91_emac *emac)
+{
+	u32 conf;
+
+	at91_emac_init_ring(emac);
+
+	at91_emac_writel(EMAC_NCR, 0);
+
+	at91_emac_writel(EMAC_TSR, ~0UL);
+	at91_emac_writel(EMAC_RSR, ~0UL);
+
+	at91_emac_writel(EMAC_IDR, ~0UL);
+	at91_emac_readl(EMAC_ISR);
+
+	conf = at91_emac_readl(EMAC_NCFGR);
+	conf &= (3 << 10);
+	conf |= (1 << 17);
+	conf |= (1 << 13);
+	conf |= 3;
+	at91_emac_writel(EMAC_NCFGR, conf);
+
+	at91_emac_writel(EMAC_NCR, 0x3c);
+	at91_emac_writel(EMAC_USRIO, 0x3);
+}
+
+static int at91_emac_set_mac(struct net_device *ndev, const u8 mac_adr[])
+{
+	at91_emac_writel(EMAC_SA1B, *(u32 *)ndev->mac_adr);
+	at91_emac_writel(EMAC_SA1T, *(u16 *)(ndev->mac_adr + 4));
+
+	return 0;
+}
+
+static int __INIT__ at91_emac_probe(void)
+{
+	int ret;
+	struct net_device *ndev;
+	struct at91_emac *emac;
+
+	ndev = net_dev_new(sizeof(*emac));
+	emac = ndev->chip;
+
+	//
+	ndev->chip_name   = "AT91SAM9263 EMAC";
+	//
+	ndev->send_packet = at91_emac_send;
+	ndev->set_mac_adr = at91_emac_set_mac;
+#ifndef CONFIG_IRQ_SUPPORT
+	ndev->ndev_poll   = at91_emac_poll;
+#endif
+	//
+	ndev->mdio_read   = at91_emac_mdio_read;
+	ndev->mdio_write  = at91_emac_mdio_write;
+
+	at91_clock_enable(PID_EMAC);
+
+	at91_emac_init(emac);
+
+	ret = net_dev_register(ndev);
+	if (ret < 0)
+	{
+		// DPRINT ...
+		goto L1;
+	}
+
+	irq_register_isr(PID_EMAC, at91_emac_isr, ndev);
+	at91_emac_writel(EMAC_IER, 0x3cf7);
+
+	return 0;
+L1:
+	free(ndev);
+	return ret;
+}
+
+DRIVER_INIT(at91_emac_probe);
+

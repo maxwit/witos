@@ -1,0 +1,10 @@
+#
+# NOT automatically generated, you could edit it :)
+#
+
+CONFIG_GTH_START_MEM = 0x00300000
+CONFIG_GBH_START_MEM = 0x23F00000
+CONFIG_GBH_START_BLK = 0
+
+export CONFIG_DM9000 = y
+export CONFIG_BOOTUP_LOGO = n

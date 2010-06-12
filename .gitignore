@@ -1,0 +1,3 @@
+*.o
+__temp_gapp_*
+include/autoconf.h

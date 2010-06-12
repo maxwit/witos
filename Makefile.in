@@ -1,0 +1,70 @@
+# Makefile.in
+MAJOR_VER = 0
+MINOR_VER = 9
+
+TOP_DIR = $(shell pwd)
+
+AS = $(CROSS_COMPILE)as
+CC = $(CROSS_COMPILE)gcc
+LD = $(CROSS_COMPILE)ld 
+OBJDUMP = $(CROSS_COMPILE)objdump
+OBJCOPY = $(CROSS_COMPILE)objcopy
+
+ASFLAGS = $(CFLAGS) -D__ASSEMBLY__
+CFLAGS = -I$(TOP_DIR)/include -ffreestanding -nostdinc -nostdlib -fno-builtin -DGBIOS_VER_MAJOR=$(MAJOR_VER) -DGBIOS_VER_MINOR=$(MINOR_VER) -mno-thumb-interwork  -march=$(ARCH_VER) -mabi=aapcs-linux -O2 -mpoke-function-name -DGBH_START_BLK=$(CONFIG_GBH_START_BLK) -DGBH_START_MEM=$(CONFIG_GBH_START_MEM) $(PLAT_OPT) -Wall -Werror-implicit-function-declaration
+# to be added:
+# -mtune=
+
+LDFLAGS = -m armelf_linux_eabi
+
+ifeq ($(CONFIG_BOOTUP_LOGO), y)
+	CFLAGS += -DCONFIG_BOOTUP_LOGO
+endif
+
+BUILT_IN_OBJ = built-in.o
+
+export ARCH ARCH_VER PLAT_DIR PLAT_OPT AS CC LD OBJDUMP OBJCOPY CFLAGS LDFLAGS ASFLAGS CROSS_COMPILE BUILT_IN_OBJ TOP_DIR IMAGE_OUT_DIR CONFIG_GTH_START_MEM
+
+GBH_SUBDIRS = \
+	arch/$(ARCH) \
+	mm \
+	base \
+	driver \
+	lib \
+	filesys \
+	app
+
+GBH_SUBDIR_OBJ := $(foreach n, $(GBH_SUBDIRS), $(n)/$(BUILT_IN_OBJ))
+
+all: th bh
+	@echo
+	@ls -lh $(IMAGE_OUT_DIR)/g-bios-[tb]h.bin
+	@echo
+
+th: $(GTH_SUBDIRS)
+	@make -C boot all
+	@echo
+
+bh: $(GBH_SUBDIRS) $(IMAGE_OUT_DIR)/g-bios-bh.elf
+
+$(IMAGE_OUT_DIR)/g-bios-bh.elf: $(GBH_SUBDIR_OBJ)
+	$(LD) $(LDFLAGS) -T arch/$(ARCH)/g-bios-bh.lds -Ttext $(CONFIG_GBH_START_MEM) $^ -o $@
+	$(OBJCOPY) -O binary -S $@ $(@:.elf=.bin)
+	$(OBJDUMP) -D $@ > $(@:.elf=.dis)
+
+clean:
+	@for dir in boot $(GBH_SUBDIRS); do \
+		make -C $$dir clean; \
+	 done	
+	@rm -f *.bin *.elf
+
+distclean: clean
+	@rm -vf Makefile
+
+#@rm -vf include/autoconf.h
+
+$(GBH_SUBDIRS):
+	@make -C $@ all
+
+.PHONY: $(GBH_SUBDIRS)
+
