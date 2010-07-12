@@ -16,6 +16,17 @@
 #define AT91SAM926X_PA_UHP            0x00500000
 
 #define AT91SAM926X_PA_LCDC           0x00600000
+#define DMABADDR1 0x0000
+#define DMABADDR2 0x0004
+#define DMAFRMCFG 0x0018
+#define DMACON    0x001c
+#define LCDCON1   0x0800
+#define LCDCON2   0x0804
+#define LCDTIM1   0x0808
+#define LCDTIM2   0x080C
+#define LCDFRMCFG 0x0810
+#define LCDFIFO   0x0814
+#define PWRCON    0x083c
 
 
 #define AT91SAM926X_PA_SMC            0xFFFFEC00
