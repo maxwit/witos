@@ -5,4 +5,3 @@ obj-y = s3c24x0_clock.o s3c24x0_uart.o s3c24x0_nand.o
 
 # common rules
 include $(TOP_DIR)/build/rules/general.mk
-

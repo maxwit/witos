@@ -8,6 +8,7 @@ static u16 RGB24toRGB16(u8 r, u8 g, u8 b)
 	return (r >> 3) << 11 | (g >> 2) << 5 | b >> 3;
 }
 
+
 static void draw_logo(u16 * const pVideoBuffer, u32 uWidth, u32 uHeight, EPixFormat ePixFormat)
 {
 	int i;

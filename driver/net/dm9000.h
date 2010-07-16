@@ -12,6 +12,9 @@
 #elif defined(CONFIG_AT91SAM9261)
 #define CONFIG_DM9000_IRQ        (32 + 2 * 32 + 11)
 #define DM9000_PHYS_BASE         0x30000000
+#elif defined(CONFIG_S3C6410)
+#define CONFIG_DM9000_IRQ        0
+#define DM9000_PHYS_BASE         0x18000000
 #endif
 
 

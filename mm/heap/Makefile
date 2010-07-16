@@ -8,4 +8,3 @@ $(BUILT_IN_OBJ): $(OBJ_C)
 
 clean:
 	@rm -vf *.o
-

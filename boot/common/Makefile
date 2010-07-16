@@ -21,4 +21,3 @@ ymodem.o: $(TOP_DIR)/driver/uart/ymodem.c
 
 clean:
 	@rm -vf *.o
-

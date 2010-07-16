@@ -43,18 +43,25 @@ class MainWin:
 			self.radio_interrupt.set_active(True)
 		elif widget.get_active() == 2:
 			self.config["ARCH"] = "arm"
+			self.config["ARCH_VER"] = "armv6"
+			self.config["PLAT_DIR"] = "s3c6410"
+			self.config["PLAT_NAME"] = "s3c6410"
+			self.config["CONSOLE"]  = "ttySAC0"
+		elif widget.get_active() == 3:
+			self.config["ARCH"] = "arm"
 			self.config["ARCH_VER"] = "armv5te"
 			self.config["PLAT_DIR"] = "at91sam926x"
 			self.config["PLAT_NAME"] = "at91sam9261"
 			self.config["CONSOLE"]  = "ttyS0"
 			self.radio_interrupt.set_active(True)
-		elif widget.get_active() == 3:
+		elif widget.get_active() == 4:
 			self.config["ARCH"] = "arm"
 			self.config["ARCH_VER"] = "armv5te"
 			self.config["PLAT_DIR"] = "at91sam926x"
 			self.config["PLAT_NAME"] = "at91sam9263"
 			self.config["CONSOLE"]  = "ttyS0"
 			self.radio_interrupt.set_active(True)
+			self.radio_ecc_hw.set_active(True)
 		else:
 			self.config["ARCH"] = "Unknown"
 
@@ -197,6 +204,7 @@ class MainWin:
 		self.cmb_plat.connect("changed", self.change_plat)
 		self.cmb_plat.append_text("Samsung S3C2410")
 		self.cmb_plat.append_text("Samsung S3C2440")
+		self.cmb_plat.append_text("Samsung S3C6410")
 		self.cmb_plat.append_text("ATMEL AT91SAM9261")
 		self.cmb_plat.append_text("ATMEL AT91SAM9263")
 
