@@ -7,24 +7,22 @@
 
 
 // fxime: add __INITDATA__
-static const struct part_attr smdk6410_part_tab[] =
+static const struct part_attr mw6410_part_tab[] =
 {
-#if 0
 	{
 		.part_type = PT_BL_GTH,
-		.part_size = 1,
+		.part_size = 1, // 1 block
 		.part_name = "g-bios",
 	},
-#endif
 	{
 		.part_type = PT_BL_GBH,
-		.part_size = KB(512),
+		.part_size = KB(256),
 		.part_name = "g-bios",
 	},
 	{
 		.part_type = PT_BL_GB_CONF,
 		.part_size = 1, // 1 block
-		.part_name = "sysconfig",
+		.part_name = "g-bios",
 	},
 	{
 		.part_type = PT_OS_LINUX,
@@ -75,7 +73,7 @@ static int __INIT__ s3c6410_init(void)
 	s3c6410_timer_init();
 #endif
 
-	sysconf_init_part_tab(smdk6410_part_tab, ARRAY_ELEM_NUM(smdk6410_part_tab));
+	sysconf_init_part_tab(mw6410_part_tab, ARRAY_ELEM_NUM(mw6410_part_tab));
 
 	return 0;
 }

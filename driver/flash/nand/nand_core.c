@@ -246,7 +246,6 @@ static int nand_check_blk_bad(struct nand_chip *nand, u32 ofs, int getchip)
 	if (!nand->bbt)
 		return nfc->block_bad(nand, ofs, getchip);
 
-
 	return nand_is_bad_bbt(nand, ofs);
 }
 
@@ -261,10 +260,7 @@ static void nand_wait_ready(struct nand_chip *nand)
 
 
 static void nand_command_small(struct nand_chip *nand,
-							u32 command,
-							int col,
-							int row
-							)
+									u32 command, int col, int row)
 {
 	int ctrl = NAND_CTRL_CLE | NAND_CTRL_CHANGE;
 	struct flash_chip    *flash = NAND_TO_FLASH(nand);
@@ -273,24 +269,24 @@ static void nand_command_small(struct nand_chip *nand,
 
 	if (command == NAND_CMMD_SEQIN)
 	{
-		int readcmd;
+		int read_cmd;
 
 		if (col >= flash->write_size)
 		{
 			col -= flash->write_size;
-			readcmd = NAND_CMMD_READOOB;
+			read_cmd = NAND_CMMD_READOOB;
 		}
 		else if (col < 256)
 		{
-			readcmd = NAND_CMMD_READ0;
+			read_cmd = NAND_CMMD_READ0;
 		}
 		else
 		{
 			col -= 256;
-			readcmd = NAND_CMMD_READ1;
+			read_cmd = NAND_CMMD_READ1;
 		}
 
-		nfc->cmd_ctrl(nand, readcmd, ctrl);
+		nfc->cmd_ctrl(nand, read_cmd, ctrl);
 
 		ctrl &= ~NAND_CTRL_CHANGE;
 	}
@@ -370,10 +366,7 @@ static void nand_command_small(struct nand_chip *nand,
 
 
 static void nand_command_large(struct nand_chip *nand,
-								u32 command,
-								int col,
-								int row
-								)
+									u32 command, int col, int row)
 {
 	struct flash_chip *flash = NAND_TO_FLASH(nand);
 	struct nand_ctrl *nfc = nand->master;
