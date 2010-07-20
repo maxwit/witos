@@ -884,6 +884,11 @@ int command_translate(const char *command_line, char *argv[])
 		}
 
 		i++;
+
+		if (command_line[i] == '\0')
+		{
+			return argc;
+		}
 	}
 #endif
 
