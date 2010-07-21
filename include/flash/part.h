@@ -13,6 +13,7 @@
 #define PT_STR_JFFS2    "jffs2"
 #define PT_STR_YAFFS    "yaffs"
 #define PT_STR_YAFFS2   "yaffs2"
+#define PT_STR_UBIFS    "ubifs"
 #define PT_STR_FREE     "free"
 
 #define PT_MAX (PT_FREE + 1)

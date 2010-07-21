@@ -39,7 +39,12 @@ static const struct part_attr mw6410_part_tab[] =
 	},
 	{
 		.part_type = PT_FS_YAFFS2,
-		.part_name = "data"
+		.part_size = MB(64),
+		.part_name = "data_1"
+	},
+	{
+		.part_type = PT_FS_UBIFS,
+		.part_name = "data_2"
 	},
 };
 

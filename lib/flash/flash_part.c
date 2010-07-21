@@ -549,6 +549,9 @@ const char *part_type2str(u32 type)
 	case PT_FS_YAFFS2:
 		return PT_STR_YAFFS2;
 
+	case PT_FS_UBIFS:
+		return PT_STR_UBIFS;
+
 	default:
 		return "Unknown";
 	}

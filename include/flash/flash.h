@@ -140,11 +140,12 @@ typedef enum
 	PT_FS_CRAMFS = PT_FS_RAMDISK + 0x100,
 	PT_FS_JFFS2,
 	PT_FS_YAFFS,
-	PT_FS_YAFFS2
+	PT_FS_YAFFS2,
+	PT_FS_UBIFS
 } PART_TYPE;
 
 #define PT_FS_BEGIN   PT_FS_CRAMFS
-#define PT_FS_END     PT_FS_YAFFS2
+#define PT_FS_END     PT_FS_UBIFS
 
 struct image_cache
 {
