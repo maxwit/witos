@@ -12,9 +12,11 @@ typedef unsigned int FS_TYPE;
 #define LINUX_MAGIC    0x016f2818
 #define CRAMFS_MAGIC   0x28cd3d45
 #define JFFS2_MAGIC    0x1985
+#define UBIFS_MAGIC    0x06101831
 
 #define LINUX_MAGIC_OFFSET	0x24
 #define JFFS2_MAGIC_OFFSET  0x0
+#define UBIFS_MAGIC_OFFSET  0x0
 
 #define O_CREAT   (1)
 #define O_RDWR    (1)

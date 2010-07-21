@@ -145,6 +145,9 @@ BOOL check_part_image(PART_TYPE type, const u8 *buff)
 	case PT_FS_CRAMFS:
 		return TRUE; //fixme
 
+	case PT_FS_UBIFS:
+		return ((u32)UBIFS_MAGIC == *(u32*)(buff + UBIFS_MAGIC_OFFSET));
+
 	default:
 		return TRUE; // tmp, fixme!!!
 	}
