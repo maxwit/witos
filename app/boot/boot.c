@@ -359,6 +359,7 @@ static int build_command_line(char *cmd_line, size_t max_len)
 			case PT_FS_YAFFS:
 			case PT_FS_YAFFS2:
 			case PT_FS_CRAMFS:
+			case PT_FS_UBIFS:
 				part_str += sprintf(part_str, "0x%x@0x%x(%s),",
 								attr->part_size,
 								attr->part_base,
@@ -399,7 +400,9 @@ static int build_command_line(char *cmd_line, size_t max_len)
 			str += sprintf(str, "root=/dev/mtdblock%d rw rootfstype=%s", // fixme
 						mtd_root, part_type2str(nRootType));
 			break;
-
+		case PT_FS_UBIFS:
+			str += sprintf(str, "ubi.mtd=%d root=ubi0_0 rootfstype=ubifs", root_idx);
+			break;
 		default:
 			ret = -EINVAL;
 			printf("partition %d (%s) is NOT set for filesystem!\n",
