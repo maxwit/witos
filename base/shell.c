@@ -13,12 +13,15 @@
 #error "APP_HIST_DEPTH must power of 2!"
 #endif
 
+static int minus_position(char *buf);
 
 struct command_stack
 {
 	char *cmd_stack[APP_HIST_DEPTH];
 	int	  cmd_hist;
 };
+
+extern struct cmd_info flash_cmd_info[];
 
 // fixme: DO NOT use pointer here
 static struct command_stack *g_cmd_stack = NULL;
@@ -306,6 +309,7 @@ static int cmd_down_key(char *buf, int *cur_pos, int *pindex, int *cur_max)
 	return 0;
 }
 
+
 static int cmd_right_key(char *buf, int *cur_pos, int *cur_max)
 {
 	if (*cur_pos < *cur_max)
@@ -347,6 +351,296 @@ static int cmd_update_history(const char *buf)
 
 	return 0;
 }
+
+
+static char* get_minus_master(char *buf, int *cur_pos, int *sub_offz)
+{
+	int offset , len, head, tail, tmp;
+	char *iter;
+	char *temp;
+
+	offset = minus_position(buf);
+	if(offset < 0)
+		return NULL;
+		offset--;
+
+	while(*(buf+offset) == ' ' )
+	{
+		offset--;
+	}
+	tail = offset;
+	while(*(buf+offset) != ' ')
+	{
+		offset--;
+	}
+	offset++;
+	head =  offset;
+	len = tail - head + 1;
+	iter = malloc(len + 1);
+	temp = iter;
+	if(iter == NULL)
+	{
+		DPRINT("ERROR: fail to malloc, %s,%d", __FUNCTION__, __LINE__);
+		return -ENOMEM;
+	}
+	tmp = head;
+	while (len)
+	{
+		*iter = buf[tmp];
+		iter++;
+		tmp++;
+		len--;
+	}
+	*iter = '\0';
+	*sub_offz = head;
+	return temp;
+}
+
+
+static char* get_flash_cmd(char *buf, int *cur_pos, int *sub_offs)
+{
+	char *sub_head, *sub_tail, *tmp;
+	char *iter, *head;
+	int len, count = 0;
+	char *temp;
+
+	sub_head = buf + 5;
+	sub_head++;
+
+	while(*sub_head == ' '  && count < 10)
+	{
+		sub_head++;
+		count++;
+	}
+
+	if(count >= 10)
+		return NULL;
+    count = 0;
+
+    sub_tail = sub_head;
+
+    while(*sub_tail != ' ' && count < 10)
+    {
+		sub_tail++;
+		count = 0;
+    }
+
+	len = sub_tail  - sub_head;
+	iter = malloc(len + 1);
+	temp = iter;
+	if(iter == NULL)
+	{
+		DPRINT("ERROR: fail to malloc, %s,%d", __FUNCTION__, __LINE__);
+		return -ENOMEM;
+	}
+
+	tmp = sub_head;
+	while (len)
+	{
+		*iter = *tmp;
+		iter++;
+		tmp++;
+		len--;
+	}
+	*iter = '\0';
+	*sub_offs = sub_head - buf;
+	return temp;
+}
+
+
+static int arg_match(char *buf, int *cur_pos, int *cur_max)
+{
+	int	i = 0, j = 0, k, cmd_index = 0, tmp_len = 0, sub_offset;
+	char* (*pszResult)[MAX_ARG_LEN];
+	char ch;
+	char *subcmd, *str_tmp, *save_p, *get_addr ;
+
+
+	const struct cmd_info *app;
+
+	BOOL bFlag;
+
+	while(flash_cmd_info[cmd_index].cmd)
+	{
+		cmd_index++;
+	}
+
+	pszResult = malloc(cmd_index * MAX_ARG_LEN);
+	if (NULL == pszResult)
+	{
+		DPRINT("ERROR: fail to malloc, %s,%d", __FUNCTION__, __LINE__);
+		return -ENOMEM;
+	}
+
+	subcmd = get_minus_master(buf, cur_pos, &sub_offset);
+	app = &flash_cmd_info[0];
+	str_tmp = zalloc(strlen(app->opt));
+	save_p = str_tmp;
+	for (app = &flash_cmd_info[0]; app < &flash_cmd_info[cmd_index]; app++)
+	{
+		if (strcmp(app->cmd, subcmd) == 0)
+		{
+			strcpy(str_tmp, app->opt);
+			while(str_tmp < save_p + strlen(app->opt))
+			{
+				get_addr = strchr(str_tmp,':');
+				if(get_addr == NULL)
+				{
+					strcpy(pszResult[j++], str_tmp);
+					break;
+				}
+				*get_addr = '\0';
+				strcpy(pszResult[j++], str_tmp);
+				str_tmp = ++get_addr;
+			}
+		}
+	}
+	free(save_p);
+
+	switch (j)
+	{
+	case 0:
+		break;
+
+	case 1:
+		i = strlen(pszResult[0]);
+		for (tmp_len = 0; tmp_len < i; tmp_len++)
+		{
+			insert_one_key(pszResult[0][tmp_len], buf, cur_pos, cur_max);
+		}
+		if (*cur_pos == *cur_max )
+		{
+			insert_one_key(' ', buf, cur_pos, cur_max);
+		}
+
+		break;
+
+	default:
+		for (i = *cur_pos - sub_offset; (ch = pszResult[0][i]); *cur_pos = ++i)
+		{
+			bFlag = FALSE;
+			for (k = 1; k < j; k++)
+				if (ch != pszResult[k][i])
+					bFlag = TRUE;
+
+			if (bFlag) break;
+
+			insert_one_key(ch, buf, cur_pos, cur_max);
+		}
+
+		putchar('\n');
+		for (i = 1; i < j + 1; i++)
+		{
+			printf("%-20s", pszResult[i - 1]);
+			if (0 == (i & 0x3))
+				putchar('\n');
+		}
+		if (0 != (j & 0x3))
+			putchar('\n');
+
+		show_prompt();
+		show_input_buff(buf, *cur_pos, *cur_max);
+
+		break;
+	}
+
+	free(pszResult);
+	free(subcmd);
+
+	return 0;
+}
+
+
+static int subcmd_match(char *buf, int *cur_pos, int *cur_max)
+{
+	int	i = 0, j = 0, k, cmd_index =0;
+	char (*pszResult)[MAX_ARG_LEN];
+	char ch;
+	char *subcmd;
+	int sub_offset;
+
+	const struct cmd_info *app;
+	BOOL bFlag;
+
+	while(flash_cmd_info[cmd_index].cmd)
+	{
+		cmd_index++;
+	}
+	pszResult = zalloc(cmd_index * MAX_ARG_LEN);
+	if (NULL == pszResult)
+	{
+		DPRINT("ERROR: fail to zalloc, %s,%d", __FUNCTION__, __LINE__);
+		return -ENOMEM;
+	}
+
+	subcmd = get_flash_cmd(buf, cur_pos, &sub_offset);
+	for (app = &flash_cmd_info[0]; app < &flash_cmd_info[cmd_index]; app++)
+	{
+		if (!(*cur_pos - sub_offset) || strncmp(app->cmd, subcmd, (*cur_pos - sub_offset)) == 0)
+			strcpy(pszResult[j++], app->cmd);
+	}
+
+	switch (j)
+	{
+	case 0:
+		break;
+
+	case 1:
+		i = strlen(pszResult[0]);
+
+		for (; (*cur_pos - sub_offset) < i; )
+		{
+			insert_one_key(pszResult[0][*cur_pos - sub_offset], buf, cur_pos, cur_max);
+		}
+		if (*cur_pos == *cur_max )
+		{
+			insert_one_key(' ', buf, cur_pos, cur_max);
+		}
+
+		break;
+
+	default:
+		for (i = *cur_pos - sub_offset; (ch = pszResult[0][i]); i++)
+		{
+			bFlag = FALSE;
+			for (k = 1; k < j; k++)
+				if (ch != pszResult[k][i])
+					bFlag = TRUE;
+
+			if (bFlag)
+				break;
+
+			insert_one_key(ch, buf, cur_pos, cur_max);
+		}
+
+		putchar('\n');
+		for (i = 1; i < j + 1; i++)
+		{
+			printf("%-20s", pszResult[i - 1]);
+			if (0 == (i & 0x3))
+				putchar('\n');
+		}
+		if (0 != (j & 0x3))
+			putchar('\n');
+
+		show_prompt();
+		show_input_buff(buf, *cur_pos, *cur_max);
+
+		break;
+	}
+
+	free(pszResult);
+	free(subcmd);
+
+	return 0;
+}
+
+
+static int minus_position(char *buf)
+{
+	return strchr(buf, '-') - buf;
+}
+
 
 int cmd_read(char buf[])
 {
@@ -391,8 +685,27 @@ int cmd_read(char buf[])
 			switch (input_c)
 			{
 			case '\t':
-				cmd_match(buf, &cur_pos, &cur_max);
+				if (strncmp("flash", buf, 5) == 0)
+				{
+					if (minus_position(buf) > 0)
+					{
+						if (cur_pos < minus_position(buf))
+						{
+							subcmd_match(buf, &cur_pos, &cur_max);
+						}
+						else
+						{
+							arg_match(buf, &cur_pos, &cur_max);
+						}
+					}
+					else
+					{
+						subcmd_match(buf, &cur_pos, &cur_max);
+					}
+				}else{
 
+					cmd_match(buf, &cur_pos, &cur_max);
+				}
 				break;
 
 			case '\r':
@@ -629,6 +942,7 @@ int __INIT__ init_cmd_queue(void)
 
 	return 0;
 }
+
 
 int exec_shell(void)
 {
