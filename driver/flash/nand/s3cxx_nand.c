@@ -165,7 +165,11 @@ static int s3cxx_nand_calc_hwecc(struct nand_chip *nand, const u8 *data, u8 *ecc
 #endif
 
 #ifdef CONFIG_S3C6410
+	u32 val = readl(VA(NAND_CTRL_BASE + NFMECC0));
 
+	ecc[0] = val & 0xFF;
+	ecc[1] = (val >> 8) & 0xFF;
+	ecc[2] = (val >> 16) & 0xFF;
 #endif
 
 	return 0;
