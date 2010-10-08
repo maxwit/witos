@@ -282,7 +282,7 @@
 
 
 // Watchdog
-#define WATCHDOG_BASE   0x53000000
+#define WATCHDOG_BASE   0x7E004000
 #define WTCON                 0x00
 #define WTDATA                0x04
 #define WTCNT                 0x08
