@@ -170,12 +170,12 @@ void irq_handle(u32 irq)
 
 int irq_set_trigger(u32 irq, u32 type)
 {
-	return 0;
+	return -EINVAL;
 }
 
 int irq_register_isr(u32 irq, IRQ_DEV_HANDLER isr, void *dev)
 {
-	return 0;
+	return -EINVAL;
 }
 
 #endif

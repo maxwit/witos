@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
 		case 'p':
 			if(string2value(optarg, (u32 *)&nDevNum) < 0)
 			{
-		    	erase_usage();
+				erase_usage();
 				goto L1;
 			}
 
@@ -139,6 +139,3 @@ int main(int argc, char *argv[])
 L1:
 	return ret;
 }
-
-
-

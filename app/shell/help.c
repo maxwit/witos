@@ -1,15 +1,12 @@
 #include <g-bios.h>
-#include <flash/flash.h>
-//fixme:
-#include <flash/part.h>
+
+extern const struct gapp g_app_begin[], g_app_end[];
 
 
 int main(int argc, char *argv[])
 {
-	int ret = -EINVAL;
-	static int mach_name_flat = 0;
+	int ret;
 	const struct gapp *app;
-	extern const struct gapp g_app_begin[], g_app_end[];
 
 	switch (argc)
 	{
@@ -24,18 +21,18 @@ int main(int argc, char *argv[])
 
 	case 2:
 		for (app = g_app_begin; app < g_app_end; app++)
+		{
 			if (!strcmp(app->name, argv[1]))
 			{
-				mach_name_flat = 1;
-
 				ret = 0;
 				break;
 			}
+		}
 
-		if (!mach_name_flat)
+		if (g_app_end == app)
 		{
 			printf("help: %s: No such command\n", argv[1]);
-			ret = -EINVAL;
+			ret = -ENOENT;
 		}
 
 		break;
@@ -49,4 +46,3 @@ int main(int argc, char *argv[])
 
 	return ret;
 }
-

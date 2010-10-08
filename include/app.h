@@ -17,5 +17,5 @@ struct gapp
 
 
 #define INSTALL_APPLICATION(app_name, app_main) \
-	static const __USED__ __GBIOS_APP__ struct gapp __gbios_app_##app_name = {.name = #app_name, .main = app_main}
-
+	static const __USED__ __GBIOS_APP__ struct gapp __gbios_app_##app_name =
+		{.name = #app_name, .main = app_main}

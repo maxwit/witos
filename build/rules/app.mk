@@ -21,6 +21,6 @@ $(BUILT_IN_OBJ) : $(OBJ_C) $(OBJ_S)
 
 $(OBJ_S): $(SRC_S)
 
-clean :
+clean:
 	@rm -vf *.o
 	@rm -f __temp_gapp_*.c

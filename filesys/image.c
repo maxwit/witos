@@ -122,19 +122,19 @@ BOOL check_part_image(PART_TYPE type, const u8 *buff)
 	switch (type)
 	{
 	case PT_BL_GTH:
-		return (GTH_MAGIC == *(u32 *)(buff + GTH_MAGIC_OFFSET));
+		return GTH_MAGIC == *(u32 *)(buff + GTH_MAGIC_OFFSET);
 
 	case PT_BL_GBH:
-		return (GBH_MAGIC == *(u32 *)(buff + GBH_MAGIC_OFFSET));
+		return GBH_MAGIC == *(u32 *)(buff + GBH_MAGIC_OFFSET);
 
 	case PT_BL_GB_CONF: // fixme
 		break;
 
 	case PT_OS_LINUX:
-		return (LINUX_MAGIC == *(u32 *)(buff + LINUX_MAGIC_OFFSET));
+		return LINUX_MAGIC == *(u32 *)(buff + LINUX_MAGIC_OFFSET);
 
 	case PT_FS_JFFS2:
-		return ((u16)JFFS2_MAGIC == *(u16 *)(buff + JFFS2_MAGIC_OFFSET));
+		return (u16)JFFS2_MAGIC == *(u16 *)(buff + JFFS2_MAGIC_OFFSET);
 
 	case PT_FS_YAFFS:
 		return check_yaffs1_image(buff + YAFFS_OOB_SIZE);
@@ -151,4 +151,3 @@ BOOL check_part_image(PART_TYPE type, const u8 *buff)
 
 	return TRUE; // fixme!
 }
-

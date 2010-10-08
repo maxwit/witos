@@ -26,8 +26,8 @@ static const char *int_to_hex_str(u32 val, char str[])
 	return p;
 }
 
+
 #if ARM_ARCH >= 6
-#error
 static const char *int_to_oct_str(u32 val, char str[])
 {
 	char *p = str + BUF_LEN;
@@ -48,6 +48,7 @@ static const char *int_to_oct_str(u32 val, char str[])
 	return p;
 }
 #endif
+
 
 // fixme
 int printf(const char *fmt, ...)
@@ -120,4 +121,3 @@ int printf(const char *fmt, ...)
 
 	return p - fmt;
 }
-

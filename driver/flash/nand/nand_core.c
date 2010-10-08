@@ -882,7 +882,6 @@ static int nand_read(struct nand_chip *nand,
 }
 
 
-
 static int nand_read_oob_std(struct nand_chip *nand, int page, int sndcmd)
 {
 	struct flash_chip *flash = NAND_TO_FLASH(nand);
@@ -935,10 +934,6 @@ static int nand_do_read_oob(struct nand_chip *nand,
 	int len;
 	u8 *buff = ops->oob_buff;
 
-
-//	DPRINT("%s(): from = 0x%08x, len = %i\n",
-//		__FUNCTION__, from, readlen);
-
 	if (ops->op_mode == FLASH_OOB_AUTO)
 		len = nfc->curr_oob_layout->free_oob_sum;
 	else
@@ -961,7 +956,6 @@ static int nand_do_read_oob(struct nand_chip *nand,
 
 	chipnr = (int)(from >> flash->chip_shift);
 	nfc->select_chip(nand, TRUE);
-
 
 	realpage = (int)(from >> flash->write_shift);
 	page = realpage & nand->page_num_mask;
@@ -1014,15 +1008,11 @@ static int nand_do_read_oob(struct nand_chip *nand,
 }
 
 
-static int nand_read_oob(struct nand_chip *nand,
-						u32 from,
-						struct oob_opt *ops
-						)
+static int nand_read_oob(struct nand_chip *nand, u32 from, struct oob_opt *ops)
 {
 
 	int ret = -ENOTSUPP;
 	struct flash_chip *flash = NAND_TO_FLASH(nand);
-
 
 	ops->ret_len = 0;
 
@@ -1031,7 +1021,6 @@ static int nand_read_oob(struct nand_chip *nand,
 		DPRINT("%s(): Attempt read beyond end of device\n", __FUNCTION__);
 		return -EINVAL;
 	}
-
 
 	switch(ops->op_mode)
 	{
@@ -1088,13 +1077,14 @@ static u8 *nand_fill_oob(struct nand_chip *nand, u8 *oob_buf, struct oob_opt *op
 		{
 			if (woffs)
 			{
-				if (woffs >= free->nOfLen) {
+				if (woffs >= free->nOfLen)
+				{
 					woffs -= free->nOfLen;
 					continue;
 				}
+
 				boffs = free->nOfOffset + woffs;
-				bytes = min_t(u32, len,
-						(free->nOfLen - woffs));
+				bytes = min_t(u32, len, free->nOfLen - woffs);
 				woffs = 0;
 			}
 			else
@@ -1106,11 +1096,14 @@ static u8 *nand_fill_oob(struct nand_chip *nand, u8 *oob_buf, struct oob_opt *op
 			memcpy(nand->oob_buf + boffs, oob_buf, bytes);
 			oob_buf += bytes;
 		}
+
 		return oob_buf;
 	}
+
 	default:
 		BUG();
 	}
+
 	return NULL;
 }
 
@@ -1249,10 +1242,7 @@ static int nand_write_by_opt(struct nand_chip *nand, long to, struct oob_opt *op
 
 
 static int nand_write(struct nand_chip *nand,
-					u32 to, u32 len,
-					u32 *retlen,
-					const u8 *buff
-					)
+					u32 to, u32 len, u32 *retlen, const u8 *buff)
 {
 	struct flash_chip *flash = NAND_TO_FLASH(nand);
 	int ret;
@@ -1286,7 +1276,6 @@ static int nand_do_write_oob(struct nand_chip *nand, u32 to, struct oob_opt *ops
 	int chipnr, page, status, len;
 	struct flash_chip *flash = NAND_TO_FLASH(nand);
 	struct nand_ctrl *nfc = nand->master;
-
 
 	DPRINT("%s(): to = 0x%08x, len = %i\n",
 		__FUNCTION__, to, ops->oob_len);
@@ -1348,9 +1337,7 @@ static int nand_do_write_oob(struct nand_chip *nand, u32 to, struct oob_opt *ops
 
 
 static int nand_write_oob(struct nand_chip *nand,
-						u32 to,
-						struct oob_opt *ops
-						)
+						u32 to, struct oob_opt *ops)
 {
 	struct flash_chip *flash = NAND_TO_FLASH(nand);
 	int ret;

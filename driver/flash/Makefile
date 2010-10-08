@@ -15,7 +15,7 @@ $(SUBDIRS):
 clean:
 	@for dir in $(SUBDIRS); do \
 		make -C $$dir clean; \
-	 done	
+	 done
 	@rm -vf *.o
 
 .PHONY: $(SUBDIRS)

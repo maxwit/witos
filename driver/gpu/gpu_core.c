@@ -3,17 +3,18 @@
 #include "logo.h"
 
 
+#ifdef CONFIG_BOOTUP_LOGO
 static u16 RGB24toRGB16(u8 r, u8 g, u8 b)
 {
 	return (r >> 3) << 11 | (g >> 2) << 5 | b >> 3;
 }
+#endif
 
 
 static void draw_logo(u16 * const pVideoBuffer, u32 uWidth, u32 uHeight, EPixFormat ePixFormat)
 {
 	int i;
 	u16 *pvBuff;
-
 
 #ifdef CONFIG_BOOTUP_LOGO
 	extern const struct Logo gMwImage;
@@ -68,5 +69,3 @@ void *video_mem_alloc(u32 uWidth, u32 uHeight, EPixFormat ePixFormat, u32 *pPhyA
 
 	return pBuff;
 }
-
-
