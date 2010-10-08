@@ -216,6 +216,7 @@
 #define NFADDR        0x0c
 #define NFDATA        0x10
 #define NFSTAT        0x28
+#define NFMECC0       0x34
 
 #define tALS  12
 #define tWP   12
@@ -282,7 +283,7 @@
 
 
 // Watchdog
-#define WATCHDOG_BASE   0x53000000
+#define WATCHDOG_BASE   0x7E004000
 #define WTCON                 0x00
 #define WTDATA                0x04
 #define WTCNT                 0x08

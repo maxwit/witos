@@ -549,6 +549,9 @@ const char *part_type2str(u32 type)
 	case PT_FS_YAFFS2:
 		return PT_STR_YAFFS2;
 
+	case PT_FS_UBIFS:
+		return PT_STR_UBIFS;
+
 	default:
 		return "Unknown";
 	}
@@ -569,7 +572,7 @@ int part_show(const struct flash_chip *flash)
 	int index;
 	struct part_attr attr_tab[MAX_FLASH_PARTS];
 	u32 nIndex, nRootIndex;
-	const char *pBar = "--------------------------------------------------------------";
+	const char *pBar = "--------------------------------------------------------------------";
 	struct linux_config *pLinuxParam;
 
 
@@ -596,9 +599,9 @@ int part_show(const struct flash_chip *flash)
 		nRootIndex = -1;
 	}
 
-	printf("\nParitions on \"%s\":\n", flash->name);
+	printf("\nPartitions on \"%s\":\n", flash->name);
 	printf("%s\n", pBar);
-	printf(" Index     Start         End     Size     Type        Name\n");
+	printf(" Index     Start         End     Size       Type        Name\n");
 	printf("%s\n", pBar);
 
 	for (nIndex = 0; nIndex < index; nIndex++)
@@ -610,7 +613,7 @@ int part_show(const struct flash_chip *flash)
 
 		val_to_hr_str(attr_tab[nIndex].part_size, szPartSize);
 
-		printf("  %-3s   0x%08x - 0x%08x  %-6s  %-9s  \"%s\"\n",
+		printf("  %-3s   0x%08x - 0x%08x  %-8s  %-9s  \"%s\"\n",
 			szPartIdx,
 			attr_tab[nIndex].part_base,
 			attr_tab[nIndex].part_base + attr_tab[nIndex].part_size,

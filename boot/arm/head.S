@@ -44,6 +44,16 @@ handle_reset:
 #endif
 #endif
 
+#ifdef CONFIG_S3C6410
+	ldr r0, =0x70000013
+	mcr p15, 0, r0, c15, c2, 4
+
+	@disable watchdog
+	ldr r0, =WATCHDOG_BASE
+	ldrh r1, [r0, #WTCON]
+	bic r1, #0xff
+	strh r1, [r0, #WTCON]
+#endif
 	bl   cpu_init
 
 	bl   soc_init

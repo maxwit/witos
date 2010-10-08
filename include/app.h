@@ -8,11 +8,18 @@
 #define MAX_ARG_LEN  		512
 #define MAX_ARGC			64
 
+struct cmd_info
+{
+	char *cmd;
+	char *opt;
+	u32 flags;
+};
 
 struct gapp
 {
 	const char *name;
 	int (*main)(int argc, char *argv[]);
+	struct cmd_info *cmd;
 };
 
 
