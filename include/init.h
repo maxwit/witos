@@ -7,8 +7,9 @@
 #define __INIT_ARCH__     INIT_CALL_LEVEL(0)
 #define __INIT_PLAT__     INIT_CALL_LEVEL(1)
 #define __INIT_SUBS__     INIT_CALL_LEVEL(2)
-#define __INIT_DRV__      INIT_CALL_LEVEL(3)
-#define __INIT_APP__      INIT_CALL_LEVEL(4)
+#define __INIT_POSTSUBS__ INIT_CALL_LEVEL(3)
+#define __INIT_DRV__      INIT_CALL_LEVEL(4)
+#define __INIT_APP__      INIT_CALL_LEVEL(5)
 
 
 #if __GNUC__ == 3 && __GNUC_MINOR__ >= 3 || __GNUC__ >= 4
@@ -28,6 +29,9 @@ typedef int (*INIT_FUNC_PTR)(void);
 
 #define SUBSYS_INIT(func) \
 	static __USED__ __INIT_SUBS__ INIT_FUNC_PTR __initcall_##func = func
+
+#define POSTSUBS_INIT(func) \
+		static __USED__ __INIT_POSTSUBS__ INIT_FUNC_PTR __initcall_##func = func
 
 #define DRIVER_INIT(func) \
 	static __USED__ __INIT_DRV__  INIT_FUNC_PTR __initcall_##func = func

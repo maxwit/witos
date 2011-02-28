@@ -1,0 +1,140 @@
+\documentclass[a4paper,11pt]{book}
+
+\input{../style}
+
+\begin{CJK*}{UTF8}{gbsn}
+\title{g-bios Developers' Manual (Volume 2)}
+\author{MaxWit~魔鬼训练营}
+\end{CJK*}
+
+%\renewcommand{\baselinestretch}{1.3}
+\linespread{1.3}
+
+\begin{document}
+\begin{CJK*}{UTF8}{gbsn}
+\CJKtilde
+\maketitle
+\tableofcontents
+
+\chapter{g-bios TH Initialization}
+
+\section{ARM Init}
+
+\section{Clock}
+\subsection{Clock Source Select}
+\subsection{ACLOCK HCLOCK and PCLOCK}
+
+\section{WDT}
+\subsection{Disable WDT}
+
+\section{DDR}
+\begin{enumerate}
+\item GPIO Setting
+\item Chip Select
+\item Clock Source
+\item Timing
+\item Bus Width
+\item SDRAM Type
+\end{enumerate}
+
+\section{TH Loader}
+
+\chapter{Interrupt}
+\input {interrupt.art}
+
+\begin{enumerate}
+\item irq\_pin\_set
+\begin{lstlisting}[language=c, numbers=none]
+	static struct int_pin irq_pin_set[MAX_IRQ_NUM];
+\end{lstlisting}
+
+\item int\_pin : irq pin object.
+\begin{lstlisting}[language=c, numbers=none]
+#include <irq.h>
+
+struct int_pin
+{
+	IRQ_PIN_HANDLER irq_handle;
+	struct int_ctrl *intctrl;
+	struct irq_dev *dev_list; // this pin be hange device list.
+}
+\end{lstlisting}
+
+\item irq\_ctrl
+\begin{lstlisting}[language=c, numbers=none]
+#include <irq.h>
+
+struct int_ctrl
+{
+	void (*ack)(u32);
+	void (*mask)(u32);
+	void (*mack)(u32);
+	void (*umask)(u32);
+	int (*set_trigger)(u32, u32);
+}
+\end{lstlisting}
+
+\item irq\_dev :
+\begin{lstlisting}[language=c, numbers=none]
+#include <irq.h>
+
+struct irq_dev
+{
+	void *device;
+	IRQ_DEV_HANDLER dev_isr;
+	struct irq_dev *next;
+}
+\end{lstlisting}
+\end{enumerate}
+
+\section{OMAP3X30 IRQ Support}
+
+\section{Tick Timer}
+
+\chapter{Bootup Logo}
+
+\section{Font Rendering}
+
+\section{JPEG H/W Decode}
+
+\chapter{TCP/IP Stack}
+
+\section{TCP Layer Implementation}
+
+\section{POSIX Socket API Compatibility}
+
+\section{HTTP Server}
+
+\section{DHCP Client Implementation}
+
+\chapter{I/O Device and Bus Support}
+\input {driver.art}
+
+\chapter{Image}
+
+\section{FS Type Checking}
+
+\subsection{YAFFS2 Image}
+
+\section{Image Creation}
+
+\subsection{SD Image Creation: sdrecord}
+\begin{enumerate}
+\item 32/64-bit compatibility
+\item getopt() support
+\end{enumerate}
+
+\subsection{Beagleboard and N900 Image (?)}
+
+\chapter{File System (original ``sysconfig'')}
+
+\chapter{Configuration}
+
+\section{Python + QT4 (?) + XML}
+
+\chapter{g-bios API Reference}
+\input{api.art}
+
+\clearpage
+\end{CJK*}
+\end{document}

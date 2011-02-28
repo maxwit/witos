@@ -3,7 +3,7 @@
 #include <types.h>
 
 
-int GkInitHeap(u32 start, u32 end);
+int gk_init_heap(u32 start, u32 end);
 
 void *malloc(u32 size);
 

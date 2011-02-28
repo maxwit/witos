@@ -16,7 +16,7 @@ int snprintf(char *, int , const char *, ...);
 
 int fflush(int);
 
-void ClearScreen(void);
+void clear_screen(void);
 
 #ifdef CONFIG_DEBUG
 #define DPRINT(fmt, args ...)	printf(fmt, ##args)

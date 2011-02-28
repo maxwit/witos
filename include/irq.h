@@ -54,7 +54,9 @@ void irq_handle_edge(struct int_pin *ipin, u32 irq);
 
 void irq_handle_simple(struct int_pin *ipin, u32 irq);
 
-void irq_set_handler(u32 irq, IRQ_PIN_HANDLER irq_handle, int isChained);
+void vectorirq_handle_level(struct int_pin *ipin, u32 irq);
+
+void irq_set_handler(u32 irq, IRQ_PIN_HANDLER irq_handle, int chain_flag);
 
 int  irq_set_trigger(u32 irq, u32 type);
 

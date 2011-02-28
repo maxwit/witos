@@ -9,7 +9,7 @@
 #define UART_NUM         5
 
 #define S3C6410_SRAM_BASE 0x0c000000
-#define S3C6410_SRAM_SIZE 0x1000
+#define S3C6410_SRAM_SIZE 0x2000
 
 ///
 #define FIN       12000000
@@ -41,3 +41,23 @@
 
 #define LINUX_BASE_ADDR    (INITRD_BASE_ADDR + SDRAM_SIZE / 4)
 #define LINUX_MAX_SIZE     (SDRAM_SIZE / 4)
+
+// SPI
+#ifndef __ASSEMBLY__
+#include <types.h>
+
+void chip_select(void);
+
+void chip_unselect(void);
+
+void spi_send_receive(u8 *send, int send_count, u8 *receive, int receive_count);
+
+u8 is_rx_overrun(void);
+
+u8 is_tx_overrun(void);
+
+int s3c6410_interrupt_init(void);
+
+int s3c6410_timer_init(void);
+
+#endif

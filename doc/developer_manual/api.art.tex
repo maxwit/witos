@@ -1,0 +1,379 @@
+\section{stdio}
+\begin{enumerate}
+\item clear\_sreen
+\begin{lstlisting}[language=c, numbers=none]
+#include <stdio.h>
+
+void clear_screen(void);
+\end{lstlisting}
+
+\item putchar
+\begin{lstlisting}[language=c, numbers=none]
+#include <stdio.h>
+
+int putchar(int ch);
+
+arguments:
+	ch---a charater which need display.
+return val:
+	return this charater.
+\end{lstlisting}
+
+\item puts
+\begin{lstlisting}[language=c, numbers=none]
+#include <stdio.h>
+
+int puts(const char *str);
+
+description:
+	dispaly a string and a newline.
+
+arguments:
+	str---a string which need display.
+return val:
+	if successed return 0, failed return -1.
+\end{lstlisting}
+
+\item gets
+\begin{lstlisting}[language=c, numbers=none]
+#include <stdio.h>
+
+char *gets(char *str);
+
+description:
+	read a line form stdin into buffer pointer to by str, until a terminating newline.
+
+arguments:
+	str: a buffer's address.
+return val:
+	return str.
+\end{lstlisting}
+
+\item printf
+\begin{lstlisting}[language=c, numbers=none]
+#include <stdio.h>
+
+int printf(const char *fmt, ...);
+
+\end{lstlisting}
+
+\item sprintf
+\begin{lstlisting}[language=c, numbers=none]
+#include <stdio.h>
+
+int sprintf(char *buf, const char *fmt, ...);
+
+\end{lstlisting}
+
+\item snprintf
+\begin{lstlisting}[language=c, numbers=none]
+#include <stdio.h>
+
+int snprintf(char *buf, int size, const char *fmt, ...);
+
+\end{lstlisting}
+
+\end{enumerate}
+
+\section{IRQ}
+\begin{enumerate}
+\item irq\_register\_isr
+\begin{lstlisting}[language=c, numbers=none]
+#include <irq.h>
+
+typedef int (*IRQ_DEV_HANDLER)(u32, void*);
+int irq_register_isr(u32 irq, IRQ_DEV_HANDLER isr, void *dev);
+
+description:
+	register a isr into irq subsystem.
+
+arguments:
+	irq----irq number.
+	isr----irq function.
+	dev----device.
+
+return val:
+	reuturn 0, is successed. return -22, irq is too large, return -12, is no memory.
+\end{lstlisting}
+
+\item irq\_set\_trigger
+\begin{lstlisting}[language=c, numbers=none]
+#include <stdio.h>
+
+int irq_set_trigger(u32 irq, u32, type);
+
+description:
+	set pin's/irq trigger mode.
+
+arguments:
+	irq---irq number.
+	type---trigger mode
+mode:
+	IRQ_TYPE_NONE
+	IRQ_TYPE_RISING
+	IRQ_TYPE_FALLING
+	IRQ_TYPE_BOTH -----falling or rising
+	IRQ_TYPE_HIGH
+	IRQ_TYPE_LOW
+
+return val:
+	if successed, return 0, otherwise return -1;
+\end{lstlisting}
+
+\item irq\_set\_handler
+\begin{lstlisting}[language=c, numbers=none]
+#include <irq.h>
+
+description: set irq handle for each irq.
+
+void irq_set_handler(u32 irq, IRQ_PIN_HANDLER irq_handle, int chain_flag);
+
+arguments:
+	irq----irq number.
+	irq_handle---isr.
+	chain_flag---irq pin is chained? if chained, chain_flag=1, otherwise chain_flag=0.
+\end{lstlisting}
+
+\item irq\_assoc\_intctl
+\begin{lstlisting}[language=c, numbers=none]
+#include <irq.h>
+
+int irq_assoc_intctl(u32 irq, struct int_ctrl *intctrl);
+
+description: set irq's int control.
+
+arguments:
+	irq---irq number.
+	intctrl---irq's control.
+
+return val:
+	always return 0;
+\end{lstlisting}
+
+\item irq\_handle
+\begin{lstlisting}[language=c, numbers=none]
+#include <irq.h>
+
+void irq_handle(u32 irq);
+
+description: execute irq's isr.
+\end{lstlisting}
+
+\item irq\_handle\_level
+\begin{lstlisting}[language=c, numbers=none]
+#include <irq.h>
+
+void irq_handle_level(struct int_pin *pin, u32 irq);
+
+description:
+	execute pin's irq_list.
+arguments:
+
+void irq_handle_edge(struct int_pin *pin, u32 irq);
+void irq_handle_simple(struct int_pin *pin, u32 irq);
+\end{lstlisting}
+\item irq\_handle\_edge: 与~irq\_handle\_level~功能类型，仅触发方式不同。
+\item irq\_handle\_simple: 与~irq\_handle\_level~功能类型，但不管触发方式。
+\end{enumerate}
+
+\section{String}
+\begin{enumerate}
+\item ~string2value~将字符串转化为数值。
+	\begin{lstlisting}[language=c, numbers=none]
+	#include <string.h>
+
+	int string2value(const char *str, u32 *val);
+	arguments:
+		str---a string which need to convert.
+		val---value after converted.
+	RETURE VALUE:
+		if convert successed, return length of string. otherwise reture -EINVAL
+	\end{lstlisting}
+\item dec\_str\_to\_val
+	\begin{lstlisting}[language=c, numbers=none]
+	#include <string.h>
+
+	int dec_str_to_val(const char *str, u32 *val);
+	arguments:
+		str---a string which need to convert.
+		val---value after converted.
+	RETURE VALUE:
+		if convert successed, return length of string. otherwise reture -EINVAL
+	\end{lstlisting}
+
+\item strchr
+	\begin{lstlisting}[language=c, numbers=none]
+	#include <string.h>
+
+	char *strchr(const char *psrc, int c);
+	arguments:
+		psrc---a string
+		c---a chartater which need find.
+	RETURE VALUE:
+		if successed, return the char's start address. otherwise reture NULL.
+	\end{lstlisting}
+
+\item strrchr
+\item strcat
+\item strncat
+\item strcmp
+\item strncmp
+\item strlen
+\item strnlen
+\item memset
+\item memmove
+\item memcmp
+\item memcpy
+	\begin{lstlisting}[language=c, numbers=none]
+#include <string.h>
+
+long memcmp(const void *pdst, const void *psrc, size_t count);
+	if pdest==psrc, return 0, otherwise return a value(+/-).
+	\end{lstlisting}
+\end{enumerate}
+
+\section{network}
+\begin{enumerate}
+\item net\_set\_mac
+\begin{lstlisting}[language=c, numbers=none]
+#include <net.h>
+
+int net_set_mac(struct net_device *ndev, const u8 mac_adr[])
+
+description:
+	set a network device's mac address.
+arguments:
+	ndev--network device.
+	mac_adr--mac address's array.
+
+return val:
+	if successed, return 0; otherwise return -ENODEV
+\end{lstlisting}
+\end{enumerate}
+
+\section{MTD}
+\subsection{part}
+\begin{enumerate}
+\item part\_write
+\begin{lstlisting}[language=c, numbers=none]
+#include <flash/part.h>
+
+long part_write()
+\end{lstlisting}
+\end{enumerate}
+
+\subsection{Flash}
+\begin{enumerate}
+\item flash\_open
+\begin{lstlisting}[language=c, numbers=none]
+#include <flash/flash.h>
+
+struct flash_chip *flash_pen(unsigned int num);
+arguments:
+	num---flash number
+\end{lstlisting}
+\item flash\_ioctl
+\begin{lstlisting}[language=c, numbers=none]
+#include <flash/flash.h>
+
+int flash_ioctl(struct flash_chip *flash, int cmd, void *arg);
+
+cmd:
+	FLASH_IOCS_OOB_MODE
+	FLASH_IOCG_OOB_MODE
+	FLASH_IOCS_CALLBACK
+	FLASH_IOC_SCANBB
+
+arg:
+
+\end{lstlisting}
+\item flash\_close
+\item flash\_write
+\begin{lstlisting}[language=c, numbers=none]
+#include <flash/flash.h>
+
+long flash_write(struct flash_chip *flash, const void *buff, u32 count, u32 ppos);
+
+u32 ppos: postion
+\end{lstlisting}
+\item flash\_read：读取数据，也可读取~OOB~
+\begin{lstlisting}[language=c, numbers=none]
+#include <flash/flash.h>
+
+int flash_read(struct flash_chip *flash, void *buff, int start, int count);
+arguments:
+	flash: flash which read form data.
+	buff: read data's write to memory's address.
+	start: flash's address.
+	count: request read's data size.
+\end{lstlisting}
+\item flash\_erase
+\begin{lstlisting}[language=c, numbers=none]
+#include <flash/flash.h>
+
+int flash_erase(struct flash_chip *flash, u32 start, u32 size, u32 flag);
+\end{lstlisting}
+\end{enumerate}
+
+\section{memory}
+\begin{enumerate}
+\item malloc
+\begin{lstlisting}[language=c, numbers=none]
+#include <malloc.h>
+
+void *malloc(u32 size);
+
+argument:
+	u32 size: request memory size.
+
+return: if alloce success, return virtual address.
+\end{lstlisting}
+\item free
+\begin{lstlisting}[language=c, numbers=none]
+#include <malloc.h>
+
+int free(void *p);.
+\end{lstlisting}
+\item zalloc: request memory and clear 0.
+\begin{lstlisting}[language=c, numbers=none]
+#include <malloc.h>
+
+void *zalloc(u32 len);
+\end{lstlisting}
+\item dma\_malloc, return pa and va, va=pa
+\begin{lstlisting}[language=c, numbers=none]
+#include <malloc.h>
+
+void *dma_malloc(size_t len, u32 *pa);
+\end{lstlisting}
+\item gk\_init\_heap. initialize heap memory.
+\begin{lstlisting}[language=c, numbers=none]
+#include <malloc.h>
+
+int gk_init_heap(u32 start, u32 end);
+
+arguments:
+	start: heap start address.
+	end: heap end address.
+returen val:
+	if successed, return 0, otherwise return -EINVAL.
+\end{lstlisting}
+\end{enumerate}
+
+\section{Misc}
+\begin{enumerate}
+\item getopt
+\begin{lstlisting}[language=c, numbers=none]
+#include <getopt.h>
+
+int getopt(int argc, char *argv[], const char *optstring, char **parg);
+
+description:
+	split argv by optstring and return by parg. every call, return a value.
+argument:
+	argc--the numbers of arguments
+	argv--arguments list
+	optstring--options string
+	parg----a string which return after match one argument.
+\end{lstlisting}
+\end{enumerate}

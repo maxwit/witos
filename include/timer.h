@@ -22,3 +22,4 @@ u32 get_tick(void);
 
 void inc_tick(void);
 
+void calibrate_delay(u32);
