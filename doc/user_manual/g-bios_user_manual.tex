@@ -1,18 +1,14 @@
 \documentclass[a4paper,11pt]{book}
 
-\input{../style}
+\input{style}
 
-\begin{CJK*}{UTF8}{gbsn}
 \title{g-bios Developers' Manual (Volume 1)}
 \author{MaxWit~魔鬼训练营}
-\end{CJK*}
 
 %\renewcommand{\baselinestretch}{1.3}
 \linespread{1.3}
 
 \begin{document}
-\begin{CJK*}{UTF8}{gbsn}
-\CJKtilde
 \maketitle
 
 \frontmatter
@@ -334,22 +330,22 @@ g-bios~上半部主要是~Load~下半部，为下半部服务。Load BH~的方�
 	\end{enumerate}
 \item Kermit
 \end{enumerate}
-\noindent第一步，先启动上半部，使用串口线将开发板上的~COM1~口和~PC~机的~COM~口连接、并用网线连接开发板和~PC~机，在~Host~端打开~kermit~\\
+\noindent 第一步，先启动上半部，使用串口线将开发板上的~COM1~口和~PC~机的~COM~口连接、并用网线连接开发板和~PC~机，在~Host~端打开~kermit~\\
 \begin{lstlisting}[language=bash,escapeinside=``]
 $cd /var/lib/tftpboot
 $kermit
 C-kermit>c (`回车`)
 \end{lstlisting}
-\noindent第二步，再按下开发板~Reset~键，将会进入~g-bios~上半部的启动界面(如图)\\
+\noindent 第二步，再按下开发板~Reset~键，将会进入~g-bios~上半部的启动界面(如图)\\
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=5in]{image/step2.eps}
 \end{figure}
 
-\noindent注：~g-bios~的上半部会自动检测~Flash~上是否已烧录下半部~g-bios-bh.bin~，若下半部已烧录则直接从~Flash~上将下半部~Load~到~Sdram~并运行，若未烧录则如上图所示，提示下半部未烧录，并需要通过从串口~Load~下半部并启动。下半部支持通过网络和串口两种方式烧录指定文件到~Flash~中。也在上半部启动过程中按任意键启动串口~Load~的功能.
+\noindent 注：~g-bios~的上半部会自动检测~Flash~上是否已烧录下半部~g-bios-bh.bin~，若下半部已烧录则直接从~Flash~上将下半部~Load~到~Sdram~并运行，若未烧录则如上图所示，提示下半部未烧录，并需要通过从串口~Load~下半部并启动。下半部支持通过网络和串口两种方式烧录指定文件到~Flash~中。也在上半部启动过程中按任意键启动串口~Load~的功能.
 
-\noindent第三步，选择``k''回车, 然后同时按下``CTRL''和``\textbackslash''键, 再按下``c''\\
+\noindent 第三步，选择``k''回车, 然后同时按下``CTRL''和``\textbackslash''键, 再按下``c''\\
 
 \begin{figure}[H]
 \centering
@@ -379,6 +375,4 @@ S3C64XX and S5P as cases
 \chapter{g-bios Commands Reference}
 \input{booting.art}
 
-\clearpage
-\end{CJK*}
 \end{document}
