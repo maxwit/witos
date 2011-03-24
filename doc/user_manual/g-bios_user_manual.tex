@@ -2,7 +2,7 @@
 
 \input{style}
 
-\title{g-bios Developers' Manual (Volume 1)}
+\title{g-bios Users' Manual}
 \author{MaxWit~魔鬼训练营}
 
 %\renewcommand{\baselinestretch}{1.3}
@@ -21,8 +21,9 @@
 %\section{g-bios: An Open Source Bootloader Project}
 ~MaxWit~开放实验室（~MaxWit Open Lab~）是由多家公司资助成立的，致力于研发开源项目和探讨软件开发技术的公益性组织。2008年1月正式成立于上海浦东张江高科，目前开放实验室成员主要来源于~Google~、~Intel、~ ~TI~、~AMD~、华为、~Cisco~、飞利浦等公司资深研发人员以及清华、浙大、上交大、中科院等科研院校的师生。
 
-~MaxWit~ ~g-bios~（以下简称~g-bios~）是由~MaxWit~开放实验室和开源社区共同研发的一个~Bootloader~，或者说是一个嵌入式系统的~BIOS，~相当于PC机的~BIOS~+~Bootloader~。~g-bios~不但借鉴了几乎所有主流~BSP/BIOS/Bootloader~的优点，而且加入不少独创的特性，包括：
-\begin{enumerate}[1)]\setlength{\itemsep}{-\itemsep}
+~MaxWit~ ~g-bios~（以下简称~g-bios~）是由~MaxWit~开放实验室和开源社区共同研发的一个~Bootloader~，或者说是一个嵌入式系统的~BIOS，~相当于PC机的~BIOS~+~Bootloader~。~g-bios~不但借鉴了几乎所有主流~BSP/BIOS/Bootloader~的优点，而且加入不少独创的特性，包括（但不局限于）：
+%\begin{enumerate}[1)]\setlength{\itemsep}{-\itemsep}
+\begin{enumerate}\setlength{\itemsep}{-\itemsep}
 \item 自动检测有待烧录的~image~文件类型，并智能自动烧录。
 \item 支持多种文件系统，包括~YAFFS2、JFFS2、CRAMFS、UBI、NFS~等。
 \item 支持两种用户界面：~GUI~（类似传统~PC BIOS~）和命令行模式（面向嵌入式系统）。
@@ -33,7 +34,7 @@
 \item 引入全新的架构及~NB~（~Never~ ~Burn~ ~Down~，烧不死）技术。核心设计思想是：把~g-bios~分为上半部分和下半部分，上半部分以最小的代码量完成~CPU~和~Memory~的初始化，并实现引导下半部分的功能；下半部分为~g-bios~主体。上半部分设计简单，调试周期短，完成后就固化在特定的引导区中不再更改；开发人员可在没有仿真器的情况下大胆开发下半部分代码（即~g-bios~主体），事实上，只需一根串口数据线应能轻松完成整个~g-bios~的开发。启动代码的地址无关性带来的麻烦？没有了！因为~bug~或不小心改错了代码，甚至是数据线连接问题而导致启动黑屏？也不可能出现了！在调试完成并正试发布的产品时，若有必要，也可将上下两部分可合成一个整体——只需一个命令重新编译即可。
 \item 优秀的子系统设计，包括：中断、网络、~Flash、USB~子系统，等等。
 \item 集成类似~PC~机版本的~Video BIOS~。
-\item 支持基于龙芯的~PC~机及嵌入式系统。
+%\item 支持基于龙芯的~PC~机及嵌入式系统。
 \item 完美支持~Google Android~操作系统，简化~Android~的系统移植过程。
 \item 支持图形化配置，不但让新手很容易上手，而且使~g-bios~的移植和开发过程变得更简单。
 \end{enumerate}
