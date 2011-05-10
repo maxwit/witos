@@ -36,8 +36,8 @@ struct block_device
 {
 	struct device dev;
 
-	u32  part_base;
-	u32  part_size;
+	size_t bdev_base;
+	size_t bdev_size;
 };
 
 int block_device_register(struct block_device *blk_dev);

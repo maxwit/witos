@@ -23,7 +23,7 @@ static int msdos_part_scan(struct generic_drive *drive, struct part_attr part_ta
 
 	assert(drive != NULL);
 
-	u8 buff[drive->block_size];
+	u8 buff[drive->sect_size];
 
 	drive->get_block(drive, 0, buff);
 
@@ -38,15 +38,29 @@ static int msdos_part_scan(struct generic_drive *drive, struct part_attr part_ta
 		part_tab[i].part_type = PT_NONE;
 		part_tab[i].part_name[0] = '\0';
 
-		part_tab[i].part_base = dos_pt[i].lba_start * drive->block_size;
-		part_tab[i].part_size = dos_pt[i].lba_size * drive->block_size;
+		part_tab[i].part_base = dos_pt[i].lba_start * drive->sect_size;
+		part_tab[i].part_size = dos_pt[i].lba_size * drive->sect_size;
 
 		printf("0x%08x - 0x%08x (%dM)\n",
 			dos_pt[i].lba_start, dos_pt[i].lba_start + dos_pt[i].lba_size,
-			dos_pt[i].lba_size * drive->block_size >> 20);
+			dos_pt[i].lba_size * drive->sect_size >> 20);
 	}
 
 	return i;
+}
+
+static int drive_get_block(struct generic_drive *drive, int start, u8 buff[])
+{
+	struct generic_drive *master = drive->master;
+
+	return master->get_block(master, drive->blk_dev.bdev_base + start, buff);
+}
+
+static int drive_put_block(struct generic_drive *drive, int start, const u8 buff[])
+{
+	struct generic_drive *master = drive->master;
+
+	return master->put_block(master, drive->blk_dev.bdev_base + start, buff);
 }
 
 int generic_drive_register(struct generic_drive *drive)
@@ -54,12 +68,6 @@ int generic_drive_register(struct generic_drive *drive)
 	int ret, num, i;
 	struct part_attr part_tab[MSDOS_MAX_PARTS];
 	struct generic_drive *slave;
-	struct block_device *blk_dev;
-
-	blk_dev = &drive->blk_dev;
-
-	blk_dev->part_base = 0; // fixme!!
-	blk_dev->part_size = drive->drive_size;
 
 	ret = block_device_register(&drive->blk_dev);
 	// if ret < 0 ...
@@ -71,13 +79,17 @@ int generic_drive_register(struct generic_drive *drive)
 	{
 		slave = zalloc(sizeof(*slave));
 		// if ...
-		blk_dev = &slave->blk_dev;
 
-		blk_dev->part_base = part_tab[i].part_base;
-		blk_dev->part_size = part_tab[i].part_size;
-		snprintf(blk_dev->dev.name, PART_NAME_LEN, "%sp%d", drive->blk_dev.dev.name, i);
+		snprintf(slave->blk_dev.dev.name, PART_NAME_LEN, "%sp%d", drive->blk_dev.dev.name, i);
 
-		ret = block_device_register(blk_dev);
+		slave->blk_dev.bdev_base = part_tab[i].part_base;
+		slave->blk_dev.bdev_size = part_tab[i].part_size;
+
+		slave->master = drive;
+		slave->get_block = drive_get_block;
+		slave->put_block = drive_put_block;
+
+		ret = block_device_register(&slave->blk_dev);
 		// if ret < 0 ...
 	}
 

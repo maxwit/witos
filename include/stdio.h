@@ -38,10 +38,10 @@ void clear_screen(void);
 	}
 
 #define assert(x) \
-		if (!x) \
-		{  \
-			BUG(); \
-		}
+	if (!(x)) \
+	{  \
+		BUG(); \
+	}
 #else
 #define DPRINT(fmt, args ...)
 #define GEN_DGB()

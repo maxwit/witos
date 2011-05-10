@@ -121,7 +121,7 @@ static int mmc_put_block(struct generic_drive *drive, int start, const u8 buff[]
 	return mmc_write_blk(card->host, buff, start);
 }
 
-static int mmc_blkdev_register(struct mmc_card *card)
+static int mmc_card_register(struct mmc_card *card)
 {
 	struct generic_drive *drive = &card->drive;
 
@@ -129,8 +129,8 @@ static int mmc_blkdev_register(struct mmc_card *card)
 	sprintf(drive->blk_dev.dev.name, "mmcblock%d", mmc_card_count);
 	mmc_card_count++;
 
-	drive->drive_size  = 0;
-	drive->block_size  = BLKSIZE;
+	drive->blk_dev.bdev_base = 0;
+	drive->blk_dev.bdev_size = 0; // fixme
 
 	drive->get_block = mmc_get_block;
 	drive->put_block = mmc_put_block;
@@ -202,7 +202,7 @@ int mmc_sd_detect_card(struct mmc_host *host)
 
 	//ret = mmc_set_block_len(host, BLKSIZE);
 
-	ret = mmc_blkdev_register(card);
+	ret = mmc_card_register(card);
 
 	return 0;
 out:
