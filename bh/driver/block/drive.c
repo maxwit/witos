@@ -15,6 +15,8 @@ struct msdos_part
 	u32 lba_size;
 };
 
+static struct list_node g_master_list;
+
 // fixme to support extened partion
 static int msdos_part_scan(struct generic_drive *drive, struct part_attr part_tab[])
 {
@@ -86,6 +88,8 @@ int generic_drive_register(struct generic_drive *drive)
 		slave->blk_dev.bdev_size = part_tab[i].part_size;
 
 		slave->master = drive;
+		list_add_tail(&slave->slave_node, &drive->slave_list);
+
 		slave->get_block = drive_get_block;
 		slave->put_block = drive_put_block;
 
@@ -93,5 +97,15 @@ int generic_drive_register(struct generic_drive *drive)
 		// if ret < 0 ...
 	}
 
+	list_add_tail(&drive->master_node, &g_master_list);
+
 	return 0;
 }
+
+static int __INIT__ generic_drive_init(void)
+{
+	list_head_init(&g_master_list);
+	return 0;
+}
+
+SUBSYS_INIT(generic_drive_init);
