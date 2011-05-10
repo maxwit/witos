@@ -5,6 +5,8 @@
 #define BLKSIZE 512
 #define MMC_HOST_NUM 5
 
+static int mmc_card_count = 0; // fixme
+
 static struct mmc_host *g_mmc_host[MMC_HOST_NUM];
 
 int mmc_erase_blk(struct mmc_host *host, int start)
@@ -124,6 +126,9 @@ static int mmc_blkdev_register(struct mmc_card *card)
 	struct generic_drive *drive = &card->drive;
 
 	// fixme
+	sprintf(drive->name, "mmcblock%d", mmc_card_count);
+	mmc_card_count++;
+
 	drive->drive_size  = 0;
 	drive->block_size  = BLKSIZE;
 
