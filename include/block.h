@@ -1,4 +1,5 @@
 #pragma once
+#include <device.h>
 
 typedef enum
 {
@@ -33,7 +34,8 @@ struct part_attr
 
 struct block_device
 {
-	char part_name[PART_NAME_LEN];
+	struct device dev;
+
 	u32  part_base;
 	u32  part_size;
 };

@@ -4,8 +4,6 @@
 
 struct generic_drive
 {
-	char name[32]; // fixme
-
 	struct block_device blk_dev;
 
 	size_t drive_size;

@@ -126,7 +126,7 @@ static int mmc_blkdev_register(struct mmc_card *card)
 	struct generic_drive *drive = &card->drive;
 
 	// fixme
-	sprintf(drive->name, "mmcblock%d", mmc_card_count);
+	sprintf(drive->blk_dev.dev.name, "mmcblock%d", mmc_card_count);
 	mmc_card_count++;
 
 	drive->drive_size  = 0;

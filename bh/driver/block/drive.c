@@ -58,9 +58,8 @@ int generic_drive_register(struct generic_drive *drive)
 
 	blk_dev = &drive->blk_dev;
 
-	blk_dev->part_base = 0;
+	blk_dev->part_base = 0; // fixme!!
 	blk_dev->part_size = drive->drive_size;
-	strncpy(blk_dev->part_name, drive->name, PART_NAME_LEN);
 
 	ret = block_device_register(&drive->blk_dev);
 	// if ret < 0 ...
@@ -76,7 +75,7 @@ int generic_drive_register(struct generic_drive *drive)
 
 		blk_dev->part_base = part_tab[i].part_base;
 		blk_dev->part_size = part_tab[i].part_size;
-		snprintf(blk_dev->part_name, PART_NAME_LEN, "%sp%d", drive->name, i);
+		snprintf(blk_dev->dev.name, PART_NAME_LEN, "%sp%d", drive->blk_dev.dev.name, i);
 
 		ret = block_device_register(blk_dev);
 		// if ret < 0 ...
