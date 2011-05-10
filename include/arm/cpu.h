@@ -14,13 +14,16 @@
 #define ARM_IRQ_MASK  (1 << 7)
 #define ARM_INT_MASK  (ARM_IRQ_MASK | ARM_FIQ_MASK)
 
-#define SVC_STACK_SIZE   0x00001000
+#define SVC_STACK_SIZE   0x00010000
 #define UND_STACK_SIZE   SVC_STACK_SIZE
 #define ABT_STACK_SIZE   SVC_STACK_SIZE
 #define IRQ_STACK_SIZE   SVC_STACK_SIZE
 #define FIQ_STACK_SIZE   SVC_STACK_SIZE
 
+#define ALLOC_STACK_SIZE \
+	(SVC_STACK_SIZE + UND_STACK_SIZE + ABT_STACK_SIZE + IRQ_STACK_SIZE + FIQ_STACK_SIZE)
 
+#ifdef CONFIG_IRQ_SUPPORT
 #define irq_enable() \
 	do \
 	{ \
@@ -32,7 +35,6 @@
 			: "i" (ARM_IRQ_MASK) \
 			: "memory"); \
 	} while (0)
-
 
 #define irq_disable() \
 	do \
@@ -46,7 +48,6 @@
 			: "memory"); \
 	} while (0)
 
-
 #define lock_irq_psr(cpsr) \
 	do \
 	{   \
@@ -59,7 +60,6 @@
 			: "memory"); \
 	} while (0)
 
-
 #define unlock_irq_psr(cpsr) \
 	do \
 	{ \
@@ -68,7 +68,6 @@
 			: "r" (cpsr) \
 			: "memory"); \
 	} while (0)
-
 
 #define fiq_enable() \
 	do \
@@ -81,9 +80,10 @@
 			: "i" (ARM_FIQ_MASK) \
 			: "memory"); \
 	} while (0)
-
-
-#define GTH_MAGIC_OFFSET   32
-#define GBH_MAGIC_OFFSET   32
-#define GBH_SIZE_OFFSET    20
-
+#else // fixme
+#define irq_enable()
+#define irq_disable()
+#define lock_irq_psr(cpsr) do {cpsr = 0;} while (0)
+#define unlock_irq_psr(cpsr) do {cpsr = 0;} while (0)
+#define fiq_enable()
+#endif

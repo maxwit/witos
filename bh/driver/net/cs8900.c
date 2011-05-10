@@ -1,22 +1,18 @@
-#include <g-bios.h>
 #include <irq.h>
 #include <net/net.h>
 #include "cs8900.h"
 
- 
 static inline u16 cs8900_inw(u16 reg)
 {
 	writew(VA(CS8900_IOBASE + 0x0A), reg);
 	return readw(VA(CS8900_IOBASE + 0x0C));
 }
 
-
 static inline void cs8900_outw(u16 reg, u16 val)
 {
 	writew(VA(CS8900_IOBASE + 0x0A), reg);
 	writew(VA(CS8900_IOBASE + 0x0C), val);
 }
-
 
 static int cs8900_reset(void)
 {
@@ -37,7 +33,6 @@ static int cs8900_reset(void)
 
 	return -ETIMEDOUT;
 }
-
 
 static int cs89x0_send_packet(struct net_device *ndev, struct sock_buff *skb)
 {
@@ -68,13 +63,14 @@ static int cs89x0_send_packet(struct net_device *ndev, struct sock_buff *skb)
 		buff++;
 	}
 
+	ndev->stat.tx_packets++;
+
 	unlock_irq_psr(psr);
 
 	return 0;
 }
 
-
-static int cs89x0_set_mac_adr(struct net_device *ndev, const u8 mac[])
+static int cs89x0_set_mac(struct net_device *ndev, const u8 mac[])
 {
 	int i;
 
@@ -83,7 +79,6 @@ static int cs89x0_set_mac_adr(struct net_device *ndev, const u8 mac[])
 
 	return 0;
 }
-
 
 static int cs89x0_isr(u32 irq, void *dev)
 {
@@ -123,7 +118,6 @@ static int cs89x0_isr(u32 irq, void *dev)
 	return 0;
 }
 
-
 #ifndef CONFIG_IRQ_SUPPORT
 static int cs89x0_poll(struct net_device *ndev)
 {
@@ -157,10 +151,11 @@ static int cs89x0_poll(struct net_device *ndev)
 
 	netif_rx(skb);
 
+	ndev->stat.rx_packets++;
+
 	return 0;
 }
 #endif
-
 
 static int __INIT__ cs89x0_init(void)
 {
@@ -187,7 +182,7 @@ static int __INIT__ cs89x0_init(void)
 	ndev->chip_name = "CS8900A";
 	ndev->phy_mask = 0;
 	ndev->send_packet = cs89x0_send_packet;
-	ndev->set_mac_adr = cs89x0_set_mac_adr;
+	ndev->set_mac_addr = cs89x0_set_mac;
 #ifndef CONFIG_IRQ_SUPPORT
 	ndev->ndev_poll   = cs89x0_poll;
 #endif

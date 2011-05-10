@@ -1,4 +1,3 @@
-#include <g-bios.h>
 #include <string.h>
 
 static void show_usage(void)

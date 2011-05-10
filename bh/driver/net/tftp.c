@@ -1,9 +1,7 @@
-#include <g-bios.h>
 #include <net/tftp.h>
 #include <getopt.h>
 #include <flash/part.h>
 #include <sysconf.h>
-
 
 struct tftp_packet
 {
@@ -15,7 +13,6 @@ struct tftp_packet
 	};
 	u8 data[0];
 } __PACKED__;
-
 
 static int tftp_make_rrq(u8 *buff, const char *file_name)
 {
@@ -39,17 +36,16 @@ static int tftp_make_rrq(u8 *buff, const char *file_name)
 	return len;
 }
 
-
-static void tftp_send_ack(const int fd, const u16 blk)
+static void tftp_send_ack(const int fd, const u16 blk, struct sockaddr_in *remote_addr)
 {
 	struct tftp_packet tftp_pkt;
 
 	tftp_pkt.op_code = TFTP_ACK;
 	tftp_pkt.block = CPU_TO_BE16(blk);
 
-	send(fd, &tftp_pkt, TFTP_HDR_LEN);
+	sendto(fd, &tftp_pkt, TFTP_HDR_LEN, 0,
+		(const struct sockaddr*)remote_addr, sizeof(*remote_addr));
 }
-
 
 // fixme
 int net_tftp_load(struct tftp_opt *opt)
@@ -60,18 +56,22 @@ int net_tftp_load(struct tftp_opt *opt)
 	char server_ip[IPV4_STR_LEN], local_ip[IPV4_STR_LEN];
 	u32  pkt_len, load_len;
 	u16  blk_num;
-	u32  nip;
 	u8  *buff_ptr;
+	u32  client_ip;
 	struct tftp_packet *tftp_pkt;
-	struct sockaddr    *skaddr;
-	struct net_config    *pNetConf;
+	struct sockaddr_in *local_addr, *remote_addr;
+	socklen_t addrlen;
+	struct net_config  *net_cfg;
 
-	sysconf_get_net_info(&pNetConf);
-	if (ip_to_str(local_ip, pNetConf->local_ip) < 0)
+	ndev_ioctl(NULL, NIOC_GET_IP, &client_ip);
+
+	if (ip_to_str(local_ip, client_ip) < 0)
 	{
 		printf("Error: Local IP!\n");
 		return -EINVAL;
 	}
+
+	net_cfg = sysconf_get_net_info();
 
 	if (ip_to_str(server_ip, opt->server_ip) < 0)
 	{
@@ -85,34 +85,41 @@ int net_tftp_load(struct tftp_opt *opt)
 
 	if (sockfd <= 0)
 	{
-		printf("%s(): error @ line %d!\n", __FUNCTION__, __LINE__);
+		printf("%s(): error @ line %d!\n", __func__, __LINE__);
 		return -EIO;
 	}
 
-	str_to_ip((u8 *)&nip, server_ip);
-
-	skaddr = getaddr(nip);
-
-	if (NULL == skaddr)
-    {
-		skaddr = gethostaddr(server_ip);
-		if (NULL == skaddr)
-		{
-			printf("%s(): addr error!\n", __FUNCTION__);
-			return -EINVAL;
-		}
+	local_addr = malloc(sizeof(*local_addr));
+	if (local_addr == NULL)
+	{
+		printf("%s(): error @ line %d!\n", __func__, __LINE__);
+		return -ENOMEM;
 	}
+
+	memset(local_addr, 0, sizeof(*local_addr));
+	local_addr->sin_port = CPU_TO_BE16(1234); // fixme: NetPortAlloc
+	local_addr->sin_addr.s_addr = client_ip;
+
+	ret = bind(sockfd, (struct sockaddr *)local_addr, sizeof(struct sockaddr));
 
 	printf(" \"%s\": %s => %s\n", opt->file_name, server_ip, local_ip);
 
-	skaddr->src_port = CPU_TO_BE16(1234); // fixme: NetPortAlloc
-	skaddr->des_port = CPU_TO_BE16(STD_PORT_TFTP);
-
-	ret = connect(sockfd, skaddr, sizeof(struct sockaddr));
-
 	pkt_len = tftp_make_rrq((u8 *)tftp_pkt, opt->file_name);
 
-	send(sockfd, tftp_pkt, pkt_len);
+	remote_addr = malloc(sizeof(*remote_addr));
+	if (remote_addr == NULL)
+	{
+		printf("%s(): error @ line %d!\n", __func__, __LINE__);
+		return -ENOMEM;
+	}
+
+	memset(remote_addr, 0, sizeof(*remote_addr));
+	remote_addr->sin_addr.s_addr = net_cfg->server_ip; // bigendian
+	remote_addr->sin_port = CPU_TO_BE16(STD_PORT_TFTP);
+	addrlen = sizeof(*remote_addr);
+
+	sendto(sockfd, tftp_pkt, pkt_len, 0,
+			(const struct sockaddr *)remote_addr, addrlen);
 
 	buff_ptr = opt->load_addr;
 	load_len = 0;
@@ -120,7 +127,8 @@ int net_tftp_load(struct tftp_opt *opt)
 
 	do
 	{
-		pkt_len = recv(sockfd, tftp_pkt, TFTP_BUF_LEN);
+		pkt_len = recvfrom(sockfd, tftp_pkt, TFTP_BUF_LEN, 0,
+							(struct sockaddr *)remote_addr, &addrlen);
 		if(0 == pkt_len)
 			goto L1;
 
@@ -134,7 +142,7 @@ int net_tftp_load(struct tftp_opt *opt)
 		case TFTP_DAT:
 			if (BE16_TO_CPU(tftp_pkt->block) == blk_num)
 			{
-				tftp_send_ack(sockfd, blk_num);
+				tftp_send_ack(sockfd, blk_num, remote_addr);
 				blk_num++;
 
 				load_len += pkt_len;
@@ -169,23 +177,23 @@ int net_tftp_load(struct tftp_opt *opt)
 			{
 #ifdef TFTP_DEBUG
 				printf("\t%s(): LOST Packet = 0x%x (0x%x).\r",
-					__FUNCTION__, blk_num, BE16_TO_CPU(tftp_pkt->block));
+					__func__, blk_num, BE16_TO_CPU(tftp_pkt->block));
 #endif
-				tftp_send_ack(sockfd, blk_num - 1);
+				tftp_send_ack(sockfd, blk_num - 1, remote_addr);
 			}
 
 			break;
 
 		case TFTP_ERR:
 			printf("\n%s(): %s (Error num = %d)\n",
-				__FUNCTION__, tftp_pkt->data, BE16_TO_CPU(tftp_pkt->error));
+				__func__, tftp_pkt->data, BE16_TO_CPU(tftp_pkt->error));
 
 			ret = -EIO;
 			goto L1;
 
 		default:
 			printf("\n%s(): Unsupported opcode 0x%02x! (CurBlkNum = %d)\n",
-				__FUNCTION__, BE16_TO_CPU(tftp_pkt->op_code), blk_num);
+				__func__, BE16_TO_CPU(tftp_pkt->op_code), blk_num);
 
 			ret = -EIO;
 			goto L1;
@@ -198,6 +206,8 @@ L1:
 #endif
 
 	close(sockfd);
+	free(remote_addr);
+	free(local_addr);
 
 	return load_len;
 }

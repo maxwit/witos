@@ -22,7 +22,7 @@ def generate_autoconf(dot_conf, auto_conf, plat_info):
 	arch = plat_info[1]
 	# check
 
-	fd2.write("#pragma once\n\n")
+	fd2.write("#pragma once\n//\n")
 
 	while 1:
 		str = fd1.readline()
@@ -39,7 +39,7 @@ def generate_autoconf(dot_conf, auto_conf, plat_info):
 		elif length == 1:
 			fd2.write(str);
 
-	fd2.write('\n')
+	fd2.write('\n//\n')
 	fd2.write("#include <" + arch +"/cpu.h>\n")
 	fd2.write("#include <" + arch + '/' + plat + ".h>\n")
 	fd2.close();

@@ -7,7 +7,6 @@
 #define UART_IOCG_TXCOUNT   3
 #define UART_IOCS_TIMEOUT   4
 
-
 #define CLRSCREEN      "\033[H\033[J" // Esc + '[ '+  '2' + 'J'
 #define CHAR_CTRL_C    '\3'
 #define CHAR_ESC       '\033'

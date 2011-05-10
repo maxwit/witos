@@ -22,7 +22,6 @@
 #undef  TFTP_DEBUG  // fixme: depend on configuration
 #define TFTP_VERBOSE
 
-
 struct partition;
 
 struct tftp_opt
@@ -32,7 +31,6 @@ struct tftp_opt
 	void  *load_addr;
 	struct partition *part;
 };
-
 
 int net_tftp_load(struct tftp_opt *opt);
 

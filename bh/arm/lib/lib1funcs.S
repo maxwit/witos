@@ -2,7 +2,6 @@
  * lib1funcs.S: porting from gcc/linux and adapted for g-bios
  */
 
-
 #define ENTRY(name) \
 	.global name; \
 name:
@@ -72,7 +71,6 @@ name:
 
 .endm
 
-
 .macro ARM_DIV2_ORDER divisor, order
 
 #if __LINUX_ARM_ARCH__ >= 5
@@ -102,7 +100,6 @@ name:
 #endif
 
 .endm
-
 
 .macro ARM_MOD_BODY dividend, divisor, order, spare
 
@@ -174,7 +171,6 @@ name:
 5:
 .endm
 
-
 ENTRY(__udivsi3)
 ENTRY(__aeabi_uidiv)
 
@@ -200,7 +196,6 @@ ENTRY(__aeabi_uidiv)
 	mov	r0, r0, lsr r2
 	mov	pc, lr
 
-
 ENTRY(__umodsi3)
 
 	subs	r2, r1, #1			@ compare divisor with 1
@@ -214,7 +209,6 @@ ENTRY(__umodsi3)
 	ARM_MOD_BODY r0, r1, r2, r3
 
 	mov	pc, lr
-
 
 ENTRY(__divsi3)
 ENTRY(__aeabi_idiv)
@@ -253,7 +247,6 @@ ENTRY(__aeabi_idiv)
 	mov	r0, r3, lsr r2
 	rsbmi	r0, r0, #0
 	mov	pc, lr
-
 
 ENTRY(__modsi3)
 

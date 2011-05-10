@@ -1,4 +1,3 @@
-#include <g-bios.h>
 #include <sysconf.h>
 #include <net/net.h>
 #include <net/mii.h>
@@ -6,10 +5,9 @@
 
 struct host_addr
 {
-	struct sockaddr sk_addr;
+	struct eth_addr in_addr;
 	struct list_node node;
 };
-
 
 static struct list_node g_host_list;
 static struct list_node g_ndev_list;
@@ -17,20 +15,35 @@ static struct net_device *g_curr_ndev; // fixme
 #ifdef CONFIG_DEBUG
 static const char *g_arp_desc[] = {"N/A", "Request", "Reply"};
 #endif
-
+static int ndev_count = 0;
 
 static void ether_send_packet(struct sock_buff *skb, const u8 mac[], u16 eth_type);
 
 struct socket *search_socket(const struct udp_header *, const struct ip_header *);
 
+static BOOL __INLINE__ ip_is_bcast(u32 ip)
+{
+	u32 mask;
+	int ret;
+
+	ret = ndev_ioctl(NULL, NIOC_GET_MASK, &mask);
+	if (ret < 0)
+	{
+		return FALSE;
+	}
+
+	if (~(mask | ip) == 0)
+		return TRUE;
+	else
+		return FALSE;
+}
 
 static void __INLINE__ mac_fill_bcast(u8 mac[])
 {
 	memset(mac,(u8)0xff, MAC_ADR_LEN);
 }
 
-
-#ifdef CONFIG_DEBUG
+#ifdef CONFIG_NET_DEBUG
 static void ether_info(struct ether_header *eth_head)
 {
 
@@ -52,7 +65,6 @@ static void ether_info(struct ether_header *eth_head)
 		eth_head->src_mac[4],
 		eth_head->src_mac[5]);
 }
-
 
 static void dump_sock_buff(const struct sock_buff *skb)
 {
@@ -78,14 +90,13 @@ void udp_send_packet(struct sock_buff *skb)
 
 	udp_hdr = (struct udp_header *)skb->data;
 	//
-	udp_hdr->src_port = skb->sock->addr.src_port;
-	udp_hdr->des_port = skb->sock->addr.des_port;
+	udp_hdr->src_port = skb->sock->addr.sin_port;
+	udp_hdr->des_port = skb->remote_addr.sin_port;
 	udp_hdr->udp_len  = CPU_TO_BE16(skb->size);
 	udp_hdr->chksum  = 0;
 
 	ip_send_packet(skb, PROT_UDP);
 }
-
 
 struct sock_buff *udp_recv_packet(struct socket *sock)
 {
@@ -120,11 +131,10 @@ struct sock_buff *udp_recv_packet(struct socket *sock)
 	list_del_node(first);
 	unlock_irq_psr(psr);
 
-	skb = OFF2BASE(first, struct sock_buff, node);
+	skb = container_of(first, struct sock_buff, node);
 
 	return skb;
 }
-
 
 static int udp_layer_deliver(struct sock_buff *skb, const struct ip_header *ip_hdr)
 {
@@ -148,13 +158,14 @@ static int udp_layer_deliver(struct sock_buff *skb, const struct ip_header *ip_h
 		return -ENODEV;
 	}
 
-	sock->addr.des_port = udp_hdr->src_port;
+	// sock->addr.des_port = udp_hdr->src_port;
+	memcpy(&skb->remote_addr.sin_addr.s_addr, ip_hdr->src_ip, IPV4_ADR_LEN);
+	skb->remote_addr.sin_port = udp_hdr->src_port;
 
 	list_add_tail(&skb->node, &sock->rx_qu);
 
 	return 0;
 }
-
 
 static int init_ping_packet(struct ping_packet *ping_pkt,
 				const u8 *buff, u8 type, u32 size, u16 id, u16 seq)
@@ -180,7 +191,6 @@ static int init_ping_packet(struct ping_packet *ping_pkt,
 	return 0;
 }
 
-
 int ping_send(struct sock_buff *rx_skb, const struct ip_header *ip_hdr, u8 type)
 {
 	u8   ping_buff[PING_PACKET_LENGTH];
@@ -199,13 +209,12 @@ int ping_send(struct sock_buff *rx_skb, const struct ip_header *ip_hdr, u8 type)
 	tx_skb = skb_alloc(ETH_HDR_LEN + IP_HDR_LEN, PING_PACKET_LENGTH);
 	if (NULL == tx_skb)
 	{
-	    printf("%s(): skb_alloc return null\n", __FUNCTION__);
+	    printf("%s(): skb_alloc return null\n", __func__);
 	    return -EBUSY;
 	}
 
-	memcpy(sock.addr.des_ip, ip_hdr->src_ip, IPV4_ADR_LEN);
-
-	memcpy(sock.addr.des_mac, eth_head->src_mac, MAC_ADR_LEN);
+	memcpy(&tx_skb->remote_addr.sin_addr, ip_hdr->src_ip, IPV4_ADR_LEN);
+	memcpy(&sock.addr.sin_addr, ip_hdr->des_ip, IPV4_ADR_LEN);
 
 	tx_skb->sock = &sock;
 
@@ -217,7 +226,6 @@ int ping_send(struct sock_buff *rx_skb, const struct ip_header *ip_hdr, u8 type)
 
 	return 0;
 }
-
 
 int ping_recv(struct sock_buff *rx_skb, const struct ip_header *ip_hdr)
 {
@@ -237,8 +245,7 @@ int ping_recv(struct sock_buff *rx_skb, const struct ip_header *ip_hdr)
 	return 0;
 }
 
-
-int ping_request(struct socket *socket)
+int ping_request(struct socket *socket, struct eth_addr *remote_addr)
 {
 	int i, j;
 	u8  ping_buff[PING_PACKET_LENGTH];
@@ -246,17 +253,17 @@ int ping_request(struct socket *socket)
 	struct sock_buff *skb;
 	struct ping_packet *ping_pkt;
 
-
 	for (i = 0; i < PING_MAX_TIMES; i++)
 	{
 	    skb = skb_alloc(ETH_HDR_LEN + IP_HDR_LEN, PING_PACKET_LENGTH);
 	    if (NULL == skb)
 	    {
-	    	printf("%s(): skb_alloc failed\n", __FUNCTION__);
+			printf("%s(): skb_alloc failed\n", __func__);
 			return -ENOMEM;
 	    }
 
 	    skb->sock = socket;
+		memcpy(&skb->remote_addr.sin_addr, remote_addr->ip, IPV4_ADR_LEN);
 
 	    ping_pkt = (struct ping_packet *)ping_buff;
 
@@ -276,7 +283,6 @@ int ping_request(struct socket *socket)
 
 	return 0;
 }
-
 
 static int icmp_deliver(struct sock_buff *skb, const struct ip_header *ip_hdr)
 {
@@ -312,25 +318,27 @@ static int icmp_deliver(struct sock_buff *skb, const struct ip_header *ip_hdr)
 	    break;
 	}
 
+	skb_free(skb);
+
 	return 0;
 }
-
 
 int ip_layer_deliver(struct sock_buff *skb)
 {
 	struct ip_header *ip_hdr;
+	u8 ip_hdr_len;
 
 	ip_hdr = (struct ip_header *)skb->data;
+	ip_hdr_len = (ip_hdr->ver_len & 0xf) << 2;
 
-	skb->data += IP_HDR_LEN;
-	skb->size = BE16_TO_CPU(ip_hdr->total_len) - IP_HDR_LEN;
+	skb->data += ip_hdr_len;
+	skb->size = BE16_TO_CPU(ip_hdr->total_len) - ip_hdr_len;
 
-	if (IP_HDR_LEN != ((ip_hdr->ver_len & 0xf) << 2))
+	if (ip_hdr_len < IP_HDR_LEN)
 	{
 		printf("Warning: ip_hdr head len not match\n");
 		return -1;
 	}
-
 
 	switch(ip_hdr->up_prot)
 	{
@@ -350,7 +358,7 @@ int ip_layer_deliver(struct sock_buff *skb)
 		break;
 
 	case PROT_IGMP:
-		printf("\tIGMP received!\n");
+		// printf("\tIGMP received!\n");
 		skb_free(skb);
 		break;
 
@@ -365,16 +373,19 @@ int ip_layer_deliver(struct sock_buff *skb)
 		return 0;
 	}
 
-
 	return ip_hdr->up_prot;
 }
 
-
 void ip_send_packet(struct sock_buff *skb, u8 bProtocal)
 {
+	struct udp_header *udp_hdr;
 	struct ip_header *ip_hdr;
-	u32 src_ip;
+	struct eth_addr *remote_addr = NULL;
+	u8 mac[MAC_ADR_LEN];
+	u8 *pmac = NULL;
+	u32 nip;
 
+	udp_hdr = (struct udp_header*)skb->data;
 
 	skb->data -= IP_HDR_LEN;
 	skb->size += IP_HDR_LEN;
@@ -390,30 +401,51 @@ void ip_send_packet(struct sock_buff *skb, u8 bProtocal)
 	ip_hdr->up_prot     = bProtocal;
 	ip_hdr->chksum     = 0;
 
-	net_get_ip(NULL, &src_ip);
-	memcpy(ip_hdr->src_ip, &src_ip, IPV4_ADR_LEN);
+	memcpy(ip_hdr->src_ip, &skb->sock->addr.sin_addr, IPV4_ADR_LEN);
 
-	memcpy(&ip_hdr->des_ip, skb->sock->addr.des_ip, IPV4_ADR_LEN);
+	memcpy(ip_hdr->des_ip, &skb->remote_addr.sin_addr, IPV4_ADR_LEN);
 
 	ip_hdr->chksum = ~net_calc_checksum(ip_hdr, IP_HDR_LEN);
 
-	ether_send_packet(skb, skb->sock->addr.des_mac, ETH_TYPE_IP);
-}
+	nip = skb->remote_addr.sin_addr.s_addr;
 
+	if (ip_is_bcast(BE32_TO_CPU(nip)))
+	{
+		mac_fill_bcast(mac);
+		pmac = mac;
+	}
+	else
+	{
+		remote_addr = getaddr(nip);
+
+		if (NULL == remote_addr)
+	    {
+			remote_addr = gethostaddr(skb->remote_addr.sin_addr.s_addr);
+			if (NULL == remote_addr)
+			{
+				printf("%s(): addr error!\n", __func__);
+				return;
+			}
+		}
+
+		pmac = remote_addr->mac;
+	}
+
+	ether_send_packet(skb, pmac, ETH_TYPE_IP);
+}
 
 //------------------------ ARP Layer -------------------------
 void arp_send_packet(const u8 nip[], const u8 *mac, u16 op_code)
 {
 	struct sock_buff *skb;
 	struct arp_packet *arp_pkt;
-	u8 mac_adr[MAC_ADR_LEN];
+	u8 mac_addr[MAC_ADR_LEN];
 	u32 src_ip;
-
 
 	skb = skb_alloc(ETH_HDR_LEN, ARP_PKT_LEN);
 	if (NULL == skb)
 	{
-		printf("%s: fail to alloc skb!\n", __FUNCTION__);
+		printf("%s: fail to alloc skb!\n", __func__);
 		return;
 	}
 
@@ -425,10 +457,10 @@ void arp_send_packet(const u8 nip[], const u8 *mac, u16 op_code)
 	arp_pkt->prot_size = IPV4_ADR_LEN;
 	arp_pkt->op_code = op_code;
 
-	net_get_mac(NULL, mac_adr); //fixme for failure
-	memcpy(arp_pkt->src_mac, mac_adr, MAC_ADR_LEN);
+	ndev_ioctl(NULL, NIOC_GET_MAC, mac_addr); //fixme for failure
+	memcpy(arp_pkt->src_mac, mac_addr, MAC_ADR_LEN);
 
-	net_get_ip(NULL, &src_ip);
+	ndev_ioctl(NULL, NIOC_GET_IP, &src_ip);
 	memcpy(arp_pkt->src_ip, &src_ip, IPV4_ADR_LEN);
 
 	if (NULL == mac)
@@ -440,11 +472,11 @@ void arp_send_packet(const u8 nip[], const u8 *mac, u16 op_code)
 	ether_send_packet(skb, arp_pkt->des_mac, ETH_TYPE_ARP);
 }
 
-
 static int arp_recv_packet(struct sock_buff *skb)
 {
 	struct arp_packet *arp_pkt;
 	u32 ip;
+	u32 local_ip;
 
 	arp_pkt = (struct arp_packet *)skb->data;
 
@@ -477,20 +509,20 @@ static int arp_recv_packet(struct sock_buff *skb)
 			if (NULL == host)
 				return -ENOMEM;
 
-			memcpy(host->sk_addr.des_ip, arp_pkt->src_ip, 4);
-			memcpy(host->sk_addr.des_mac, arp_pkt->src_mac, 6);
+			memcpy(host->in_addr.ip, arp_pkt->src_ip, IPV4_ADR_LEN);
+			memcpy(host->in_addr.mac, arp_pkt->src_mac, MAC_ADR_LEN);
 #if 0
 			printf("ARP %d.%d.%d.%d<-->%02x.%02x.%02x.%02x.%02x.%02x\n",
-				   host->sk_addr.des_ip[0],
-				   host->sk_addr.des_ip[1],
-				   host->sk_addr.des_ip[2],
-				   host->sk_addr.des_ip[3],
-				   host->sk_addr.des_mac[0],
-				   host->sk_addr.des_mac[1],
-				   host->sk_addr.des_mac[2],
-				   host->sk_addr.des_mac[3],
-				   host->sk_addr.des_mac[4],
-				   host->sk_addr.des_mac[5]
+				   host->in_addr.ip[0],
+				   host->in_addr.ip[1],
+				   host->in_addr.ip[2],
+				   host->in_addr.ip[3],
+				   host->in_addr.mac[0],
+				   host->in_addr.mac[1],
+				   host->in_addr.mac[2],
+				   host->in_addr.mac[3],
+				   host->in_addr.mac[4],
+				   host->in_addr.mac[5]
 				   );
 #endif
 
@@ -500,11 +532,13 @@ static int arp_recv_packet(struct sock_buff *skb)
 		break;
 
 	case ARP_OP_REQ:
-		arp_send_packet(arp_pkt->src_ip, arp_pkt->src_mac, ARP_OP_REP);
+		ndev_ioctl(NULL, NIOC_GET_IP, &local_ip);
+		if (0 == memcmp(arp_pkt->des_ip, &local_ip, IPV4_ADR_LEN))
+			arp_send_packet(arp_pkt->src_ip, arp_pkt->src_mac, ARP_OP_REP);
 		break;
 
 	default:
-		printf("\t%s(): op_code error!\n", __FUNCTION__);
+		printf("\t%s(): op_code error!\n", __func__);
 		break;
 	}
 
@@ -512,7 +546,6 @@ static int arp_recv_packet(struct sock_buff *skb)
 
 	return 0;
 }
-
 
 //-----------------------------------------------
 int netif_rx(struct sock_buff *skb)
@@ -553,8 +586,7 @@ int netif_rx(struct sock_buff *skb)
 void ether_send_packet(struct sock_buff *skb, const u8 mac[], u16 eth_type)
 {
 	struct ether_header *eth_head;
-	u8 mac_adr[MAC_ADR_LEN];
-
+	u8 mac_addr[MAC_ADR_LEN];
 
 	skb->data -= ETH_HDR_LEN;
 	skb->size += ETH_HDR_LEN;
@@ -569,8 +601,8 @@ void ether_send_packet(struct sock_buff *skb, const u8 mac[], u16 eth_type)
 
 	memcpy(eth_head->des_mac, mac, MAC_ADR_LEN);
 
-	net_get_mac(NULL, mac_adr); //fixme for failure
-	memcpy(eth_head->src_mac, mac_adr, MAC_ADR_LEN);
+	ndev_ioctl(NULL, NIOC_GET_MAC, mac_addr); //fixme for failure
+	memcpy(eth_head->src_mac, mac_addr, MAC_ADR_LEN);
 
 	eth_head->frame_type = eth_type;
 
@@ -578,7 +610,6 @@ void ether_send_packet(struct sock_buff *skb, const u8 mac[], u16 eth_type)
 
 	skb_free(skb);
 }
-
 
 u16 net_calc_checksum(const void *buff, u32 size)
 {
@@ -597,7 +628,7 @@ u16 net_calc_checksum(const void *buff, u32 size)
 	return (chksum & 0xffff);
 }
 
-
+// fixme!
 struct sock_buff *skb_alloc(u32 prot_len, u32 data_len)
 {
 	struct sock_buff *skb;
@@ -609,7 +640,7 @@ struct sock_buff *skb_alloc(u32 prot_len, u32 data_len)
 	skb->head = malloc(prot_len + data_len);
 	if (NULL == skb->head)
 	{
-		printf("%s(): malloc failed (size = %d bytes)!\n", __FUNCTION__, prot_len + data_len);
+		printf("%s(): malloc failed (size = %d bytes)!\n", __func__, prot_len + data_len);
 		return NULL;
 	}
 
@@ -630,147 +661,96 @@ void skb_free(struct sock_buff *skb)
 	free(skb);
 }
 
-
-struct sockaddr *getaddr(u32 nip)
+struct eth_addr *getaddr(u32 nip)
 {
 	struct list_node *iter;
 	struct host_addr *host;
-	u32 ulPsr;
+	u32 psr;
 	u32 *dip;
-	struct sockaddr *addr = NULL;
+	struct eth_addr *addr = NULL;
 
-	lock_irq_psr(ulPsr);
+	lock_irq_psr(psr);
 
 	list_for_each(iter, &g_host_list)
 	{
-		host = OFF2BASE(iter, struct host_addr, node);
+		host = container_of(iter, struct host_addr, node);
 
-		dip = (u32 *)host->sk_addr.des_ip;
+		dip = (u32 *)host->in_addr.ip;
 		if (*dip == nip)
 		{
-			addr = &host->sk_addr;
+			addr = &host->in_addr;
 			break;
 		}
 	}
 
-	unlock_irq_psr(ulPsr);
+	unlock_irq_psr(psr);
 
 	return addr;
 }
 
-
-int net_get_ip(struct net_device *ndev, u32 *ip)
+struct list_node *net_get_device_list(void)
 {
-	struct net_config *net_cfg;
-
-	sysconf_get_net_info(&net_cfg);
-
-	if (NULL == net_cfg)
-	{
-		BUG();
-		return -EIO;
-	}
-
-	*ip = net_cfg->local_ip;
-
-	return 0;
+	return &g_ndev_list;
 }
 
-
-int net_set_ip(struct net_device *ndev, u32 ip)
+struct net_device *net_get_dev(const char *ifx)
 {
-	struct net_config *net_cfg;
+	struct net_device *ndev;
+	struct list_node *iter;
 
-	sysconf_get_net_info(&net_cfg);
-
-	if (NULL == net_cfg)
+	list_for_each(iter, net_get_device_list())
 	{
-		BUG();
-		return -EIO;
+		ndev = container_of(iter, struct net_device, ndev_node);
+
+		if (!strcmp(ifx, ndev->ifx_name))
+		{
+			return ndev;
+		}
 	}
 
-	net_cfg->local_ip = ip;
-
-	return 0;
-}
-
-
-int net_get_server_ip(u32 *ip)
-{
-	struct net_config *net_cfg;
-
-	sysconf_get_net_info(&net_cfg);
-
-	if (NULL == net_cfg)
-	{
-		BUG();
-		return -EIO;
-	}
-
-	*ip = net_cfg->server_ip;
-
-	return 0;
-}
-
-
-int net_set_server_ip(u32 ip)
-{
-	struct net_config *net_cfg;
-
-	sysconf_get_net_info(&net_cfg);
-
-	if (NULL == net_cfg)
-	{
-		BUG();
-		return -EIO;
-	}
-
-	net_cfg->server_ip = ip;
-
-	return 0;
-}
-
-
-int net_set_mask(struct net_device *ndev, u32 mask)
-{
-	struct net_config *net_cfg;
-
-	sysconf_get_net_info(&net_cfg);
-
-	if (NULL == net_cfg)
-	{
-		BUG();
-		return -EIO;
-	}
-
-	net_cfg->net_mask = mask;
-
-	return 0;
+	return NULL;
 }
 
 int net_dev_register(struct net_device *ndev)
 {
-	int i;
-	// int speed;
+	int index;
 	struct mii_phy *phy;
+	static u8 mac_addr[] = CONFIG_MAC_ADDR;
 
-	if (NULL == ndev || NULL == ndev->send_packet)
+	if (!ndev || !ndev->send_packet || !ndev->set_mac_addr)
+	{
 		return -EINVAL;
+	}
+
+	if (!ndev->chip_name)
+	{
+		printf("Warning: chip_name is NOT set!\n");
+	}
+
+	mac_addr[0] = (mac_addr[0] & ~1) + 2; // fixme
+
+	if (ndev_ioctl(ndev, NIOC_SET_MAC, mac_addr) < 0)
+	{
+		DPRINT("%s(): fail to set MAC address!\n");
+		return -EIO;
+	}
 
 	list_add_tail(&ndev->ndev_node, &g_ndev_list);
-	g_curr_ndev = ndev;
+
+	if (!g_curr_ndev)
+		g_curr_ndev = ndev;
 
 	// fixme
 	if (!ndev->phy_mask || !ndev->mdio_read || !ndev->mdio_write)
 		return 0;
 
 	// detecting PHY
-	for (i = 0; i < 32; i++)
+	for (index = 0; index < 32; index++)
 	{
-		if (!((1 << i) & ndev->phy_mask))
+		if (!((1 << index) & ndev->phy_mask))
 			continue;
 
-		phy = mii_phy_probe(ndev, i);
+		phy = mii_phy_probe(ndev, index);
 
 		if (phy)
 		{
@@ -781,65 +761,8 @@ int net_dev_register(struct net_device *ndev)
 
 			// fixme
 			printf("PHY found @ MII[%d]: ID1 = 0x%04x, ID2 = 0x%04x\n",
-				i, phy->ven_id, phy->dev_id);
-
-#if 0
-			printf("Detecting ethernet speed ... ");
-			speed = mii_get_link_status(phy);
-
-			if (speed < 0)
-			{
-				printf("NOT linked, please check the cable!\n");
-			}
-			else
-			{
-				switch(speed)
-				{
-				case ETHER_SPEED_10M_HD:
-					printf("10M Half Duplex activated!\n");
-					break;
-
-				case ETHER_SPEED_10M_FD:
-					printf("10M Full Duplex activated!\n");
-					break;
-
-				case ETHER_SPEED_100M_HD:
-					printf("100M Half Duplex activated!\n");
-					break;
-
-				case ETHER_SPEED_100M_FD:
-					printf("100M Full Duplex activated!\n");
-					break;
-
-				default:
-					printf("Unknown speed (%d)!\n", speed);
-					break;
-				}
-			}
-#endif
-			// break;
+				index, phy->ven_id, phy->dev_id);
 		}
-	}
-
-	return 0;
-}
-
-int net_get_mac(struct net_device *ndev, u8 pMacAddr[])
-{
-	memcpy(pMacAddr, g_curr_ndev->mac_adr, MAC_ADR_LEN);
-	return 0;
-}
-
-int net_set_mac(struct net_device *ndev, const u8 mac_adr[])
-{
-	if (NULL == g_curr_ndev)
-		return -ENODEV;
-
-	memcpy(g_curr_ndev->mac_adr, mac_adr, MAC_ADR_LEN);
-
-	if (g_curr_ndev->set_mac_adr)
-	{
-		g_curr_ndev->set_mac_adr(g_curr_ndev, mac_adr);
 	}
 
 	return 0;
@@ -847,7 +770,6 @@ int net_set_mac(struct net_device *ndev, const u8 mac_adr[])
 
 struct net_device *net_dev_new(u32 chip_size)
 {
-	static int ndev_count = 0; // fixme!!
 	struct net_device *ndev;
 	u32 core_size = (sizeof(struct net_device) + WORD_SIZE - 1) & ~(WORD_SIZE - 1);
 
@@ -859,7 +781,7 @@ struct net_device *net_dev_new(u32 chip_size)
 	ndev->phy_mask = 0xFFFFFFFF;
 
 	// set default name
-	sprintf(ndev->ifx_name, "eth%d", ndev_count);
+	snprintf(ndev->ifx_name, NET_NAME_LEN, "eth%d", ndev_count);
 	ndev_count++;
 
 	list_head_init(&ndev->ndev_node);
@@ -867,7 +789,6 @@ struct net_device *net_dev_new(u32 chip_size)
 
 	return ndev;
 }
-
 
 #ifndef CONFIG_IRQ_SUPPORT
 int netif_rx_poll()
@@ -882,26 +803,28 @@ int netif_rx_poll()
 }
 #endif
 
-
 int net_check_link_status()
 {
-	int speed, phy_count = 0;
+	int speed, phy_count;
 	struct net_device *ndev;
 	struct mii_phy *phy;
 	struct list_node *ndev_ln, *phy_ln;
 
 	list_for_each(ndev_ln, &g_ndev_list)
 	{
-		ndev = OFF2BASE(ndev_ln, struct net_device, ndev_node);
+		ndev = container_of(ndev_ln, struct net_device, ndev_node);
+		phy_count = 0;
+
+		printf("Detecting ethernet speed for %s(%s):",
+			ndev->ifx_name, ndev->chip_name);
 
 		list_for_each(phy_ln, &ndev->phy_list)
 		{
-			phy = OFF2BASE(phy_ln, struct mii_phy, phy_node);
+			phy = container_of(phy_ln, struct mii_phy, phy_node);
 
-			printf("Detecting ethernet speed for %s(%s) PHY%d ... ",
-				ndev->ifx_name, ndev->chip_name, phy->mii_id);
+			printf("\n\tPHY%d -> ", phy->mii_id);
 
-			speed = mii_get_link_status(phy);
+			speed = mii_get_link_speed(phy);
 
 			if (speed < 0)
 			{
@@ -935,14 +858,98 @@ int net_check_link_status()
 
 			phy_count++;
 		}
+
+		if (0 == phy_count)
+			printf(" no PHY found!\n");
 	}
 
-	if (0 == phy_count)
-		printf("No PHY found!\n");
-
-	return phy_count;
+	return 0;
 }
 
+// fixme: to be moved to net_api.c
+int ndev_ioctl(struct net_device *ndev, int cmd, void *arg)
+{
+	struct mii_phy *phy;
+	struct link_status *status;
+	u16 speed;
+
+	// fixme!!!
+	if (NULL == ndev)
+		ndev = g_curr_ndev;
+
+	switch (cmd)
+	{
+	case NIOC_GET_IP:
+		*(u32 *)arg = ndev->ip;
+		break;
+
+	case NIOC_SET_IP:
+		ndev->ip = (u32)arg;
+		break;
+
+	case NIOC_GET_MASK:
+		*(u32 *)arg = ndev->mask;
+		break;
+
+	case NIOC_SET_MASK:
+		ndev->mask = (u32)arg;
+		break;
+
+	case NIOC_GET_MAC:
+		memcpy(arg, ndev->mac_addr, MAC_ADR_LEN);
+		break;
+
+	case NIOC_SET_MAC:
+		if (!ndev->set_mac_addr)
+			return -EINVAL;
+
+		memcpy(ndev->mac_addr, arg, MAC_ADR_LEN);
+		ndev->set_mac_addr(ndev, arg);
+		break;
+
+	case NIOC_GET_STATUS:
+		if (list_is_empty(&ndev->phy_list))
+			return -ENODEV;
+
+		phy = container_of(ndev->phy_list.next, struct mii_phy, phy_node);
+		status = (struct link_status *)arg;
+
+		status->connected = !!(ndev->mdio_read(ndev, phy->mii_id, MII_REG_BMS) & 0x20);
+		if (!status->connected)
+		{
+			status->link_speed = ETHER_SPEED_UNKNOW;
+			break;
+		}
+
+		speed = ndev->mdio_read(ndev, phy->mii_id, MII_REG_STAT);
+		switch (speed >> 12)
+		{
+		case 1:
+			status->link_speed = ETHER_SPEED_10M_HD;
+			break;
+
+		case 2:
+			status->link_speed = ETHER_SPEED_10M_FD;
+			break;
+
+		case 4:
+			status->link_speed = ETHER_SPEED_100M_HD;
+			break;
+
+		case 8:
+			status->link_speed = ETHER_SPEED_100M_FD;
+			break;
+
+		default:
+			break;
+		}
+
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
+}
 
 void socket_init(void);
 
@@ -959,4 +966,3 @@ static int __INIT__ net_core_init(void)
 }
 
 SUBSYS_INIT(net_core_init);
-

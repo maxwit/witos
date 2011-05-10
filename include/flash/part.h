@@ -1,7 +1,7 @@
 #pragma once
 
+#include <stdio.h>
 #include <flash/flash.h>
-
 
 #define PT_STR_GB_TH    "g-bios-th"
 #define PT_STR_GB_BH    "g-bios-bh"
@@ -18,13 +18,13 @@
 
 #define PT_MAX (PT_FREE + 1)
 
+const char *part_type2str(u32 type);
 
 struct part_info
 {
 	int parts;
 	struct part_attr attr_tab[MAX_FLASH_PARTS];
 };
-
 
 //////////////////
 typedef enum
@@ -33,7 +33,6 @@ typedef enum
 	OP_WRONLY,
 	OP_RDWR,
 } OP_MODE;
-
 
 #define PART_CURR  0x100000
 struct partition *part_open(int index, OP_MODE uMode);
@@ -54,6 +53,7 @@ const char *part_get_name(const struct part_attr *part);
 
 int part_get_index(const struct partition *part);
 
+#if 0
 static int __INLINE__ part_get_attr(const struct partition *part, struct part_attr *attr)
 {
 	*attr = *part->attr;
@@ -64,6 +64,7 @@ static void __INLINE__ part_set_attr(const struct partition *part, struct part_a
 {
 	*part->attr = *attr;
 }
+#endif
 
 static int __INLINE__ part_get_type(const struct partition *part)
 {

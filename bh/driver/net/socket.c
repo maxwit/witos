@@ -1,7 +1,5 @@
-#include <g-bios.h>
 #include <net/net.h>
 #include <uart/uart.h>
-
 
 #define MAX_SOCK_NUM  32
 
@@ -28,7 +26,7 @@ alloc_sock:
 
 	if (NULL == sock)
 	{
-		printf("%s: fail to alloc socket!\n", __FUNCTION__);
+		printf("%s: fail to alloc socket!\n", __func__);
 		return -ENOMEM;
 	}
 
@@ -47,7 +45,7 @@ int close(int fd)
 {
 	if (fd < 1 || fd >= MAX_SOCK_NUM || NULL == g_sock_fds[fd])
 	{
-		printf("%s: invalid fd!\n", __FUNCTION__);
+		printf("%s: invalid fd!\n", __func__);
 		return -EINVAL;
 	}
 
@@ -56,18 +54,10 @@ int close(int fd)
 	return 0;
 }
 
-
-struct sockaddr *gethostaddr(const char *sip)
+struct eth_addr *gethostaddr(const u32 nip)
 {
-	u32 nip;
 	u32 count = 0;
-	struct sockaddr *sk_addr;
-
-	if(str_to_ip((u8 *)&nip, sip))
-	{
-		printf("%s(): fail to convert ip %s\n", __FUNCTION__, sip);
-		return NULL;
-	}
+	struct eth_addr *remote_addr;
 
 	arp_send_packet((u8 *)&nip, NULL, ARP_OP_REQ);
 
@@ -84,8 +74,8 @@ struct sockaddr *gethostaddr(const char *sip)
 
 		netif_rx_poll();
 
-		sk_addr = getaddr(nip);
-		if (sk_addr)
+		remote_addr = getaddr(nip);
+		if (remote_addr)
 			break;
 
 		// TODO: add re-send code here
@@ -93,7 +83,24 @@ struct sockaddr *gethostaddr(const char *sip)
 		count++;
 	}
 
-	return sk_addr;
+	return remote_addr;
+}
+
+int bind(int fd, const struct sockaddr *addr, socklen_t len)
+{
+	struct socket *sock;
+
+	sock = get_sock(fd);
+
+	if (NULL == sock)
+	{
+		// printf
+		return -EINVAL;
+	}
+
+	memcpy(&sock->addr, addr, len);
+
+	return 0;
 }
 
 int connect(int fd, const struct sockaddr *addr, socklen_t len)
@@ -114,6 +121,33 @@ int connect(int fd, const struct sockaddr *addr, socklen_t len)
 }
 
 //
+ssize_t sendto(int fd, const void *buf, u32 n, int flags,
+					const struct sockaddr *dest_addr, socklen_t addrlen)
+{
+	struct socket *sock;
+	struct sock_buff *skb;
+
+	sock = get_sock(fd);
+
+	if (NULL == sock)
+	{
+		// printf
+		return -EINVAL;
+	}
+
+	skb = skb_alloc(ETH_HDR_LEN + IP_HDR_LEN + UDP_HDR_LEN, n);
+
+	skb->sock = sock;
+	skb->remote_addr = *(struct sockaddr_in *)dest_addr;
+
+	memcpy(skb->data, buf, n);
+
+	udp_send_packet(skb);
+
+	return n;
+
+}
+
 long send(int fd, const void *buf, u32 n)
 {
 	struct socket *sock;
@@ -136,6 +170,39 @@ long send(int fd, const void *buf, u32 n)
 	udp_send_packet(skb);
 
 	return n;
+}
+
+long recvfrom(int fd, void *buf, u32 n, int flags,
+				struct sockaddr *src_addr, socklen_t *addrlen)
+{
+	struct socket *sock;
+	struct sock_buff *skb;
+	u32 pkt_len;
+
+	sock = get_sock(fd);
+
+	if (NULL == sock)
+	{
+		return -EINVAL;
+	}
+
+	skb = udp_recv_packet(sock);
+	if(NULL == skb)
+		return 0;
+
+	// fixme !
+	pkt_len   = skb->size <= n ? skb->size : n;
+
+	// fixme
+	// if (sizeof(skb->remote_addr) > *addrlen) return -EINVAL;
+	*addrlen = sizeof(skb->remote_addr);
+	memcpy(src_addr, &skb->remote_addr, *addrlen);
+
+	memcpy(buf, skb->data, pkt_len);
+
+	skb_free(skb);
+
+	return pkt_len;
 }
 
 //
@@ -166,7 +233,6 @@ long recv(int fd, void *buf, u32 n)
 	return pkt_len;
 }
 
-
 struct socket *get_sock(int fd)
 {
 	if (fd <= 0 || fd >= MAX_SOCK_NUM)
@@ -179,11 +245,10 @@ struct socket *search_socket(const struct udp_header *udp_pkt, const struct ip_h
 {
 	int fd;
 	struct socket *sock;
-	struct sockaddr *sk_adr;
+	struct sockaddr_in *sk_adr;
 	u32 src_ip;
 
-
-	net_get_ip(NULL, &src_ip);
+	ndev_ioctl(NULL, NIOC_GET_IP, &src_ip);
 
 	for (fd = 1; fd < MAX_SOCK_NUM; fd++)
 	{
@@ -194,9 +259,9 @@ struct socket *search_socket(const struct udp_header *udp_pkt, const struct ip_h
 
 		sk_adr = &sock->addr;
 
-		if (memcmp(sk_adr->des_ip, ip_pkt->src_ip, 4) != 0)
-		{
 #if 0
+		if (memcmp(sk_adr->sin_addr, ip_pkt->src_ip, 4) != 0)
+		{
 			printf("sock = 0x%x, des ip is %d (NOT %d.%d.%d.%d, %02x.%02x.%02x.%02x.%02x.%02x)\n",
 				sk_adr,
 				ip_pkt->src_ip[3],
@@ -211,11 +276,11 @@ struct socket *search_socket(const struct udp_header *udp_pkt, const struct ip_h
 				sk_adr->des_mac[4],
 				sk_adr->des_mac[5]
 				);
-#endif
 			continue;
 		}
+#endif
 
-		if (sk_adr->src_port != udp_pkt->des_port)
+		if (sk_adr->sin_port != udp_pkt->des_port)
 		{
 #if 0
 			printf("from %d, src port: 0x%x != 0x%x\n", ip_pkt->src_ip[3], BE16_TO_CPU(sk_adr->src_port), BE16_TO_CPU(udp_pkt->des_port));
@@ -223,18 +288,19 @@ struct socket *search_socket(const struct udp_header *udp_pkt, const struct ip_h
 			continue;
 		}
 
+#if 0
 		if (memcmp(&src_ip, ip_pkt->des_ip, 4) != 0)
 		{
-#if 0
 			printf("src ip: %d.%d.%d.%d\n",
 				ip_pkt->des_ip[0],
 				ip_pkt->des_ip[1],
 				ip_pkt->des_ip[2],
 				ip_pkt->des_ip[3]
 				);
-#endif
+
 			continue;
 		}
+#endif
 
 		return sock;
 	}

@@ -6,7 +6,6 @@
 #define ISHEX(b) (((b) >= 'a' && (b) <= 'f') || ((b) >= 'A' && (b) <= 'F') || ((b) >= '0' && (b) <= '9'))
 #define ISDIGIT(x) ((x) >= '0' && (x) <= '9')
 
-
 //-------------- Standard String APIs ---------------
 
 char * strncpy(char *, const char *,size_t);
@@ -37,7 +36,6 @@ char *strchr(const char *, int);
 
 char *strrchr(const char *, size_t);
 
-
 //------------------ Extra String APIs ------------------
 
 int hex_str_to_val(const char *str, u32 *val);
@@ -53,4 +51,5 @@ int string2value(const char *str, u32 *val);
 
 int str_to_ip(u8 ip_val[], const char *ip_str);
 int ip_to_str(char ip_str[], const u32 ip);
+int str_to_mac(u8 mac[], const char *str);
 

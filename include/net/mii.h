@@ -21,11 +21,9 @@
 #define MII_REG_DISC    23
 #define MII_REG_RSLS    24
 
-
 #define MII_PHY_RESET   0x8000
 
 //////////////////////////////
-
 
 #define MII_BMCR            0x00        /* Basic mode control register */
 #define MII_BMSR            0x01        /* Basic mode status register  */
@@ -101,7 +99,7 @@
 #define ADVERTISE_FULL (ADVERTISE_100FULL | ADVERTISE_10FULL | \
 			ADVERTISE_CSMA)
 #define ADVERTISE_ALL (ADVERTISE_10HALF | ADVERTISE_10FULL | \
-                       ADVERTISE_100HALF | ADVERTISE_100FULL)
+	                   ADVERTISE_100HALF | ADVERTISE_100FULL)
 
 /* Link partner ability register. */
 #define LPA_SLCT                0x001f  /* Same as advertise selector  */
@@ -154,7 +152,6 @@
 #define FLOW_CTRL_TX		0x01
 #define FLOW_CTRL_RX		0x02
 
-
 struct net_device;
 
 struct mii_phy
@@ -165,8 +162,9 @@ struct mii_phy
 	struct list_node phy_node;
 };
 
+int mii_get_link_speed(struct mii_phy * phy);
 
-int mii_get_link_status(struct mii_phy * phy);
+int mii_get_link_connection(struct mii_phy * phy);
 
 struct mii_phy *mii_phy_probe(struct net_device *ndev, u8 mii_id);
 

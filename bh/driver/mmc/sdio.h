@@ -83,7 +83,6 @@
 
 #define SDIO_FBR_CIS		0x09	/* CIS pointer (3 bytes) */
 
-
 #define SDIO_FBR_CSA		0x0C	/* CSA pointer (3 bytes) */
 
 #define SDIO_FBR_CSA_DATA	0x0F
@@ -92,15 +91,13 @@
 
 #define SDIO_FBR_BASE(f)	((f) * 0x100) /* base of function f's FBRs */
 
-
 int sdio_register(struct mmc_host *host);
 
-struct sdio_func_tuple 
+struct sdio_func_tuple
 {
 	struct sdio_func_tuple *next;
 	unsigned char code;
 	unsigned char size;
 	unsigned char data[0];
 };
-
 

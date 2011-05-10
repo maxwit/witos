@@ -116,7 +116,6 @@ kerm_recv_done:
 	sub   sp, fp, #12
 	ldmfd sp, {fp, sp, pc}
 
-
 send_ack_packet:
 	mov   ip, sp
 	stmfd sp!, {fp, ip, lr, pc}

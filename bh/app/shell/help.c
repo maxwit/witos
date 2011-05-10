@@ -1,7 +1,5 @@
-#include <g-bios.h>
 
 extern const struct gapp g_app_begin[], g_app_end[];
-
 
 int main(int argc, char *argv[])
 {

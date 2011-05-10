@@ -1,10 +1,9 @@
-#include <g-bios.h>
 #include <net/tftp.h>
 #include <getopt.h>
 #include <flash/part.h>
 #include <sysconf.h>
 
-static char app_option[][CMD_OPTION_LEN] = {"a", "m", "s", "h", "0"};
+//static char app_option[][CMD_OPTION_LEN] = {"a", "m", "s", "h", "0"};
 
 static void tftp_usage(void)
 {
@@ -16,7 +15,6 @@ static void tftp_usage(void)
 		"  -s   \ttftp server ip\n"
 		"  -h   \tthis help\n");
 }
-
 
 int main(int argc, char *argv[])
 {
@@ -30,7 +28,7 @@ int main(int argc, char *argv[])
 	memset(&dlopt, 0x0, sizeof(dlopt));
 	net_get_server_ip(&dlopt.server_ip);
 
-	while ((ch = getopt(argc, argv, "a:m:s:f:", &opt_arg)) != -1)
+	while ((ch = getopt(argc, argv, "a:ms:f:", &opt_arg)) != -1)
 	{
 		switch(ch)
 		{

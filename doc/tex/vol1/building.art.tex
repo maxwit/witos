@@ -1,0 +1,63 @@
+\section{g-bios配置}
+与编译Linux kernel类似，进入在g-bios源码目录，执行make PLAT\_defconfig（PLAT指的是具体硬件平台名称，例如s3c6410\_defconfig或者beagle\_defconfig, g-bios所支持的各硬件平台的默认配置文件位于g-bios源码build/configs目录下），用默认的选项编译g-bios，然后执行make进行编译，如需要将编译产生的image文件拷贝到tftpboot目录下，还需要执行make install命令。如果需要修改默认的编译选项，可以直接执行make menuconfig，在随后出现的GUI中进行配置。目前的2.5版本暂不支持GUI配置方式。
+
+\subsection{基于命令行的配置方式}
+切换到g-bios源码目录下，然后执行如下命令：
+\begin{lstlisting}[language=bash, numbers=none]
+$ make ${BOARDNAME}_defconfig
+\end{lstlisting}
+其中BOARDNAME为某个具体的硬件平台名称，如beagle、mw61、mini2440等。
+
+\subsection{基于图形界面的配置方式}
+切换到g-bios源码目录下，然后执行如下命令：
+\begin{lstlisting}[language=bash, numbers=none]
+$ make menuconfig
+\end{lstlisting}
+
+\subsection{配置选项详解}
+接下来分析一个各个配置选项的功能作用。
+
+Platform:	g-bios运行的platform，可以是at91sam9263、at91sam9261、s3c2410、s3c2440或s3c6410等，这是目前g-bios支持的几个Platform。Toolchain：编译g-bios源码所选用的编译工具，默认使用的是lablin源码包编译生成的toolchain，也可以手工修改为系统上已有的toolchain（注：Toolchain要支持EABI）。Image Patch编译g-bios后生成的image路径，默认为/var/lib/tftpboot目录。Server IP服务器IP，local IP开发板IP，将二者设为同一网段。此二项，也可不配。MAC Addr此项不用理会，Nfs Path：g-bios引导内核时，如用nfs加载rootfs时，指定rootfs路径，默认路径$\sim$/maxwit/rootfs。Flash ECC mode选择ECC校验模式（硬件ECC，软件ECC，也可不使用ECC）。IRQ/Polling Mode g-bios使用中断模式还是非中断模式（Polling）。
+
+g-bios配置程序所完成的功能：
+\begin{table}[htbp]
+\centering
+\setlength{\parindent}{0pt}
+\begin{tabular}{|c|l|l|}
+\hline
+类别 & \multicolumn{1}{|c|}{选项} & \multicolumn{1}{|c|}{功能说明} \\ \hline
+\multirow{3}{*}{general} & Platform & g-bios运行的目标Platform \\ \cline{2-3}
+		& TooLchain & 编译g-bios的编译工具 \\ \cline{2-3}
+		& Image Path & 编译生成image的目录 \\ \hline
+\multirow{4}{*}{Network} & Server IP & 服务器IP \\ \cline{2-3}
+		& Local IP & 目标机IP \\ \cline{2-3}
+		& MAC addr & MAC地址\\ \cline{2-3}
+		& NFS root path &  lablin的rootfs路径\\ \hline
+\multirow{3}{*}{Flash ECC Mode}   & Hardward & 支持硬件ECC\\ \cline{2-3}
+		& Software & 软件ECC\\ \cline{2-3}
+		& None & 无ECC较验\\ \cline{2-3}
+\multirow{2}{*}{IRQ/Polling Mode} & IRQ Enabled & 支持中断 \\ \cline{2-3}
+		& Polling Mode & 查询模式（非中断）\\ \hline
+\end{tabular}
+\end{table}
+
+%\begin{itemize}
+%\item Gerneral
+%\item Tophalf
+%\item Uart
+%\item Memory
+%\item Flash
+%\item NetWork
+%\item Interrupt
+%\item Logo
+%\item Boot
+%\end{itemize}
+
+\section{编译}
+%\subsection{``make'' and ``make install''}
+上面通过configure配置的g-bios编译特性，生成了Makefile。本节将编译g-bios。
+\begin{lstlisting}[language=bash,numbers=none]
+$ make
+$ make install
+\end{lstlisting}
+编译后会在/var/lib/tftpboot(configure中配置的Image Path)目录下生成g-bios-th.bin和g-bios-bh.bin二个文件。

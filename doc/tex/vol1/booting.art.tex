@@ -1,0 +1,95 @@
+
+%\section{Add New Commands}
+%g-bios添加命令规范。
+%\begin{lstlisting}
+%static char app_option[][CMD_OPTION_LEN] = {};
+%
+%#include <getopt.h>
+%
+%int getopt(int argc, char *argv[], const char *optstring, char **arg);
+%\end{lstlisting}
+
+boot command design ..
+
+\section{OS引导}
+见第五章？
+\begin{table}[H]
+\setlength{\parindent}{0pt}
+\begin{tabular}{|c|c|}
+\hline
+ 命令名称 & 命令说明\\
+\hline
+boot & 引导操作系统\\
+\hline
+\end{tabular}
+\end{table}
+
+\noindent{}命令名称：boot\\
+参数介绍:\\
+\begin{table}[H]
+\setlength{\parindent}{0pt}
+\begin{tabular}{|p{2.5cm}|p{8.5cm}|}
+\hline
+-t [filename] &若指定filename，则通过tftp下载kernel image文件；否则从本地的linux分区下载kernel image文件 \\ \hline
+-r [filename] &用ramdisk启动。指定filename，则通过tftp下载ramdisk image；否则从本地ramdisk分区下载。 \\ \hline
+-f [N] & 指定rootfs分区，N为分区号 \\ \hline
+-n [ip:path] & 用nfs方式mount rootfs \\ \hline
+-v &仅显示kernel启动参数，但并不真正引导OS \\ \hline
+\end{tabular}
+\end{table}
+\section{TFTP + NFS}
+
+\indent 其中NFS服务配置和编译linux kernel部分详情请参阅$<<$MaxWit Lablin开发者手册$>>$第一卷\\
+\indent 在g-bios命令行下，输入:\\
+
+\begin{verbatim}
+g-bios: 0# boot -t zImage -n 192.168.0.2:/home/maxwit/maxwit/rootfs
+【说明】
+-t [filename]：用tftp方式下载指定的kernel image
+-n [nfs_server:/nfs/path/]： 用NFS方式mout rootfs。也可以加上参数，如：-n 192.168.0.111:/path/to/nfs
+\end{verbatim}
+
+boot程序具有记录功能，即，能记住用户输入的参数，换句话，再次输入boot时不再需要输入参数了，除非你想重设参数。
+
+\section{FLASH + NFS}
+\begin{verbatim}
+g-bios: 1# cd 3  (进入Linux分区)
+g-bios: 3# ls (列出当前分区信息)
+        Partition Type = "linux"
+        Partition Base = 0x00080000 (512K)
+        Partition Size = 0x00200000 (2M)
+        Host Device    = NAND 256MB 3.3V 8-bit
+        MTD Deivce     = /dev/mtdblock3
+        Image File     = "zImage" (1968220 bytes)
+g-bios: 3# tftp zImage （下载zImage 到当前分区)
+ "zImage": 192.168.2.101 => 192.168.2.100
+ 1968220(1M898K92B) loaded
+
+g-bios: 1# boot  -t  -n 192.168.2.11:/root/maxwit/rootfs
+【说明】
+-t  不加参数，从Linux分区Load kernel image
+-n [nfs_server:/nfs/path/]： 用NFS方式mount rootfs。也可以加上参数。如：-n 192.168.0.111:/home/maxwit/maxwit/rootfs。
+\end{verbatim}
+
+\section{Booting from Flash}
+
+\begin{verbatim}
+g-bios: 1# cd 3  (进入Linux分区)
+g-bios: 3# ls (列出当前分区信息)
+        Partition Type = "linux"
+        Partition Base = 0x00080000 (512K)
+        Partition Size = 0x00200000 (2M)
+        Host Device    = NAND 256MB 3.3V 8-bit
+        MTD Deivce     = /dev/mtdblock3
+        Image File     = "zImage" (1968220 bytes)
+g-bios: 3# tftp zImage （下载zImage 到当前分区)
+ "zImage": 192.168.2.101 => 192.168.2.100
+ 1968220(1M898K92B) loaded
+
+g-bios: 3# cd 5 (进入Rootfs分区)
+g-bios: 5# tftp rootfs_l.jffs2 (下载zImage 到当前分区)
+g-bios: 5# boot -t -f 5
+【说明】
+-t ：不加参数，从Linux分区Load kernel image
+-f [N]：指定rootfs的分区，N为分区号
+\end{verbatim}

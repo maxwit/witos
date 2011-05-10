@@ -2,8 +2,6 @@
  *  comment here
  */
 
-
-#include <g-bios.h>
 #include <net/net.h>
 #include <net/mii.h>
 #include <irq.h>
@@ -17,13 +15,11 @@ static u8 dm9000_readb(u8 reg)
 	return readb(VA(DM9000_DATA_PORT));
 }
 
-
 static void dm9000_writeb(u8 reg, u8 val)
 {
 	writeb(VA(DM9000_INDEX_PORT), reg);
 	writeb(VA(DM9000_DATA_PORT), val);
 }
-
 
 static u16 dm9000_mdio_read(struct net_device *ndev, u8 mii_id, u8 reg)
 {
@@ -56,19 +52,17 @@ static void dm9000_mdio_write(struct net_device *ndev, u8 mii_id, u8 reg, u16 va
 	dm9000_writeb(DM9000_EPCR, 0x0);
 }
 
-
 static int dm9000_set_mac(struct net_device *ndev, const u8 *pMac)
 {
 	int i;
 
 	for (i = 0; i < MAC_ADR_LEN; i++)
 	{
-		dm9000_writeb(DM9000_PAR + i, ndev->mac_adr[i]);
+		dm9000_writeb(DM9000_PAR + i, ndev->mac_addr[i]);
 	}
 
 	return 0;
 }
-
 
 static int dm9000_reset(void)
 {
@@ -97,7 +91,6 @@ static int dm9000_reset(void)
 	return 0;
 }
 
-
 static int dm9000_send_packet(struct net_device *ndev, struct sock_buff *skb)
 {
 	int i;
@@ -125,12 +118,14 @@ static int dm9000_send_packet(struct net_device *ndev, struct sock_buff *skb)
 
 	while (dm9000_readb(DM9000_TCR) & 1);
 
+	ndev->stat.tx_packets++;
+
 	unlock_irq_psr(flag);
 
 	return 0;
 }
 
-static int dm9000_recv_packet(void)
+static int dm9000_recv_packet(struct net_device *ndev)
 {
 	int i;
 	u8 val;
@@ -149,7 +144,7 @@ static int dm9000_recv_packet(void)
 				return 0;
 
 			printf("\n%s(), line %d: wrong status = 0x%02x\n",
-				__FUNCTION__, __LINE__, val);
+				__func__, __LINE__, val);
 
 			dm9000_reset();
 			dm9000_writeb(DM9000_IMR, IMR_VAL);
@@ -173,7 +168,7 @@ static int dm9000_recv_packet(void)
 			}
 
 			printf("\n%s(), line %d error: status = 0x%04x, size = %d\n",
-			 		__FUNCTION__, __LINE__, rx_stat, rx_size);
+			 		__func__, __LINE__, rx_stat, rx_size);
 		}
 		else
 		{
@@ -189,16 +184,18 @@ static int dm9000_recv_packet(void)
 			skb->size -= 4;
 
 			netif_rx(skb);
+
+			ndev->stat.rx_packets++;
 		}
 	}
 
 	return 0;
 }
 
-
 static int dm9000_isr(u32 irq, void *dev)
 {
 	u8 status;
+	struct net_device* ndev = dev;
 
 	status = dm9000_readb(DM9000_ISR);
 
@@ -208,22 +205,29 @@ static int dm9000_isr(u32 irq, void *dev)
 	dm9000_writeb(DM9000_ISR, status);
 
 	DPRINT("%s() line %d: status = 0x%08x\n",
-		__FUNCTION__, __LINE__, status);
+		__func__, __LINE__, status);
 
 	if (status & 0x1)
 	{
-		dm9000_recv_packet();
+		status = dm9000_readb(DM9000_RSR);
+		if (status & 0xBF)
+		{
+			printf("%s(): RX Status = 0x%02x\n", __func__, status);
+		}
+
+		dm9000_recv_packet(ndev);
 	}
 
+	//fixme: move to upper layer
 	if (status & 0x20)
 	{
-		printf("dm9000 link status changed!\n");
-		// TODO: up or down ?
+		u8 link = dm9000_readb(0x1) & 1 << 6;
+
+		printf("dm9000 link %s\n", link ? "up" : "down");
 	}
 
 	return 0;
 }
-
 
 #ifndef CONFIG_IRQ_SUPPORT
 static int dm9000_poll(struct net_device *ndev)
@@ -231,7 +235,6 @@ static int dm9000_poll(struct net_device *ndev)
 	return dm9000_isr(CONFIG_DM9000_IRQ, ndev);
 }
 #endif
-
 
 static int __INIT__ dm9000_init(void)
 {
@@ -246,7 +249,7 @@ static int __INIT__ dm9000_init(void)
 
 	if (ven_id != VENDOR_ID_DAVICOM)
 	{
-		printf("No DM9000X found!\n");
+		printf("No DM9000X found! (ID = %04x:%04x)\n", ven_id, dev_id);
 		return -ENODEV;
 	}
 
@@ -277,17 +280,17 @@ static int __INIT__ dm9000_init(void)
 	if (NULL == ndev)
 		return -ENOMEM;
 
-	ndev->chip_name   = chip_name;
+	ndev->chip_name    = chip_name;
 	//
-	ndev->send_packet = dm9000_send_packet;
-	ndev->set_mac_adr = dm9000_set_mac;
+	ndev->send_packet  = dm9000_send_packet;
+	ndev->set_mac_addr = dm9000_set_mac;
 #ifndef CONFIG_IRQ_SUPPORT
-	ndev->ndev_poll   = dm9000_poll;
+	ndev->ndev_poll    = dm9000_poll;
 #endif
 	// MII
-	ndev->phy_mask    = 2;
-	ndev->mdio_read   = dm9000_mdio_read;
-	ndev->mdio_write  = dm9000_mdio_write;
+	ndev->phy_mask   = 2;
+	ndev->mdio_read  = dm9000_mdio_read;
+	ndev->mdio_write = dm9000_mdio_write;
 
 	ret = irq_register_isr(CONFIG_DM9000_IRQ, dm9000_isr, ndev);
 
@@ -302,4 +305,3 @@ static int __INIT__ dm9000_init(void)
 }
 
 DRIVER_INIT(dm9000_init);
-

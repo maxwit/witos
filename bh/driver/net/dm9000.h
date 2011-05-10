@@ -4,23 +4,28 @@
 
 #pragma once
 
-
 // fixme !!
 #if defined(CONFIG_S3C2440) || defined(CONFIG_S3C2410)
 #define CONFIG_DM9000_IRQ        IRQ_EINT7
 #define DM9000_PHYS_BASE         0x20000000
+#define DM9000_INDEX_PORT        (DM9000_PHYS_BASE + 0x0)
+#define DM9000_DATA_PORT         (DM9000_PHYS_BASE + 0x4)
 #elif defined(CONFIG_AT91SAM9261)
 #define CONFIG_DM9000_IRQ        (32 + 2 * 32 + 11)
 #define DM9000_PHYS_BASE         0x30000000
+#define DM9000_INDEX_PORT        (DM9000_PHYS_BASE + 0x0)
+#define DM9000_DATA_PORT         (DM9000_PHYS_BASE + 0x4)
 #elif defined(CONFIG_S3C6410)
 #define CONFIG_DM9000_IRQ        INT_EINT(7)
 #define DM9000_PHYS_BASE         0x18000000
-#endif
-
-
 #define DM9000_INDEX_PORT        (DM9000_PHYS_BASE + 0x0)
 #define DM9000_DATA_PORT         (DM9000_PHYS_BASE + 0x4)
-
+#elif defined(CONFIG_OMAP3530)
+#define CONFIG_DM9000_IRQ        0
+#define DM9000_PHYS_BASE         0x2c000000
+#define DM9000_INDEX_PORT        (DM9000_PHYS_BASE + 0x0)
+#define DM9000_DATA_PORT         (DM9000_PHYS_BASE + 0x400)
+#endif
 
 #define DM9000_NCR               0x00
 #define DM9000_NSR               0x01
@@ -64,10 +69,9 @@
 #define DM9000_ISR               0xFE
 #define DM9000_IMR               0xFF
 
-
 #define VENDOR_ID_DAVICOM        0x0A46
 
-#define IMR_VAL                  0x8f
+#define IMR_VAL                  0xaf
 
 // DM9000_EPCR
 #define DM9000_PHY_BUSY         (1 << 0)
@@ -77,5 +81,3 @@
 
 // DM9000_EPAR
 #define DM9000_PHY_INTER        (1 << 6)
-
-

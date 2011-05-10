@@ -1,6 +1,4 @@
-#include <g-bios.h>
 #include <bar.h>
-
 
 int create_progress_bar(struct process_bar **ppNew, u32 nMin, u32 nMax)
 {

@@ -1,13 +1,11 @@
 #pragma once
 #include <flash/flash.h>
 
-
 // -------- PDC_PTCR : (PDC Offset: 0x20) PDC Transfer Control Register --------
 #define AT91C_PDC_RXTEN           (0x1 <<  0) // (PDC) Receiver Transfer Enable
 #define AT91C_PDC_RXTDIS          (0x1 <<  1) // (PDC) Receiver Transfer Disable
 #define AT91C_PDC_TXTEN           (0x1 <<  8) // (PDC) Transmitter Transfer Enable
 #define AT91C_PDC_TXTDIS          (0x1 <<  9) // (PDC) Transmitter Transfer Disable
-
 
 // -------- SPI_SR : (SPI Offset: 0x10) Status Register --------
 #define AT91C_SPI_RDRF            (0x1 <<  0) // (SPI) Receive Data Register Full
@@ -34,13 +32,11 @@
 #define AT91C_SPI_PCS             (0xF << 16) // (SPI) Peripheral Chip Select
 #define AT91C_SPI_DLYBCS          (0xFF << 24) // (SPI) Delay Between Chip Selects
 
-
 // -------- SPI_CR : (SPI Offset: 0x0) SPI Control Register --------
 #define AT91C_SPI_SPIEN           (0x1 <<  0) // (SPI) SPI Enable
 #define AT91C_SPI_SPIDIS          (0x1 <<  1) // (SPI) SPI Disable
 #define AT91C_SPI_SWRST           (0x1 <<  7) // (SPI) SPI Software reset
 #define AT91C_SPI_LASTXFER        (0x1 << 24) // (SPI) SPI Last Transfer
-
 
 #define   AT91C_SPI_PCS0	(0xE << 16)
 #define   AT91C_SPI_PCS1	(0xD << 16)
@@ -50,23 +46,18 @@
 #define AT91C_SPI_PCS0_SERIAL_DATAFLASH		AT91C_SPI_PCS0
 #define AT91C_SPI_PCS3_DATAFLASH_CARD		AT91C_SPI_PCS3
 
-
 #define OP_READ_CONTINUOUS	0xE8
 #define OP_READ_PAGE		0xD2
 
-
 #define OP_READ_STATUS		0xD7
-
 
 #define OP_READ_BUFFER1		0xD4
 #define OP_READ_BUFFER2		0xD6
 #define OP_WRITE_BUFFER1	0x84
 #define OP_WRITE_BUFFER2	0x87
 
-
 #define OP_ERASE_PAGE		0x81
 #define OP_ERASE_BLOCK		0x50
-
 
 #define OP_TRANSFER_BUF1	0x53
 #define OP_TRANSFER_BUF2	0x55
@@ -77,14 +68,11 @@
 #define OP_MWRITE_BUFFER1	0x88
 #define OP_MWRITE_BUFFER2	0x89
 
-
 #define OP_PROGRAM_VIA_BUF1	0x82
 #define OP_PROGRAM_VIA_BUF2	0x85
 
-
 #define OP_COMPARE_BUF1		0x60
 #define OP_COMPARE_BUF2		0x61
-
 
 #define OP_REWRITE_VIA_BUF1	0x58
 #define OP_REWRITE_VIA_BUF2	0x59
@@ -95,8 +83,6 @@
 #define OP_READ_ID			0x9F
 #define OP_READ_SECURITY	0x77
 #define OP_WRITE_SECURITY	0x9A
-
-
 
 #define CFG_HZ          	10000
 #define CFG_SPI_WRITE_TOUT	(5 * CFG_HZ)
@@ -117,7 +103,6 @@ struct DataFlashOptMsg
 
 	BOOL	hasData;
 };
-
 
 struct DataFlash
 {

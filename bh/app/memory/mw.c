@@ -1,5 +1,4 @@
-#include <g-bios.h>
-
+#include <stdio.h>
 
 int main(int argc, char *argv[])
 {

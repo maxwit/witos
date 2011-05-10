@@ -1,6 +1,4 @@
-#include <types.h>
-#include <g-bios.h>
-#include <uart/uart.h>
+#include <stdio.h>
 
 // read CPU, SoC & Board IDs
 // fixme: add ARM Cortex+ support
@@ -9,13 +7,13 @@
 // PXA168: 0x4115926*?
 //
 
-u32 read_cpu_id(void)
+unsigned long read_cpu_id(void)
 {
 	// int i;
 	// char buff[4];
 	// const char *arch_name[] = {"4", "4T","5", "5T", "5TE", "5TEJ", "6"};
 	// const char *fmt = "ARCH = ARMv%s\n";
-	u32 orig_id;
+	unsigned long orig_id;
 
 	asm volatile ("mrc  p15, 0, %0, c0, c0, 0"
 					: "=r"(orig_id)

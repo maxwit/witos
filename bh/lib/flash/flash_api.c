@@ -1,6 +1,7 @@
-#include <g-bios.h>
 #include <flash/flash.h>
-
+#ifdef CONFIG_DEBUG
+#include <stdio.h>
+#endif
 
 struct flash_chip *flash_open(unsigned int num)
 {
@@ -16,7 +17,6 @@ struct flash_chip *flash_open(unsigned int num)
 
 	return flash;
 }
-
 
 int flash_ioctl(struct flash_chip *flash, int cmd, void *arg)
 {
@@ -41,11 +41,13 @@ int flash_ioctl(struct flash_chip *flash, int cmd, void *arg)
 	case FLASH_IOC_SCANBB:
 		if (NULL == flash->scan_bad_block)
 			return -EINVAL;
-		
+
 		ret = flash->scan_bad_block(flash);
-		
+
+#ifdef CONFIG_DEBUG
 		if (ret < 0)
-			printf("%s() failed! (errno = %d)\n", __FUNCTION__, ret);
+			printf("%s() failed! (errno = %d)\n", __func__, ret);
+#endif
 
 		return ret;
 
@@ -56,12 +58,10 @@ int flash_ioctl(struct flash_chip *flash, int cmd, void *arg)
 	return 0;
 }
 
-
 int flash_close(struct flash_chip *flash)
 {
 	return 0;
 }
-
 
 // fixme
 int flash_read(struct flash_chip *flash, void *buff, int start, int count)
@@ -72,7 +72,7 @@ int flash_read(struct flash_chip *flash, void *buff, int start, int count)
 	if (FLASH_OOB_RAW == flash->oob_mode)
 	{
 		struct oob_opt opt;
-		
+
 		memset(&opt, 0, sizeof(struct oob_opt));
 		opt.op_mode   = FLASH_OOB_RAW;
 		opt.data_buff = buff;
@@ -84,8 +84,8 @@ int flash_read(struct flash_chip *flash, void *buff, int start, int count)
 
 		if (ret < 0)
 			return ret;
-		
-		return opt.ret_len;	
+
+		return opt.ret_len;
 	}
 	else
 	{
@@ -97,9 +97,9 @@ int flash_read(struct flash_chip *flash, void *buff, int start, int count)
 		{
 #ifdef CONFIG_DEBUG
 			if (count != ret_len)
-				printf("ERROR: fail to read data! %s()\n", __FUNCTION__);
+				printf("ERROR: fail to read data! %s()\n", __func__);
 			else
-				printf("ECC ERROR: while reading data! %s()\n", __FUNCTION__);
+				printf("ECC ERROR: while reading data! %s()\n", __func__);
 #endif
 
 			return -EFAULT;
@@ -110,7 +110,6 @@ int flash_read(struct flash_chip *flash, void *buff, int start, int count)
 
 	return 0;
 }
-
 
 long flash_write(struct flash_chip *flash, const void *buff, u32 count, u32 ppos)
 {
@@ -128,19 +127,19 @@ long flash_write(struct flash_chip *flash, const void *buff, u32 count, u32 ppos
 		opt.data_len  = count;
 		opt.data_buff = (u8 *)buff;
 		opt.oob_len   = flash->oob_size;
-		
+
 		ret = flash->write_oob(flash, ppos, &opt);
-		
+
 		if (ret < 0)
 		{
-			printf("%s() failed! ret = %d\n", __FUNCTION__, ret);
+			DPRINT("%s() failed! ret = %d\n", __func__, ret);
 			return ret;
 		}
 		else if (opt.ret_len != opt.data_len)
 		{
 			BUG();
 		}
-		
+
 		// *ppos += opt.ret_len;
 
 		return opt.ret_len;
@@ -148,7 +147,7 @@ long flash_write(struct flash_chip *flash, const void *buff, u32 count, u32 ppos
 	case FLASH_OOB_AUTO:
 		if (count % (flash->write_size + flash->oob_size))
 		{
-			printf("%s(), size invalid!\n", __FUNCTION__);
+			DPRINT("%s(), size invalid!\n", __func__);
 			return -EINVAL;
 		}
 
@@ -165,7 +164,7 @@ long flash_write(struct flash_chip *flash, const void *buff, u32 count, u32 ppos
 
 			if (ret < 0)
 			{
-				printf("%s() failed! ret = %d\n", __FUNCTION__, ret);
+				printf("%s() failed! ret = %d\n", __func__, ret);
 				return ret;
 			}
 
@@ -203,23 +202,24 @@ long flash_write(struct flash_chip *flash, const void *buff, u32 count, u32 ppos
 	return 0;
 }
 
-
 int flash_erase(struct flash_chip *flash, u32 start, u32 size, u32 flags)
 {
 	int ret;
-	struct erase_opt erase;
+	struct erase_opt opt;
 
-	memset(&erase, 0, sizeof(struct erase_opt));
-	erase.estart = start;
-	erase.esize  = size;
-	ALIGN_UP(erase.esize, flash->erase_size);
-	erase.for_jffs2 = !!(flags & EDF_JFFS2); // MARK_FOR_MAXWIT_TRAINING: code browsing skills
-	erase.bad_allow = !!(flags & EDF_ALLOWBB);
+	memset(&opt, 0, sizeof(opt));
+	opt.estart = start;
+	opt.esize  = size;
+	ALIGN_UP(opt.esize, flash->erase_size);
+	opt.for_jffs2 = !!(flags & EDF_JFFS2);
+	opt.bad_allow = !!(flags & EDF_ALLOWBB);
 
-	ret = flash->erase(flash, &erase);
+	ret = flash->erase(flash, &opt);
 
+#ifdef CONFIG_DEBUG
 	if (ret < 0)
-		printf("%s() failed! (errno = %d)\n", __FUNCTION__, ret);
+		printf("%s() failed! (errno = %d)\n", __func__, ret);
+#endif
 
 	return ret;
 }

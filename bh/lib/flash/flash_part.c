@@ -1,21 +1,14 @@
-
-#include <g-bios.h>
-#include <sysconf.h>
-#include <fs.h>
 #include <sysconf.h>
 #include <flash/flash.h>
 #include <flash/part.h>
 
-
 static int g_home_index = -1; // to be removed
 static int g_curr_index = -1;
-
 
 static __INLINE__ struct partition *get_flash_part(struct flash_chip *flash, int num)
 {
 	return flash->part_tab + num;
 }
-
 
 static struct partition *get_part(int index)
 {
@@ -46,7 +39,6 @@ static struct partition *get_part(int index)
 
 	return NULL;
 }
-
 
 struct partition *part_open(int index, OP_MODE mode)
 {
@@ -95,7 +87,6 @@ struct partition *part_open(int index, OP_MODE mode)
 	return part;
 }
 
-
 int part_close(struct partition *part)
 {
 	int ret = 0, rest;
@@ -104,7 +95,6 @@ int part_close(struct partition *part)
 	struct block_buff *blk_buff;
 	struct flash_chip *flash;
 	u32 dwEraseFlag = EDF_ALLOWBB;
-
 
 	if (NULL == part)
 		return -EINVAL;
@@ -124,7 +114,7 @@ int part_close(struct partition *part)
 		u32 part_size, part_base, pos_adj;
 
 		//printf("%s(): pos = 0x%08x, blk_base = 0x%08x, blk_off = 0x%08x, rest = 0x%08x\n",
-			// __FUNCTION__, part->cur_pos + part->attr->part_base, blk_buff->blk_base, blk_buff->blk_off, rest);
+			// __func__, part->cur_pos + part->attr->part_base, blk_buff->blk_base, blk_buff->blk_off, rest);
 
 		type = part_get_type(part);
 		part_base = part_get_base(part);
@@ -155,7 +145,7 @@ int part_close(struct partition *part)
 
 		if (ret < 0)
 		{
-			DPRINT("%s(), line %d\n", __FUNCTION__, __LINE__);
+			DPRINT("%s(), line %d\n", __func__, __LINE__);
 			goto L1;
 		}
 
@@ -183,7 +173,7 @@ int part_close(struct partition *part)
 
 			if (ret < 0)
 			{
-				DPRINT("%s(), line %d\n", __FUNCTION__, __LINE__);
+				DPRINT("%s(), line %d\n", __func__, __LINE__);
 				goto L1;
 			}
 
@@ -197,13 +187,11 @@ L1:
 	return ret < 0 ? ret : 0;
 }
 
-
 long part_read(struct partition *part, void *buff, u32 size)
 {
 	printf("%s() not supported!\n");
 	return -EIO;
 }
-
 
 long part_write(struct partition *part, const void *buff, u32 size)
 {
@@ -213,7 +201,6 @@ long part_write(struct partition *part, const void *buff, u32 size)
 	u32 dwEraseFlag = EDF_ALLOWBB;
 	PART_TYPE part_type;
 	struct flash_chip *flash;
-	struct image_cache *img_cache;
 	struct part_attr   *attr;
 	struct block_buff  *blk_buff;
 
@@ -232,8 +219,6 @@ long part_write(struct partition *part, const void *buff, u32 size)
 
 	part_type = part_get_type(part);
 	part_base = part_get_base(part);
-
-	img_cache = part->img_cache;
 
 	attr = part->attr;
 
@@ -266,7 +251,7 @@ long part_write(struct partition *part, const void *buff, u32 size)
 #ifdef CONFIG_IMAGE_CHECK
 			if (part->cur_pos < blk_buff->blk_size)
 			{
-				if (FALSE == check_part_image(part_type, blk_buff->blk_base))
+				if (FALSE == check_image_type(part_type, blk_buff->blk_base))
 				{
 					printf("\nImage part_type mismatch!"
 						"Please check the image name and the target partition!\n");
@@ -306,7 +291,7 @@ long part_write(struct partition *part, const void *buff, u32 size)
 			ret = flash_erase(flash, flash_pos, len_adj, dwEraseFlag);
 			if (ret < 0)
 			{
-				printf("%s(), line %d\n", __FUNCTION__, __LINE__);
+				printf("%s(), line %d\n", __func__, __LINE__);
 				goto L1;
 			}
 
@@ -330,7 +315,7 @@ long part_write(struct partition *part, const void *buff, u32 size)
 
 			if (ret < 0)
 			{
-				DPRINT("%s(), line %d\n", __FUNCTION__, __LINE__);
+				DPRINT("%s(), line %d\n", __func__, __LINE__);
 				goto L1;
 			}
 
@@ -351,7 +336,6 @@ L1:
 	return ret;
 }
 
-
 int part_get_index(const struct partition *part)
 {
 	struct flash_chip *flash;
@@ -362,7 +346,6 @@ int part_get_index(const struct partition *part)
 
 	return part - flash->part_tab;
 }
-
 
 #if 0
 
@@ -376,17 +359,14 @@ static struct part_attr *PartGetAttr(struct part_info *pt_info, int nFreeIndex)
 	return pt_info->attr_tab + nFreeIndex;
 }
 
-
 static BOOL __INLINE__ PartProtected(PART_TYPE epart_type)
 {
 	return PT_BL_GTH == epart_type;
 }
 
-
 int GuPartCreate(struct part_info *pt_info, int nFreeIndex, u32 size, PART_TYPE part_type)
 {
 	struct part_attr *pFreeAttr;
-
 
 	pFreeAttr = PartGetAttr(pt_info, nFreeIndex);
 	if (NULL == pFreeAttr)
@@ -441,7 +421,6 @@ int GuPartCreate(struct part_info *pt_info, int nFreeIndex, u32 size, PART_TYPE 
 }
 #endif
 
-
 int part_change(int index)
 {
 	if (NULL == get_part(index))
@@ -452,12 +431,10 @@ int part_change(int index)
 	return g_curr_index;
 }
 
-
 int part_tab_read(const struct flash_chip *host, struct part_attr attr_tab[], int index)
 {
 	u32 nIndex;
 	struct part_info *pt_info = host->pt_info;
-
 
 	if (NULL == pt_info)
 		return -EINVAL;
@@ -473,43 +450,42 @@ int part_tab_read(const struct flash_chip *host, struct part_attr attr_tab[], in
 	return index;
 }
 
-
 int part_get_image(const struct partition *part, char name[], u32 *size)
 {
-	if (part->attr->image_size && name)
+	struct image_info *image = part->image;
+
+	if (image->image_size && name)
 	{
-		strncpy(name, part->attr->image_name, MAX_FILE_NAME_LEN);
+		strncpy(name, image->image_name, MAX_FILE_NAME_LEN);
 	}
 
 	if (size)
 	{
-		*size = part->attr->image_size;
+		*size = image->image_size;
 	}
 
-	return part->attr->image_size;
+	return image->image_size;
 }
-
 
 int part_set_image(struct partition *part, char name[], u32 size)
 {
-	strncpy(part->attr->image_name, name, MAX_FILE_NAME_LEN);
-	part->attr->image_size = size;
+	struct image_info *image = part->image;
 
-	return part->attr->image_size;
+	strncpy(image->image_name, name, MAX_FILE_NAME_LEN);
+	image->image_size = size;
+
+	return image->image_size;
 }
-
 
 void part_set_home(int index)
 {
 	g_home_index = index;
 }
 
-
 int part_get_home(void)
 {
 	return g_home_index;
 }
-
 
 //
 const char *part_type2str(u32 type)
@@ -525,7 +501,7 @@ const char *part_type2str(u32 type)
 	case PT_BL_GBH:
 		return PT_STR_GB_BH;
 
-	case PT_BL_GB_CONF:
+	case PT_BL_GCONF:
 		return PT_STR_GB_CONF;
 
 	case PT_OS_LINUX:
@@ -557,7 +533,6 @@ const char *part_type2str(u32 type)
 	}
 }
 
-
 const char *part_get_name(const struct part_attr *attr)
 {
 	if (attr->part_name[0] == '\0')
@@ -575,7 +550,6 @@ int part_show(const struct flash_chip *flash)
 	const char *pBar = "--------------------------------------------------------------------";
 	struct linux_config *pLinuxParam;
 
-
 	if (NULL == flash)
 	{
 		printf("ERROR: fail to open a flash!\n");
@@ -590,14 +564,9 @@ int part_show(const struct flash_chip *flash)
 		return index;
 	}
 
-	if (!sysconf_get_linux_param(&pLinuxParam))
-	{
-		nRootIndex = pLinuxParam->root_dev;
-	}
-	else
-	{
-		nRootIndex = -1;
-	}
+	pLinuxParam = sysconf_get_linux_param();
+
+	nRootIndex = pLinuxParam->root_dev;
 
 	printf("\nPartitions on \"%s\":\n", flash->name);
 	printf("%s\n", pBar);

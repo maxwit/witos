@@ -1,10 +1,8 @@
-#include <g-bios.h>
 #include <sysconf.h>
 #include <string.h>
 #include <getopt.h>
 #include <flash/part.h>
 #include <bar.h>
-
 
 int main(int argc, char *argv[])
 {
@@ -38,6 +36,4 @@ L2:
 	printf("Usage: cd Device (For example: \"cd 0\").\n");
 	return -EINVAL;
 }
-
-
 

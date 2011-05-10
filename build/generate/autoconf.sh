@@ -19,6 +19,8 @@ elif `grep CONFIG_AT91SAM9261 .config > /dev/null 2>&1`; then
 	PLAT_DIR=at91sam926x
 elif `grep CONFIG_AT91SAM9263 .config > /dev/null 2>&1`; then
 	PLAT_DIR=at91sam926x
+elif `grep CONFIG_OMAP3530 .config > /dev/null 2>&1`; then
+	PLAT_DIR=omap3530
 else
 	echo "Platform not specified!"
 	exit 1

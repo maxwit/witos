@@ -16,7 +16,11 @@ OBJCOPY = $(CROSS_COMPILE)objcopy
 ASFLAGS = $(CFLAGS) -D__ASSEMBLY__
 
 # fxime: to add "-mtune=xxx"
-CFLAGS = -I$(TOP_DIR)/include -ffreestanding -nostdinc -nostdlib -fno-builtin -DGBIOS_VER_MAJOR=$(MAJOR_VER) -DGBIOS_VER_MINOR=$(MINOR_VER) -mno-thumb-interwork -march=$(CONFIG_ARCH_VER) -mabi=aapcs-linux -O2 -mpoke-function-name -DGBH_START_BLK=$(CONFIG_GBH_START_BLK) -DGBH_START_MEM=$(CONFIG_GBH_START_MEM) -Wall -Werror-implicit-function-declaration
+CFLAGS = -ffreestanding -nostdinc -nostdlib -fno-builtin -I$(TOP_DIR)/include -include g-bios.h -DGBIOS_VER_MAJOR=$(MAJOR_VER) -DGBIOS_VER_MINOR=$(MINOR_VER) -mno-thumb-interwork -march=$(CONFIG_ARCH_VER) -mabi=aapcs-linux -O2 -mpoke-function-name -DGBH_START_BLK=$(CONFIG_GBH_START_BLK) -DGBH_START_MEM=$(CONFIG_GBH_START_MEM) -Wall -Werror-implicit-function-declaration
+
+#ifeq ($(CONFIG_DEBUG),y)
+#	CFLAGS += -DCONFIG_DEBUG
+#endif
 
 LDFLAGS = -m armelf_linux_eabi
 
@@ -37,12 +41,14 @@ $(dir-y): include/autoconf.h
 	@make $(img_build)$@
 
 include/autoconf.h: .config
-	@build/generate/autoconf $< $@
+	@build/generate/autoconf.py $< $@
+	@sed -i '/CONFIG_CROSS_COMPILE/d' $@
+	@sed -i '/^$$/d' $@
 
 # fixme
 %_defconfig:
 	@echo
-	@./build/generate/dotconfig $@
+	@./build/generate/dotconfig.sh $@
 	@echo
 
 #####echo "******************"
@@ -54,6 +60,8 @@ install:
 	@for fn in $(wildcard [tb]h/g-bios-*.bin); do \
 		cp -v $$fn $(CONFIG_IMAGE_PATH); \
 	done
+	@echo
+	@ls -l $(CONFIG_IMAGE_PATH)/g-bios-[tb]h.bin
 	@echo
 
 clean:

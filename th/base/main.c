@@ -2,12 +2,9 @@
  *  comment here
  */
 
-#include <g-bios.h>
+#include <stdio.h>
 #include <loader.h>
 #include <uart/uart.h>
-
-// fixme!
-#define CONFIG_DEFAULT_LOADER LM_NAND
 
 extern struct loader_opt g_loader_begin[], g_loader_end[];
 
@@ -18,6 +15,24 @@ int main(void)
 	int i;
 
 	read_cpu_id();
+
+#ifdef CONFIG_SDRAM_TESTING
+	volatile u32 *p = (u32 *)SDRAM_BASE;
+
+	while (p < (u32 *)(SDRAM_BASE + SDRAM_SIZE))
+	{
+		u32 val1 = *p, val2;
+
+		val2 = ~val1;
+		*p = val2;
+		val1 = *p;
+
+		if (val1 != val2)
+			printf("bad memory @ 0x%x\n", p);
+
+		p++;
+	}
+#endif
 
 	for (i = 0; i < 0x100; i++)
 	{
@@ -62,13 +77,11 @@ int main(void)
 	return 'm';
 }
 
-
-static inline void boot_gbios_bh()
+static inline void boot_bh()
 {
 	printf("\n");
 	((void (*)())GBH_START_MEM)();
 }
-
 
 int load_gbios_bh(char key)
 {
@@ -95,18 +108,19 @@ int load_gbios_bh(char key)
 			if (ret < 0)
 				return ret;
 
-			boot_gbios_bh();
+			boot_bh();
 		}
 	}
 
 	return 0;
 }
 
+#ifdef CONFIG_RAM_LOADER
 static int ram_loader(struct loader_opt *loader)
 {
-	boot_gbios_bh();
+	boot_bh();
 	return -1;
 }
 
 REGISTER_LOADER(m, ram_loader, "RAM/ROM");
-
+#endif

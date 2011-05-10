@@ -1,12 +1,10 @@
-#include <g-bios.h>
-
+#include <malloc.h>
 
 #define LIST_NODE_SIZE             WORD_ALIGN_UP(sizeof(struct list_node))
 #define LIST_NODE_ALIGN(size)     (((size) + LIST_NODE_SIZE - 1) & ~(LIST_NODE_SIZE - 1))
 #define MIN_HEAP_LEN               1024
 #define IS_FREE(size)             (((size) & (WORD_SIZE - 1)) == 0)
 #define GET_SIZE(region)          ((region)->curr_size & ~(WORD_SIZE - 1))
-
 
 struct mem_region
 {
@@ -15,21 +13,17 @@ struct mem_region
 	struct list_node ln_mem_region;
 };
 
-
 static struct list_node g_free_region_list;
-
 
 static __INLINE__ struct mem_region *get_successor(struct mem_region *region)
 {
 	return (struct mem_region *)((u8 *)region + DWORD_SIZE + GET_SIZE(region));
 }
 
-
 static __INLINE__ struct mem_region *get_predeccessor(struct mem_region *region)
 {
 	return (struct mem_region *)((u8 *)region - (region->pre_size & ~(WORD_SIZE - 1)) - DWORD_SIZE);
 }
-
 
 static void __INLINE__ region_set_size(struct mem_region *region, u32 size)
 {
@@ -40,7 +34,6 @@ static void __INLINE__ region_set_size(struct mem_region *region, u32 size)
 	succ_region = get_successor(region);
 	succ_region->pre_size = size;
 }
-
 
 int gk_init_heap(u32 start, u32 end)
 {
@@ -68,6 +61,26 @@ int gk_init_heap(u32 start, u32 end)
 	return 0;
 }
 
+// fixme: __WEAK__
+int heap_init(void)
+{
+	unsigned long heap_start, heap_end;
+#ifdef CONFIG_NORMAL_SPACE
+	extern unsigned long bss_end[];
+
+	heap_start = (unsigned long)bss_end + ALLOC_STACK_SIZE;
+#else
+	extern unsigned long _start[];
+
+	heap_start = (unsigned long)_start - HEAP_SIZE;
+#endif
+	heap_end = heap_start + HEAP_SIZE;
+
+	DPRINT("%s(): region = [0x%08x, 0x%08x]\n",
+			__func__, heap_start, heap_end);
+
+	return gk_init_heap(heap_start, heap_end);
+}
 
 void *malloc(u32 size)
 {
@@ -82,7 +95,7 @@ void *malloc(u32 size)
 	alloc_size = LIST_NODE_ALIGN(size);
 	list_for_each(iter, &g_free_region_list)
 	{
-		curr_region = OFF2BASE(iter, struct mem_region, ln_mem_region);
+		curr_region = container_of(iter, struct mem_region, ln_mem_region);
 		// printf("%d <--> %d\n", curr_region->curr_size, alloc_size);
 		if (curr_region->curr_size >= alloc_size)
 			goto do_alloc;
@@ -116,7 +129,6 @@ do_alloc:
 
 	return p;
 }
-
 
 void free(void *p)
 {
@@ -152,8 +164,6 @@ void free(void *p)
 
 	unlock_irq_psr(psr);
 }
-
-
 
 void *zalloc(u32 len)
 {

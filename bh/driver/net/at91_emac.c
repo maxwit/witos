@@ -1,4 +1,3 @@
-#include <g-bios.h>
 #include <timer.h>
 #include <net/net.h>
 #include <net/mii.h>
@@ -16,13 +15,11 @@
 #define EMAC_SOF  (1 << 14)
 #define EMAC_EOF  (1 << 15)
 
-
 #define at91_emac_readl(reg) \
 	readl(VA(AT91SAM9263_PA_EMAC + (reg)))
 
 #define at91_emac_writel(reg, val) \
 	writel(VA(AT91SAM9263_PA_EMAC + (reg)), (val))
-
 
 struct emac_buff_desc
 {
@@ -36,12 +33,10 @@ struct at91_emac
 	struct emac_buff_desc *tx_queue, *tx_rear;
 };
 
-
 static int at91_emac_recv(struct net_device *);
 static int at91_emac_send(struct net_device *, struct sock_buff *);
 static int at91_emac_isr(u32, void *);
 static int at91_emac_set_mac(struct net_device *, const u8 []);
-
 
 static int at91_emac_isr(u32 irq, void *dev)
 {
@@ -51,7 +46,7 @@ static int at91_emac_isr(u32 irq, void *dev)
 	stat = at91_emac_readl(EMAC_ISR);
 
 #ifdef CONFIG_DEBUG
-	printf("%s(), isr = 0x%08x\n", __FUNCTION__, stat);
+	printf("%s(), isr = 0x%08x\n", __func__, stat);
 #endif
 
 	if (stat & 0x2)
@@ -60,14 +55,12 @@ static int at91_emac_isr(u32 irq, void *dev)
 	return 0;
 }
 
-
 #ifndef CONFIG_IRQ_SUPPORT
 static int at91_emac_poll(struct net_device *ndev)
 {
 	return at91_emac_isr(0, ndev);
 }
 #endif
-
 
 static int at91_emac_send(struct net_device *ndev, struct sock_buff *skb)
 {
@@ -94,6 +87,8 @@ static int at91_emac_send(struct net_device *ndev, struct sock_buff *skb)
 	at91_emac_writel(EMAC_NCR, val);
 
 	while (!(tx_rear->stat & (1 << 31))); // fixme
+
+	ndev->stat.tx_packets++;
 
 	unlock_irq_psr(ulFlag);
 }
@@ -135,6 +130,7 @@ static int at91_emac_recv(struct net_device * ndev)
 		{
 			skb->size = rx_head->stat & 0xfff;
 			netif_rx(skb);
+			ndev->stat.rx_packets++;
 			pBufPtr = NULL;
 		}
 
@@ -145,7 +141,7 @@ static int at91_emac_recv(struct net_device * ndev)
 
 #ifdef CONFIG_DEBUG
 	if (count > 1)
-		printf("%s(): RX frames = %d\n", __FUNCTION__, count);
+		printf("%s(): RX frames = %d\n", __func__, count);
 #endif
 
 	emac->rx_head = rx_head;
@@ -178,7 +174,6 @@ static int __INIT__ at91_emac_init_ring(struct at91_emac *emac)
 {
 	int i;
 	u32 dma_buff_base;
-
 
 	// init RX ring buffer
 	dma_buff_base = (u32)malloc(RX_BUFF_LEN * RX_BUFF_NUM);
@@ -242,10 +237,10 @@ static void __INIT__ at91_emac_init(struct at91_emac *emac)
 	at91_emac_writel(EMAC_USRIO, 0x3);
 }
 
-static int at91_emac_set_mac(struct net_device *ndev, const u8 mac_adr[])
+static int at91_emac_set_mac(struct net_device *ndev, const u8 mac_addr[])
 {
-	at91_emac_writel(EMAC_SA1B, *(u32 *)ndev->mac_adr);
-	at91_emac_writel(EMAC_SA1T, *(u16 *)(ndev->mac_adr + 4));
+	at91_emac_writel(EMAC_SA1B, *(u32 *)ndev->mac_addr);
+	at91_emac_writel(EMAC_SA1T, *(u16 *)(ndev->mac_addr + 4));
 
 	return 0;
 }
@@ -263,7 +258,7 @@ static int __INIT__ at91_emac_probe(void)
 	ndev->chip_name   = "AT91SAM9263 EMAC";
 	//
 	ndev->send_packet = at91_emac_send;
-	ndev->set_mac_adr = at91_emac_set_mac;
+	ndev->set_mac_addr = at91_emac_set_mac;
 #ifndef CONFIG_IRQ_SUPPORT
 	ndev->ndev_poll   = at91_emac_poll;
 #endif

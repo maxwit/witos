@@ -152,7 +152,6 @@ struct tag
 	} u;
 };
 
-
 #define tag_next(t)	((struct tag *)((u32 *)(t) + (t)->hdr.size))
 #define tag_size(type)	((sizeof(struct tag_header) + sizeof(struct type)) >> 2)
 

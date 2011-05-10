@@ -1,4 +1,3 @@
-
 obj-y = flash_core.o
 
 dir-$(CONFIG_NAND) += nand

@@ -1,6 +1,5 @@
-#include <g-bios.h>
 #include <mmc/mmc.h>
-#include "mmc_ops.h"
+#include <mmc/mmc_ops.h>
 #include "sdio_ops.h"
 #include "sdio.h"
 
@@ -87,13 +86,12 @@ static int sdio_read_cis(struct mmc_host *host)
 	return ret;
 }
 
-
 static int sdio_read_cccr(struct mmc_host *host)
 {
 	int ret;
 	int cccr_vsn;
 	unsigned char data;
-	struct mmc_card *card = &host->info;
+	struct mmc_card *card = &host->card;
 
 	memset(&card->cccr, 0, sizeof(struct sdio_cccr));
 
@@ -104,7 +102,7 @@ static int sdio_read_cccr(struct mmc_host *host)
 	cccr_vsn = data & 0x0f;
 
 	if (cccr_vsn > SDIO_CCCR_REV_1_20) {
-		printf("%s: unrecognised CCCR structure version %d\n", __FUNCTION__, cccr_vsn);
+		printf("%s: unrecognised CCCR structure version %d\n", __func__, cccr_vsn);
 		return -EINVAL;
 	}
 
@@ -143,7 +141,6 @@ out:
 	return ret;
 }
 
-
 static int mmc_sdio_init_card(struct mmc_host *host)
 {
 	int i = 0, ret = 0;
@@ -164,7 +161,7 @@ static int mmc_sdio_init_card(struct mmc_host *host)
 
 	ret = mmc_set_relative_addr(host);
 
-	DPRINT("rca = %d\n", host->info.rca);
+	DPRINT("rca = %d\n", host->card.rca);
 
 	ret = mmc_select_card(host);
 
@@ -174,7 +171,6 @@ static int mmc_sdio_init_card(struct mmc_host *host)
 
 	return ret;
 }
-
 
 int sdio_register(struct mmc_host *host)
 {

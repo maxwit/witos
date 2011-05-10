@@ -3,7 +3,6 @@
 
 #pragma once
 
-
 #define	EPERM     1
 #define	ENOENT    2
 #define	ESRCH     3
@@ -142,7 +141,6 @@
 /* for robust mutexes */
 #define	EOWNERDEAD	130	/* Owner died */
 #define	ENOTRECOVERABLE	131	/* State not recoverable */
-
 
 //
 #define ERESTARTSYS	512

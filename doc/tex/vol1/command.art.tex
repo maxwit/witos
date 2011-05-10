@@ -1,0 +1,228 @@
+\section{flash读写及分区}
+\subsection{flash}
+usage: flash <子命令> [可选参数 <值>]
+
+\begin{table}[H]
+%\centering
+\setlength{\parindent}{0pt}
+\begin{tabular}{|c|l|} \hline
+子命令名称 & 命令说明 \\ \hline
+%select & 选中某个flash设备，作为其他flash命令的操作对象 \\ \hline
+dump & 查看flash页内容，以page为单位，包括oob \\ \hline
+read & 从Flash中加载数据到DDR \\ \hline
+write & Flash中写数据from DDR \\ \hline
+erase & 以block为单位，擦除flash一块内容 \\ \hline
+scanbb & 扫描指定分区上的坏快 \\ \hline
+\end{tabular}
+%\caption{Flash子命令}
+\end{table}
+
+\begin{table}[H]
+\setlength{\parindent}{0pt}
+\begin{tabular}{|c|l|} \hline
+参数 & 功能 \\ \hline
+-a & 设定起始地址\\ \hline
+-l & 设定长度\\ \hline
+-p & 设定分区，不与-a和-l并用\\ \hline
+-m & mem的起始址址\\ \hline
+-f & 强制erase（无论是否存在坏块）\\ \hline
+-c & 擦除的同时写入cleanmark\\ \hline
+\end{tabular}
+\end{table}
+
+命令使用示例：\\
+\begin{itemize}
+\item flash erase -a 1M -l 32K
+\item flash erase -a 100block -l 16block -f
+\end{itemize}
+
+\subsection{part}
+usage: part [options]
+
+参数说明：
+
+\begin{table}[H]
+\begin{tabular}{|c|l|}
+\hline
+参数 & 功能 \\ \hline
+-l & 显示分区表 \\ \hline
+%-i [N] & 显示分区N的具体信息 \\ \hline
+\end{tabular}
+\end{table}
+
+\subsection{ls}
+显示当前分区的具体信息
+
+\subsection{cd}
+切换分区
+
+\section{MMC/SD卡操作}
+\subsection{mmc}
+usage: mmc $<$子命令$>$ [options]
+
+\begin{table}[H]
+%\centering
+\setlength{\parindent}{0pt}
+\begin{tabular}{|c|l|} \hline
+子命令名称 & 命令说明 \\ \hline
+scan & 扫描所有MMC/SD设备，解析并打印设备信息 \\ \hline
+%select & 选中某个MMC/SD设备，作为其他MMC/SD命令的操作对象 \\ \hline
+dump & 查看MMC/SD上的数据，每次显示一个block \\ \hline
+%read & 从MMC/SD中加载数据到DDR \\ \hline
+%write & MMC/SD中写数据from DDR \\ \hline
+%erase & 以block为单位，擦除MMC/SD一块内容 \\ \hline
+\end{tabular}
+%\caption{MMC子命令}
+\end{table}
+
+MMC/SD命令选项及参数介绍：
+\begin{table}[H]
+\setlength{\parindent}{0pt}
+\begin{tabular}{|c|l|} \hline
+参数 & 功能 \\ \hline
+-a & 设定起始地址\\ \hline
+%-l & 设定长度\\ \hline
+%-m & mem的起始址址\\ \hline
+\end{tabular}
+\end{table}
+
+\section{网络连接}
+
+\subsection{ifconfig}
+usage: ifconfig [interface] [address] [netmask <address>] [hw [HW] <address>]
+
+选项及参数介绍：
+\begin{table}[H]
+\setlength{\parindent}{0pt}
+\begin{tabular}{|l|l|} \hline
+选项 & 功能描述 \\ \hline
+interface & 指定网络设备对象，如``eth0''。缺省为系统中第一个网络设备。 \\ \hline
+address & 配置网络设备IP地址为address \\ \hline
+netmask <address> & 配置netmask为address \\ \hline
+hw [HW] <address> & 配置设备的MAC地址为address。其中HW缺省为``ether'' \\ \hline
+\end{tabular}
+\end{table}
+
+不加任何option时显示interface的信息，具体包括：
+\begin{enumerate} \setlength{\itemsep}{-\itemsep}
+\item NIC芯片名称（ID及字符串表示）
+\item PHY信息：ID、地址
+\item 连接状态，包括速率
+\item RX/TX bytes
+\item error count
+\end{enumerate}
+
+\subsection{ping}
+usage：ping [DestIp] 
+
+若DestIp不指定，则默认的server ip
+
+\subsection{tftp}
+usage：tftp [options] [filename]
+
+参数介绍：
+\begin{table}[H]
+\setlength{\parindent}{0pt}
+\begin{tabular}{|c|l|} \hline
+选项 & 功能描述 \\ \hline
+ -s & 设定服务端IP \\ \hline
+ -m & 下载的内容放在内存里，即，不烧录到flash上 \\ \hline
+\end{tabular}
+\end{table}
+
+\subsection{dhclient}
+usage：dhclient [options]
+
+参数介绍：
+\begin{table}[H]
+\setlength{\parindent}{0pt}
+\begin{tabular}{|c|l|} \hline
+选项 & 功能描述 \\ \hline
+ -s & 同时将Server IP更新为DHCP Server \\ \hline
+\end{tabular}
+\end{table}
+
+\section{串口协议及工具}
+
+\subsection{kermit}
+usage：kermit [options]
+
+作用概述：串口文件传输%\footnote{目前kermit和ymodem仅支持下载}
+
+选项及参数介绍：
+\begin{table}[H]
+\setlength{\parindent}{0pt}
+\begin{tabular}{|c|m{10cm}|} \hline
+选项 & 功能描述 \\ \hline
+ -m [address] & 将下载的数据放在内存中，而不直写到storage（如Flash）上。其中address为可选参数，表示memory地址；若不指定address，则由系统自动分配一块空间。 \\ \hline
+\end{tabular}
+\end{table}
+
+\subsection{ymodem}
+usage: ymodem [options]
+
+作用概述：串口文件传输%\footnote{目前kermit和ymodem仅支持下载}
+
+选项及参数介绍：
+\begin{table}[H]
+\setlength{\parindent}{0pt}
+\begin{tabular}{|c|m{10cm}|} \hline
+选项 & 功能描述 \\ \hline
+ -m [address] & 将下载的数据放在内存中，而不直写到storage（如Flash）上。其中address为可选参数，表示memory地址；若不指定address，则由系统自动分配一块空间。 \\ \hline
+\end{tabular}
+\end{table}
+
+\section{Graphics和Display}
+\subsection{lcd}
+usage：lcd [options]
+
+参数介绍：
+\begin{table}[H]
+\setlength{\parindent}{0pt}
+\begin{tabular}{|c|l|} \hline
+选项 & 功能描述 \\ \hline
+-l [all] & 列出LCD的video mode。all表示所有video mode，不加则仅显示当前的video mode \\ \hline
+-s <N> & 将当前LCD的video mode设置为第N种mode。 \\ \hline
+\end{tabular}
+\end{table}
+
+\section{memory读写及指令跳转}
+
+\subsection{mem}
+\begin{table}[H]
+%\centering
+\begin{tabular}{|c|l|}
+\hline
+命令名称 & 命令说明\\ \hline
+read & 显示memory数据\\ \hline
+write & 将数据写入memory\\ \hline
+set & 将某个memory空间写入值\\ \hline
+\end{tabular}
+%\caption{md}
+\end{table}
+
+\subsection{go}
+usage: go <address>
+
+address跳转的目标地址，可十进制表示，也可十六进制表示。
+
+示例: go 0xc000000　跳转到0xc000000处执行。
+
+\section{系统配置}
+\subsection{sysconf}
+\begin{table}[H]
+%\centering
+\begin{tabular}{|c|l|}
+\hline
+命令名称 & 命令说明\\ \hline
+-r <all|net|boot> & sysconf reset \\ \hline
+\end{tabular}
+%\caption{md}
+\end{table}
+
+\section{其他命令}
+\subsection{help}
+列出g-bios系统中当前所有可用的命令
+
+\subsection{led}
+LED灯测试

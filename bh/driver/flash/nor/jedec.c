@@ -1,4 +1,3 @@
-#include <g-bios.h>
 #include <spi.h>
 
 #define JEDEC_READ_ID   0x9F
@@ -32,7 +31,7 @@ static int __INIT__ nor_flash_probe(void)
 	int i;
 	u8 jedec_id[64];
 	struct spi_slave *nor_flash;
-	
+
 	nor_flash = get_spi_slave("w25x_nor_flash");
 	read_jedec_id(nor_flash, jedec_id);
 

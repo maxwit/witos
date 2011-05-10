@@ -1,4 +1,3 @@
-#include <g-bios.h>
 
 void undef_handle()
 {
@@ -12,20 +11,17 @@ void swi_handle()
 	while (1);
 }
 
-
 void iabt_handle()
 {
 	printf("Instruction Abort\n");
 	while (1);
 }
 
-
 void dabt_handle()
 {
 	printf("Data Abort\n");
 	while (1);
 }
-
 
 void fiq_handle()
 {

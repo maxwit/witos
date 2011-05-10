@@ -1,13 +1,17 @@
 /*
+ *
  *  comment here
+ *
  */
-
-#include <g-bios.h>
 
 	.global _start
 	.global hang
 	.global tim_addr
 
+#ifdef CONFIG_OMAP3530
+	.word (_end - _start)
+	.word _start
+#endif
 _start:
 	b     handle_reset
 	ldr   pc, [pc, #24]
@@ -29,10 +33,11 @@ _start:
 handle_reset:
 	msr  cpsr, #(ARM_MODE_SVC | ARM_INT_MASK)
 
+@ fixme
 #if 0
 	@ init default sp
 #if defined(CONFIG_S3C2410) || defined(CONFIG_S3C2440)
-	mov  r0, #0x1000
+	mov  sp, #0x1000
 	ldr  r0, [sp, #-4]
 	mvn  r1, r0
 	str  r1, [sp, #-4]
@@ -54,6 +59,12 @@ handle_reset:
 	bic r1, #0xff
 	strh r1, [r0, #WTCON]
 #endif
+
+#ifdef CONFIG_OMAP3530
+	mov r12, #0x1		@ to invalidate L2
+	.word 0xE1600070	@ Call SMI monitor
+#endif
+
 	bl   cpu_init
 
 	bl   soc_init
@@ -139,7 +150,6 @@ handle_fiq:
 hang:
 	bl   uart_send_byte
 	sub  pc, pc, #8
-
 
 build_time:
 	.ascii "\n\r\n\r[" __TIME__ "] g-bios\n\r\0"

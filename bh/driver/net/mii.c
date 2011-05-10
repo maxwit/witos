@@ -1,9 +1,7 @@
-#include <g-bios.h>
 #include <net/net.h>
 #include <net/mii.h>
 
-
-int mii_get_link_status(struct mii_phy *phy)
+int mii_get_link_speed(struct mii_phy *phy)
 {
 	int i;
 	struct net_device *ndev = phy->ndev;
@@ -13,7 +11,7 @@ int mii_get_link_status(struct mii_phy *phy)
 		if (ndev->mdio_read(ndev, phy->mii_id, MII_REG_BMS) & 0x20) // or 0x24
 		{
 			u16 link = ndev->mdio_read(ndev, phy->mii_id, MII_REG_STAT);
-		
+
 			switch (link >> 12)
 			{
 			case 1:
@@ -40,6 +38,12 @@ int mii_get_link_status(struct mii_phy *phy)
 	return ETHER_SPEED_UNKNOW;
 }
 
+int mii_get_link_connection(struct mii_phy *phy)
+{
+	struct net_device *ndev = phy->ndev;
+
+	return ndev->mdio_read(ndev, phy->mii_id, MII_REG_BMS) & 0x4;
+}
 
 struct mii_phy *mii_phy_probe(struct net_device *ndev, u8 mii_id)
 {
@@ -50,7 +54,7 @@ struct mii_phy *mii_phy_probe(struct net_device *ndev, u8 mii_id)
 	phy->dev_id = ndev->mdio_read(ndev, mii_id, MII_REG_ID2);
 
 	DPRINT("%s(): ID = 0x%04x, 0x%04x @ %d\n",
-		__FUNCTION__, phy->ven_id, phy->dev_id, mii_id);
+		__func__, phy->ven_id, phy->dev_id, mii_id);
 
 	if (phy->ven_id != 0xFFFF && phy->ven_id != 0x0000 &&
 		phy->dev_id != 0xFFFF && phy->dev_id != 0x0000)

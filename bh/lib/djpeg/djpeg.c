@@ -49,7 +49,6 @@ static int Zig_Zag[8][8] = {
 	{35,36,48,49,57,58,62,63}
 };
 
-
 void init_table()
 {
 	size_i = size_j = 0;
@@ -75,24 +74,22 @@ void init_table()
 	memset(Y, 0, 64 * sizeof(int));
 	memset(U, 0, 64 * sizeof(int));
 	memset(V, 0, 64 * sizeof(int));
-    memset(comp_index, 0, 3 * sizeof(u8));
+	memset(comp_index, 0, 3 * sizeof(u8));
 }
 
 PBITMAPINFOHEADER get_bmpinfoheader()
 {
-    return &bi;
+	return &bi;
 }
-
 
 PBITMAPFILEHEADER get_bmpfileheader()
 {
-    return &bf;
+	return &bf;
 }
-
 
 void creat_bmphead()
 {
-    u32 num_colors, ImgSize;
+	u32 num_colors, ImgSize;
 	memset((char *)&bf, 0, sizeof(BITMAPFILEHEADER));
 	memset((char *)&bi, 0, sizeof(BITMAPINFOHEADER));
 
@@ -114,7 +111,6 @@ void creat_bmphead()
 	bf.bfOffBits = (u32)(num_colors * sizeof(RGBQUAD) + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER));
 	//BufSize = bf.bfSize - sizeof(BITMAPFILEHEADER);
 }
-
 
 int init_tag(u8 *jpegbuf)
 {
@@ -160,7 +156,7 @@ int init_tag(u8 *jpegbuf)
 					qt_table[qt_table_index][i] = (short)*(lptemp++);
 				}
 
-                qt_table_index = (*(lptemp++)) & 0x0f;
+	            qt_table_index = (*(lptemp++)) & 0x0f;
 				for(i = 0; i < 64; i++)
 				{
 					qt_table[qt_table_index][i] = (short)*(lptemp++);
@@ -174,7 +170,7 @@ int init_tag(u8 *jpegbuf)
 			llength = MAKEWORD(*(lp + 1), *lp);
 			img_h = MAKEWORD(*(lp + 4), *(lp + 3));
 			img_w = MAKEWORD(*(lp + 6), *(lp + 5));
-            comp_num = *(lp + 7);
+	        comp_num = *(lp + 7);
 			if((comp_num != 1)&&(comp_num != 3))
 			{
 				return -1;
@@ -213,7 +209,7 @@ int init_tag(u8 *jpegbuf)
 			lp += llength;
 			break;
 
-        case M_DHT:
+	    case M_DHT:
 			llength = MAKEWORD(*(lp + 1), *lp);
 			if (llength < 0xd0)
 			{
@@ -251,8 +247,8 @@ int init_tag(u8 *jpegbuf)
 					huf_max_value[huftabindex][j] = 0;
 				}
 
-                huf_min_value[huftabindex][i] = 0;
-                huf_max_value[huftabindex][i] = code_len_table[huftabindex][i] - 1;
+	            huf_min_value[huftabindex][i] = 0;
+	            huf_max_value[huftabindex][i] = code_len_table[huftabindex][i] - 1;
 
 				for (j = i + 1;j < 16; j++)
 				{
@@ -286,7 +282,7 @@ int init_tag(u8 *jpegbuf)
 					}
 
 					ccount += 17;
-                    j = 0;
+	                j = 0;
 					for (i = 0; i < 16; i++)
 					{
 						if(code_len_table[huftabindex][i] != 0)
@@ -380,11 +376,10 @@ int init_tag(u8 *jpegbuf)
 		}  //switch
 	} //while
 
-    creat_bmphead();
+	creat_bmphead();
 
 	return 0;
 }
-
 
 void fast_idct_init()
 {
@@ -397,7 +392,6 @@ void fast_idct_init()
 	}
 }
 
-
 u8 read_u8()
 {
 	u8 i;
@@ -408,7 +402,6 @@ u8 read_u8()
 	cur_byte = i;
 	return i;
 }
-
 
 int decode_element()
 {
@@ -479,7 +472,7 @@ int decode_element()
 		cur_byte = cur_byte&And[bit_pos];
 	}
 	else
-    {
+	{
 		valueex = cur_byte;
 		tempsize -= bit_pos;
 		while (tempsize > 8)
@@ -547,7 +540,6 @@ int HufBlock(u8 dchufindex, u8 achufindex)
 
 	return 0;
 }
-
 
 int dec_mcu_block()
 {
@@ -620,7 +612,6 @@ int dec_mcu_block()
 
 	return 0;
 }
-
 
 void idctrow(int * blk)
 {
@@ -716,7 +707,6 @@ void idctcol(int * blk)
 	blk[8 * 7] = iclp[(x7 - x1) >> 14];
 }
 
-
 void Fast_IDCT(int * block)
 {
 	short i;
@@ -727,7 +717,6 @@ void Fast_IDCT(int * block)
 	for ( i = 0; i < 8; i++)
 		idctcol(block + i);
 }
-
 
 void IQtIZzBlock(short *s, int *d, short flag)
 {
@@ -756,7 +745,7 @@ void IQtIZzBlock(short *s, int *d, short flag)
 		break;
 	}
 
-    for ( i = 0; i < 8; i++)
+	for ( i = 0; i < 8; i++)
 	{
 		for ( j = 0; j < 8; j++)
 		{
@@ -765,7 +754,7 @@ void IQtIZzBlock(short *s, int *d, short flag)
 		}
 	}
 
-    buffer1 = (int *)buffer2;
+	buffer1 = (int *)buffer2;
 	Fast_IDCT(buffer1);
 	for ( i = 0; i < 8; i++)
 	{
@@ -776,7 +765,6 @@ void IQtIZzBlock(short *s, int *d, short flag)
 	}
 }
 
-
 void IQtIZzMCUComponent(short flag)
 {
 	short H = 0, VV = 0;
@@ -784,7 +772,7 @@ void IQtIZzMCUComponent(short flag)
 	int *pQtZzMCUBuffer = NULL;
 	short  *pMCUBuffer;
 
-    switch(flag)
+	switch(flag)
 	{
 	case 0:
 		H  = SampRate_Y_H;
@@ -817,7 +805,6 @@ void IQtIZzMCUComponent(short flag)
 		}
 	}
 }
-
 
 void  getyuv(short flag)
 {
@@ -859,7 +846,6 @@ void  getyuv(short flag)
 
 }
 
-
 void store_buf()
 {
 	short i, j;
@@ -867,7 +853,7 @@ void store_buf()
 	u8 R, G, B;
 	int y, u, v, rr, gg, bb;
 
-    line_ubytes = (u32)WIDTHBYTES(img_w * bi.biBitCount);
+	line_ubytes = (u32)WIDTHBYTES(img_w * bi.biBitCount);
 
 	for (i = 0; i < SampRate_Y_V * 8; i++)
 	{
@@ -896,18 +882,17 @@ void store_buf()
 				    *lpbmp++ = R;
 				}
 				else
-                {
-                    break;
-                }
+	            {
+	                break;
+	            }
 			}
 		}
 		else
-        {
-           break;
-        }
+	    {
+	       break;
+	    }
 	}
 }
-
 
 int decode(u8* rgbbuf)
 {
@@ -922,7 +907,7 @@ int decode(u8* rgbbuf)
 	V_YtoV = SampRate_Y_V / SampRate_V_V;
 
 	fast_idct_init();
-    lpPtr = (char *)rgbbuf;
+	lpPtr = (char *)rgbbuf;
 
 	while ((ret = dec_mcu_block()) == 0)
 	{
@@ -967,35 +952,33 @@ int jpeg2bmp_decode(struct djpeg_opts *djpeg2bmp)
 
 	init_table();
 
-    if(0 != init_tag(djpeg2bmp->jpegbuf))
+	if(0 != init_tag(djpeg2bmp->jpegbuf))
 	{
-        printf("init_tag failed\n");
+	    printf("init_tag failed\n");
 		return -1;
 	}
 
-    djpeg2bmp->imgbf = get_bmpfileheader();
-    djpeg2bmp->imgbi = get_bmpinfoheader();
+	djpeg2bmp->imgbf = get_bmpfileheader();
+	djpeg2bmp->imgbi = get_bmpinfoheader();
 
-    printf("image width:%ld, height:%ld, bmp file size:%d, rgb data size:%d\n", djpeg2bmp->imgbi->biWidth, djpeg2bmp->imgbi->biHeight, djpeg2bmp->imgbf->bfSize, djpeg2bmp->imgbf->bfSize - djpeg2bmp->imgbf->bfOffBits);
+	printf("image width:%ld, height:%ld, bmp file size:%d, rgb data size:%d\n", djpeg2bmp->imgbi->biWidth, djpeg2bmp->imgbi->biHeight, djpeg2bmp->imgbf->bfSize, djpeg2bmp->imgbf->bfSize - djpeg2bmp->imgbf->bfOffBits);
 
-    djpeg2bmp->bmpbuf = malloc(djpeg2bmp->imgbf->bfSize);
-    djpeg2bmp->rgbdata = djpeg2bmp->bmpbuf + djpeg2bmp->imgbf->bfOffBits;
+	djpeg2bmp->bmpbuf = malloc(djpeg2bmp->imgbf->bfSize);
+	djpeg2bmp->rgbdata = djpeg2bmp->bmpbuf + djpeg2bmp->imgbf->bfOffBits;
 	ret = decode(djpeg2bmp->rgbdata);
 
-    ///////////////////////////////////////////////
+	///////////////////////////////////////////////
 
 	if (0 == ret)
 	{
-        printf("decode jpeg ok!\n");
+	    printf("decode jpeg ok!\n");
 		memcpy(djpeg2bmp->bmpbuf, djpeg2bmp->imgbf, sizeof(BITMAPFILEHEADER));
-        memcpy(djpeg2bmp->bmpbuf + sizeof(BITMAPFILEHEADER), djpeg2bmp->imgbi, djpeg2bmp->imgbi->biSize);
+	    memcpy(djpeg2bmp->bmpbuf + sizeof(BITMAPFILEHEADER), djpeg2bmp->imgbi, djpeg2bmp->imgbi->biSize);
 	}
-    else
-    {
-        printf("decoder jpeg error!\n");
-    }
-
-	// printf("%p\n", djpeg2bmp->bmpbuf);
+	else
+	{
+	    printf("decoder jpeg error!\n");
+	}
 
 	return 0;
 }

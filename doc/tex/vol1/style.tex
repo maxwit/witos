@@ -1,0 +1,69 @@
+\usepackage{float}
+\usepackage{longtable}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{makecell}
+\usepackage{colortbl}
+\usepackage{fontspec}
+\usepackage{listings}
+\usepackage{xunicode}
+\usepackage{indentfirst}
+\usepackage{xltxtra}
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+\usepackage{amsmath}
+\usepackage{wasysym}
+\usepackage{enumerate}
+\usepackage[table]{xcolor}
+%\usepackage[parfill]{parskip}
+\usepackage[slantfont,boldfont]{xeCJK}
+
+%\setlength{\voffset}{-60pt}
+%\setlength{\hoffset}{-20pt}
+%\usepackage[font=small,format=plain,labelfont=bf,up,textfont=it,up]{caption}
+\usepackage[font=small,format=plain,labelfont=bf,up]{caption}
+\usepackage[body={16cm,25cm}]{geometry}
+
+\usepackage[
+	dvipdfm,
+	CJKbookmarks=true,
+	bookmarksnumbered=true,
+	bookmarksopen=false,
+	colorlinks,
+	linkcolor=black,
+	urlcolor=blue
+	]{hyperref}
+
+\lstdefinelanguage{mwshell}{
+	morekeywords={if,then,elif,else,fi,for,in,while,do,done},%cd,ls,mkdir,make,apt-get,yum,sudo,tar\ ,echo,cat,chown,chmod,grep,find,mv,mount,rm,uname,which,whereis},
+	morecomment=[l]{\#\ },
+}
+
+\lstset{
+	numbers=left,
+	%framexleftmargin=10mm,
+	%frame=none,
+	%frame=shadowbox,
+	%rulesepcolor=\color{blue},
+	backgroundcolor=\color[RGB]{240,240,240},
+	tabsize=4,
+	breaklines=true,
+	keywordstyle=\bf\color{blue},
+	%identifierstyle=\bf,
+	%numberstyle=\color[RGB]{0,192,192},
+	commentstyle=\it\color[RGB]{0,96,96},
+	%stringstyle=\rmfamily\slshape\color[RGB]{128,0,0},
+	showstringspaces=false,
+	lineskip=0.5pt,
+	basicstyle=\small
+}
+
+\pagestyle{fancy}
+
+\setlength{\parindent}{2em}
+
+\defaultfontfeatures{Mapping=tex-text}
+
+%\setmainfont{WenQuanYi Micro Hei Mono}
+\setCJKmainfont{SimSun}
+\setCJKfamilyfont{hei}{WenQuanYi Micro Hei Mono}

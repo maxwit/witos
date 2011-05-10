@@ -1,2 +1,1 @@
-
-obj-$(CONFIG_S3C6410) += jedec.o
+obj-$(CONFIG_NOR) += jedec.o

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <types.h>
+// #include <types.h>
 
 int putchar(int);
 
@@ -18,11 +18,26 @@ int fflush(int);
 
 void clear_screen(void);
 
+#define BUG() \
+	do \
+	{ \
+		printf(" BUG @ %s() line %d!\n", __func__, __LINE__); \
+		while (1); \
+	} while(0)
+
 #ifdef CONFIG_DEBUG
 #define DPRINT(fmt, args ...)	printf(fmt, ##args)
-#define GEN_DGB() printf("%s(): line %d\n", __FUNCTION__, __LINE__)
+
+#define GEN_DGB() printf("%s(): line %d\n", __func__, __LINE__)
+
+#define BUG_ON(x) \
+	if (x) \
+	{  \
+		printf(" BUG @ %s() line %d!\n", __func__, __LINE__); \
+		while(1); \
+	}
 #else
 #define DPRINT(fmt, args ...)
 #define GEN_DGB()
+#define BUG_ON(x)
 #endif
-

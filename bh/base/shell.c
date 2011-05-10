@@ -1,10 +1,8 @@
-#include <g-bios.h>
 #include <getopt.h>
 #include <flash/flash.h>
 #include <flash/part.h>
 #include <uart/uart.h>
 #include <net/net.h>
-
 
 #define APP_HIST_DEPTH			    16  // should be 2**n bytes aligned.
 #define APP_ADJUST_INDEX(index)    ((index) & (APP_HIST_DEPTH - 1))
@@ -15,19 +13,16 @@
 #error "APP_HIST_DEPTH must power of 2!"
 #endif
 
-
 struct command_stack
 {
 	char *cmd_stack[APP_HIST_DEPTH];
 	int	  cmd_hist;
 };
 
-
 // fixme: DO NOT use pointer here
 static struct command_stack *g_cmd_stack = NULL;
 
 extern const struct gapp g_app_begin[], g_app_end[];
-
 
 static char shell_getchar(void)
 {
@@ -47,19 +42,16 @@ static char shell_getchar(void)
 	return ch;
 }
 
-
 // fixme
 static void __INLINE__ cmd_backspace(void)
 {
 	printf("\033[D\033[1P");
 }
 
-
 void show_prompt(void)
 {
 	int d;
 	struct partition *part;
-
 
 	part = part_open(PART_CURR, OP_RDONLY);
 	if (NULL != part)
@@ -89,7 +81,6 @@ static int __INLINE__ get_pre_space_count(char *buf)
 	return pre_space_count;
 }
 
-
 static int __INLINE__ get_mid_space_count(char *buf)
 {
 	int mid_space_count = 0;
@@ -112,7 +103,6 @@ static int __INLINE__ get_mid_space_count(char *buf)
 	return mid_space_count;
 }
 
-
 // had been fixed  i = *cur_max + 1 ==> i =*cur_max
 void insert_one_key(char input_c, char *buf, int *cur_pos, int *cur_max)
 {
@@ -127,7 +117,6 @@ void insert_one_key(char input_c, char *buf, int *cur_pos, int *cur_max)
 	putchar(input_c);
 }
 
-
 // had been fixed  buf[*cur_max] ==> buf[*cur_max - 1]
 static void backspace_one_key(char *buf, int *cur_pos, int *cur_max)
 {
@@ -141,7 +130,6 @@ static void backspace_one_key(char *buf, int *cur_pos, int *cur_max)
 
 	cmd_backspace();
 }
-
 
 static void delete_one_key(char *buf, int *cur_pos, int *cur_max)
 {
@@ -159,7 +147,6 @@ static void delete_one_key(char *buf, int *cur_pos, int *cur_max)
 	printf("\033[1P");
 }
 
-
 void show_input_buff(char *buf, const int cur_pos, const int cur_max)
 {
 	int i;
@@ -169,7 +156,6 @@ void show_input_buff(char *buf, const int cur_pos, const int cur_max)
 	for (i = cur_max; i > cur_pos; --i)
 		printf("\033[D");
 }
-
 
 static int cmd_match(char *buf, int *cur_pos, int *cur_max)
 {
@@ -185,7 +171,7 @@ static int cmd_match(char *buf, int *cur_pos, int *cur_max)
 	psz_result = malloc(MAX_ARG_LEN * nLen);
 	if (NULL == psz_result)
 	{
-		DPRINT("ERROR: fail to malloc, %s,%d", __FUNCTION__, __LINE__);
+		DPRINT("ERROR: fail to malloc, %s,%d", __func__, __LINE__);
 		return -ENOMEM;
 	}
 
@@ -259,173 +245,6 @@ static int cmd_match(char *buf, int *cur_pos, int *cur_max)
 	return 0;
 }
 
-static char *get_opt_buf(char *buf, int cur_pos)
-{
-	char *opt_buf = buf + cur_pos;
-
-	while (opt_buf > buf)
-	{
-		if (*opt_buf == '-' && *(opt_buf - 1) == ' ')
-		{
-			break;
-		}
-		opt_buf--;
-	}
-
-	return opt_buf + 1;
-}
-
-static int opt_match(char *buf, int *cur_pos, int *cur_max)
-{
-	int	i = 0, j = 0, k = 0;
-	int ret = -1;
-	char (*psz_result)[CMD_OPTION_LEN];
-	char ch;
-	const struct gapp *app;
-	char cmd_buf[CMD_MAX_LEN];
-	char *opt_buf;
-	BOOL bFlag;
-	int pre_space_count;
-	int mid_space_count;
-	int delta_pos = *cur_max - *cur_pos;
-	size_t cur_opt_match_len;
-	int pre_opt_len;
-	int opt_last_pos = 0;
-
-	psz_result = malloc(CMD_OPTION_LEN * CMD_OPTION_COUNT);
-	if (NULL == psz_result)
-	{
-		DPRINT("ERROR: fail to malloc, %s,%d", __FUNCTION__, __LINE__);
-		return -ENOMEM;
-	}
-
-	pre_space_count = get_pre_space_count(buf);
-	mid_space_count = get_mid_space_count(buf);
-
-	while (buf[i + pre_space_count] != ' ' && buf[i + pre_space_count] != '\0')
-	{
-		cmd_buf[i] = buf[i + pre_space_count];
-		i++;
-	}
-	cmd_buf[i] = '\0';
-
-	for (app = g_app_begin; app < g_app_end; app++)
-	{
-		if (strncmp(app->name, cmd_buf, i) == 0 && strlen(app->name) == i)
-		{
-			if (app->usr_opt_match != NULL)
-			{
-				if (ret != 1)
-				{
-					ret = app->usr_opt_match(buf, cur_pos, cur_max);
-					opt_last_pos = *cur_pos;
-				}
-
-				free(psz_result);
-				return ret;
-			}
-			break;
-		}
-	}
-
-	opt_buf = get_opt_buf(buf, *cur_pos);
-	cur_opt_match_len = buf + *cur_pos - opt_buf;
-	pre_opt_len = (int)(opt_buf - buf);
-
-	//fixme
-	if (app->option)
-	{
-		while (app < g_app_end && strncmp(app->option[k], "0", 1))
-		{
-			if (*cur_pos - pre_opt_len > 0)
-			{
-				if (strncmp(app->option[k], opt_buf, cur_opt_match_len) == 0)
-				{
-					strcpy(psz_result[j], app->option[k]);
-					j++;
-				}
-
-				k++;
-			}
-			else
-			{
-				while (strncmp(app->option[k], "0", 1))
-				{
-					strcpy(psz_result[j], app->option[k]);
-					j++;
-					k++;
-				}
-				break;
-			}
-		}
-	}
-
-	switch (j)
-	{
-	case 0:
-		break;
-
-	case 1:
-		i = strlen(psz_result[0]) + pre_opt_len;
-
-		for (; *cur_pos < i ; )
-		{
-			insert_one_key(psz_result[0][*cur_pos - pre_opt_len], buf, cur_pos, cur_max);
-		}
-		if (*cur_pos == *cur_max)
-		{
-			insert_one_key(' ', buf, cur_pos, cur_max);
-		}
-
-		break;
-
-	default:
-		if (*cur_pos - pre_opt_len > 0)
-		{
-			for (i = *cur_pos - pre_opt_len; (ch = psz_result[0][i]); *cur_pos = ++i)
-			{
-				bFlag = FALSE;
-				for (k = 1; k < j; k++)
-				{
-					if (ch != psz_result[k][i])
-					{
-						bFlag = TRUE;
-					}
-				}
-
-				if (bFlag) break;
-
-				insert_one_key(ch, buf, cur_pos, cur_max);
-			}
-		}
-
-		putchar('\n');
-		for (i = 1; i < j + 1; i++)
-		{
-			printf("%-20s", psz_result[i - 1]);
-			if (0 == (i & 0x3))
-			{
-				putchar('\n');
-			}
-		}
-		if (0 != (j & 0x3))
-			putchar('\n');
-
-		show_prompt();
-		show_input_buff(buf, *cur_pos, *cur_max);
-
-		for (; *cur_pos < *cur_max - delta_pos; (*cur_pos)++)
-			printf("\033[C");
-
-		break;
-	}
-
-	free(psz_result);
-
-	return 0;
-}
-
-
 static void print_input(char input_c, char *buf, int *cur_pos, int *cur_max)
 {
 	if (*cur_pos < MAX_ARG_LEN - 1)
@@ -441,7 +260,6 @@ static void print_input(char input_c, char *buf, int *cur_pos, int *cur_max)
 		printf(buf);
 	}
 }
-
 
 static int cmd_up_key(char *buf, int *cur_pos, int *pindex, int *cur_max)
 {
@@ -493,7 +311,6 @@ static int cmd_up_key(char *buf, int *cur_pos, int *pindex, int *cur_max)
 	return -1;
 }
 
-
 static int cmd_down_key(char *buf, int *cur_pos, int *pindex, int *cur_max)
 {
 	int i;
@@ -526,7 +343,6 @@ static int cmd_down_key(char *buf, int *cur_pos, int *pindex, int *cur_max)
 	return 0;
 }
 
-
 static int cmd_right_key(char *buf, int *cur_pos, int *cur_max)
 {
 	if (*cur_pos < *cur_max)
@@ -538,7 +354,6 @@ static int cmd_right_key(char *buf, int *cur_pos, int *cur_max)
 	return 0;
 }
 
-
 static int cmd_left_key(char *buf, int *cur_pos, int *cur_max)
 {
 	if (*cur_pos > 0)
@@ -549,7 +364,6 @@ static int cmd_left_key(char *buf, int *cur_pos, int *cur_max)
 
 	return 0;
 }
-
 
 static int cmd_update_history(const char *buf)
 {
@@ -568,7 +382,6 @@ static int cmd_update_history(const char *buf)
 
 	return 0;
 }
-
 
 // return 1 for command align, retrurn 2 for command option align
 static int cmd_line_status(char *buf, int *cur_pos)
@@ -589,7 +402,6 @@ static int cmd_line_status(char *buf, int *cur_pos)
 	return IS_CMD_MATCH;
 }
 
-
 int cmd_read(char buf[])
 {
 	char input_c;
@@ -599,10 +411,7 @@ int cmd_read(char buf[])
 	int esc_sequence = 0;
 	int spec_key = 0;
 	int ret;
-	int match_count = 0;
 	int pre_space_count;
-	const struct gapp *app;
-	int cmd_last_pos = 0;
 
 	memset(buf, 0, MAX_ARG_LEN);
 
@@ -638,7 +447,7 @@ int cmd_read(char buf[])
 			{
 			case '\t':
 				pre_space_count = get_pre_space_count(buf);
-
+#if 0
 				for (app = g_app_begin; app < g_app_end; app++)
 				{
 					if (!cur_pos || strncmp(app->name, buf + pre_space_count, strlen(app->name)) == 0)
@@ -659,14 +468,13 @@ int cmd_read(char buf[])
 						break;
 					}
 				}
-
+#endif
 				if (IS_CMD_MATCH == cmd_line_status(buf, &cur_pos))
 				{
 					cmd_match(buf, &cur_pos, &cur_max);
 				}
 				else
 				{
-					opt_match(buf, &cur_pos, &cur_max);
 				}
 				break;
 
@@ -785,11 +593,11 @@ int cmd_read(char buf[])
 	return 0;
 }
 
-
 int command_translate(const char *command_line, char *argv[])
 {
 	int argc = 0;
 	int i = 0;
+	int flag = 0;
 	static char cmd_line[MAX_ARG_LEN];
 
 #if 0
@@ -822,7 +630,61 @@ int command_translate(const char *command_line, char *argv[])
 	}
 
 	return argc;
+#elif 1
+	while (command_line[i])
+	{
+		switch (command_line[i])
+		{
+		case ' ':
+			if (flag == 0)
+			{
+			}
+			else if (flag == 1)
+			{
+				cmd_line[i] = '\0';
+				argc++;
 
+				flag = 0;
+			}
+			else
+			{
+				cmd_line[i] = command_line[i];
+			}
+			break;
+
+		case '"':
+			if (flag == 0)
+			{
+				argv[argc] = cmd_line + i + 1;
+				flag = 2;
+			}
+			else if (flag == 1) // fixme
+			{
+				printf("Invalid! (forget space?)\n");
+				return -EINVAL;
+			}
+			else
+			{
+				cmd_line[i] = '\0';
+				argc++;
+
+				flag = 0;
+			}
+			break;
+
+		default:
+			if (flag == 0)
+			{
+				argv[argc] = cmd_line + i;
+				flag = 1;
+			}
+
+			cmd_line[i] = command_line[i];
+			break;
+		}
+
+		i++;
+	}
 #else
 	while (1)
 	{
@@ -853,10 +715,19 @@ int command_translate(const char *command_line, char *argv[])
 		}
 	}
 #endif
+	if (flag == 1)
+	{
+		cmd_line[i] = '\0';
+		argc++;
+	}
+	else if (flag == 2)
+	{
+		printf("Invalid: (forget \"?)\n");
+		return -EINVAL;
+	}
 
-	return 0;
+	return argc;
 }
-
 
 int cmd_exec(const char *command_line)
 {
@@ -893,7 +764,6 @@ int cmd_exec(const char *command_line)
 	return -ENOEXEC;
 }
 
-
 // fixme: to be removed
 int __INIT__ init_cmd_queue(void)
 {
@@ -902,14 +772,13 @@ int __INIT__ init_cmd_queue(void)
 	if (NULL == g_cmd_stack)
 	{
 		DPRINT("%s, %s(), line %d: No memory!\n",
-				__FILE__, __FUNCTION__, __LINE__);
+				__FILE__, __func__, __LINE__);
 
 		return -ENOMEM;
 	}
 
 	return 0;
 }
-
 
 int exec_shell(void)
 {

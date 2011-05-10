@@ -2,8 +2,6 @@
  * the entry of g-bios bottom half
  */
 
-#include <g-bios.h>
-
 	.global _start
 
 _start:
@@ -24,11 +22,13 @@ _start:
 	.word handle_irq
 	.word handle_fiq
 
-	.word _start
 handle_reset:
-	ldr   r0, handle_reset - 4   @ heap_end
-	sub   r0, r0, #HEAP_SIZE     @ heap_start
-#if 1
+#ifdef CONFIG_NORMAL_SPACE
+	ldr   r0, =(bss_end + ALLOC_STACK_SIZE)
+#else
+	ldr   r0, =(_start - HEAP_SIZE)
+#endif
+
 	msr   cpsr, #(ARM_MODE_UND | ARM_INT_MASK)
 	mov   sp, r0
 	sub   r0, r0, #UND_STACK_SIZE
@@ -47,30 +47,16 @@ handle_reset:
 
 	msr   cpsr, #(ARM_MODE_SVC | ARM_INT_MASK)
 	mov   sp, r0
-#else
-	msr   cpsr, #(ARM_MODE_UND | ARM_INT_MASK)
-	ldr   sp, =UND_STACK_BASE
 
-	msr   cpsr, #(ARM_MODE_ABT | ARM_INT_MASK)
-	ldr   sp, =ABT_STACK_BASE
+#if 0
+	bl    cpu_init
 
-	msr   cpsr, #(ARM_MODE_IRQ | ARM_INT_MASK)
-	ldr   sp, =IRQ_STACK_BASE
+	bl    soc_init
 
-	msr   cpsr, #(ARM_MODE_FIQ | ARM_INT_MASK)
-	ldr   sp, =FIQ_STACK_BASE
-
-	msr   cpsr, #(ARM_MODE_SVC | ARM_INT_MASK)
-	mov   sp, #SVC_STACK_BASE
+	bl    mem_init
 #endif
-	@
-	@ bl    cpu_init
 
-	@ bl    soc_init
-
-	@ bl    mem_init
-
-	ldr   r0, handle_reset - 4
+	ldr   r0, =_start
 	adr   r1, _start
 	cmp   r0, r1
 	beq   skip_move
@@ -92,11 +78,13 @@ handle_reset:
 skip_move:
 	@ fixme for ROM
 	mov   r0, #0
-	ldr   r1, handle_reset - 4
+	ldr   r1, =_start
 	cmp   r1, r0
 	beq   bss_init
+#ifdef CONFIG_IRQ_SUPPORT
 	mov   r2, #(handle_reset - _start)
 	bl    memcpy
+#endif
 
 bss_init:
 	ldr   r0, =bss_begin
@@ -108,6 +96,8 @@ bss_init:
 	blo   0b
 
 	mov   fp, #0
+	bl    heap_init
+
 	bl    main
 0:
 	b     0b

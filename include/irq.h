@@ -12,13 +12,11 @@
 #define IRQ_TYPE_HIGH         0x00000004
 #define IRQ_TYPE_LOW          0x00000008
 
-
 struct int_pin;
 struct irq_dev;
 
 typedef	void (*IRQ_PIN_HANDLER)(struct int_pin *, u32);
 typedef int  (*IRQ_DEV_HANDLER)(u32, void *);
-
 
 struct int_ctrl
 {
@@ -29,7 +27,6 @@ struct int_ctrl
 	int	 (*set_trigger)(u32, u32);
 };
 
-
 struct int_pin
 {
 	IRQ_PIN_HANDLER	 irq_handle;
@@ -37,14 +34,12 @@ struct int_pin
 	struct irq_dev	 *dev_list;
 };
 
-
 struct irq_dev
 {
 	void             *device;
 	IRQ_DEV_HANDLER  dev_isr;
 	struct irq_dev   *next;
 };
-
 
 void irq_handle(u32 irq);
 

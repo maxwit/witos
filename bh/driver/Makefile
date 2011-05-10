@@ -1,6 +1,6 @@
 dir-y += uart
 dir-$(CONFIG_SPI) += spi
-dir-y += flash
-dir-y += net
-dir-y += mmc
-dir-$(CONFIG_GPU) += gpu
+dir-$(CONFIG_FLASH) += flash
+dir-$(CONFIG_NET) += net
+dir-$(CONFIG_MMC) += mmc block
+dir-$(CONFIG_GRAPHICS) += graphics

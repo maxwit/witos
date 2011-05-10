@@ -1,7 +1,15 @@
-#include <g-bios.h>
 #include <uart/uart.h>
 
 #define BUF_LEN 10
+
+void putchar(char ch)
+{
+	uart_send_byte(ch);
+	if ('\n' == ch)
+		uart_send_byte('\r');
+	else if ('\r' == ch)
+		uart_send_byte('\n');
+}
 
 static const char *int_to_hex_str(u32 val, char str[])
 {
@@ -23,9 +31,11 @@ static const char *int_to_hex_str(u32 val, char str[])
 		val >>= 4;
 	} while (val);
 
+	if ((p - str) & 0x1)
+		*--p = '0';
+
 	return p;
 }
-
 
 #if ARM_ARCH >= 6
 static const char *int_to_oct_str(u32 val, char str[])
@@ -48,7 +58,6 @@ static const char *int_to_oct_str(u32 val, char str[])
 	return p;
 }
 #endif
-
 
 // fixme
 int printf(const char *fmt, ...)

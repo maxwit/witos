@@ -3,7 +3,9 @@
 #include <uart/uart.h>
 #include <uart/kermit.h>
 #include <flash/part.h>
-
+#ifdef CONFIG_DEBUG
+#include <stdio.h>
+#endif
 
 #define MARK_START  0x1
 #define MARK_EXIT   0x3
@@ -12,6 +14,7 @@
 #define KERM_TYPE_SEND  'S'
 #define KERM_TYPE_ACK   'Y'
 #define KERM_TYPE_NACK  'N'
+#define KERM_TYPE_HEAD  'F'
 #define KERM_TYPE_BREAK 'B'
 
 #define KERM_KEY_SPACE   0x20
@@ -24,8 +27,7 @@
 #define ENC_PRINT(c) (c + KERM_KEY_SPACE)
 #define DEC_PRINT(c) (c - KERM_KEY_SPACE)
 
-
-static void send_ack_packet(u32 seq)
+static void send_ack_packet(u32 seq, char type)
 {
 	u8 buff[KERM_ACK_LEN];
 	int index = 0, check_sum = 0;
@@ -33,7 +35,7 @@ static void send_ack_packet(u32 seq)
 	buff[index++] = MARK_START;
 	buff[index++] = ENC_PRINT(3);
 	buff[index++] = seq + KERM_KEY_SPACE;
-	buff[index++] = KERM_TYPE_ACK;
+	buff[index++] = type;
 	buff[index]   = '\0';
 
 	index = 1;
@@ -55,14 +57,14 @@ static void send_ack_packet(u32 seq)
 	}
 }
 
-
 int kermit_load(struct loader_opt *opt)
 {
 	u8 buff[KERM_BUF_LEN];
 	u8 curr_char;
-	int index, count;
-	int check_sum, len, seq, type;
+	int index, count, check_sum, len, seq, real_seq = 0;
+	int type = KERM_TYPE_BREAK; // fixme
 	u8 *curr_addr = (u8 *)opt->load_addr;
+	int i;
 
 #ifndef CONFIG_GTH
 	if (!opt->load_addr)
@@ -102,6 +104,14 @@ int kermit_load(struct loader_opt *opt)
 		check_sum += seq;
 		seq -= KERM_KEY_SPACE;
 
+		if (seq != real_seq)
+		{
+			send_ack_packet(real_seq, KERM_TYPE_NACK);
+			continue;
+		}
+
+		real_seq = (real_seq + 1) & 63;
+
 		/* get package type */
 		type = buff[index++];
 		check_sum += type;
@@ -109,35 +119,77 @@ int kermit_load(struct loader_opt *opt)
 		if (len) // fixme: handle extended length
 			len -= 2;
 
-		while (len > 1)
+		switch (type)
 		{
-			curr_char = buff[index++];
-			check_sum += curr_char;
-			len--;
-
-			if (type != KERM_TYPE_DATA)
-				continue;
-
-			if (curr_char == KERM_KEY_SHARP) /* '#' */
+		case KERM_TYPE_HEAD:
+			i = 0;
+			while (len > 1)
 			{
 				curr_char = buff[index++];
 				check_sum += curr_char;
 				len--;
 
-				if (0x40 == (curr_char & 0x60))
-					curr_char = curr_char & ~0x40;
-				else if (0x3f == (curr_char & 0x7f))
-					curr_char |= 0x40;
-			}
+				if (curr_char == KERM_KEY_SHARP)
+				{
+					curr_char = buff[index++];
+					check_sum += curr_char;
+					len--;
 
-			// *curr_addr++ = curr_char;
-			curr_addr[count++] = curr_char;
+					if (0x40 == (curr_char & 0x60))
+						curr_char = curr_char & ~0x40;
+					else if (0x3f == (curr_char & 0x7f))
+						curr_char |= 0x40;
+				}
+
+				opt->file_name[i++] = curr_char;
+			}
+			opt->file_name[i] = '\0';
+			break;
+
+		case KERM_TYPE_DATA:
+			while (len > 1)
+			{
+				curr_char = buff[index++];
+				check_sum += curr_char;
+				len--;
+
+				if (curr_char == KERM_KEY_SHARP)
+				{
+					curr_char = buff[index++];
+					check_sum += curr_char;
+					len--;
+
+					if (0x40 == (curr_char & 0x60))
+						curr_char = curr_char & ~0x40;
+					else if (0x3f == (curr_char & 0x7f))
+						curr_char |= 0x40;
+				}
+
+				curr_addr[count++] = curr_char;
+			}
+			break;
+
+		default:
+			while (len > 1)
+			{
+				curr_char = buff[index++];
+				check_sum += curr_char;
+				len--;
+			}
+			break;
 		}
 
 		/* checksum */
 		curr_char = buff[index++];
 		if (curr_char != (KERM_KEY_SPACE + (0x3f & (check_sum + (0x03 & (check_sum >> 6))))))
-			goto Error;
+		{
+#ifdef CONFIG_DEBUG
+			// while (1)
+				printf("Checksum error!\n");
+#endif
+			send_ack_packet(real_seq, KERM_TYPE_NACK);
+			continue;
+		}
 
 		/* terminator */
 		curr_char = buff[index++];
@@ -156,8 +208,8 @@ int kermit_load(struct loader_opt *opt)
 		opt->load_size += count;
 
 		/* send ack package */
-		send_ack_packet(seq);
-	}while (type != KERM_TYPE_BREAK);
+		send_ack_packet(seq, KERM_TYPE_ACK);
+	} while (type != KERM_TYPE_BREAK);
 
 	return opt->load_size;
 
@@ -166,4 +218,3 @@ Error:
 }
 
 REGISTER_LOADER(k, kermit_load, "Kermit");
-

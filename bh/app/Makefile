@@ -1,8 +1,10 @@
 dir-y += sysconf
-dir-y += flash
+dir-$(CONFIG_FLASH) += flash
 dir-y += memory
-dir-y += net
+dir-$(CONFIG_NET) += net
 dir-y += serial
 dir-y += boot
 dir-y += shell
 dir-y += misc
+dir-$(CONFIG_MMC) += mmc
+dir-$(CONFIG_GRAPHICS) += display

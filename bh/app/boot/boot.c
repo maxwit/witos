@@ -1,17 +1,18 @@
-#include <g-bios.h>
 #include <sysconf.h>
-#include <fs.h>
+#include <getopt.h>
+#include <image.h>
 #include <net/tftp.h>
 #include <uart/uart.h>
 #include <flash/part.h>
 #include "atag.h"
 
-#define LINUX_IMAGE_NAME "zImage"
+#define LINUX_IMAGE_NAME     "zImage"
 #define CONFIG_RAM_BANK_NUM  1 // fixme!
+#define UIMAGE_HEAD_SIZE     64
 
 typedef void (*LINUX_KERNEL_ENTRY)(int, int, u32);
 
-static char app_option[][CMD_OPTION_LEN] = {"t", "r", "f", "n", "m", "c", "v", "l", "0"};
+//static char app_option[][CMD_OPTION_LEN] = {"t", "r", "f", "n", "m", "c", "v", "l", "0"};
 
 static struct tag *begin_setup_atag (void *tag_base)
 {
@@ -44,7 +45,6 @@ static struct tag *setup_cmdline_atag(struct tag *cur_tag, char *cmd_line)
 	return cur_tag;
 }
 
-
 // fixme
 static struct tag *setup_mem_atag (struct tag *cur_tag)
 {
@@ -64,7 +64,6 @@ static struct tag *setup_mem_atag (struct tag *cur_tag)
 	return cur_tag;
 }
 
-
 #if 0
 static struct tag *setup_ramdisk_atag(struct tag *cur_tag, struct image_cache *rd_cache)
 {
@@ -80,19 +79,17 @@ static struct tag *setup_ramdisk_atag(struct tag *cur_tag, struct image_cache *r
 }
 #endif
 
-
-static struct tag *setup_initrd_atag(struct tag *cur_tag, struct image_cache *initrd_cache)
+static struct tag *setup_initrd_atag(struct tag *cur_tag, void *image_buff, u32 image_size)
 {
 	cur_tag = tag_next(cur_tag);
 
 	cur_tag->hdr.tag  = ATAG_INITRD2;
 	cur_tag->hdr.size = tag_size(tag_initrd);
-	cur_tag->u.initrd.start = (u32)initrd_cache->cache_base;
-	cur_tag->u.initrd.size  = initrd_cache->cache_size;
+	cur_tag->u.initrd.start = (u32)image_buff;
+	cur_tag->u.initrd.size  = image_size;
 
 	return cur_tag;
 }
-
 
 static void end_setup_atag (struct tag *cur_tag)
 {
@@ -122,40 +119,33 @@ static int boot_usage(void)
 	return 0;
 }
 
-
-static int part_load_image(PART_TYPE type, struct image_cache **ppImgCache)
+static int part_load_image(PART_TYPE type, u8 **buff_ptr, u32 *buff_len)
 {
 	int  index;
 	u32  offset;
 	int  part_num;
-	int  errno = 0;
-	char err_msg[64];
+	int  ret;
 	char image_name[MAX_FILE_NAME_LEN];
-	u32  image_size;
+	u32  image_size, part_size;
 	struct part_attr   attr_tab[MAX_FLASH_PARTS];
 	struct flash_chip  *flash;
 	struct partition   *part;
-	struct image_cache *img_cache;
-
+	u8 *buff;
 
 	printf("Loading %s image from flash ... ",
 		type == PT_OS_LINUX ? "kernel" : "ramdisk");
 
-	img_cache = image_cache_get(type);
-	BUG_ON (NULL == img_cache || NULL == img_cache->cache_base);
-
 	flash = flash_open(BOOT_FLASH_ID);
 	if (!flash)
 	{
-		strcpy(err_msg, "cannot open flash");
-		errno = -ENODEV;
+		ret = -ENODEV;
 		goto L0;
 	}
 
 	part_num = part_tab_read(flash, attr_tab, MAX_FLASH_PARTS);
 	if (part_num < 0)
 	{
-		strcpy(err_msg, "cannot read partition table");
+		ret = -EIO;
 		goto L1;
 	}
 
@@ -163,87 +153,79 @@ static int part_load_image(PART_TYPE type, struct image_cache **ppImgCache)
 
 	if (index == part_num)
 	{
-		strcpy(err_msg, "cannot find the partition");
-		errno = -1;
+		ret = -1;
 		goto L1;
 	}
 
 	part = part_open(index, OP_RDONLY);
 	if (NULL == part)
 	{
-		strcpy(err_msg, "cannot open partition");
-		errno = -1;
+		ret = -1;
 		goto L1;
-	}
-
-	errno = part_get_image(part, image_name, &image_size);
-#if 0
-	if (errno < 0)
-	{
-		strcpy(err_msg, "no image, pls download it first");
-		errno = -ENOENT;
-		goto L2;
-	}
-#endif
-
-	// fixme
-	if (image_size <= 0 || image_size >= part_get_size(part))
-	{
-		printf("warning: image size invalid(%d/0x%08x), setting to partition size(%d/0x%08x)!\n",
-			image_size, image_size, part_get_size(part), part_get_size(part));
-
-		image_size = part_get_size(part);
 	}
 
 	offset = part_get_base(part);
 
-	errno = flash_read(flash, img_cache->cache_base, offset, image_size);
-	if (errno < 0)
+	ret = part_get_image(part, image_name, &image_size);
+
+	// to be optimized
+	if (ret < 0 || image_size <= 0 || image_size >= part_get_size(part))
 	{
-		strcpy(err_msg, "flash read failed");
+		// if (ret < 0) {}
+
+		part_size = part_get_size(part);
+
+		printf("%s(): Image seems invalid, still try to load.\n"
+			"Current image size = %d/0x%08x, adjusting to partition size (%d/0x%08x)!\n",
+			__func__, image_size, image_size, part_size, part_size);
+
+		image_size = part_size;
+	}
+
+	buff = malloc(image_size);
+	if (!buff)
+	{
+		ret = -ENOMEM;
 		goto L2;
 	}
 
-	img_cache->cache_size = image_size;
+	ret = flash_read(flash, buff, offset, image_size);
+	if (ret < 0)
+	{
+		ret = -EIO;
+		goto L2;
+	}
 
-	*ppImgCache = img_cache;
+	*buff_ptr = buff;
+	*buff_len = image_size;
 
 L2:
 	part_close(part);
 L1:
 	flash_close(flash);
 L0:
-	if (errno >= 0)
-	{
-		puts("OK.");
-	}
-	else
-	{
-		printf("failed! (%s)\n", err_msg);
-	}
 
-	return errno;
+	return ret;
 }
 
-
-static int tftp_load_image(PART_TYPE type, char image_name[], struct image_cache **ppImgCache)
+static int tftp_load_image(PART_TYPE type, char image_name[], u8 **buff_ptr, u32 *buff_len)
 {
 	int ret;
 	struct tftp_opt dlopt;
-	struct image_cache *img_cache;
-
 
 	printf("Downloading %s image via tftp:\n",
 		type == PT_OS_LINUX ? "linux" : "ramdisk");
-
-	img_cache = image_cache_get(type);
-	BUG_ON (NULL == img_cache || NULL == img_cache->cache_base);
 
 	memset(&dlopt, 0x0, sizeof(dlopt));
 
 	net_get_server_ip(&dlopt.server_ip);
 	strcpy(dlopt.file_name, image_name);
-	dlopt.load_addr = img_cache->cache_base;
+	dlopt.load_addr = malloc(MB(3)); //fixme!!!
+	if (!dlopt.load_addr)
+	{
+		printf("%s(): fail to malloc buffer!\n", __func__);
+		return -ENOMEM;
+	}
 
 	ret = net_tftp_load(&dlopt);
 	if (ret < 0)
@@ -252,40 +234,45 @@ static int tftp_load_image(PART_TYPE type, char image_name[], struct image_cache
 		goto L1;
 	}
 
-	img_cache->cache_size = ret;
-
-	*ppImgCache = img_cache;
-
+	*buff_ptr = dlopt.load_addr;
+	*buff_len = ret;
 L1:
 	return ret;
 }
-
 
 // fixme: for debug stage while no flash driver available
 static int build_command_line(char *cmd_line, size_t max_len)
 {
 	int ret = 0;
 	char *str = cmd_line;
-	struct part_info    *part_conf;
+	struct image_info   *image_conf;
 	struct net_config   *net_conf;
 	struct linux_config *linux_conf;
 	struct flash_chip       *flash;
 	char local_ip[IPV4_STR_LEN], server_ip[IPV4_STR_LEN], net_mask[IPV4_STR_LEN];
-	char mtd_dev[MTD_DEV_NAME_LEN];
-	char part_list[512];
+	const char *mtd_dev;
+	char part_list[512], *part_str = part_list;
 	int part_num;
 	int mtd_root = 0, root_idx;
 	struct part_attr attr_tab[MAX_FLASH_PARTS];
+	u32 part_idx;
+#ifdef CONFIG_MERGE_GB_PARTS
+	u32 gb_base, gb_size;
+#endif
+	u32 client_ip, client_mask; // fixme
 
 	memset(cmd_line, 0, max_len);
 
-	sysconf_get_part_info(&part_conf);
-	sysconf_get_net_info(&net_conf);
-	sysconf_get_linux_param(&linux_conf);
+	image_conf = sysconf_get_image_info();
+	net_conf = sysconf_get_net_info();
+	linux_conf = sysconf_get_linux_param();
 
-	ip_to_str(local_ip, net_conf->local_ip);
+	ndev_ioctl(NULL, NIOC_GET_IP, &client_ip);
+	ndev_ioctl(NULL, NIOC_GET_MASK, &client_mask);
+
+	ip_to_str(local_ip, client_ip);
 	ip_to_str(server_ip, net_conf->server_ip);
-	ip_to_str(net_mask, net_conf->net_mask);
+	ip_to_str(net_mask, client_mask);
 
 	root_idx = linux_conf->root_dev;
 
@@ -297,87 +284,81 @@ static int build_command_line(char *cmd_line, size_t max_len)
 		goto L1;
 	}
 
-	ret = flash_get_mtd_name(flash, mtd_dev, sizeof(mtd_dev));
-	if (ret < 0)
+	mtd_dev = flash_get_mtd_name(flash);
+	if (mtd_dev == NULL)
 	{
 		printf("fail to get mtd name!\n");
 		goto L2;
 	}
 
-	// MARK_MAXWIT_TRAINING: C Basics {
+	// MARK_MAXWIT_TRAINING {
 	part_num = part_tab_read(flash, attr_tab, MAX_FLASH_PARTS);
-
 	if (part_num < 0)
 	{
 		printf("fail to read part table! (ret = %d)\n", part_num);
 		ret = part_num;
 		goto L2;
 	}
-	else if (mtd_dev[0] != '\0' && part_num > 0)
+
+	part_str += sprintf(part_str, "mtdparts=%s:", mtd_dev);
+
+	for (part_idx = 0; part_idx < part_num; part_idx++)
 	{
-		u32 part_idx;
-		char *part_str = part_list;
+		struct part_attr *attr = attr_tab + part_idx;
 
-		part_str += sprintf(part_str, "mtdparts=%s:", mtd_dev);
-
-		for (part_idx = 0; part_idx < part_num; part_idx++)
+		switch (attr->part_type)
 		{
-			struct part_attr *attr = attr_tab + part_idx;
-
-			switch (attr->part_type)
-			{
-			default:
+		default:
 #ifdef CONFIG_FS_PARTS_ONLY
-				break;
+			break;
 #elif defined(CONFIG_MERGE_GB_PARTS)
-			case PT_BL_GTH:
+		case PT_BL_GTH:
+			gb_base = attr->part_base;
+			gb_size += attr->part_size;
+			break;
+
+		case PT_BL_GBH:
+			if (gb_base > attr->part_base)
+			{
 				gb_base = attr->part_base;
-				gb_size += attr->part_size;
-				break;
+			}
+			gb_size += attr->part_size;
+			break;
 
-			case PT_BL_GBH:
-				if (gb_base > attr->part_base)
-				{
-					gb_base = attr->part_base;
-				}
-				gb_size += attr->part_size;
-				break;
+		case PT_BL_GCONF: // must be defined and the the last GB partition
+			if (gb_base > attr->part_base)
+			{
+				gb_base = attr->part_base;
+			}
+			gb_size += attr->part_size;
 
-			case PT_BL_GB_CONF: // must be defined and the the last GB partition
-				if (gb_base > attr->part_base)
-				{
-					gb_base = attr->part_base;
-				}
-				gb_size += attr->part_size;
+			part_str += sprintf(part_str, "0x%x@0x%x(g-bios),", gb_size, gb_base);
+			mtd_root++;
 
-				part_str += sprintf(part_str, "0x%x@0x%x(g-bios),", gb_size, gb_base);
-				mtd_root++;
-
-				break;
+			break;
 #endif
 
-			case PT_FS_JFFS2:
-			case PT_FS_YAFFS:
-			case PT_FS_YAFFS2:
-			case PT_FS_CRAMFS:
-			case PT_FS_UBIFS:
-				part_str += sprintf(part_str, "0x%x@0x%x(%s),",
-								attr->part_size,
-								attr->part_base,
-								attr->part_name);
+		case PT_FS_JFFS2:
+		case PT_FS_YAFFS:
+		case PT_FS_YAFFS2:
+		case PT_FS_CRAMFS:
+		case PT_FS_UBIFS:
+			part_str += sprintf(part_str, "0x%x@0x%x(%s),",
+							attr->part_size,
+							attr->part_base,
+							attr->part_name);
 
-				if (part_idx < root_idx)
-					mtd_root++;
+			if (part_idx < root_idx)
+				mtd_root++;
 
-				break;
+			break;
 
-			case PT_BAD:
-				break;
-			}
+		case PT_BAD:
+			break;
 		}
-
-		*--part_str = '\0';
 	}
+
+	*--part_str = '\0';
 	// } MARK_MAXWIT_TRAINING
 
 	BUG_ON(root_idx >= part_num);
@@ -385,21 +366,20 @@ static int build_command_line(char *cmd_line, size_t max_len)
 	if (linux_conf->boot_mode & BM_NFS)
 	{
 		str += sprintf(str, "root=/dev/nfs rw nfsroot=%s:%s",
-					server_ip,
-					linux_conf->nfs_path);
+					server_ip, linux_conf->nfs_path);
 	}
 	else if (linux_conf->boot_mode & BM_FLASHDISK)
 	{
-		int nRootType = attr_tab[root_idx].part_type;
+		int root_type = attr_tab[root_idx].part_type;
 
-		switch (nRootType)
+		switch (root_type)
 		{
 		case PT_FS_CRAMFS:
 		case PT_FS_JFFS2:
 		case PT_FS_YAFFS:
 		case PT_FS_YAFFS2:
 			str += sprintf(str, "root=/dev/mtdblock%d rw rootfstype=%s", // fixme
-						mtd_root, part_type2str(nRootType));
+						mtd_root, part_type2str(root_type));
 			break;
 		case PT_FS_UBIFS:
 			str += sprintf(str, "ubi.mtd=%d root=ubi0_0 rootfstype=ubifs", root_idx);
@@ -436,7 +416,6 @@ static int show_boot_args(void *tag_base)
 	int i;
 	struct tag *arm_tag = tag_base;
 
-
 	if (arm_tag->hdr.tag != ATAG_CORE)
 	{
 		printf("Invalid ATAG pointer (0x%08x)!\n", arm_tag);
@@ -444,7 +423,6 @@ static int show_boot_args(void *tag_base)
 	}
 
 	i = 0;
-	printf("\n");
 
 	while (1)
 	{
@@ -487,126 +465,109 @@ static int show_boot_args(void *tag_base)
 	return 0;
 }
 
-
+// fixme!!
 int main(int argc, char *argv[])
 {
-	int  i, ret = 0;
+	int  ret = 0, rebuild = 0;
 	u32  dev_num;
 	char cmd_line[DEFAULT_KCMDLINE_LEN];
 	BOOL show_args = FALSE;
-	struct image_cache *pImgKernel, *rd_cache;
+	u8 *kernel_image, *ramdisk_image;
+	u32 image_size;
 	struct linux_config *linux_conf;
 	struct net_config   *net_conf;
 	struct tag *arm_tag;
-	LINUX_KERNEL_ENTRY exec_linux;
+	LINUX_KERNEL_ENTRY exec_linux = NULL;
+	char *arg, *p;
+	signed char opt;
 
-	sysconf_get_linux_param(&linux_conf);
-	sysconf_get_net_info(&net_conf);
+	linux_conf = sysconf_get_linux_param();
+	net_conf = sysconf_get_net_info();
 
-	// fixme
-	for (i = 1; i < argc; i++)
+	while ((opt = getopt(argc, argv, "t::r::f::n::m:c:vl:h", &arg)) != -1)
 	{
-		char *arg = argv[i];
-
-		if ('-' != arg[0] || strlen(arg) != 2)
-		{
-			boot_usage();
-			return -EINVAL;
-		}
-
-		switch (arg[1])
+		switch (opt)
 		{
 		case 't':
-			if (i + 1 == argc || '-' == argv[i + 1][0])
+			if (arg == NULL)
 			{
 				linux_conf->kernel_image[0] = '\0';
-				break;
 			}
-
-			strcpy(linux_conf->kernel_image, argv[++i]);
+			else
+			{
+				strcpy(linux_conf->kernel_image, arg);
+			}
 
 			break;
 
 		case 'r':
 			linux_conf->boot_mode = BM_RAMDISK;
 
-			if (i + 1 == argc || '-' == argv[i + 1][0])
+			if (arg == NULL)
 			{
 				linux_conf->ramdisk_image[0] = '\0';
-				break;
 			}
-
-			strcpy(linux_conf->ramdisk_image, argv[++i]);
+			else
+			{
+				strcpy(linux_conf->ramdisk_image, arg);
+			}
 
 			break;
 
 		case 'f':
 			linux_conf->boot_mode = BM_FLASHDISK;
 
-			if (i + 1 == argc || '-' == argv[i + 1][0])
+			if (arg == NULL)
 				break;
 
-			if (string2value(argv[++i], &dev_num) < 0)
+			if (string2value(arg, &dev_num) < 0)
 			{
-				printf("Invalid partition number (%s)!\n", argv[i]);
-				break;
+				printf("Invalid partition number (%s)!\n", arg);
 			}
-
-			// fixme: if num > nParts
-			linux_conf->root_dev = dev_num;
+			else
+			{
+				// fixme: if num > nParts
+				linux_conf->root_dev = dev_num;
+			}
 
 			break;
 
 		case 'n':
 			linux_conf->boot_mode = BM_NFS;
 
-			if (i + 1 == argc || '-' == argv[i + 1][0])
+			if (arg == NULL)
 				break;
 
-			arg = argv[++i];
+			p = arg;
 
-			while (*arg && *arg != ':' && *arg != '/') arg++;
+			while (*p && *p != ':' && *p != '/') p++;
 
-			switch (*arg)
+			switch (*p)
 			{
 			case ':':
-				*arg = '\0';
-				strcpy(linux_conf->nfs_path, arg + 1);
+				*p = '\0';
+				strcpy(linux_conf->nfs_path, p + 1);
 
 			case '\0':
-				if (str_to_ip((u8 *)&net_conf->server_ip, argv[i]) < 0)
-					printf("wrong ip format! (%s)\n", argv[i]);
+				if (str_to_ip((u8 *)&net_conf->server_ip, arg) < 0)
+					printf("wrong ip format! (%s)\n", arg);
 
 				break;
 
 			default:
-				strcpy(linux_conf->nfs_path, argv[i]);
+				strcpy(linux_conf->nfs_path, arg);
 				break;
 			}
 
 			break;
 
 		case 'm':
-			if (i + 1 == argc || '-' == argv[i + 1][0])
-			{
-				printf("Invalid option: %s, current MachID = %u\n", argv[i], linux_conf->mach_id);
-				boot_usage();
-				return -ENAVAIL;
-			}
-
-			string2value(argv[++i], (u32 *)&linux_conf->mach_id);
+			string2value(arg, (u32 *)&linux_conf->mach_id);
 
 			break;
 
 		case 'c':
-			if (i + 1 == argc || '-' == argv[i + 1][0])
-			{
-				printf("Invalid option: %s", argv[i]);
-				boot_usage();
-				return -EINVAL;
-			}
-
-			strcpy(linux_conf->console_device, argv[++i]);
+			strcpy(linux_conf->console_device, arg);
 
 			break;
 
@@ -615,59 +576,35 @@ int main(int argc, char *argv[])
 			break;
 
 		case 'l':
-			if (i + 1 == argc)
+			if (!strcmp(arg, "auto"))
 			{
-				//fix me:need to check kernel command line.
-				if (linux_conf->cmd_line[0] != 'r')
-				{
-					printf("Invalid kernel command line!\n");
-					return -EINVAL;
-				}
+				rebuild = 1;
 			}
 			else
 			{
-				strcpy(linux_conf->cmd_line, argv[++i]);
-
-				for (i++; i < argc; i++)
-				{
-					strcat(linux_conf->cmd_line, " ");
-					strcat(linux_conf->cmd_line, argv[i]);
-				}
+				strncpy(linux_conf->cmd_line, arg, DEFAULT_KCMDLINE_LEN);
 			}
 
-			linux_conf->boot_mode = BM_CMDLINE;
 			break;
 
+		default:
+			ret = -EINVAL;
+			printf("Invalid option: \"%c: %s\"!\n", opt, arg);
 		case 'h':
 			boot_usage();
-			return 0;
-
-		default:
-			printf("Invalid option: \"%s\"!\n", arg);
-			boot_usage();
-			return -EINVAL;
+			return ret;
 		}
 	}
+
+	if (rebuild)
+		build_command_line(linux_conf->cmd_line, DEFAULT_KCMDLINE_LEN);
+
+	strncpy(cmd_line, linux_conf->cmd_line, DEFAULT_KCMDLINE_LEN);
 
 	if (argc > 2 || (2 == argc && FALSE == show_args))
 	{
 		sysconf_save();
 	}
-
-	if(!(linux_conf->boot_mode & BM_CMDLINE))
-	{
-		ret = build_command_line(cmd_line, sizeof(cmd_line));
-		if (ret < 0)
-		{
-			printf("Warning: fail to setup linux command line!\n\"%s\"\n", cmd_line);
-			// anyway, we'd go ahead :)
-		}
-	}
-	else
-	{
-		strncpy(cmd_line, linux_conf->cmd_line, DEFAULT_KCMDLINE_LEN);
-	}
-
 
 	BUG_ON ((linux_conf->boot_mode & ~BM_MASK) == 0);
 
@@ -675,24 +612,29 @@ int main(int argc, char *argv[])
 	{
 		if (linux_conf->kernel_image[0] != '\0') // fixme for error return (i.e. permission denied)
 		{
-			ret = tftp_load_image(PT_OS_LINUX, linux_conf->kernel_image, &pImgKernel);
+			ret = tftp_load_image(PT_OS_LINUX, linux_conf->kernel_image, &kernel_image, &image_size);
 		}
 		else
 		{
-			ret = part_load_image(PT_OS_LINUX, &pImgKernel);
+			ret = part_load_image(PT_OS_LINUX, &kernel_image, &image_size);
 		}
+
+		if (ret < 0)
+		{
+			goto L1;
+		}
+
+		printf("\n");
+
+		exec_linux = (LINUX_KERNEL_ENTRY)kernel_image;
+
+		if (check_image_type(PT_OS_LINUX, kernel_image + UIMAGE_HEAD_SIZE))
+			exec_linux = (LINUX_KERNEL_ENTRY)(kernel_image + UIMAGE_HEAD_SIZE);
+		else if (!check_image_type(PT_OS_LINUX, kernel_image))
+			printf("Warning: no Linux kernel image found!\n");
+
+		DPRINT("kernel is loaded @ 0x%08x\n", exec_linux);
 	}
-
-	// TODO: check the kernel image
-
-	if (ret < 0)
-	{
-		goto L1;
-	}
-
-	exec_linux = (LINUX_KERNEL_ENTRY)pImgKernel->cache_base;
-
-	printf("\n");
 
 	arm_tag = begin_setup_atag((void *)ATAG_BASE);
 	arm_tag = setup_cmdline_atag(arm_tag, cmd_line);
@@ -703,11 +645,11 @@ int main(int argc, char *argv[])
 		{
 			if (linux_conf->ramdisk_image[0] != '\0')
 			{
-				ret = tftp_load_image(PT_FS_RAMDISK, linux_conf->ramdisk_image, &rd_cache);
+				ret = tftp_load_image(PT_FS_RAMDISK, linux_conf->ramdisk_image, &ramdisk_image, &image_size);
 			}
 			else
 			{
-				ret = part_load_image(PT_FS_RAMDISK, &rd_cache);
+				ret = part_load_image(PT_FS_RAMDISK, &ramdisk_image, &image_size);
 			}
 
 			if (ret < 0)
@@ -718,7 +660,7 @@ int main(int argc, char *argv[])
 
 		// TODO: check the ramdisk
 
-		arm_tag = setup_initrd_atag(arm_tag, rd_cache);
+		arm_tag = setup_initrd_atag(arm_tag, ramdisk_image, image_size);
 	}
 
 	arm_tag = setup_mem_atag(arm_tag);
@@ -727,11 +669,13 @@ int main(int argc, char *argv[])
 
 	if (show_args)
 	{
+		printf("\nMachine ID = %d (0x%x)\n", linux_conf->mach_id, linux_conf->mach_id);
 		show_boot_args((void *)ATAG_BASE);
 		return 0;
 	}
 
-	irq_disable(); // fixme
+	// fixme
+	irq_disable();
 
 	exec_linux(0, linux_conf->mach_id, ATAG_BASE);
 
@@ -740,7 +684,6 @@ L1:
 
 	return ret;
 }
-
 
 void __INIT__ auto_boot_linux(void)
 {
@@ -776,4 +719,3 @@ void __INIT__ auto_boot_linux(void)
 
 	main(1, argv); // fixme
 }
-

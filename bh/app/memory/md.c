@@ -1,7 +1,6 @@
-#include <g-bios.h>
 #include <getopt.h>
 
-static char app_option[][CMD_OPTION_LEN] = {"a", "n", "h", "0"};
+//static char app_option[][CMD_OPTION_LEN] = {"a", "n", "h", "0"};
 
 #define MD_USAGE 			"Usage md [-a <ram address>] [-n <number>] [-h]"
 #define MEMZERO_USAGE		"Usage memzero [ram address] [number]. Carefully use it!!!"

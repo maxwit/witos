@@ -60,11 +60,9 @@ int nand_load(struct nand_chip *);
 #define SOFT_ECC_DATA_LEN  256
 #define SOFT_ECC_CODE_NUM  3
 
-
 #define NAND_MAX_CHIPS        8
 #define NAND_MAX_OOB_SIZE    64
 #define NAND_MAX_PAGESIZE    2048
-
 
 #define NAND_NCE        0x01
 #define NAND_CLE        0x02
@@ -74,18 +72,15 @@ int nand_load(struct nand_chip *);
 #define NAND_CTRL_ALE        (NAND_NCE | NAND_ALE)
 #define NAND_CTRL_CHANGE    0x80
 
-
 #define NAND_STATUS_FAIL        0x01
 #define NAND_STATUS_FAIL_N1     0x02
 #define NAND_STATUS_TRUE_READY  0x20
 #define NAND_STATUS_READY       0x40
 #define NAND_STATUS_WP          0x80
 
-
 #define NAND_ECC_READ        0
 #define NAND_ECC_WRITE        1
 #define NAND_ECC_READSYN    2
-
 
 #define NAND_NO_AUTOINCR    0x00000001
 #define NAND_BUSWIDTH_16    0x00000002
@@ -111,7 +106,6 @@ int nand_load(struct nand_chip *);
 #define NAND_SKIP_BBTSCAN    0x00020000
 #define NAND_OWN_BUFFERS    0x00040000
 
-
 typedef enum
 {
 	FL_READY,
@@ -123,14 +117,12 @@ typedef enum
 	FL_PM_SUSPENDED,
 } NAND_STATE;
 
-
 struct nand_buffer
 {
 	u8 ecccalc[NAND_MAX_OOB_SIZE];
 	u8 ecccode[NAND_MAX_OOB_SIZE];
 	u8 data_buff[NAND_MAX_PAGESIZE + NAND_MAX_OOB_SIZE];
 };
-
 
 struct nand_chip;
 struct nand_ctrl;
@@ -147,7 +139,6 @@ struct nand_bad_blk
 	u8  version[NAND_MAX_CHIPS];
 	u8 *pattern;
 };
-
 
 struct nand_chip
 {
@@ -180,11 +171,10 @@ struct nand_chip
 	struct nand_bad_blk    *bad_blk_patt;
 
 	u32  bus_idx;
-	char name[MTD_DEV_NAME_LEN];
+	const char *name; // [MTD_DEV_NAME_LEN];
 
 	struct list_node nand_node;
 };
-
 
 struct nand_ctrl
 {
@@ -235,11 +225,10 @@ struct nand_ctrl
 	int   (*ecc_generate)(struct nand_chip *nand, const u8 *data, u8 *ecc);
 	int   (*ecc_correct)(struct nand_chip *nand, u8 *data, u8 *ecc_read, u8 *ecc_calc);
 
-	char  name[MTD_DEV_NAME_LEN]; // fixme
+	const char *name;
 
 	struct list_node nand_list;
 };
-
 
 #define NAND_MFR_TOSHIBA    0x98
 #define NAND_MFR_SAMSUNG    0xec
@@ -251,7 +240,6 @@ struct nand_ctrl
 #define NAND_MFR_MICRON        0x2c
 #define NAND_MFR_AMD        0x01
 
-
 struct nand_device_desc
 {
 	const char *name;
@@ -262,13 +250,11 @@ struct nand_device_desc
 	u32 flags;
 };
 
-
 struct nand_vendor_name
 {
 	int  id;
 	const char *name;
 };
-
 
 #define NAND_BBT_NRBITS_MSK    0x0000000F
 #define NAND_BBT_1BIT        0x00000001
@@ -295,12 +281,10 @@ int nand_update_bbt(struct nand_chip *nand, u32 offs);
 int nand_is_bad_bbt(struct nand_chip *nand, u32 offs);
 int nand_erase(struct nand_chip *nand, struct erase_opt *opt);
 
-
 #define NAND_BBP_LARGE        0
 #define NAND_BBP_SMALL        5
 
-
-#define FLASH_TO_NAND(flash)  OFF2BASE(flash, struct nand_chip, parent)
+#define FLASH_TO_NAND(flash)  container_of(flash, struct nand_chip, parent)
 #define NAND_TO_FLASH(nand)   (&nand->parent)
 
 ECC_MODE nand_set_ecc_mode(struct nand_ctrl *nfc, ECC_MODE new_mode);
@@ -309,9 +293,7 @@ int nand_calculate_ecc(struct nand_chip *nand, const u8 *data, u8 *ecc);
 
 int nand_correct_data(struct nand_chip *nand, u8 *dat, u8 *read_ecc, u8 *calc_ecc);
 
-
 #define PAGE_SIZE_AUTODETECT 0
-
 
 int nand_ctrl_register(struct nand_ctrl *);
 

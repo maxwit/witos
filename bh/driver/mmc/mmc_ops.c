@@ -1,10 +1,9 @@
-#include <g-bios.h>
 #include <mmc/mmc.h>
-#include "mmc_ops.h"
+#include <mmc/mmc_ops.h>
 
 int mmc_go_idle(struct mmc_host *host)
 {
-	
+
 	struct mmc_command cmd;
 	int ret = 0;
 
@@ -23,7 +22,7 @@ int mmc_all_send_cid(struct mmc_host *host, u32 *cid)
 {
 	struct mmc_command cmd;
 	int ret = 0;
-	
+
 	memset(&cmd, 0, sizeof(struct mmc_command));
 
 	cmd.index = MMC_ALL_SEND_CID;
@@ -49,7 +48,7 @@ int mmc_set_relative_addr(struct mmc_host *host)
 
 	ret = host->send_cmd(host, cmd.index, cmd.arg, cmd.resp);
 
-	host->info.rca = host->resp[0] >> 16;
+	host->card.rca = host->resp[0] >> 16;
 
 	return ret;
 }
@@ -62,7 +61,7 @@ int mmc_select_card(struct mmc_host *host)
 	memset(&cmd, 0, sizeof(struct mmc_command));
 
 	cmd.index = MMC_SELECT_CARD;
-	cmd.arg = host->info.rca << 16;
+	cmd.arg = host->card.rca << 16;
 	cmd.resp = R1b;
 
 	ret = host->send_cmd(host, cmd.index, cmd.arg, cmd.resp);
@@ -84,9 +83,8 @@ int mmc_send_if_cond(struct mmc_host *host, u32 ocr)
 	ret = host->send_cmd(host, cmd.index, cmd.arg, cmd.resp);
 
 	return ret;
-	
-}
 
+}
 
 static int mmc_app_cmd(struct mmc_host *host)
 {
@@ -98,11 +96,11 @@ static int mmc_app_cmd(struct mmc_host *host)
 	memset(&cmd, 0, sizeof(struct mmc_command));
 
 	cmd.index= MMC_APP_CMD;
-	cmd.arg = host->info.rca << 16;
+	cmd.arg = host->card.rca << 16;
 	cmd.resp = R1;
 
 	ret = host->send_cmd(host, cmd.index, cmd.arg, cmd.resp);
-	
+
 	return ret;
 }
 
@@ -116,7 +114,6 @@ int mmc_send_app_op_cond(struct mmc_host *host, u32 ocr, u32 *rocr)
 	cmd.index = SD_APP_OP_COND;
 	cmd.arg  = ocr;
 	cmd.resp = R3;
-
 
 	for (i = 0; i < MMC_CMD_RETRIES; i++)
 	{
@@ -141,22 +138,21 @@ int mmc_send_app_op_cond(struct mmc_host *host, u32 ocr, u32 *rocr)
 
 }
 
-
 int mmc_send_csd(struct mmc_host *host, u32 *csd)
 {
 	struct mmc_command cmd;
 	int ret = 0;
-	
+
 	memset(&cmd, 0, sizeof(struct mmc_command));
 
 	cmd.index = MMC_SEND_CSD;
-	cmd.arg = host->info.rca << 16;
+	cmd.arg = host->card.rca << 16;
 	cmd.resp = R2;
 
 	ret = host->send_cmd(host, cmd.index, cmd.arg, cmd.resp);
 
 	memcpy(csd, host->resp, sizeof(u32) * 4);
-	
+
 	return ret;
 }
 
@@ -172,6 +168,25 @@ int mmc_app_set_bus_width(struct mmc_host *host, int width)
 	cmd.resp = R1;
 
 	ret = mmc_app_cmd(host);
+
+	udelay(500);
+
+	ret = host->send_cmd(host, cmd.index, cmd.arg, cmd.resp);
+
+	return ret;
+
+}
+
+int mmc_set_block_len(struct mmc_host *host, int len)
+{
+	int ret = 0;
+	struct mmc_command cmd;
+
+	memset(&cmd, 0, sizeof(struct mmc_command));
+
+	cmd.index = MMC_SET_BLOCKLEN;
+	cmd.arg  = len;
+	cmd.resp = R1;
 
 	udelay(500);
 

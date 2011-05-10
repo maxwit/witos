@@ -2,14 +2,50 @@
 #include <types.h>
 #include <list.h>
 
-
 struct mii_phy;
 
 // fixme
-#define AF_INET     0
 
-#define SOCK_DGRAM  0
-#define SOCK_STREAM 0
+#define	PF_INET		2	/* IP protocol family.  */
+
+#define	AF_INET		PF_INET /*Address family*/
+
+enum __socket_type
+{
+	SOCK_STREAM    = 1,
+	SOCK_DGRAM     = 2,
+	SOCK_RAW       = 3,
+	SOCK_RDM       = 4,
+	SOCK_SEQPACKET = 5,
+	SOCK_DCCP      = 6,
+	SOCK_PACKET    = 10,
+	SOCK_CLOEXEC   = 02000000,
+	SOCK_NONBLOCK  = 04000
+};
+
+/* Bits in the FLAGS argument to `send', `recv', et al.  */
+enum __flags_type
+{
+	MSG_OOB          = 0x01,
+	MSG_PEEK         = 0x02,
+	MSG_DONTROUTE    = 0x04,
+	MSG_TRYHARD      = MSG_DONTROUTE,
+	MSG_CTRUNC       = 0x08,
+	MSG_PROXY        = 0x10,
+	MSG_TRUNC        = 0x20,
+	MSG_DONTWAIT     = 0x40,
+	MSG_EOR          = 0x80,
+	MSG_WAITALL      = 0x100,
+	MSG_FIN          = 0x200,
+	MSG_SYN          = 0x400,
+	MSG_CONFIRM      = 0x800,
+	MSG_RST          = 0x1000,
+	MSG_ERRQUEUE     = 0x2000,
+	MSG_NOSIGNAL     = 0x4000,
+	MSG_MORE         = 0x8000,
+	MSG_WAITFORONE   = 0x10000,
+	MSG_CMSG_CLOEXEC = 0x40000000
+};
 
 #define PROT_ICMP 1
 #define PROT_IGMP 2
@@ -17,15 +53,14 @@ struct mii_phy;
 #define PROT_UDP  17
 #define PROT_OSPF 89
 
-
 #define ETH_TYPE_IP   CPU_TO_BE16(0x0800)
 #define ETH_TYPE_ARP  CPU_TO_BE16(0x0806)
 #define ETH_TYPE_RARP CPU_TO_BE16(0x0835)
 
-
 #define IPV4_STR_LEN    16
 #define IPV4_ADR_LEN    4
 #define MAC_ADR_LEN     6
+#define MAC_STR_LEN	    18
 
 #define ETH_HDR_LEN     14
 #define ARP_PKT_LEN     28
@@ -56,20 +91,8 @@ enum EtherSpeed
 	ETHER_SPEED_1000M_FD,
 };
 
-
 struct socket;
 struct sockaddr;
-
-struct sock_buff
-{
-	u8  *head;
-	u8  *data;
-	u16  size;
-
-	struct list_node node;
-	struct socket *sock;
-};
-
 
 //
 struct ether_header
@@ -111,7 +134,6 @@ struct ip_header
 	u8   des_ip[IPV4_ADR_LEN];
 };
 
-
 //
 #define ICMP_TYPE_ECHO_REPLY     	0
 #define ICMP_TYPE_DEST_UNREACHABLE	3
@@ -143,6 +165,95 @@ struct udp_header
 	u16 udp_len;
 	u16 chksum;
 };
+///////////////////////////////////
+
+typedef u32 socklen_t;
+
+#if 1
+
+typedef unsigned short sa_family_t;
+
+#define __SOCKADDR_COMMON(sa_prefix) \
+	sa_family_t sa_prefix##family
+
+struct sockaddr
+{
+	__SOCKADDR_COMMON(sa);
+	char sa_data[14];
+};
+
+struct in_addr
+{
+	u32 s_addr;
+};
+
+struct sockaddr_in
+{
+	__SOCKADDR_COMMON(sin);
+	unsigned short sin_port;
+	struct in_addr sin_addr;
+
+	unsigned char sin_zero[sizeof(struct sockaddr) -
+				sizeof(unsigned short) -
+				sizeof(unsigned short) -
+				sizeof(struct in_addr)];
+};
+
+struct socket
+{
+	struct list_node tx_qu, rx_qu;
+	struct sockaddr_in addr;
+};
+
+struct eth_addr
+{
+	u8  ip[4];
+	u8  mac[6];
+};
+
+#else
+
+struct sockaddr
+{
+	u8  des_ip[4];
+	u8  des_mac[6];
+
+	u16 des_port;
+	u16 src_port;
+};
+
+struct socket
+{
+	struct list_node tx_qu, rx_qu;
+	struct sockaddr addr;
+};
+
+#endif
+
+struct sock_buff
+{
+	u8  *head;
+	u8  *data;
+	u16  size;
+
+	struct list_node node;
+	struct socket *sock;
+	struct sockaddr_in remote_addr;
+};
+
+struct net_device_stat
+{
+	u32 rx_packets;
+	u32 tx_packets;
+	u32 tx_errors;
+	u32 rx_errors;
+};
+
+struct link_status
+{
+	int connected;
+	enum EtherSpeed link_speed;
+};
 
 //
 #define NET_NAME_LEN 16
@@ -152,11 +263,17 @@ struct net_device
 	const char *chip_name;
 	char ifx_name[NET_NAME_LEN];
 	struct list_node ndev_node;
-	u8 mac_adr[MAC_ADR_LEN];
+	//
+	u32 ip;
+	u32 mask;
+	u8  mac_addr[MAC_ADR_LEN];
 	void *chip;
+
+	struct net_device_stat stat;
+
 	//
 	int (*send_packet)(struct net_device *ndev, struct sock_buff *skb);
-	int (*set_mac_adr)(struct net_device *ndev, const u8 mac[]);
+	int (*set_mac_addr)(struct net_device *ndev, const u8 mac[]);
 #ifndef CONFIG_IRQ_SUPPORT
 	int (*ndev_poll)(struct net_device *ndev);
 #endif
@@ -173,8 +290,7 @@ struct sock_buff *skb_alloc(u32 prot_len, u32 data_len);
 void skb_free(struct sock_buff * skb);
 
 ///////////
-struct sockaddr *gethostaddr(const char *sip);
-
+struct eth_addr *gethostaddr(const u32 nip);
 
 void udp_send_packet(struct sock_buff *skb);
 
@@ -186,66 +302,25 @@ int ip_layer_deliver(struct sock_buff *skb);
 
 void arp_send_packet(const u8 nip[], const u8 *mac, u16 op_code);
 
-///////////////////////////////////
-
-typedef u32 socklen_t;
-
-struct sockaddr
-{
-	u8  des_ip[4];
-	u8  des_mac[6];
-
-	u16 des_port;
-	u16 src_port;
-};
-
-
-struct socket
-{
-	struct list_node tx_qu, rx_qu;
-	struct sockaddr addr;
-};
-
-
 int socket(int domain, int type, int protocol);
 
-struct sockaddr *getaddr(u32 ip);
+struct eth_addr *getaddr(u32 nip);
+
+int bind(int fd, const struct sockaddr *addr, socklen_t len);
 
 int connect(int fd, const struct sockaddr *addr, socklen_t len);
 
 long send(int fd, const void *buf, u32 n);
 
+ssize_t sendto(int fd, const void *buf, u32 n, int flags, const struct sockaddr *dest_addr, socklen_t addrlen);
+
 long recv(int fd, void *buf, u32 n);
+
+long recvfrom(int fd, void *buf, u32 n, int flags, struct sockaddr *src_addr, socklen_t *addrlen);
 
 int close(int fd);
 
-
-#define NFS_PATH_LEN   256
-
-struct net_config
-{
-	u32  local_ip;
-	u32  net_mask;
-	u32  server_ip;
-	u8   mac_adr[MAC_ADR_LEN];
-};
-
-
-int net_get_ip(struct net_device *ndev, u32 *ip);
-
-int net_set_ip(struct net_device *ndev, u32 ip);
-
-int net_get_mask(struct net_device *ndev, u32 *mask);
-
-int net_set_mask(struct net_device *ndev, u32 mask);
-
-int net_get_server_ip(u32 *ip);
-
-int net_set_server_ip(u32 ip);
-
-int net_get_mac(struct net_device *ndev, u8 vbMAC[MAC_ADR_LEN]);
-
-int net_set_mac(struct net_device *ndev, const u8 vbMAC[MAC_ADR_LEN]);
+struct net_device *net_get_dev(const char *ifx_name);
 
 u16 net_calc_checksum(const void *buff, u32 size);
 
@@ -261,7 +336,20 @@ int netif_rx_poll();
 #define netif_rx_poll()
 #endif
 
-int ping_request(struct socket *socket);
+int ping_request(struct socket *socket, struct eth_addr *remote_addr);
+
+// int ping_request(struct socket *socket);
 
 int net_check_link_status();
 
+struct list_node *net_get_device_list(void);
+
+#define NIOC_GET_IP     1
+#define NIOC_SET_IP     2
+#define NIOC_GET_MASK   3
+#define NIOC_SET_MASK   4
+#define NIOC_GET_MAC    5
+#define NIOC_SET_MAC    6
+#define NIOC_GET_STATUS 7
+
+int ndev_ioctl(struct net_device *ndev, int cmd, void *arg);

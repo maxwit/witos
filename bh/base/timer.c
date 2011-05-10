@@ -1,4 +1,3 @@
-#include <g-bios.h>
 
 #ifdef CONFIG_IRQ_SUPPORT
 
@@ -15,17 +14,14 @@ void inc_tick(void)
 	g_tick_count++;
 }
 
-
 u32 get_tick(void)
 {
 	return g_tick_count;
 }
 
-
 void mdelay(u32 n)
 {
 	volatile u32 curr_tick = get_tick();
-
 
 	// yes, we'd write the loop in this way :P
 	while (1)
@@ -34,7 +30,6 @@ void mdelay(u32 n)
 			return;
 	}
 }
-
 
 extern void __udelay(u32 n);
 

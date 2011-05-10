@@ -1,4 +1,3 @@
-#include <g-bios.h>
 
 	.global __udelay
 __udelay:

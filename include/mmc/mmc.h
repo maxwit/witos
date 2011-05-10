@@ -1,71 +1,69 @@
 #pragma once
 
-#define MMC_CMD0   0
-#define MMC_CMD1   1
-#define MMC_CMD2   2
-#define MMC_CMD3   3
-#define MMC_CMD4   4
-#define MMC_CMD5   5
-#define MMC_CMD6   6
-#define MMC_CMD7   7
-#define MMC_CMD8   8
-#define MMC_CMD9   9
-#define MMC_CMD10  10
-#define MMC_CMD11  11
-#define MMC_CMD12  12
-#define MMC_CMD13  13
-#define MMC_CMD14  14
-#define MMC_CMD15  15
-#define MMC_CMD16  16
-#define MMC_CMD17  17
-#define MMC_CMD18  18
-#define MMC_CMD19  19
-#define MMC_CMD20  20
-#define MMC_CMD21  21
-#define MMC_CMD22  22
-#define MMC_CMD23  23
-#define MMC_CMD24  24
-#define MMC_CMD25  25
-#define MMC_CMD26  26
-#define MMC_CMD27  27
-#define MMC_CMD28  28
-#define MMC_CMD29  29
-#define MMC_CMD30  30
-#define MMC_CMD31  31
-#define MMC_CMD32  32
-#define MMC_CMD33  33
-#define MMC_CMD34  34
-#define MMC_CMD35  35
-#define MMC_CMD36  36
-#define MMC_CMD37  37
-#define MMC_CMD38  38
-#define MMC_CMD39  39
-#define MMC_CMD40  40
-#define MMC_CMD41  41
-#define MMC_CMD42  42
-#define MMC_CMD43  43
-#define MMC_CMD44  44
-#define MMC_CMD45  45
-#define MMC_CMD46  46
-#define MMC_CMD47  47
-#define MMC_CMD48  48
-#define MMC_CMD49  49
-#define MMC_CMD50  50
-#define MMC_CMD51  51
-#define MMC_CMD52  52
-#define MMC_CMD53  53
-#define MMC_CMD54  54
-#define MMC_CMD55  55
-#define MMC_CMD56  56
-#define MMC_CMD57  57
-#define MMC_CMD58  58
-#define MMC_CMD59  59
-#define MMC_CMD60  60
-#define MMC_CMD61  61
-#define MMC_CMD62  62
-#define MMC_CMD63  63
-#define MMC_CMD64  64
-#define MMC_CMD65  65
+#include <block.h>
+
+#define MMC_GO_IDLE_STATE         0   /* bc                          */
+#define MMC_SEND_OP_COND          1   /* bcr  [31:0] OCR         R3  */
+#define MMC_ALL_SEND_CID          2   /* bcr                     R2  */
+#define MMC_SET_RELATIVE_ADDR     3   /* ac   [31:16] RCA        R1  */
+#define MMC_SET_DSR               4   /* bc   [31:16] RCA            */
+#define MMC_SLEEP_AWAKE		  5   /* ac   [31:16] RCA 15:flg R1b */
+#define MMC_SWITCH                6   /* ac   [31:0] See below   R1b */
+#define MMC_SELECT_CARD           7   /* ac   [31:16] RCA        R1  */
+#define MMC_SEND_EXT_CSD          8   /* adtc                    R1  */
+#define MMC_SEND_CSD              9   /* ac   [31:16] RCA        R2  */
+#define MMC_SEND_CID             10   /* ac   [31:16] RCA        R2  */
+#define MMC_READ_DAT_UNTIL_STOP  11   /* adtc [31:0] dadr        R1  */
+#define MMC_STOP_TRANSMISSION    12   /* ac                      R1b */
+#define MMC_SEND_STATUS          13   /* ac   [31:16] RCA        R1  */
+#define MMC_GO_INACTIVE_STATE    15   /* ac   [31:16] RCA            */
+#define MMC_SPI_READ_OCR         58   /* spi                  spi_R3 */
+#define MMC_SPI_CRC_ON_OFF       59   /* spi  [0:0] flag      spi_R1 */
+
+  /* class 2 */
+#define MMC_SET_BLOCKLEN         16   /* ac   [31:0] block len   R1  */
+#define MMC_READ_SINGLE_BLOCK    17   /* adtc [31:0] data addr   R1  */
+#define MMC_READ_MULTIPLE_BLOCK  18   /* adtc [31:0] data addr   R1  */
+
+  /* class 3 */
+#define MMC_WRITE_DAT_UNTIL_STOP 20   /* adtc [31:0] data addr   R1  */
+
+  /* class 4 */
+#define MMC_SET_BLOCK_COUNT      23   /* adtc [31:0] data addr   R1  */
+#define MMC_WRITE_BLOCK          24   /* adtc [31:0] data addr   R1  */
+#define MMC_WRITE_MULTIPLE_BLOCK 25   /* adtc                    R1  */
+#define MMC_PROGRAM_CID          26   /* adtc                    R1  */
+#define MMC_PROGRAM_CSD          27   /* adtc                    R1  */
+
+  /* class 6 */
+#define MMC_SET_WRITE_PROT       28   /* ac   [31:0] data addr   R1b */
+#define MMC_CLR_WRITE_PROT       29   /* ac   [31:0] data addr   R1b */
+#define MMC_SEND_WRITE_PROT      30   /* adtc [31:0] wpdata addr R1  */
+
+  /* class 5 */
+#define MMC_ERASE_GROUP_START    35   /* ac   [31:0] data addr   R1  */
+#define MMC_ERASE_GROUP_END      36   /* ac   [31:0] data addr   R1  */
+#define MMC_ERASE                38   /* ac                      R1b */
+
+  /* class 9 */
+#define MMC_FAST_IO              39   /* ac   <Complex>          R4  */
+#define MMC_GO_IRQ_STATE         40   /* bcr                     R5  */
+
+  /* class 7 */
+#define MMC_LOCK_UNLOCK          42   /* adtc                    R1b */
+
+  /* class 8 */
+#define MMC_APP_CMD              55   /* ac   [31:16] RCA        R1  */
+#define MMC_GEN_CMD              56   /* adtc [0] RD/WR          R1  */
+
+/*sd*/
+#define SD_APP_SET_BUS_WIDTH      6   /* ac   [1:0] bus width    R1  */
+#define SD_SEND_IF_COND           8   /* bcr  [11:0] See below   R7  */
+#define SD_APP_OP_COND           41   /* bcr  [31:0] OCR         R3  */
+
+#define MMC_CMD_RETRIES        20
+#define SD_BUS_WIDTH_1		0
+#define SD_BUS_WIDTH_4		2
 
 typedef enum{
 	REV,
@@ -108,8 +106,23 @@ struct sdio_cis
 	unsigned int		max_dtr;
 };
 
+struct mmc_cid
+{
+	u8	alw1:1;
+	u8	crc:7;
+	u16 mdt:12;
+	u16 rev:4;
+	u32 psn;
+	u8	prv;
+	u8	pnm[5];
+	u16 oid;
+	u8	mid;
+}__PACKED__;
+
 struct mmc_card
 {
+	struct block_device blkdev;
+
 	u16 rca;
 	u16 dsr;
 	u32 blen;
@@ -117,20 +130,29 @@ struct mmc_card
 	u32	raw_csd[4];	/* raw card CSD */
 	struct sdio_cccr	cccr;		/* common card info */
 	struct sdio_cis		cis;		/* common tuple info */
+	char card_name[6];
 
+	struct mmc_host *host;
 };
 
 struct mmc_host
 {
 	u32 resp[4];
-	struct mmc_card info;
+	struct mmc_card card;
 
 	int (*send_cmd)(struct mmc_host *mmc, u32 index, u32 arg, RESP resp);
 	void (*set_hclk)(void);
-
+	void (*set_lclk)(void);
 	int (*read_data)(struct mmc_host *mmc, void *buf);
-	int (*write_data)(struct mmc_host *mmc, void *buf);
+	int (*write_data)(struct mmc_host *mmc, const void *buf);
+
 };
 
 int mmc_register(struct mmc_host * mmc);
+struct mmc_host * mmc_get_host(int id);
+int mmc_read_blk(struct mmc_host *host, u8 *buf, int start);
+int mmc_write_blk(struct mmc_host *host, const u8 *buf, int start);
+int mmc_erase_blk(struct mmc_host *host, int start);
+int mmc_decode_cid(struct mmc_host *host);
+int mmc_sd_detect_card(struct mmc_host *host);
 

@@ -1,8 +1,7 @@
-#include <g-bios.h>
 #include <mmc/mmc.h>
 
 #define SD_IO_SEND_OP_COND 5
-#define SD_IO_RW_DIRECT    52 
+#define SD_IO_RW_DIRECT    52
 
 int mmc_send_io_op_cond(struct mmc_host *host, u32 ocr, u32 *rocr)
 {
@@ -20,7 +19,6 @@ int mmc_send_io_op_cond(struct mmc_host *host, u32 ocr, u32 *rocr)
 	return ret;
 }
 
-
 int mmc_io_rw_direct(struct mmc_host *host, int write, unsigned fn,
 	unsigned addr, u8 in, u8* out)
 {
@@ -35,17 +33,16 @@ int mmc_io_rw_direct(struct mmc_host *host, int write, unsigned fn,
 
 	cmd.index = SD_IO_RW_DIRECT;
 	cmd.resp = R5;
-	
+
 	ret = host->send_cmd(host, cmd.index, cmd.arg, cmd.resp);
 
 	if (NULL != out)
 	{
 		*out = host->resp[0];
 	}
-	
+
 	return ret;
 }
-
 
 int mmc_io_rw_extended(struct mmc_host *host, int write, unsigned fn,
 	unsigned addr, int incr_addr, u8 *buf, unsigned blocks, unsigned blksz)

@@ -1,8 +1,6 @@
 #pragma once
 
-#include <arm/board_id.h>
-#include <arm/s3c24x0_reg.h>
-
+#include <arm/s3c24x0_register.h>
 
 #define UART_NUM         3
 
@@ -34,7 +32,6 @@
 #define NAND_BLOCK_SIZE    (NAND_PAGE_SIZE * 32)
 #define NAND_CHIP_SIZE     (64 << 20)
 #endif
-
 
 // fixme
 #define ATAG_BASE          SDRAM_BASE

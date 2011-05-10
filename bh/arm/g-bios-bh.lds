@@ -1,3 +1,6 @@
+OUTPUT_ARCH(arm)
+ENTRY(_start)
+
 SECTIONS
 {
 	.text ALIGN(4):

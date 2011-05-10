@@ -1,9 +1,7 @@
-#include <g-bios.h>
 #include <loader.h>
 #include <uart/uart.h>
 #include <uart/ymodem.h>
 #include <flash/part.h>
-
 
 #define SOH    0x01
 #define STX    0x02
@@ -12,9 +10,7 @@
 #define NAK    0x15
 #define CAN    0x18
 
-
 #define MODEM_TIMEOUT  (UART_DELAY * 8)
-
 
 // fixme: reset fifo
 static void uart_clear_buff()
@@ -31,7 +27,6 @@ static void uart_clear_buff()
 	}
 }
 
-
 // TODO:  support MS hyper-term
 static inline void modem_end_rx()
 {
@@ -47,12 +42,11 @@ static inline void modem_end_rx()
 	uart_send_byte(CAN);
 }
 
-
 int ymodem_load(struct loader_opt *opt)
 {
 	int ret;
 	int size = 0, count;
-	int blk = 0;
+	char blk = 0;
 	u8 stx, blk_num[2], crc[2];
 	u8 *curr_addr;
 
@@ -71,9 +65,6 @@ int ymodem_load(struct loader_opt *opt)
 
 	opt->load_size = 0;
 
-	// uart_clear_buff();
-
-	//
 	while (1)
 	{
 		uart_send_byte('C');
@@ -165,8 +156,11 @@ int ymodem_load(struct loader_opt *opt)
 		{
 			uart_clear_buff();
 			uart_send_byte(NAK);
+
+			printf("%d,%d,%d\n",blk_num[0], blk_num[1], blk);
+
 #ifdef CONFIG_DEBUG
-			printf("block num (%d) error!\n", blk);
+			//printf("block num (%d) error!\n", blk);
 #endif
 			continue;
 		}
@@ -205,7 +199,6 @@ L1:
 
 	return opt->load_size;
 }
-
 
 REGISTER_LOADER(y, ymodem_load, "Y-modem");
 

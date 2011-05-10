@@ -1,8 +1,6 @@
-#include <g-bios.h>
 #include <flash/flash.h>
 #include <flash/part.h>
 #include <net/net.h>
-
 
 static const char banner[] = "\n\n" // CLRSCREEN
 	"\t+---------------------------------+\n"
@@ -10,21 +8,22 @@ static const char banner[] = "\n\n" // CLRSCREEN
 	"\t|      http://www.maxwit.com      |\n"
 	"\t|      "__DATE__", "__TIME__"      |\n"
 	"\t+---------------------------------+\n"
+#ifdef CONFIG_DEBUG
 	"\ng-bios running "
 #ifdef CONFIG_IRQ_SUPPORT
 	"with IRQ enabled!\n"
 #else
 	"in polling mode!\n"
 #endif
+#endif
 	;
-
 
 int exec_shell(void);
 
 static int __INIT__ sys_init(void)
 {
 	int count = 1;
-	INIT_FUNC_PTR *init_call = init_call_begin;
+	init_func_t *init_call = init_call_begin;
 	const char* func_name;
 
 	while (init_call < init_call_end)
@@ -58,27 +57,13 @@ static int __INIT__ sys_init(void)
 	return 0;
 }
 
-
 // fixme
 static void __INIT__ show_sys_info(void)
 {
-	struct flash_chip *flash;
-
-	// fixme: show all part on each flash
-	flash = flash_open(BOOT_FLASH_ID);
-	if (flash)
-	{
-		part_show(flash);
-		flash_close(flash);
-	}
-
-	puts(banner);
+	printf("%s\n", banner);
 
 	net_check_link_status();
-
-	printf("\n");
 }
-
 
 int main(void)
 {
@@ -86,8 +71,8 @@ int main(void)
 
 	show_sys_info();
 
+	printf("\n");
 	exec_shell();
 
 	return -1;
 }
-

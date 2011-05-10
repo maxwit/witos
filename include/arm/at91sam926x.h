@@ -1,14 +1,12 @@
 #pragma once
 
-#include <arm/board_id.h>
 #ifdef CONFIG_AT91SAM9261
-#include <arm/at91sam9261_reg.h>
+#include <arm/at91sam9261_register.h>
 #elif defined(CONFIG_AT91SAM9263)
-#include <arm/at91sam9263_reg.h>
+#include <arm/at91sam9263_register.h>
 #else
 #error "AT91 platform not defined!"
 #endif
-
 
 #define AT91SAM926X_PA_AIC           0xfffff000
 	#define AIC_SMR(n)               ((n) * 4)
@@ -31,7 +29,6 @@
 	#define AIC_FFSR                      0x148
 
 #define MAX_IRQ_NUM          (32 + 5 * 32)
-
 
 #define PIOA    0
 #define PIOB    1
@@ -63,13 +60,11 @@
 #define at91_smc_writel(reg, val) \
 	writel(VA(AT91SAM926X_PA_SMC + reg), val)
 
-
 // #define GTH_STACK_BASE	 0x10000
 #define AT91SAM926X_SRAM_SIZE  0x10000
 
 #define GBH_STACK_BASE   SVC_STACK_BASE
 #define GBH_STACK_LIMIT (FIQ_STACK_BASE - FIQ_STACK_SIZE)
-
 
 #define SDRAM_CONFIG_RATE_100   0x85227259
 

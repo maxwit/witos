@@ -1,0 +1,187 @@
+\section{MaxWit g-bios简介}
+%\section{g-bios: An Open Source Bootloader Project}
+%MaxWit开放实验室（MaxWit Open Lab）是由多家公司资助成立的，致力于研发开源项目和探讨软件开发技术的公益性组织。2008年1月正式成立于上海浦东张江高科，目前开放实验室成员主要来源于Google、Intel、 TI、AMD、华为、Cisco、飞利浦等公司资深研发人员以及清华、浙大、上交大、中科院等科研院校的师生。
+
+g-bios（以下简称g-bios）是由Intel、IBM、Qualcomm、AMD等公司的几名软件工程师与开源社区共同研发的一个Bootloader\footnote{或者说是一个嵌入式系统的BIOS，相当于PC机的BIOS+Bootloader。}。g-bios不但借鉴了几乎所有主流BSP/BIOS/Bootloader的优点，而且加入不少独创的特性，包括：
+\begin{enumerate}\setlength{\itemsep}{-\itemsep}
+\item 自动检测有待烧录的image文件类型，并智能自动烧录。
+\item 支持多种文件系统，包括YAFFS2、JFFS2、CRAMFS、UBI、NFS等。
+%\item 支持两种用户界面：GUI（类似传统PC BIOS）和命令行模式（面向嵌入式系统）。
+\item 命令行自动补全（Tab）键及历史记录（上、下键）支持。
+\item Flash(MTD)分区支持，帮助Linux、Android内核识别分区。
+\item 自动设置Linux内核启动参数（Linux kernel command line），极大地降低了参数设置的复杂度并减少了启动出错的概率。当然，同时也支持手动设置，以满足特殊要求。
+\item 常用命令具有记忆功能。如boot命令，它能记住用户输入的参数，以后只需简单输入boot即可。
+\item 引入全新的架构及NB技术（即Never Burn-down，又称``烧不死''技术）。
+%核心设计思想是：把g-bios分为上半部分和下半部分，上半部分以最小的代码量完成CPU和Memory的初始化，并实现引导下半部分的功能；下半部分为g-bios主体。上半部分设计简单，调试周期短，完成后就固化在特定的引导区中不再更改；
+开发人员可在没有仿真器的情况下大胆开发
+Bootloader
+%下半部分代码（即g-bios%主体）
+。事实上，只需一根串口数据线应能轻松完成整个g-bios的开发。启动代码的地址无关性带来的麻烦？没有了！因为bug或不小心改错了代码，甚至是数据线连接问题而导致启动黑屏？也不可能出现了！
+%在调试完成并正试发布的产品时，若有必要，也可将上下两部分可合成一个整体——只需一个命令重新编译即可。
+\item 支持完整的中断机制。开发者可简单地通过一个编译选项选择IRQ或Polling两种模式的中的任意一种。
+\item 优秀的网络子系统，并提供符合POSIX规范的Socket API，方便二次开发。
+%\item 优秀的软件架构及子系统设计，包括：中断、网络、Flash、USB子系统，等等。
+%\item 集成类似PC机版本的Video BIOS。
+%\item 支持基于龙芯的PC机及嵌入式系统。
+\item 支持
+%嵌入式系统几乎所有
+多种常用外设，包包括：WDT、UART、NAND、NOR、SD/MMC、USB、LCD、Touchscreen，...
+\item 集成硬件调试/测试程序，大大提高了bring-up的工作效率。
+\item 完美支持Google Android操作系统，简化Android的系统移植过程。
+\item 支持图形化配置，不但让新手很容易上手，而且使g-bios的移植和开发过程变得更简单。
+\end{enumerate}
+
+更多详情，请登录项目主页http://maxwit.googlecode.com或ChinaUnix论坛上的g-bios版块（http://bbs.chinaunix.net/forum-238-1.html）。
+
+\section{获取源码}
+请确认git（一个版本管理软件）已经安装，然后执行如下命令：
+\begin{lstlisting}[language=bash,numbers=none]
+$ git clone git://github.com/maxwit/g-bios.git
+\end{lstlisting}
+此时会在当前目录（方便描述起见，假定为HOME目录）下将会创建一个名为 ``g-bios''的目录，该目录中为g-bios源码。
+%\section{如何参与g-bios开发}
+%g-bios开源社区采用maillist和bbs相结合的方式，任何人都可以通过这两种方式把自己的代码递交给g-bios项目维护者。若对文档有任何疑问或改进也可联系我们。
+%  \begin{table}[htbp]
+%  \centering
+%  \setlength{\parindent}{0pt}
+%  \begin{tabular}{|c|c|}
+%  \hline
+%  g-bios论坛 &\small http://linux.chinaunix.net/bbs/forum-70-1.htm \\
+%  \hline
+%  g-bios邮件列表 &\small maxwit@googlegroups.com \\
+%  \hline
+%  g-bios项目维护者 &\smallConke Hu $<$conke.hu@gmail.com$>$ \\
+%					 &\smallTiger Yu $<$tigerflying.yu@gmail.com$>$ \\
+%					 &\smallFleya Hou $<$fleya.hou@gmail.com$>$ \\
+%  \hline
+%  文档编辑 &\small  \\
+%  \hline
+% \end{tabular}
+% \end{table}
+
+\section{g-bios体系结构}
+
+\section{源码目录结构}
+\begin{lstlisting}[language=bash, numbers=none]
+$ ls /g-bios/
+bh  build  doc  include  Makefile  th
+\end{lstlisting}
+
+\begin{equation*}
+\text{g-bios}
+\left\{
+	\begin{aligned}
+	&\text{th: stage 1代码} \\
+	&\text{bh: stage 2代码，即g-bios上半部分启动代码} \\
+	&\text{Makefile：} 整个g-bios项目的顶层Makefile \\
+	&\text{include：头文件(stdio.h, string.h, g-bios.h等)} \\
+	&\text{doc：使用开发手册} \\
+	&\text{build：与编译相关文件夹（配置文件，编译规则）} \\
+	\end{aligned}
+\right.
+\end{equation*}
+
+
+bh目录:
+\begin{lstlisting}[language=bash, numbers=none]
+$ ls /g-bios/bh
+app  arm  base  driver  filesys  lib  Makefile  mm
+\end{lstlisting}
+
+\begin{equation*}
+\text{bh: stage 2}
+\left\{
+	\begin{aligned}
+	&\text{app：g-bios应用程序、命令所在目录(ping, ls, reboot等)} \\
+	&\text{arm：arm体系结构相关代码} \\
+	&\text{base：g-bios下半部分公共文件夹(main, shell, sysconfig等)} \\
+	&\text{driver: 驱动程序源码，通用driver} \\
+	&\text{filesys：文件系统相关源码} \\
+	&\text{lib：库文件(stdlib, string, net等)} \\
+	&\text{mm：内存管理文件夹(内存分配函数代码等)}
+	\end{aligned}
+\right.
+\end{equation*}
+
+app目录
+
+\begin{lstlisting}[language=bash, numbers=none]
+$ ls /g-bios/app
+boot  flash  led  Makefile  memory  misc  net  serial  shell  sysconf
+\end{lstlisting}
+将不同功能的application分成类，置于不同的文件夹下。每个文件下都有一个Makefile文件。从文件夹的命名就可知道其文件夹下有哪些文件。app文件下的每个.c文件都对应g-bios中的某个命令，文件名就是g-bios shell中的命令名。
+\begin{equation*}
+\text{bh/app}
+\left\{
+	\begin{aligned}
+	&\text{boot：引导程序(boot kernel or reboot, etc)} \\
+	&\text{flash：flash操作相关app} \\
+	&\text{led：控制led灯程序} \\
+	&\text{Makefile} \\
+	&\text{memory：memory操作函数} \\
+	&\text{misc：杂项程序} \\
+	&\text{net：网络程序} \\
+	&\text{serial：串口程序} \\
+	&\text{shell: clear, ls, etc} \\
+	&\text{sysconf: configure程序}
+	\end{aligned}
+\right.
+\end{equation*}
+
+目前g-bios仅支持arm体系结构的处理器，因此仅有arm目录。
+\begin{lstlisting}[language={SH},numbers=none]
+$ ls /g-bios/bh/arm/
+arm_heap.c  at91sam926x  exception.c  g-bios-bh.lds  head.S  lib  Makefile  omap3530  s3c24x0  s3c6410  udelay.S
+\end{lstlisting}
+
+\begin{equation*}
+\text{bh/arm}
+\left\{
+	\begin{aligned}
+	&\text{arm\_heap.c：heap init} \\
+	&\text{at91sam926x} \\
+	&\text{exception.c：exception handle} \\
+	&\text{g-bios-bh.lds：编译bh所需的链接脚本。} \\
+	&\text{head.S：stage 2入口} \\
+	&\text{lib：arm体系结构相关库文件} \\
+	&\text{Makefile}\\
+	&\text{omap3530}\\
+	&\text{s3c24x0}\\
+	&\text{s3c6410}\\
+	&\text{udelay.S:udelay}
+	\end{aligned}
+\right.
+\end{equation*}
+其中at91sam926x、s3c24x0、s3c6410为平台相关代码：包括soc相有关的driver，board级初始化代码。
+
+嵌入式开发要了解的几个概念：板级，SOC级，CPU级，CPU core级。板级：与硬件开发板的布线有关。现在嵌入式处理器，通常将SOC级，CPU级，CPU core级做成一颗芯片。也就是所说的SOC，例如s3c6410，s3c2440，at91sam9261等这就是一个SOC。每个芯片公司将一个常用的外设芯片集成在一个cpu芯片里，就生产出了自己的SOC处理器芯片。这也就是说不同的SOC，他们所集成的外设可能会不一样。因此对于不同的SOC，他们的相对的处理代码也就可能不一样了。SOC里集成了外设，所以也可将SOC叫做platform或``板子''。cpu core也就是所说的体系结构例如：arm v5，arm v6，arm v7，core 2等。cpu就将cpu core，MMU，cache等等集成在一起的芯片，不同的CPU，它们的cache个数、大小可能不同，因此处理cpu级的程序代码也可能不同。（例如：arm 9，arm 11，cotex-a8等）。其它厂商可以在此基础上加入一此外设从而制造处一个SOC。因此，对于不同的SOC，他们的cpu和cpu core可能相同（s3c2410，s3c2440他们的都是arm 9系列cpu，因此他们的cpu和cpu-core就是一样）。
+
+有了以上基础后再来看ARCH相关的目录结构就十分简单了。s3c6410，at91sam926x，s3c24x0为不同cpu的处理程序,里含各个SOC处理的相关的代码。*.c，*.s体系结构公共相关的代码。lib体系结构相关库文件。
+
+th目录：
+\begin{lstlisting}[language={SH}]
+$ ls /g-bios/th/
+arm  base Makefile
+\end{lstlisting}
+g-bios上半部分启动程序，arm目录与上面所讲的arm目录类似， 里不再重述。
+base目录上半部分与体系结构无关代码(main, ymodem, kermit等)。
+
+driver目录：
+\begin{lstlisting}[language=bash, numbers=none]
+$ ls /g-bios/driver
+flash  gpu  Makefile  mmc  net  uart
+\end{lstlisting}
+不同外设的驱动程序源码。
+
+\begin{equation*}
+\text{driver}
+\left\{
+	\begin{aligned}
+	&\text{flash：flash驱动程序（nand flash, nor flash, dataflash等）}\\
+	&\text{gpu：显卡驱动程序（lcd等）}\\
+	&\text{mmc：mmc相关驱动（sd卡等）}\\
+	&\text{net：net相关驱动(dm9000网卡驱动，cs8900驱动，协议栈等)}\\
+	&\text{uart：串口相关驱动。}
+	\end{aligned}
+\right.
+\end{equation*}

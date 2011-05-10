@@ -8,5 +8,3 @@ int mmc_io_rw_direct(struct mmc_host *host, int write, unsigned fn,
 int mmc_io_rw_extended(struct mmc_host *host, int write, unsigned fn,
 		unsigned addr, int incr_addr, u8 *buf, unsigned blocks, unsigned blksz);
 
-
-

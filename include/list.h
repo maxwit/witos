@@ -42,7 +42,6 @@ static inline void list_del_node(struct list_node *node)
 	__list_del(node->prev, node->next);
 }
 
-
 static inline int list_is_empty(const struct list_node *head)
 {
 	return head->next == head;

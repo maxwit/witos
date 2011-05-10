@@ -1,5 +1,3 @@
-#include <g-bios.h>
-
 __WEAK__ void reboot(void);
 
 int main(int argc, char *argv[])

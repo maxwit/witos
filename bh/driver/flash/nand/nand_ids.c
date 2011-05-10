@@ -81,8 +81,7 @@ const struct nand_device_desc g_nand_device_id[] =
 	},
 
 	{NULL,}
-};;
-
+};
 
 const struct nand_vendor_name g_nand_vendor_id[] =
 {
@@ -97,5 +96,4 @@ const struct nand_vendor_name g_nand_vendor_id[] =
 	{NAND_MFR_AMD,      "AMD"},
 	{0x0,               "Unknown"}
 };
-
 

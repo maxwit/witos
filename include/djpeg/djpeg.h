@@ -1,7 +1,5 @@
 #pragma once
 
-#include <g-bios.h>
-
 #define MAKEWORD(a, b)      ((u16)(((u8)(a)) | ((u16)((u8)(b))) << 8))
 
 #define BI_RGB        0L
@@ -40,7 +38,7 @@ struct djpeg_opts{
 	u8 *bmpbuf;
 	u8 *rgbdata;
 	LPBITMAPINFOHEADER imgbi;
-    LPBITMAPFILEHEADER imgbf;
+	LPBITMAPFILEHEADER imgbf;
 };
 
 typedef struct tagRGBQUAD {
@@ -66,7 +64,6 @@ typedef RGBQUAD  *LPRGBQUAD;
 #define W5 1609 /* 2048*sqrt(2)*cos(5*pi/16) */
 #define W6 1108 /* 2048*sqrt(2)*cos(6*pi/16) */
 #define W7 565  /* 2048*sqrt(2)*cos(7*pi/16) */
-
 
 void init_table();
 int init_tag(u8* jpegbuf);

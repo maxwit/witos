@@ -1,7 +1,6 @@
 #include <string.h>
 #include <types.h>
 
-
 size_t strlen(const char *psrc)
 {
 	const char *iter;
@@ -11,7 +10,6 @@ size_t strlen(const char *psrc)
 	return iter - psrc;
 }
 
-
 size_t strnlen(const char *psrc, size_t count)
 {
 	const char *iter;
@@ -20,7 +18,6 @@ size_t strnlen(const char *psrc, size_t count)
 
 	return iter - psrc;
 }
-
 
 char *strcpy(char *pdst, const char *psrc)
 {
@@ -34,7 +31,6 @@ char *strcpy(char *pdst, const char *psrc)
 
 	return pdst;
 }
-
 
 char *strncpy(char *pdst, const char *psrc, size_t count)
 {
@@ -57,7 +53,6 @@ char *strncpy(char *pdst, const char *psrc, size_t count)
 	return pdst;
 }
 
-
 int strcmp (const char *pstr1, const char *pstr2)
 {
 	while (*pstr1 == *pstr2)
@@ -71,7 +66,6 @@ int strcmp (const char *pstr1, const char *pstr2)
 
 	return *pstr1 - *pstr2;
 }
-
 
 int strncmp(const char *pstr1, const char *pstr2, size_t count)
 {
@@ -90,7 +84,6 @@ int strncmp(const char *pstr1, const char *pstr2, size_t count)
 	return *pstr1 - *pstr2;
 }
 
-
 char *strcat(char *pdst, const char *psrc)
 {
 	char *iter;
@@ -105,7 +98,6 @@ char *strcat(char *pdst, const char *psrc)
 
 	return pdst;
 }
-
 
 char *strncat(char *pdst, const char *psrc, size_t count)
 {
@@ -131,7 +123,6 @@ char *strncat(char *pdst, const char *psrc, size_t count)
 	return pdst;
 }
 
-
 char *strchr(const char *psrc, int c)
 {
 	const char *iter;
@@ -144,7 +135,6 @@ char *strchr(const char *psrc, int c)
 
 	return NULL;
 }
-
 
 char *strrchr(const char *psrc, size_t c)
 {
@@ -162,7 +152,6 @@ char *strrchr(const char *psrc, size_t c)
 	return NULL;
 }
 
-
 void *memcpy(void *pdst, const void *psrc, size_t count)
 {
 	u8 *pd;
@@ -179,7 +168,6 @@ void *memcpy(void *pdst, const void *psrc, size_t count)
 
 	return pdst;
 }
-
 
 void *memmove(void *pdst, const void *psrc, size_t count)
 {
@@ -212,7 +200,6 @@ void *memmove(void *pdst, const void *psrc, size_t count)
 	return pdst;
 }
 
-
 void *memset(void *psrc, int c, size_t count)
 {
 	char *ps = psrc;
@@ -227,7 +214,6 @@ void *memset(void *psrc, int c, size_t count)
 
 	return psrc;
 }
-
 
 long memcmp(const void* pdst, const void* psrc, size_t count)
 {
@@ -249,5 +235,4 @@ long memcmp(const void* pdst, const void* psrc, size_t count)
 
 	return 0;
 }
-
 

@@ -1,4 +1,3 @@
-#include <g-bios.h>
 #include <spi.h>
 
 #define MAX_SPI 10
@@ -140,12 +139,11 @@ struct spi_slave *get_spi_slave(char *name)
 	return NULL;
 }
 
-
 static int __INIT__ spi_init(void)
 {
 	int i;
 
-	printf("%s:spi subsys init\n", __FUNCTION__);
+	printf("%s:spi subsys init\n", __func__);
 
 	for (i = 0; i < MAX_SPI; i++)
 	{

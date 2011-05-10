@@ -25,7 +25,6 @@ int getchar(void)
 }
 #endif
 
-
 int puts(const char * str)
 {
 	int ret;
@@ -39,7 +38,6 @@ int puts(const char * str)
 
 	return (putchar('\n'));
 }
-
 
 char *gets(char *s)
 {
@@ -85,7 +83,6 @@ char *gets(char *s)
 	return s;
 }
 
-
 /**
 	vsprintf() sign contain:
 	 	'-':align left
@@ -102,7 +99,6 @@ char *gets(char *s)
 #define ZERO		0x10
 #define SIGNINT		0x20
 
-
 //#define ISDIGIT(x) (x >= '0' && x <= '9')
 
 static char *num_to_ascii(char *buf,
@@ -115,7 +111,6 @@ static char *num_to_ascii(char *buf,
 	const char *pdigit = "0123456789ABCDEF";
 	int count = 0;
 	int pre_fixnum = 0;
-
 
 	fill_char = (output_style & ZERO) ? '0' : ' ';//set ZERO attribute
 
@@ -189,7 +184,6 @@ static char *num_to_ascii(char *buf,
 	return buf;
 }
 
-
 static int vsprintf(char *buf, const char *fmt, int *para)
 {
 	int output_style, width, base;
@@ -199,7 +193,6 @@ static int vsprintf(char *buf, const char *fmt, int *para)
 	char tmp_array[32];
 	int count = 0;
 	char *buf_tmp = buf;
-
 
 	while (*fmt)
 	{
@@ -365,7 +358,6 @@ get_sign :
 	return buf_tmp - buf;
 }
 
-
 int sprintf(char *buf, const char *fmt, ...)
 {
 	int *arg = (int *)&fmt + 1;
@@ -375,7 +367,6 @@ int sprintf(char *buf, const char *fmt, ...)
 
 	return printed;
 }
-
 
 // fixme:
 // 1. add %p support
@@ -410,7 +401,6 @@ static int vsnprintf(char *buf, int size, const char *fmt, int *para)
 	char ctmp;
 	char ch_num[32] = {0};
 	char* ch_tmp_num = NULL;
-
 
 	while (*fmt)
 	{
@@ -580,7 +570,6 @@ get_sign :
 	return str_count;
 }
 
-
 int snprintf(char *buf, int size, const char *fmt, ...)
 {
 	int *arg = (int *)&fmt + 1;
@@ -600,4 +589,3 @@ void clear_screen(void)
 {
 	printf("\033[2J");
 }
-

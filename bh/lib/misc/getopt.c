@@ -1,13 +1,11 @@
 #include <stdio.h>
 #include <string.h>
 
-
 static char *opt_arg;
 static int opt_idx = 1;
 static int opt_pos = 1;
 static int non_arg_start = 0;
 static int non_arg_end = 0;
-
 
 // fixme
 #define SWAP(a,b) \
@@ -17,7 +15,6 @@ static int non_arg_end = 0;
 			(a) = (b); \
 			(b) = __temp; \
 		} while(0)
-
 
 void getopt_init(void)
 {
@@ -36,7 +33,6 @@ char *getopt_arg()
 {
 	return opt_arg;
 }
-
 
 static void adjust_argv(char *argv[])
 {
@@ -61,8 +57,7 @@ static void adjust_argv(char *argv[])
 	}
 }
 
-
-int getopt(int argc, char *argv[], const char *optstring, char **parg)
+int getopt(int argc, char *argv[], const char *opt_str, char **cur_arg)
 {
 	char c, *cp;
 
@@ -79,7 +74,6 @@ int getopt(int argc, char *argv[], const char *optstring, char **parg)
 			++opt_idx;
 		}
 
-
 		if (opt_idx >= argc || argv[opt_idx][0] != '-' || argv[opt_idx][opt_pos] == '\0')
 		{
 			//fixme
@@ -92,7 +86,7 @@ int getopt(int argc, char *argv[], const char *optstring, char **parg)
 
 	c = argv[opt_idx][opt_pos];
 
-	if (':' == c || (cp = strchr(optstring, c)) == NULL)
+	if (':' == c || (cp = strchr(opt_str, c)) == NULL)
 	{
 		printf("%s:  invalid option: -- \'%c\'\n", argv[0], c);
 
@@ -120,7 +114,7 @@ int getopt(int argc, char *argv[], const char *optstring, char **parg)
 			printf("%s:  option:\'-%c\' requires an argument\n",argv[0], c);
 			opt_pos = 1;
 
-			if (':' == optstring[0])
+			if (':' == opt_str[0])
 				return ':';
 			return '?';
 		}
@@ -143,9 +137,8 @@ int getopt(int argc, char *argv[], const char *optstring, char **parg)
 L1:
 	adjust_argv(argv);
 
-	*parg = opt_arg;
+	if (cur_arg)
+		*cur_arg = opt_arg;
 
 	return c;
-
 }
-

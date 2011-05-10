@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
-
+#include <net/net.h>
 
 // negative hex skipped
 #define MAX_HEX_STR_LEN (sizeof(u32) * 2)
@@ -45,14 +45,12 @@ int hex_str_to_val(const char *str, u32 *val)
 	return iLen;
 }
 
-
 #define MAX_DEC_LEN 32
 
 int val_to_dec_str(char *str, long val)
 {
 	char buff[MAX_DEC_LEN];
 	int i = MAX_DEC_LEN - 1, j = 0;
-
 
 	if (val < 0)
 	{
@@ -78,14 +76,12 @@ int val_to_dec_str(char *str, long val)
 	return j;
 }
 
-
 #define MAX_HEX_LEN (sizeof(u32) * 2 + 1)
 
 int val_to_hex_str(char *str, u32 val)
 {
 	char buff[MAX_HEX_LEN];
 	int i = MAX_HEX_LEN - 1, j = 0;
-
 
 	while (val)
 	{
@@ -120,7 +116,6 @@ int dec_str_to_val(const char *str, u32 *val)
 	long tmp = 0;
 	const char *num = str;
 
-
 	if ('-' == *num)
 	{
 		num++;
@@ -151,7 +146,6 @@ int dec_str_to_val(const char *str, u32 *val)
 
 	return num - str;
 }
-
 
 /*
  * Convert human string to value. e.g.:
@@ -232,12 +226,10 @@ error:
 	return -EINVAL;
 }
 
-
 int string2value(const char *str, u32 *val)
 {
 	int ret;
 	u32 tmp;
-
 
 	if ('0' == *str && ('x' == *(str + 1) || 'X' == *(str + 1)))
 	{
@@ -256,7 +248,6 @@ int string2value(const char *str, u32 *val)
 	return ret;
 }
 
-
 #define KB_MASK ((1 << 10) - 1)
 
 int val_to_hr_str(u32 val, char str[])
@@ -270,7 +261,6 @@ int val_to_hr_str(u32 val, char str[])
 		int shift;
 		char sign;
 	} soff[] = {{30, 'G'}, {20, 'M'}, {10, 'K'}, {0, 'B'}};
-
 
 	for (i = 0; i < ARRAY_ELEM_NUM(soff); i++)
 	{
@@ -318,7 +308,6 @@ int val_to_hr_str(u32 val, char str[])
 
 	return ch - str;
 }
-
 
 int str_to_ip(u8 ip_val[], const char *ip_str)
 {
@@ -393,7 +382,6 @@ int str_to_ip(u8 ip_val[], const char *ip_str)
 	return 0;
 }
 
-
 int ip_to_str(char buf[], const u32 ip)
 {
 	sprintf(buf, "%d.%d.%d.%d",
@@ -405,3 +393,31 @@ int ip_to_str(char buf[], const u32 ip)
 	return 0;
 }
 
+int str_to_mac(u8 mac[], const char *str)
+{
+	int i, j;
+	u32 num;
+	u8 buf[MAC_STR_LEN];
+	char *p = (char *)buf;
+
+	strncpy((char*)buf, str, MAC_STR_LEN);
+
+	for (i = j = 0; i <= MAC_STR_LEN; i++)
+	{
+		if (buf[i] == ':' || buf[i] == '\0')
+		{
+			buf[i] = '\0';
+			if (0 == hex_str_to_val(p, &num) || num > 255)
+			{
+				return -EINVAL;
+			}
+			mac[j++] = num;
+			p = (char*)buf + i + 1;
+		}
+	}
+
+	if (j != MAC_ADR_LEN)
+		return -EINVAL;
+
+	return 0;
+}

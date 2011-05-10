@@ -1,7 +1,6 @@
 #pragma once
 
-#include <arm/board_id.h>
-#include <arm/s3c6410_reg.h>
+#include <arm/s3c6410_register.h>
 
 #define SDRAM_BASE      0x50000000
 #define SDRAM_SIZE      0x04000000
