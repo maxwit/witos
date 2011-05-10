@@ -125,12 +125,14 @@ static int mmc_card_register(struct mmc_card *card)
 {
 	struct generic_drive *drive = &card->drive;
 
-	// fixme
 	sprintf(drive->blk_dev.dev.name, "mmcblock%d", mmc_card_count);
 	mmc_card_count++;
 
+	// TODO: fix size
 	drive->blk_dev.bdev_base = 0;
-	drive->blk_dev.bdev_size = 0; // fixme
+	drive->blk_dev.bdev_size = 0;
+
+	drive->sect_size = BLKSIZE;
 
 	drive->get_block = mmc_get_block;
 	drive->put_block = mmc_put_block;
