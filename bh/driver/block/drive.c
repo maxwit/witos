@@ -54,8 +54,12 @@ int generic_drive_register(struct generic_drive *drive)
 	int ret, num, i;
 	struct part_attr part_tab[MSDOS_MAX_PARTS];
 	struct generic_drive *slave;
+	struct block_device *blk_dev = &drive->blk_dev;
 
-	strncpy(drive->blk_dev.part_name, drive->name, PART_NAME_LEN);
+	blk_dev->part_base = 0;
+	blk_dev->part_size = drive->drive_size;
+	strncpy(blk_dev->part_name, drive->name, PART_NAME_LEN);
+
 	ret = block_device_register(&drive->blk_dev);
 	// if ret < 0 ...
 
@@ -64,8 +68,6 @@ int generic_drive_register(struct generic_drive *drive)
 
 	for (i = 0; i < num; i++)
 	{
-		struct block_device *blk_dev;
-
 		slave = zalloc(sizeof(*slave));
 		// if ...
 		blk_dev = &slave->blk_dev;
