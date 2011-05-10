@@ -130,8 +130,8 @@ static int mmc_card_register(struct mmc_card *card)
 	// TODO: fix size
 	drive->blk_dev.bdev_base = 0;
 	drive->blk_dev.bdev_size = 0;
+	drive->blk_dev.sect_size = BLKSIZE;
 
-	drive->sect_size = BLKSIZE;
 	list_head_init(&drive->slave_list);
 
 	drive->get_block = mmc_get_block;

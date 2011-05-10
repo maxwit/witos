@@ -10,8 +10,6 @@ struct generic_drive
 	int (*get_block)(struct generic_drive *drive, int start, void *buff);
 	int (*put_block)(struct generic_drive *drive, int start, const void *buff);
 
-	size_t sect_size; // fixme: move to block_device
-
 	union
 	{
 		struct list_node master_node;

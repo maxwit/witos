@@ -25,7 +25,7 @@ static int msdos_part_scan(struct generic_drive *drive, struct part_attr part_ta
 
 	assert(drive != NULL);
 
-	u8 buff[drive->sect_size];
+	u8 buff[drive->blk_dev.sect_size];
 
 	drive->get_block(drive, 0, buff);
 
@@ -40,25 +40,25 @@ static int msdos_part_scan(struct generic_drive *drive, struct part_attr part_ta
 		part_tab[i].part_type = PT_NONE;
 		part_tab[i].part_name[0] = '\0';
 
-		part_tab[i].part_base = dos_pt[i].lba_start * drive->sect_size;
-		part_tab[i].part_size = dos_pt[i].lba_size * drive->sect_size;
+		part_tab[i].part_base = dos_pt[i].lba_start * drive->blk_dev.sect_size;
+		part_tab[i].part_size = dos_pt[i].lba_size * drive->blk_dev.sect_size;
 
 		printf("0x%08x - 0x%08x (%dM)\n",
 			dos_pt[i].lba_start, dos_pt[i].lba_start + dos_pt[i].lba_size,
-			dos_pt[i].lba_size * drive->sect_size >> 20);
+			dos_pt[i].lba_size * drive->blk_dev.sect_size >> 20);
 	}
 
 	return i;
 }
 
-static int drive_get_block(struct generic_drive *drive, int start, u8 buff[])
+static int drive_get_block(struct generic_drive *drive, int start, void *buff)
 {
 	struct generic_drive *master = drive->master;
 
 	return master->get_block(master, drive->blk_dev.bdev_base + start, buff);
 }
 
-static int drive_put_block(struct generic_drive *drive, int start, const u8 buff[])
+static int drive_put_block(struct generic_drive *drive, int start, const void *buff)
 {
 	struct generic_drive *master = drive->master;
 

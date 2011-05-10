@@ -163,7 +163,7 @@ int fat_read(struct file *fp, void *buff, size_t size)
 	printf("%s(): cluster = %d\n", __func__, clus_num);
 
 	//
-	clus_size = fs->bdev.bdev_size * dbr->sec_per_clus;
+	clus_size = fs->bdev->sect_size * dbr->sec_per_clus;
 
 	if (size > dir->size)
 		size = dir->size;
