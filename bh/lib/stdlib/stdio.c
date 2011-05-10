@@ -516,7 +516,6 @@ get_sign :
 				}
 				else
 				{
-					printf("%d,%d\n", width, str_len);
 					while (width-- > str_len)
 						IF_UNOVER(' ')
 				}
