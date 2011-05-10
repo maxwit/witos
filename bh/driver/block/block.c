@@ -7,7 +7,7 @@ static int block_scan_part(struct block_device *blkdev, struct part_attr part_ta
 }
 */
 
-int block_device_register(struct block_device *blkdev)
+int generic_drive_register(struct generic_drive *drive)
 {
 	return 0;
 }

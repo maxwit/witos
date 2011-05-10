@@ -106,32 +106,32 @@ int mmc_decode_cid(struct mmc_host *host)
 	return 0;
 }
 
-static int mmc_get_block(struct block_device *blkdev, int idx, u8 buff[])
+static int mmc_get_block(struct generic_drive *drive, int idx, u8 buff[])
 {
-	struct mmc_card *card = container_of(blkdev, struct mmc_card, blkdev);
+	struct mmc_card *card = container_of(drive, struct mmc_card, drive);
 
 	return mmc_read_blk(card->host, buff, idx);
 }
 
-static int mmc_put_block(struct block_device *blkdev, int idx, const u8 buff[])
+static int mmc_put_block(struct generic_drive *drive, int idx, const u8 buff[])
 {
-	struct mmc_card *card = container_of(blkdev, struct mmc_card, blkdev);
+	struct mmc_card *card = container_of(drive, struct mmc_card, drive);
 
 	return mmc_write_blk(card->host, buff, idx);
 }
 
-static int mmc_register_blkdev(struct mmc_card *card)
+static int mmc_blkdev_register(struct mmc_card *card)
 {
-	struct block_device *blkdev = &card->blkdev;
+	struct generic_drive *drive = &card->drive;
 
 	// fixme
-	blkdev->blk_size  = BSIZE;
-	blkdev->dev_size  = 0;
+	drive->drive_size  = 0;
+	drive->block_size  = BSIZE;
 
-	blkdev->get_block = mmc_get_block;
-	blkdev->put_block = mmc_put_block;
+	drive->get_block = mmc_get_block;
+	drive->put_block = mmc_put_block;
 
-	return block_device_register(&card->blkdev);
+	return generic_drive_register(&card->drive);
 }
 
 int mmc_sd_detect_card(struct mmc_host *host)
@@ -198,7 +198,7 @@ int mmc_sd_detect_card(struct mmc_host *host)
 
 	//ret = mmc_set_block_len(host, BSIZE);
 
-	ret = mmc_register_blkdev(card);
+	ret = mmc_blkdev_register(card);
 
 	return 0;
 out:

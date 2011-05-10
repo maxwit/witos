@@ -121,7 +121,7 @@ struct mmc_cid
 
 struct mmc_card
 {
-	struct block_device blkdev;
+	struct generic_drive drive;
 
 	u16 rca;
 	u16 dsr;

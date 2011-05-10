@@ -1,12 +1,12 @@
 #pragma once
 
-struct block_device
+struct generic_drive
 {
-	size_t dev_size;
-	size_t blk_size;
+	size_t drive_size;
+	size_t block_size;
 
-	int (*get_block)(struct block_device *blkdev, int idx, u8 buff[]);
-	int (*put_block)(struct block_device *blkdev, int idx, const u8 buff[]);
+	int (*get_block)(struct generic_drive *drive, int index, u8 buff[]);
+	int (*put_block)(struct generic_drive *drive, int index, const u8 buff[]);
 };
 
-int block_device_register(struct block_device *blkdev);
+int generic_drive_register(struct generic_drive *drive);
