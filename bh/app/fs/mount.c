@@ -1,8 +1,10 @@
+#include <stdio.h>
+#include <errno.h>
 #include <fs.h>
 
 int main(int argc, char *argv[])
 {
-	struct list_node *iter, *list = get_bdev_list();
+	int ret;
 	struct block_device *bdev;
 
 	if (argc != 2)
@@ -11,14 +13,16 @@ int main(int argc, char *argv[])
 		return -EINVAL;
 	}
 
-	list_for_each(iter, list)
+	bdev = bdev_open(argv[1]);
+	if (NULL == bdev)
 	{
-		bdev = container_of(iter, struct block_device, bdev_node);
-		if (!strcmp(argv[1], bdev->dev.name))
-			break;
+		printf("fail to open block device \"%s\"!\n", argv[1]);
+		return -ENODEV;
 	}
 
-	fat_mount(bdev, "fat", 0);
+	ret = fat_mount(bdev, "vfat", 0);
 
-	return 0;
+	bdev_close(bdev);
+
+	return ret;
 }

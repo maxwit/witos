@@ -47,5 +47,8 @@ struct block_device
 	struct list_node bdev_node;
 };
 
-int block_device_register(struct block_device *blk_dev);
+int block_device_register(struct block_device *bdev);
 struct list_node *get_bdev_list(void);
+
+struct block_device *bdev_open(const char *name);
+int bdev_close(struct block_device *bdev);

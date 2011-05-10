@@ -14,7 +14,7 @@ int fat_mount(struct block_device *bdev, const char *type, unsigned long flags)
 	struct fat_dentry *root;
 	__u32  *fat;
 	size_t fat_len;
-	struct generic_drive *drive = container_of(bdev, struct generic_drive, blk_dev);
+	struct generic_drive *drive = container_of(bdev, struct generic_drive, bdev);
 
 	fs = malloc(sizeof(*fs));
 
@@ -123,14 +123,57 @@ static struct fat_dentry *fat_lookup(struct fat_dentry *parent, const char *name
 	return NULL;
 }
 
+#define MAX_FILE_NAME_SIZE 256
+
 // name = "mmcblock0p1:a.c"
 struct file *fat_open(const char *name, int flags, ...)
 {
 	struct fat_dentry *dir;
 	struct file *fp;
 	struct block_device *bdev;
+	char dev_name[MAX_FILE_NAME_SIZE];
+	int count;
 
 	//
+	count = 0;
+	while (*name != ':' && *name != '\0')
+	{
+		dev_name[count] = *name;
+
+		name++;
+		count++;
+
+		if (count == MAX_FILE_NAME_SIZE)
+		{
+			DPRINT("%s(): file name length error!\n", __func__);
+			return NULL;
+		}
+	}
+
+	dev_name[count] = '\0';
+
+	if (*name == '\0')
+	{
+		DPRINT("%s(): Invalid file name \"%s\"!\n", __func__, dev_name);
+		return NULL;
+	}
+
+	name++;
+
+	bdev = bdev_open(dev_name);
+
+	if (NULL == bdev)
+	{
+		DPRINT("%s(): No block device \"%s\"!\n", __func__, dev_name);
+		return NULL;
+	}
+
+	if (NULL == bdev->fs)
+	{
+		DPRINT("%s(): block device \"%s\" not mounted!\n", __func__, dev_name);
+		return NULL;
+	}
+
 	dir = fat_lookup(bdev->fs->root, name);
 	if (!dir)
 		return NULL;
@@ -139,6 +182,7 @@ struct file *fat_open(const char *name, int flags, ...)
 
 	fp->dent = dir;
 	fp->offset = 0;
+	fp->fs = bdev->fs;
 
 	return fp;
 }
@@ -152,12 +196,14 @@ int fat_close(struct file *fp)
 int fat_read(struct file *fp, void *buff, size_t size)
 {
 	__u32 clus_num, clus_size;
-	struct fat_dentry *dir = fp->dent;
 	struct fat_boot_sector *dbr;
-	struct fat_fs *fs;
+	struct fat_dentry *dir = fp->dent;
+	struct fat_fs *fs = fp->fs;
+	struct generic_drive *drive;
+	size_t pos;
 
-	// fs = ..
 	dbr = &fs->dbr;
+	drive = container_of(fp->fs->bdev, struct generic_drive, bdev);
 
 	clus_num = dir->clus_hi << 16 | dir->clus_lo;
 	printf("%s(): cluster = %d\n", __func__, clus_num);
@@ -168,8 +214,9 @@ int fat_read(struct file *fp, void *buff, size_t size)
 	if (size > dir->size)
 		size = dir->size;
 
+	pos = fs->data + (clus_num - 2) * clus_size + fp->offset;
 	// part_read(part, buff,  fs->data + (clus_num - 2) * clus_size + fp->offset, size);
-
+	drive->get_block(drive, pos, buff);
 	fp->offset += size;
 
 	return size;
@@ -179,3 +226,24 @@ int fat_write(struct file *fp, const void *buff, size_t size)
 {
 	return 0;
 }
+
+#if 0
+int sys_mount(const char *dev_name, const char *type, int flags)
+{
+	int ret;
+	struct block_device *bdev;
+
+	bdev = bdev_open(dev_name);
+	if (NULL == bdev)
+	{
+		DPRINT("fail to open block device \"%s\"!\n", dev_name);
+		return -ENODEV;
+	}
+
+	ret = fat_mount(bdev, type, flags);
+
+	bdev_close(bdev);
+
+	return ret;
+}
+#endif

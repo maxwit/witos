@@ -8,11 +8,31 @@ struct list_node *get_bdev_list(void)
 	return &g_bdev_list;
 }
 
-int block_device_register(struct block_device *blk_dev)
+struct block_device *bdev_open(const char *name)
 {
-	printf("%s(): registering %s\n", __func__, blk_dev->dev.name);
+	struct list_node *iter;
+	struct block_device *bdev;
 
-	list_add_tail(&blk_dev->bdev_node, &g_bdev_list);
+	list_for_each(iter, &g_bdev_list)
+	{
+		bdev = container_of(iter, struct block_device, bdev_node);
+		if (!strcmp(bdev->dev.name, name))
+			return bdev;
+	}
+
+	return NULL;
+}
+
+int bdev_close(struct block_device *bdev)
+{
+	return 0;
+}
+
+int block_device_register(struct block_device *bdev)
+{
+	printf("%s(): registering %s\n", __func__, bdev->dev.name);
+
+	list_add_tail(&bdev->bdev_node, &g_bdev_list);
 
 	return 0;
 }

@@ -63,6 +63,9 @@ struct file
 	struct fat_dentry *dent;
 	size_t offset;
 	int    mode;
+
+	// fixme: remove it
+	struct fat_fs *fs;
 };
 
 int fat_mount(struct block_device *bdev, const char *type, unsigned long flags);
@@ -77,3 +80,5 @@ int fat_close(struct file *fp);
 int fat_read(struct file *fp, void *buff, size_t size);
 
 int fat_write(struct file *fp, const void *buff, size_t size);
+
+int sys_mount(const char *dev_name, const char *type, int flags);

@@ -5,7 +5,7 @@
 
 struct generic_drive
 {
-	struct block_device blk_dev;
+	struct block_device bdev;
 
 	int (*get_block)(struct generic_drive *drive, int start, void *buff);
 	int (*put_block)(struct generic_drive *drive, int start, const void *buff);
