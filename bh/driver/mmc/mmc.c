@@ -69,7 +69,6 @@ int mmc_read_blk(struct mmc_host *host, u8 *buf, int start)
 #endif
 
 	return 0;
-
 }
 
 int mmc_write_blk(struct mmc_host *host, const u8 *buf, int start)
@@ -85,8 +84,8 @@ int mmc_write_blk(struct mmc_host *host, const u8 *buf, int start)
 		return ret;
 
 	udelay(1000);
-	return 0;
 
+	return 0;
 }
 
 int mmc_decode_cid(struct mmc_host *host)
@@ -107,14 +106,14 @@ int mmc_decode_cid(struct mmc_host *host)
 	return 0;
 }
 
-static int mmc_get_block(struct generic_drive *drive, int start, u8 buff[])
+static int mmc_get_block(struct generic_drive *drive, int start, void *buff)
 {
 	struct mmc_card *card = container_of(drive, struct mmc_card, drive);
 
 	return mmc_read_blk(card->host, buff, start);
 }
 
-static int mmc_put_block(struct generic_drive *drive, int start, const u8 buff[])
+static int mmc_put_block(struct generic_drive *drive, int start, const void *buff)
 {
 	struct mmc_card *card = container_of(drive, struct mmc_card, drive);
 

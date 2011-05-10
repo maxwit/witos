@@ -6,8 +6,8 @@ struct generic_drive
 {
 	struct block_device blk_dev;
 
-	int (*get_block)(struct generic_drive *drive, int start, u8 buff[]);
-	int (*put_block)(struct generic_drive *drive, int start, const u8 buff[]);
+	int (*get_block)(struct generic_drive *drive, int start, void *buff);
+	int (*put_block)(struct generic_drive *drive, int start, const void *buff);
 
 	union
 	{

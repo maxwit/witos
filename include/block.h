@@ -32,12 +32,17 @@ struct part_attr
 	char  part_name[PART_NAME_LEN];
 };
 
+// fixme
+struct fat_fs;
+
 struct block_device
 {
 	struct device dev;
 
 	size_t bdev_base;
 	size_t bdev_size;
+
+	struct fat_fs *fs;
 };
 
 int block_device_register(struct block_device *blk_dev);

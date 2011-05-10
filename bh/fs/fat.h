@@ -1,5 +1,7 @@
 #pragma once
 
+#include <types.h>
+#include <drive.h>
 
 struct fat_boot_sector {
 	__u8	ignored[3];
@@ -49,12 +51,11 @@ struct fat_dentry
 
 struct fat_fs
 {
-	struct fat_boot_sector *dbr;
-	struct fat_dentry *root;
-	struct part_attr *part;
 	__u32  *fat;
 	__u32  data;
-	__u32  blk_size;
+	struct fat_boot_sector dbr;
+	struct fat_dentry *root;
+	struct block_device *bdev;
 };
 
 struct file
@@ -64,7 +65,7 @@ struct file
 	int    mode;
 };
 
-int fat_mount(struct part_attr *part, const char *path, const char *type, unsigned long flags);
+int fat_mount(struct block_device *bdev, const char *type, unsigned long flags);
 
 #define O_RDONLY 0
 #define O_RDWD   0
