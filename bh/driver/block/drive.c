@@ -54,7 +54,9 @@ int generic_drive_register(struct generic_drive *drive)
 	int ret, num, i;
 	struct part_attr part_tab[MSDOS_MAX_PARTS];
 	struct generic_drive *slave;
-	struct block_device *blk_dev = &drive->blk_dev;
+	struct block_device *blk_dev;
+
+	blk_dev = &drive->blk_dev;
 
 	blk_dev->part_base = 0;
 	blk_dev->part_size = drive->drive_size;
