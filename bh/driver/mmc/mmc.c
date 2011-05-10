@@ -2,7 +2,7 @@
 #include <mmc/mmc_ops.h>
 
 #define BLKNR 1
-#define BSIZE 512
+#define BLKSIZE 512
 #define MMC_HOST_NUM 5
 
 static struct mmc_host *g_mmc_host[MMC_HOST_NUM];
@@ -14,7 +14,7 @@ int mmc_erase_blk(struct mmc_host *host, int start)
 	if (ret < 0)
 		goto out;
 
-	ret = host->send_cmd(host, 33, start + BSIZE, R1);
+	ret = host->send_cmd(host, 33, start + BLKSIZE, R1);
 	if (ret < 0)
 		goto out;
 
@@ -48,24 +48,23 @@ int mmc_read_blk(struct mmc_host *host, u8 *buf, int start)
 
 	udelay(1000);
 
-	if (1)
+#ifdef CONFIG_DEBUG
+	int i;
+
+	for (i = 0; i < BLKSIZE / 4; i++)
 	{
-		int i;
+		printf("%08x", ((u32*)buf)[i]);
 
-		for (i = 0; i < BSIZE / 4; i++)
+		if ((i + 1)% 8)
 		{
-			printf("%08x", ((u32*)buf)[i]);
-
-			if ((i + 1)% 8)
-			{
-				printf(" ");
-			}
-			else
-			{
-				printf("\n");
-			}
+			printf(" ");
+		}
+		else
+		{
+			printf("\n");
 		}
 	}
+#endif
 
 	return 0;
 
@@ -106,18 +105,18 @@ int mmc_decode_cid(struct mmc_host *host)
 	return 0;
 }
 
-static int mmc_get_block(struct generic_drive *drive, int idx, u8 buff[])
+static int mmc_get_block(struct generic_drive *drive, int start, u8 buff[])
 {
 	struct mmc_card *card = container_of(drive, struct mmc_card, drive);
 
-	return mmc_read_blk(card->host, buff, idx);
+	return mmc_read_blk(card->host, buff, start);
 }
 
-static int mmc_put_block(struct generic_drive *drive, int idx, const u8 buff[])
+static int mmc_put_block(struct generic_drive *drive, int start, const u8 buff[])
 {
 	struct mmc_card *card = container_of(drive, struct mmc_card, drive);
 
-	return mmc_write_blk(card->host, buff, idx);
+	return mmc_write_blk(card->host, buff, start);
 }
 
 static int mmc_blkdev_register(struct mmc_card *card)
@@ -126,7 +125,7 @@ static int mmc_blkdev_register(struct mmc_card *card)
 
 	// fixme
 	drive->drive_size  = 0;
-	drive->block_size  = BSIZE;
+	drive->block_size  = BLKSIZE;
 
 	drive->get_block = mmc_get_block;
 	drive->put_block = mmc_put_block;
@@ -196,7 +195,7 @@ int mmc_sd_detect_card(struct mmc_host *host)
 
 	//mmc_app_set_bus_width(host,SD_BUS_WIDTH_4);
 
-	//ret = mmc_set_block_len(host, BSIZE);
+	//ret = mmc_set_block_len(host, BLKSIZE);
 
 	ret = mmc_blkdev_register(card);
 

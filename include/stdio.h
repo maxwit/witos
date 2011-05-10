@@ -36,8 +36,15 @@ void clear_screen(void);
 		printf(" BUG @ %s() line %d!\n", __func__, __LINE__); \
 		while(1); \
 	}
+
+#define assert(x) \
+		if (!x) \
+		{  \
+			BUG(); \
+		}
 #else
 #define DPRINT(fmt, args ...)
 #define GEN_DGB()
 #define BUG_ON(x)
+#define assert(x)
 #endif
