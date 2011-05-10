@@ -6,5 +6,6 @@ dir-y += serial
 dir-y += boot
 dir-y += shell
 dir-y += misc
+dir-y += fs
 dir-$(CONFIG_MMC) += mmc
 dir-$(CONFIG_GRAPHICS) += display

@@ -1,7 +1,7 @@
 #include <malloc.h>
 #include <errno.h>
 #include <string.h>
-#include "fat.h"
+#include <fs.h>
 
 int fat_mount(struct block_device *bdev, const char *type, unsigned long flags)
 {
