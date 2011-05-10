@@ -43,6 +43,8 @@ struct block_device
 	size_t bdev_size;
 
 	struct fat_fs *fs;
+	struct list_node bdev_node;
 };
 
 int block_device_register(struct block_device *blk_dev);
+struct list_node *get_bdev_list(void);

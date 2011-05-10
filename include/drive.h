@@ -1,5 +1,6 @@
 #pragma once
 
+#include <list.h>
 #include <block.h>
 
 struct generic_drive
@@ -9,9 +10,17 @@ struct generic_drive
 	int (*get_block)(struct generic_drive *drive, int start, void *buff);
 	int (*put_block)(struct generic_drive *drive, int start, const void *buff);
 
+	size_t sect_size; // fixme: move to block_device
+
 	union
 	{
-		size_t sect_size;
+		struct list_node master_node;
+		struct list_node slave_node;
+	};
+
+	union
+	{
+		struct list_node slave_list;
 		struct generic_drive *master;
 	};
 };
