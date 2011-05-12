@@ -397,22 +397,22 @@ int str_to_mac(u8 mac[], const char *str)
 {
 	int i, j;
 	u32 num;
-	u8 buf[MAC_STR_LEN];
-	char *p = (char *)buf;
+	char buf[MAC_STR_LEN];
+	char *p = buf;
 
 	strncpy((char*)buf, str, MAC_STR_LEN);
 
-	for (i = j = 0; i <= MAC_STR_LEN; i++)
+	for (i = j = 0; i <= MAC_STR_LEN && j < MAC_ADR_LEN; i++)
 	{
-		if (buf[i] == ':' || buf[i] == '\0')
+		if (':' == buf[i]|| '\0' == buf[i])
 		{
 			buf[i] = '\0';
-			if (0 == hex_str_to_val(p, &num) || num > 255)
+			if (hex_str_to_val(p, &num) <= 0 || num > 255)
 			{
 				return -EINVAL;
 			}
 			mac[j++] = num;
-			p = (char*)buf + i + 1;
+			p = buf + i + 1;
 		}
 	}
 
