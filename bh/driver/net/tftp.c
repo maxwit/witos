@@ -61,7 +61,6 @@ int net_tftp_load(struct tftp_opt *opt)
 	struct tftp_packet *tftp_pkt;
 	struct sockaddr_in *local_addr, *remote_addr;
 	socklen_t addrlen;
-	struct net_config  *net_cfg;
 
 	ndev_ioctl(NULL, NIOC_GET_IP, &client_ip);
 
@@ -70,8 +69,6 @@ int net_tftp_load(struct tftp_opt *opt)
 		printf("Error: Local IP!\n");
 		return -EINVAL;
 	}
-
-	net_cfg = sysconf_get_net_info();
 
 	if (ip_to_str(server_ip, opt->server_ip) < 0)
 	{
@@ -114,12 +111,12 @@ int net_tftp_load(struct tftp_opt *opt)
 	}
 
 	memset(remote_addr, 0, sizeof(*remote_addr));
-	remote_addr->sin_addr.s_addr = net_cfg->server_ip; // bigendian
+	remote_addr->sin_addr.s_addr = opt->server_ip; // bigendian
 	remote_addr->sin_port = CPU_TO_BE16(STD_PORT_TFTP);
 	addrlen = sizeof(*remote_addr);
 
 	sendto(sockfd, tftp_pkt, pkt_len, 0,
-			(const struct sockaddr *)remote_addr, addrlen);
+		(struct sockaddr *)remote_addr, addrlen);
 
 	buff_ptr = opt->load_addr;
 	load_len = 0;
