@@ -4,27 +4,38 @@
 
 #include "lan9220.h"
 
-#ifdef LAN9220_32BITS
-#define lan9220_readl(reg) \
-	readl(VA(LAN9220_BASE + reg))
-
-#define lan9220_writel(reg, val) \
-	writel(VA(LAN9220_BASE + reg), val)
+#if 0
+struct lan9220_chip
+{
+	int lan9220_32bits;
+	u32 (*readl)(lan9220_chip *, int);
+	u32 (*writel)(lan9220_chip *, int, u32);
+	// ...
+};
+#else
+static int lan9220_32bits;
 #endif
 
-#define LAN9220_16BITS
-#ifdef LAN9220_16BITS
 static inline u32 lan9220_readl(u8 reg)
 {
+	if (lan9220_32bits)
+		return readl(VA(LAN9220_BASE + reg));
+
 	return readw(VA(LAN9220_BASE + reg + 2)) << 16 | readw(VA(LAN9220_BASE + reg));
 }
 
 static inline void lan9220_writel(u8 reg, u32 val)
 {
-	writew(VA(LAN9220_BASE + reg), val & 0xffff);
-	writew(VA(LAN9220_BASE + reg + 2), val >> 16 & 0xffff);
+	if (lan9220_32bits)
+	{
+		writel(VA(LAN9220_BASE + reg), val);
+	}
+	else
+	{
+		writew(VA(LAN9220_BASE + reg), val & 0xffff);
+		writew(VA(LAN9220_BASE + reg + 2), val >> 16 & 0xffff);
+	}
 }
-#endif
 
 static u32 lan9220_mac_csr_read(u32 csr_reg)
 {
@@ -240,11 +251,13 @@ static __INIT__ int lan9220_probe(void)
 	switch (mac_id >> 16)
 	{
 	case 0x0118:
-		chip_name = "lan9118";
+		lan9220_32bits = 1;
+		chip_name = "LAN9118 (32-bit)";
 		break;
 
 	case 0x9220:
-		chip_name = "lan9220";
+		lan9220_32bits = 0;
+		chip_name = "LAN9220 (16-bit)";
 		break;
 
 	default:
