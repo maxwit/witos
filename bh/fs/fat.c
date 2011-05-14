@@ -160,7 +160,7 @@ struct file *fat_open(const char *name, int flags, ...)
 
 	name++;
 
-	bdev = bdev_open(dev_name);
+	bdev = get_bdev_by_name(dev_name);
 
 	if (NULL == bdev)
 	{
@@ -233,7 +233,7 @@ int sys_mount(const char *dev_name, const char *type, int flags)
 	int ret;
 	struct block_device *bdev;
 
-	bdev = bdev_open(dev_name);
+	bdev = get_bdev_by_name(dev_name);
 	if (NULL == bdev)
 	{
 		DPRINT("fail to open block device \"%s\"!\n", dev_name);
@@ -242,7 +242,6 @@ int sys_mount(const char *dev_name, const char *type, int flags)
 
 	ret = fat_mount(bdev, type, flags);
 
-	bdev_close(bdev);
 
 	return ret;
 }

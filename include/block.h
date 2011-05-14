@@ -50,5 +50,4 @@ struct block_device
 int block_device_register(struct block_device *bdev);
 struct list_node *get_bdev_list(void);
 
-struct block_device *bdev_open(const char *name);
-int bdev_close(struct block_device *bdev);
+struct block_device *get_bdev_by_name(const char *name);

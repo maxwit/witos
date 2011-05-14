@@ -8,7 +8,7 @@ struct list_node *get_bdev_list(void)
 	return &g_bdev_list;
 }
 
-struct block_device *bdev_open(const char *name)
+struct block_device *get_bdev_by_name(const char *name)
 {
 	struct list_node *iter;
 	struct block_device *bdev;
@@ -21,11 +21,6 @@ struct block_device *bdev_open(const char *name)
 	}
 
 	return NULL;
-}
-
-int bdev_close(struct block_device *bdev)
-{
-	return 0;
 }
 
 int block_device_register(struct block_device *bdev)

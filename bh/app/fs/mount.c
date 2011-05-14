@@ -13,7 +13,7 @@ int main(int argc, char *argv[])
 		return -EINVAL;
 	}
 
-	bdev = bdev_open(argv[1]);
+	bdev = get_bdev_by_name(argv[1]);
 	if (NULL == bdev)
 	{
 		printf("fail to open block device \"%s\"!\n", argv[1]);
@@ -22,7 +22,6 @@ int main(int argc, char *argv[])
 
 	ret = fat_mount(bdev, "vfat", 0);
 
-	bdev_close(bdev);
 
 	return ret;
 }
