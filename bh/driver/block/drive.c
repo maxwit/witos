@@ -18,7 +18,7 @@ struct msdos_part
 static struct list_node g_master_list;
 
 // fixme to support extened partion
-static int msdos_part_scan(struct generic_drive *drive, struct part_attr part_tab[])
+static int msdos_part_scan(struct disk_drive *drive, struct part_attr part_tab[])
 {
 	int i;
 	struct msdos_part dos_pt[MSDOS_MAX_PARTS];
@@ -51,25 +51,25 @@ static int msdos_part_scan(struct generic_drive *drive, struct part_attr part_ta
 	return i;
 }
 
-static int drive_get_block(struct generic_drive *drive, int start, void *buff)
+static int drive_get_block(struct disk_drive *drive, int start, void *buff)
 {
-	struct generic_drive *master = drive->master;
+	struct disk_drive *master = drive->master;
 
 	return master->get_block(master, drive->bdev.bdev_base + start, buff);
 }
 
-static int drive_put_block(struct generic_drive *drive, int start, const void *buff)
+static int drive_put_block(struct disk_drive *drive, int start, const void *buff)
 {
-	struct generic_drive *master = drive->master;
+	struct disk_drive *master = drive->master;
 
 	return master->put_block(master, drive->bdev.bdev_base + start, buff);
 }
 
-int generic_drive_register(struct generic_drive *drive)
+int disk_drive_register(struct disk_drive *drive)
 {
 	int ret, num, i;
 	struct part_attr part_tab[MSDOS_MAX_PARTS];
-	struct generic_drive *slave;
+	struct disk_drive *slave;
 
 	ret = block_device_register(&drive->bdev);
 	// if ret < 0 ...
@@ -102,10 +102,10 @@ int generic_drive_register(struct generic_drive *drive)
 	return 0;
 }
 
-static int __INIT__ generic_drive_init(void)
+static int __INIT__ disk_drive_init(void)
 {
 	list_head_init(&g_master_list);
 	return 0;
 }
 
-SUBSYS_INIT(generic_drive_init);
+SUBSYS_INIT(disk_drive_init);

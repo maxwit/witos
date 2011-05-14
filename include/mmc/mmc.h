@@ -121,7 +121,7 @@ struct mmc_cid
 
 struct mmc_card
 {
-	struct generic_drive drive;
+	struct disk_drive drive;
 
 	u16 rca;
 	u16 dsr;

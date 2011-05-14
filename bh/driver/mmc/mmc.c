@@ -106,14 +106,14 @@ int mmc_decode_cid(struct mmc_host *host)
 	return 0;
 }
 
-static int mmc_get_block(struct generic_drive *drive, int start, void *buff)
+static int mmc_get_block(struct disk_drive *drive, int start, void *buff)
 {
 	struct mmc_card *card = container_of(drive, struct mmc_card, drive);
 
 	return mmc_read_blk(card->host, buff, start);
 }
 
-static int mmc_put_block(struct generic_drive *drive, int start, const void *buff)
+static int mmc_put_block(struct disk_drive *drive, int start, const void *buff)
 {
 	struct mmc_card *card = container_of(drive, struct mmc_card, drive);
 
@@ -122,7 +122,7 @@ static int mmc_put_block(struct generic_drive *drive, int start, const void *buf
 
 static int mmc_card_register(struct mmc_card *card)
 {
-	struct generic_drive *drive = &card->drive;
+	struct disk_drive *drive = &card->drive;
 
 	sprintf(drive->bdev.dev.name, "mmcblock%d", mmc_card_count);
 	mmc_card_count++;
@@ -137,7 +137,7 @@ static int mmc_card_register(struct mmc_card *card)
 	drive->get_block = mmc_get_block;
 	drive->put_block = mmc_put_block;
 
-	return generic_drive_register(&card->drive);
+	return disk_drive_register(&card->drive);
 }
 
 int mmc_sd_detect_card(struct mmc_host *host)

@@ -14,7 +14,7 @@ int fat_mount(struct block_device *bdev, const char *type, unsigned long flags)
 	struct fat_dentry *root;
 	__u32  *fat;
 	size_t fat_len;
-	struct generic_drive *drive = container_of(bdev, struct generic_drive, bdev);
+	struct disk_drive *drive = container_of(bdev, struct disk_drive, bdev);
 
 	fs = malloc(sizeof(*fs));
 
@@ -199,11 +199,11 @@ int fat_read(struct file *fp, void *buff, size_t size)
 	struct fat_boot_sector *dbr;
 	struct fat_dentry *dir = fp->dent;
 	struct fat_fs *fs = fp->fs;
-	struct generic_drive *drive;
+	struct disk_drive *drive;
 	size_t pos;
 
 	dbr = &fs->dbr;
-	drive = container_of(fp->fs->bdev, struct generic_drive, bdev);
+	drive = container_of(fp->fs->bdev, struct disk_drive, bdev);
 
 	clus_num = dir->clus_hi << 16 | dir->clus_lo;
 	printf("%s(): cluster = %d\n", __func__, clus_num);

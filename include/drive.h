@@ -3,12 +3,12 @@
 #include <list.h>
 #include <block.h>
 
-struct generic_drive
+struct disk_drive
 {
 	struct block_device bdev;
 
-	int (*get_block)(struct generic_drive *drive, int start, void *buff);
-	int (*put_block)(struct generic_drive *drive, int start, const void *buff);
+	int (*get_block)(struct disk_drive *drive, int start, void *buff);
+	int (*put_block)(struct disk_drive *drive, int start, const void *buff);
 
 	union
 	{
@@ -19,8 +19,8 @@ struct generic_drive
 	union
 	{
 		struct list_node slave_list;
-		struct generic_drive *master;
+		struct disk_drive *master;
 	};
 };
 
-int generic_drive_register(struct generic_drive *drive);
+int disk_drive_register(struct disk_drive *drive);
