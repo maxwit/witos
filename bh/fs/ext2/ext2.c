@@ -11,13 +11,18 @@
 #define min(x, y) ((x) < (y) ? (x) : (y))
 #endif
 
+#define MAX_MNT_LEN 256
+
 struct ext2_file_system
 {
 	struct ext2_super_block sb;
 	struct block_device *bdev;
 	struct ext2_dir_entry_2 *root;
 	struct ext2_group_desc *gdt;
-} *g_ext2_fs;
+};
+
+// TODO:  remove it!
+static struct ext2_file_system *g_ext2_fs;
 
 static ssize_t ext2_read_block(struct ext2_file_system *fs, void *buff, int blk_no, size_t off, size_t size)
 {
@@ -123,7 +128,7 @@ struct ext2_dir_entry_2 *ext2_mount(const char *dev_name, const char *path, cons
 
 	ext2_read_block(fs, gdt, sb->s_first_data_block + 1, 0, gdt_num * sizeof(struct ext2_group_desc));
 
-	printf("%s(), block group[0 of %d]: free blocks= %d, free inodes = %d\n",
+	printf("%s(), block group[0 / %d]: free blocks= %d, free inodes = %d\n",
 		__func__, gdt_num, gdt->bg_free_blocks_count, gdt->bg_free_inodes_count);
 
 	fs->gdt  = gdt;
@@ -140,6 +145,7 @@ struct ext2_dir_entry_2 *ext2_mount(const char *dev_name, const char *path, cons
 	return root;
 }
 
+// fixme: free all resources
 int ext2_umount(const char *path)
 {
 	struct ext2_file_system *fs;
@@ -157,6 +163,7 @@ int ext2_umount(const char *path)
 	return 0;
 }
 
+// fixme: to support large directory
 static struct ext2_dir_entry_2 *ext2_lookup(struct ext2_inode *parent, const char *name)
 {
 	struct ext2_dir_entry_2 *d_match;
@@ -164,6 +171,7 @@ static struct ext2_dir_entry_2 *ext2_lookup(struct ext2_inode *parent, const cha
 	char buff[parent->i_size];
 	size_t len = 0;
 
+	// fixme
 	ext2_read_block(fs, buff, parent->i_block[0], 0, parent->i_size);
 
 	struct ext2_dir_entry_2 *dentry = (struct ext2_dir_entry_2 *)buff;
@@ -193,18 +201,37 @@ found_entry:
 	return d_match;
 }
 
+// fixme: to parse path in syntax: "mount_point:filename"
+static inline int mnt_of_path(const char *path, char mnt[])
+{
+	return 0;
+}
+
 struct ext2_file *ext2_open(const char *name, int flags, ...)
 {
 	struct ext2_file_system *fs;
 	struct ext2_dir_entry_2 *dir, *de;
 	struct ext2_inode *parent;
 	struct ext2_file *file;
+	char mnt[MAX_MNT_LEN];
+	int ret;
 
-	fs = ext2_get_file_system(name);
+	ret =  mnt_of_path(name, mnt);
+	// if ...
+
+	fs = ext2_get_file_system(mnt);
+	if (NULL == fs)
+	{
+		printf("\"%s\" not mounted!\n", mnt);
+		return NULL;
+	}
+
 	dir = fs->root;
 
 	parent = ext2_read_inode(fs, dir->inode);
 	//
+
+	name += ret;
 
 	de = ext2_lookup(parent, name);
 	if (NULL == de)
@@ -227,6 +254,7 @@ int ext2_close(struct ext2_file *file)
 	return 0;
 }
 
+// fixme: to support "where"
 ssize_t ext2_lseek(struct ext2_file *file, ssize_t off, int where)
 {
 	switch (where)
@@ -239,6 +267,7 @@ ssize_t ext2_lseek(struct ext2_file *file, ssize_t off, int where)
 	return file->pos;
 }
 
+// fixme: to large file support (iterate each valid i_block[])
 ssize_t ext2_read(struct ext2_file *file, void *buff, size_t size)
 {
 	struct ext2_file_system *fs = file->fs;
