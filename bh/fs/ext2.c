@@ -12,9 +12,8 @@ struct ext2_file_system
 	struct ext2_super_block sb;
 	struct block_device *bdev;
 	struct ext2_dir_entry_2 *root;
+	struct ext2_group_desc *gdt;
 } g_ext2_fs;
-
-struct ext2_dir_entry_2 *pwd;
 
 static ssize_t ext2_read_block(struct ext2_file_system *fs, void *buff, int blk_no, size_t off, size_t size)
 {
@@ -40,36 +39,53 @@ static struct ext2_inode *ext2_read_inode(struct ext2_file_system *fs, int ino)
 	struct ext2_super_block *sb = &fs->sb;
 	// struct block_device *bdev = fs->bdev;
 	int grp_no, ino_no, blk_is;
-	struct ext2_group_desc gde;
+	struct ext2_group_desc *gde;
 
 	ino--;
 
 	grp_no = ino / sb->s_inodes_per_group;
-	ext2_read_block(fs, &gde, sb->s_first_data_block + 1, grp_no * sizeof(gde), sizeof(gde));
-
-	printf("free blocks = %d, free inodes = %d\n", gde.bg_free_blocks_count, gde.bg_free_inodes_count);
+	// ext2_read_block(fs, &gde, sb->s_first_data_block + 1, grp_no * sizeof(gde), sizeof(gde));
+	gde = &fs->gdt[grp_no];
 
 	inode = malloc(sb->s_inode_size);
 
 	blk_is = (1 << (sb->s_log_block_size + 10)) / sb->s_inode_size;
-	printf("inode size = %d, block size = %d, inodes per block = %d\n",
-		sb->s_inode_size, (1 << (sb->s_log_block_size + 10)), blk_is);
-
 	ino_no = ino % sb->s_inodes_per_group;
-	ext2_read_block(fs, inode, gde.bg_inode_table + ino_no / blk_is, ino_no * sb->s_inode_size, sb->s_inode_size);
 
-	printf("inode %d:\nsize = %d, uid = %d, gid = %d, mode = 0x%x\n",
-		ino, inode->i_size, inode->i_uid, inode->i_gid, inode->i_mode);
+	ext2_read_block(fs, inode, gde->bg_inode_table + ino_no / blk_is, ino_no * sb->s_inode_size, sb->s_inode_size);
+
+	printf("%s(), inode %d:\nsize = %d, uid = %d, gid = %d, mode = 0x%x\n",
+		__func__, ino + 1, inode->i_size, inode->i_uid, inode->i_gid, inode->i_mode);
 
 	return inode;
 }
 
-struct ext2_dir_entry_2 *ext2_mount(struct block_device *bdev, const char *type, const char *path)
+struct ext2_file_system *ext2_get_file_system(const char *name)
 {
+	return &g_ext2_fs;
+}
+
+struct ext2_dir_entry_2 *ext2_mount(const char *dev_name, const char *path, const char *type)
+{
+	struct block_device *bdev;
 	struct ext2_file_system *fs = &g_ext2_fs; // malloc(sizeof(*fs));
 	struct ext2_super_block *sb = &fs->sb;
 	struct ext2_dir_entry_2 *root;
+	struct ext2_group_desc *gdt;
 	char buff[DISK_BLOCK_SIZE];
+	size_t gdt_len;
+	int blk_is;
+
+	bdev = bdev_open(dev_name);
+	if (bdev == NULL)
+	{
+		char str[64];
+
+		sprintf(str, "open(%s)", dev_name);
+		perror(str);
+
+		return NULL;
+	}
 
 	bdev->get_block(bdev, 2, buff);
 	memcpy(sb, buff, sizeof(*sb));
@@ -80,21 +96,50 @@ struct ext2_dir_entry_2 *ext2_mount(struct block_device *bdev, const char *type,
 		return NULL;
 	}
 
-	printf("%s(): label = %s, log block size = %d\n",
-		__func__, sb->s_volume_name, sb->s_log_block_size);
+	blk_is = (1 << (sb->s_log_block_size + 10)) / sb->s_inode_size;
+
+	printf("%s(): label = %s, log block size = %d, "
+		"inode size = %d, block size = %d, inodes per block = %d\n",
+		__func__, sb->s_volume_name, sb->s_log_block_size,
+		sb->s_inode_size, (1 << (sb->s_log_block_size + 10)), blk_is);
+
+	fs->bdev = bdev;
+
+	gdt_len = /* sb->s_blocks_count / sb->s_blocks_per_group * */ 2 * sizeof(struct ext2_group_desc);
+	gdt = malloc(gdt_len);
+	if (NULL == gdt)
+	{
+		return NULL;
+	}
+
+	ext2_read_block(fs, gdt, sb->s_first_data_block + 1, 0, gdt_len);
+
+	printf("%s(), first block group: free blocks= %d, free inodes = %d\n",
+		__func__, gdt->bg_free_blocks_count, gdt->bg_free_inodes_count);
+
+	fs->gdt  = gdt;
 
 	root = malloc(sizeof(*root));
 	// if ...
 
 	root->inode = 2;
-	// parent->file_type = EXT2_FT_DIR;
-	// strncpy(parent->name, "ext2_root", sizeof(parent->name));
-	// parent->name_len =
 
-	fs->bdev = bdev;
 	fs->root = root;
 
 	return root;
+}
+
+int ext2_umount(const char *path)
+{
+	struct ext2_file_system *fs;
+
+	fs = ext2_get_file_system(path);
+	if (NULL == fs)
+		return -ENOENT;
+
+	bdev_close(fs->bdev);
+
+	return 0;
 }
 
 static struct ext2_dir_entry_2 *ext2_lookup(struct ext2_inode *parent, const char *name)
@@ -135,10 +180,13 @@ found_entry:
 
 struct ext2_file *ext2_open(const char *name, int flags, ...)
 {
-	struct ext2_file_system *fs = &g_ext2_fs;
-	struct ext2_dir_entry_2 *dir = fs->root, *de;
+	struct ext2_file_system *fs;
+	struct ext2_dir_entry_2 *dir, *de;
 	struct ext2_inode *parent;
 	struct ext2_file *file;
+
+	fs = ext2_get_file_system(name);
+	dir = fs->root;
 
 	parent = ext2_read_inode(fs, dir->inode);
 	//
@@ -152,12 +200,14 @@ struct ext2_file *ext2_open(const char *name, int flags, ...)
 
 	file->pos = 0;
 	file->dentry = de;
+	file->fs = fs;
 
 	return file;
 }
 
 int ext2_close(struct ext2_file *file)
 {
+	// free(inode, dentry, ...)
 	free(file);
 	return 0;
 }
@@ -178,7 +228,7 @@ ssize_t ext2_lseek(struct ext2_file *file, ssize_t off, int where)
 
 ssize_t ext2_read(struct ext2_file *file, void *buff, size_t size)
 {
-	struct ext2_file_system *fs = &g_ext2_fs;
+	struct ext2_file_system *fs = file->fs;
 	struct ext2_inode *inode;
 	ssize_t len;
 

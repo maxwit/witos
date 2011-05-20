@@ -3,13 +3,11 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include "ext2.h"
-#include "block.h"
 
 #define BUF_LEN 512
 
 int main(int argc, char *argv[])
 {
-	struct block_device *bdev;
 	struct ext2_dir_entry_2 *dir;
 	struct ext2_file *fp;
 	const char *dev, *fn;
@@ -25,18 +23,7 @@ int main(int argc, char *argv[])
 	dev = argv[1];
 	fn  = argv[2];
 
-	bdev = bdev_open(dev);
-	if (bdev == NULL)
-	{
-		char str[64];
-
-		sprintf(str, "open(%s)", dev);
-		perror(str);
-
-		return -ENODEV;
-	}
-
-	dir = ext2_mount(bdev, "ext2", "anywhere");
+	dir = ext2_mount(dev, "somewhere", "ext2");
 
 	fp = ext2_open(fn, 0);
 	if (NULL == fp)
@@ -55,7 +42,7 @@ int main(int argc, char *argv[])
 
 	ext2_close(fp);
 
-	bdev_close(bdev);
+	ext2_umount("somewhere");
 
 	return 0;
 }

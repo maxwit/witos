@@ -1,4 +1,4 @@
-CFLAGS = -Wall
+CFLAGS = -Wall -g
 CC = gcc
 
 OBJS = ext2.o main.o block.o
