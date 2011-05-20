@@ -5,6 +5,8 @@
 #include "block.h"
 #include "ext2.h"
 
+static ssize_t bdev_read_block(struct block_device *bdev, int blk_no, size_t off, void *buff, size_t size);
+
 struct block_device *bdev_open(const char *name)
 {
 	int fd;
@@ -20,6 +22,7 @@ struct block_device *bdev_open(const char *name)
 
 	bdev->name = name;
 	bdev->fd   = fd;
+	bdev->read_block = bdev_read_block;
 
 	return bdev;
 }

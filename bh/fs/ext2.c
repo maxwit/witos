@@ -10,29 +10,32 @@ struct ext2_file_system
 {
 	struct ext2_super_block sb;
 	struct block_device *bdev;
-	
 } ext2_fs;
 
 // #define EXT2_BLOCK_TO_SECT(n) ((n) << (sb->s_log_block_size + 1))
 
-static	ssize_t bdev_read_block(struct ext2_file_system *fs, int blk_no, size_t off, void *buff, size_t size)
+static	ssize_t ext2_read_block(struct ext2_file_system *fs, int blk_no, size_t off, void *buff, size_t size)
 {
-	return bdev_read_block(fs->bdev, blk_no << (fs->sb.s_log_block_size + 1), off, buff, size);
+	struct block_device *bdev = fs->bdev;
+	struct ext2_super_block *sb = &fs->sb;
+
+	return bdev->read_block(bdev, blk_no << (sb->s_log_block_size + 1), off, buff, size);
 }
 
 static struct ext2_inode *ext2_read_inode(struct ext2_file_system *fs, int ino)
 {
 	struct ext2_inode *inode;
 	struct ext2_super_block *sb = &fs->sb;
-	struct block_device *bdev = fs->bdev;
-	int blk_no, grp_no, ino_no, blk_is;
+	// struct block_device *bdev = fs->bdev;
+	int grp_no, ino_no, blk_is;
 	struct ext2_group_desc gde;
 
 	ino--;
 
 	grp_no = ino / sb->s_inodes_per_group;
-	blk_no = (sb->s_first_data_block + 1) << (sb->s_log_block_size + 1);
-	bdev_read_block(bdev, blk_no, grp_no * sizeof(gde), &gde, sizeof(gde));
+	// blk_no = (sb->s_first_data_block + 1) << (sb->s_log_block_size + 1);
+	// bdev_read_block(bdev, blk_no, grp_no * sizeof(gde), &gde, sizeof(gde));
+	ext2_read_block(fs, sb->s_first_data_block + 1, grp_no * sizeof(gde), &gde, sizeof(gde));
 
 	printf("free blocks = %d, free inodes = %d\n", gde.bg_free_blocks_count, gde.bg_free_inodes_count);
 
@@ -43,8 +46,8 @@ static struct ext2_inode *ext2_read_inode(struct ext2_file_system *fs, int ino)
 		sb->s_inode_size, (1 << (sb->s_log_block_size + 10)), blk_is);
 
 	ino_no = ino % sb->s_inodes_per_group;
-	blk_no = (gde.bg_inode_table + ino_no / blk_is) << (sb->s_log_block_size + 1);
-	bdev_read_block(bdev, blk_no, ino_no * sb->s_inode_size, inode, sb->s_inode_size);
+	// bdev_read_block(bdev, blk_no, ino_no * sb->s_inode_size, inode, sb->s_inode_size);
+	ext2_read_block(fs, gde.bg_inode_table + ino_no / blk_is, ino_no * sb->s_inode_size, inode, sb->s_inode_size);
 
 	printf("inode = %d:\n"
 		"size = %d, uid = %d, gid = %d, mode = 0x%x\n",
@@ -59,7 +62,7 @@ struct ext2_dir_entry_2 *ext2_mount(struct block_device *bdev, const char *type)
 	struct ext2_super_block *sb = &fs->sb;
 	struct ext2_inode *root;
 
-	bdev_read_block(bdev, 2, 0, sb, sizeof(*sb));
+	bdev->read_block(bdev, 2, 0, sb, sizeof(*sb));
 
 	if (sb->s_magic != 0xef53)
 	{
@@ -79,7 +82,8 @@ struct ext2_dir_entry_2 *ext2_mount(struct block_device *bdev, const char *type)
 
 		char buff[root->i_size];
 
-		bdev_read_block(bdev, root->i_block[0] << (sb->s_log_block_size + 1), 0, buff, root->i_size);
+		// bdev_read_block(bdev, root->i_block[0] << (sb->s_log_block_size + 1), 0, buff, root->i_size);
+		ext2_read_block(fs, root->i_block[0], 0, buff, root->i_size);
 
 		int j = 0;
 		struct ext2_dir_entry_2 *dentry = (struct ext2_dir_entry_2 *)buff;
@@ -87,11 +91,11 @@ struct ext2_dir_entry_2 *ext2_mount(struct block_device *bdev, const char *type)
 		while (j < root->i_size)
 		{
 			struct ext2_inode *inode;
-			
+
 			if (dentry->rec_len > 0)
 			{
 				dentry->name[dentry->name_len] = '\0';
-				printf("%s: inode = %d, dentry len = %d, sizeof dentry = %d\n",
+				printf("%s: inode = %d, dentry len = %d, sizeof dentry = %ld\n",
 					dentry->name, dentry->inode, dentry->rec_len, sizeof(*dentry));
 
 				// read data
@@ -103,7 +107,8 @@ struct ext2_dir_entry_2 *ext2_mount(struct block_device *bdev, const char *type)
 
 					inode = ext2_read_inode(fs, dentry->inode);
 
-					len = bdev_read_block(bdev, inode->i_block[0] << (sb->s_log_block_size + 1), 0, buff, DISK_BLOCK_SIZE);
+					// len = bdev_read_block(bdev, inode->i_block[0] << (sb->s_log_block_size + 1), 0, buff, DISK_BLOCK_SIZE);
+					len = ext2_read_block(fs, inode->i_block[0], 0, buff, DISK_BLOCK_SIZE);
 					buff[len] = '\0';
 					printf("data = %s", buff);
 				}

@@ -125,7 +125,7 @@ int net_tftp_load(struct tftp_opt *opt)
 	do
 	{
 		pkt_len = recvfrom(sockfd, tftp_pkt, TFTP_BUF_LEN, 0,
-							(struct sockaddr *)remote_addr, &addrlen);
+						(struct sockaddr *)remote_addr, &addrlen);
 		if(0 == pkt_len)
 			goto L1;
 

@@ -8,12 +8,10 @@ struct block_device
 {
 	const char *name;
 	int fd;
+
+	ssize_t (*read_block)(struct block_device *bdev, int blk_no, size_t off, void *buff, size_t size);
 };
 
 struct block_device *bdev_open(const char *name);
 
 int bdev_close(struct block_device *bdev);
-
-// ssize_t bdev_read_block(struct block_device *bdev, int blk_no, void *buff);
-
-ssize_t bdev_read_block(struct block_device *bdev, int blk_no, size_t off, void *buff, size_t size);
