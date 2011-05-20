@@ -1,7 +1,7 @@
 CFLAGS = -Wall -g
 CC = gcc
 
-OBJS = ext2.o main.o block.o
+OBJS = ext2.o block.o demo.o
 SRCS = $(OBJS:%.c=%.o)
 
 demo_ext2: $(OBJS)

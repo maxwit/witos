@@ -200,8 +200,6 @@ struct ext2_file *ext2_open(const char *name, int flags, ...)
 	struct ext2_inode *parent;
 	struct ext2_file *file;
 
-	printf("%s():\n", __func__);
-
 	fs = ext2_get_file_system(name);
 	dir = fs->root;
 
@@ -246,8 +244,6 @@ ssize_t ext2_read(struct ext2_file *file, void *buff, size_t size)
 	struct ext2_file_system *fs = file->fs;
 	struct ext2_inode *inode;
 	ssize_t len;
-
-	printf("%s():\n", __func__);
 
 	inode = ext2_read_inode(fs, file->dentry->inode);
 	char disk_buff[inode->i_size];
