@@ -13,7 +13,7 @@ struct ext2_file_system
 	struct block_device *bdev;
 	struct ext2_dir_entry_2 *root;
 	struct ext2_group_desc *gdt;
-} g_ext2_fs;
+} *g_ext2_fs;
 
 static ssize_t ext2_read_block(struct ext2_file_system *fs, void *buff, int blk_no, size_t off, size_t size)
 {
@@ -62,13 +62,13 @@ static struct ext2_inode *ext2_read_inode(struct ext2_file_system *fs, int ino)
 
 struct ext2_file_system *ext2_get_file_system(const char *name)
 {
-	return &g_ext2_fs;
+	return g_ext2_fs;
 }
 
 struct ext2_dir_entry_2 *ext2_mount(const char *dev_name, const char *path, const char *type)
 {
 	struct block_device *bdev;
-	struct ext2_file_system *fs = &g_ext2_fs; // malloc(sizeof(*fs));
+	struct ext2_file_system *fs = malloc(sizeof(*fs));
 	struct ext2_super_block *sb = &fs->sb;
 	struct ext2_dir_entry_2 *root;
 	struct ext2_group_desc *gdt;
@@ -126,6 +126,8 @@ struct ext2_dir_entry_2 *ext2_mount(const char *dev_name, const char *path, cons
 
 	fs->root = root;
 
+	g_ext2_fs = fs;
+
 	return root;
 }
 
@@ -139,13 +141,17 @@ int ext2_umount(const char *path)
 
 	bdev_close(fs->bdev);
 
+	// free fs-> ...
+
+	free(fs);
+
 	return 0;
 }
 
 static struct ext2_dir_entry_2 *ext2_lookup(struct ext2_inode *parent, const char *name)
 {
 	struct ext2_dir_entry_2 *d_match;
-	struct ext2_file_system *fs = &g_ext2_fs;
+	struct ext2_file_system *fs = g_ext2_fs;
 	char buff[parent->i_size];
 	size_t len = 0;
 
