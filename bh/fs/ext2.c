@@ -82,7 +82,7 @@ struct ext2_dir_entry_2 *ext2_mount(const char *dev_name, const char *path, cons
 	struct ext2_dir_entry_2 *root;
 	struct ext2_group_desc *gdt;
 	char buff[DISK_BLOCK_SIZE];
-	size_t gdt_len;
+	int gdt_num;
 	int blk_is;
 
 	bdev = bdev_open(dev_name);
@@ -114,17 +114,17 @@ struct ext2_dir_entry_2 *ext2_mount(const char *dev_name, const char *path, cons
 
 	fs->bdev = bdev;
 
-	gdt_len = sb->s_blocks_count / sb->s_blocks_per_group * sizeof(struct ext2_group_desc);
-	gdt = malloc(gdt_len);
+	gdt_num = (sb->s_blocks_count + sb->s_blocks_per_group - 1) / sb->s_blocks_per_group;;
+	gdt = malloc(gdt_num * sizeof(struct ext2_group_desc));
 	if (NULL == gdt)
 	{
 		return NULL;
 	}
 
-	ext2_read_block(fs, gdt, sb->s_first_data_block + 1, 0, gdt_len);
+	ext2_read_block(fs, gdt, sb->s_first_data_block + 1, 0, gdt_num * sizeof(struct ext2_group_desc));
 
-	printf("%s(), first block group: free blocks= %d, free inodes = %d\n",
-		__func__, gdt->bg_free_blocks_count, gdt->bg_free_inodes_count);
+	printf("%s(), block group[0 of %d]: free blocks= %d, free inodes = %d\n",
+		__func__, gdt_num, gdt->bg_free_blocks_count, gdt->bg_free_inodes_count);
 
 	fs->gdt  = gdt;
 
