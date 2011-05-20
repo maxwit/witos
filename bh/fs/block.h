@@ -9,7 +9,7 @@ struct block_device
 	const char *name;
 	int fd;
 
-	ssize_t (*read_block)(struct block_device *bdev, int blk_no, size_t off, void *buff, size_t size);
+	ssize_t (*get_block)(struct block_device *, int, void *);
 };
 
 struct block_device *bdev_open(const char *name);

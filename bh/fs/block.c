@@ -5,7 +5,7 @@
 #include "block.h"
 #include "ext2.h"
 
-static ssize_t bdev_read_block(struct block_device *bdev, int blk_no, size_t off, void *buff, size_t size);
+static ssize_t emul_read_block(struct block_device *bdev, int blk_no, void *buff);
 
 struct block_device *bdev_open(const char *name)
 {
@@ -22,7 +22,7 @@ struct block_device *bdev_open(const char *name)
 
 	bdev->name = name;
 	bdev->fd   = fd;
-	bdev->read_block = bdev_read_block;
+	bdev->get_block = emul_read_block;
 
 	return bdev;
 }
@@ -37,18 +37,13 @@ int bdev_close(struct block_device *bdev)
 	return ret;
 }
 
-ssize_t bdev_read_block(struct block_device *bdev, int blk_no, size_t off, void *buff, size_t size)
+static ssize_t emul_read_block(struct block_device *bdev, int blk_no, void *buff)
 {
-#if 0
-	char blk_buff[DISK_BLOCK_SIZE];
-
+#if 1
 	lseek(bdev->fd, blk_no * DISK_BLOCK_SIZE, SEEK_SET);
+	read(bdev->fd, buff, DISK_BLOCK_SIZE);
 
-	read(bdev->fd, blk_buff, DISK_BLOCK_SIZE);
-
-	memcpy(buff, blk_buff + off, size);
-
-	return size;
+	return DISK_BLOCK_SIZE;
 #else
 	lseek(bdev->fd, blk_no * DISK_BLOCK_SIZE + off, SEEK_SET);
 	return read(bdev->fd, buff, size);

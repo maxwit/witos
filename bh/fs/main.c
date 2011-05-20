@@ -7,8 +7,7 @@
 
 int main(int argc, char *argv[])
 {
-	char buff[DISK_BLOCK_SIZE];
-	struct ext2_dir_entry *dir;
+	struct ext2_dir_entry_2 *dir;
 	struct block_device *bdev;
 
 	if (argc != 2)
