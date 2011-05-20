@@ -207,5 +207,15 @@ enum {
 
 struct block_device;
 
-struct ext2_dir_entry_2 *ext2_mount(struct block_device *bdev, const char *type);
+struct ext2_file
+{
+	size_t pos;
+	struct ext2_dir_entry_2 *dentry;
+};
 
+struct ext2_dir_entry_2 *ext2_mount(struct block_device *bdev, const char *type, const char *path);
+
+struct ext2_file *ext2_open(const char *name, int flags, ...);
+int ext2_close(struct ext2_file *file);
+
+ssize_t ext2_read(struct ext2_file *file, void *buff, size_t size);
