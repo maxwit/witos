@@ -7,6 +7,10 @@
 #include "block.h"
 #include "ext2.h"
 
+#ifndef min
+#define min(x, y) ((x) < (y) ? (x) : (y))
+#endif
+
 struct ext2_file_system
 {
 	struct ext2_super_block sb;
@@ -37,24 +41,29 @@ static struct ext2_inode *ext2_read_inode(struct ext2_file_system *fs, int ino)
 {
 	struct ext2_inode *inode;
 	struct ext2_super_block *sb = &fs->sb;
-	// struct block_device *bdev = fs->bdev;
-	int grp_no, ino_no, blk_is;
+	int grp_no, ino_no, blk_no, count;
 	struct ext2_group_desc *gde;
 
 	ino--;
 
+	count = (1 << (sb->s_log_block_size + 10)) / sb->s_inode_size;
+
 	grp_no = ino / sb->s_inodes_per_group;
-	// ext2_read_block(fs, &gde, sb->s_first_data_block + 1, grp_no * sizeof(gde), sizeof(gde));
 	gde = &fs->gdt[grp_no];
 
-	inode = malloc(sb->s_inode_size);
-
-	blk_is = (1 << (sb->s_log_block_size + 10)) / sb->s_inode_size;
 	ino_no = ino % sb->s_inodes_per_group;
+	blk_no = ino_no / count;
+	ino_no = ino_no % count;
 
-	ext2_read_block(fs, inode, gde->bg_inode_table + ino_no / blk_is, ino_no * sb->s_inode_size, sb->s_inode_size);
+	printf("%s(%d): grp_no = %d, blk_no = %d, ino_no = %d, inode table = %d\n",
+		__func__, ino + 1, grp_no, blk_no, ino_no, gde->bg_inode_table);
 
-	printf("%s(), inode %d:\nsize = %d, uid = %d, gid = %d, mode = 0x%x\n",
+	inode = malloc(sb->s_inode_size);
+	// if
+
+	ext2_read_block(fs, inode, gde->bg_inode_table + blk_no, ino_no * sb->s_inode_size, sb->s_inode_size);
+
+	printf("%s(%d): inode size = %d, uid = %d, gid = %d, mode = 0x%x\n",
 		__func__, ino + 1, inode->i_size, inode->i_uid, inode->i_gid, inode->i_mode);
 
 	return inode;
@@ -105,7 +114,7 @@ struct ext2_dir_entry_2 *ext2_mount(const char *dev_name, const char *path, cons
 
 	fs->bdev = bdev;
 
-	gdt_len = /* sb->s_blocks_count / sb->s_blocks_per_group * */ 2 * sizeof(struct ext2_group_desc);
+	gdt_len = sb->s_blocks_count / sb->s_blocks_per_group * sizeof(struct ext2_group_desc);
 	gdt = malloc(gdt_len);
 	if (NULL == gdt)
 	{
@@ -191,6 +200,8 @@ struct ext2_file *ext2_open(const char *name, int flags, ...)
 	struct ext2_inode *parent;
 	struct ext2_file *file;
 
+	printf("%s():\n", __func__);
+
 	fs = ext2_get_file_system(name);
 	dir = fs->root;
 
@@ -230,13 +241,13 @@ ssize_t ext2_lseek(struct ext2_file *file, ssize_t off, int where)
 	return file->pos;
 }
 
-#define MIN(x, y) ((x) < (y) ? (x) : (y))
-
 ssize_t ext2_read(struct ext2_file *file, void *buff, size_t size)
 {
 	struct ext2_file_system *fs = file->fs;
 	struct ext2_inode *inode;
 	ssize_t len;
+
+	printf("%s():\n", __func__);
 
 	inode = ext2_read_inode(fs, file->dentry->inode);
 	char disk_buff[inode->i_size];
@@ -244,7 +255,7 @@ ssize_t ext2_read(struct ext2_file *file, void *buff, size_t size)
 	if (file->pos == inode->i_size)
 		return 0;
 
-	len = MIN(size, inode->i_size - file->pos);
+	len = min(size, inode->i_size - file->pos);
 
 	len = ext2_read_block(fs, disk_buff, inode->i_block[0], 0, len);
 	if (len < 0)
