@@ -2,7 +2,7 @@
 #include <mmc/mmc_ops.h>
 
 #define BLKNR 1
-#define BLKSIZE 512
+#define MMC_BLK_SIZE 512
 #define MMC_HOST_NUM 5
 
 static int mmc_card_count = 0; // fixme
@@ -16,7 +16,7 @@ int mmc_erase_blk(struct mmc_host *host, int start)
 	if (ret < 0)
 		goto out;
 
-	ret = host->send_cmd(host, 33, start + BLKSIZE, R1);
+	ret = host->send_cmd(host, 33, start + MMC_BLK_SIZE, R1);
 	if (ret < 0)
 		goto out;
 
@@ -53,7 +53,7 @@ int mmc_read_blk(struct mmc_host *host, u8 *buf, int start)
 #ifdef CONFIG_DEBUG
 	int i;
 
-	for (i = 0; i < BLKSIZE / 4; i++)
+	for (i = 0; i < MMC_BLK_SIZE / 4; i++)
 	{
 		printf("%08x", ((u32*)buf)[i]);
 
@@ -130,7 +130,7 @@ static int mmc_card_register(struct mmc_card *card)
 	// TODO: fix size
 	drive->bdev.bdev_base = 0;
 	drive->bdev.bdev_size = 0;
-	drive->bdev.sect_size = BLKSIZE;
+	drive->bdev.sect_size = MMC_BLK_SIZE;
 
 	list_head_init(&drive->slave_list);
 
@@ -202,7 +202,7 @@ int mmc_sd_detect_card(struct mmc_host *host)
 
 	//mmc_app_set_bus_width(host,SD_BUS_WIDTH_4);
 
-	//ret = mmc_set_block_len(host, BLKSIZE);
+	//ret = mmc_set_block_len(host, MMC_BLK_SIZE);
 
 	ret = mmc_card_register(card);
 

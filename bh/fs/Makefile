@@ -1,2 +1,3 @@
 obj-y += image.o
-obj-y += fat.o
+dir-y += fat
+#dir-y += ext.o
