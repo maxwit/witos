@@ -75,7 +75,8 @@
 	<config name="MMC" bool="n">
 		<config name="MMC_AT91" bool="n"/>
 	</config>
-	<config name="NET" bool="n">
-
+	<config name="NET" bool="y">
+		<config name="NFS_ROOT" string="/maxwit/target/rootfs"/>
+		<config name="IMAGE_PATH" string="/var/lib/tftpboot"/>
 	</config>
 </config>

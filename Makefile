@@ -48,7 +48,7 @@ include/autoconf.h: .config
 # fixme
 %_defconfig:
 	@echo
-	@./build/generate/dotconfig.sh $@
+	@#./build/generate/dotconfig.sh $@
 	@./build/generate/defconfig.py $@
 	@echo
 
