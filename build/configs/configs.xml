@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<config version="1.0">
+	<choice name="arch" default="arm">
+		<config name="ARCH" string="arm">
+			<config name="ARCH_ARM" bool="y"/>
+			<config name="corss_compile" string="arm-maxwit-linux-gnueabi-"/>
+			<choice name="platform">
+				<config name="plat" string="omap3530">
+					<config name="plat_omap3530" bool="y"/>
+					<config name="arch_ver" string="armv7-a"/>
+					<choice name="board">
+						<config name="board" string="beagle">
+							<config name="mach_type" int="1546"/>
+							<select>SMSC91</select>
+						</config>
+					</choice>
+				</config>
+			</choice>
+		</config>
+
+		<config name="ARCH" string="mips">
+		</config>
+
+		<config name="ARCH" string="x86">
+		</config>
+	</choice>
+	<flash>
+
+	</flash>
+	<net>
+
+	</net>
+</config>
