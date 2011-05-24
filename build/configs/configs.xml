@@ -56,6 +56,8 @@
 		</config>
 	</choice>
 	<config name="UART" bool="y">
+		<config name="KERMIT_SUPPORT" bool="y"/>
+		<config name="YMODEM_SUPPORT" bool="n"/>
 	</config>
 	<config name="FLASH" bool="n">
 		<config name="NOR" bool="n">

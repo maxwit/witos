@@ -64,11 +64,8 @@ def get_ip_address(ifname):
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 	try:
-		local_ip = fcntl.ioctl(
-			s.fileno(),
-			0x8915,  # SIOCGIFADDR
-			struct.pack('256s', ifname[:15])
-			)
+		local_ip = fcntl.ioctl(s.fileno(), 0x8915, # SIOCGIFADDR
+					struct.pack('256s', ifname[:15]))
 	except IOError:
 		return "0.0.0.0"
 
