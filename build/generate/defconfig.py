@@ -17,39 +17,41 @@ def traverse(node):
 		lst = node.getchildren()
 
 		# fixme: check node ... from .config
-		if node.attrib.has_key('default'):
-			default_node = node.attrib['default'].upper()
+		if config.has_key(node.attrib['name']):
+			default_node = config[node.attrib['name']]
 		else:
-			default_node = lst[0].attrib['name'].upper()
+			if node.attrib.has_key('default'):
+				default_node = node.attrib['default']
+			else:
+				default_node = lst[0].attrib['name']
+			config[node.attrib['name']] = default_node
 
 		for n in lst:
-			if n.attrib['name'].upper() == default_node:
+			if n.attrib['name'] == default_node:
 				traverse(n)
 			# fixme: check matched or not
 	elif node.tag == 'select':
 		l2 = node.text.split(' ')
 		for s in l2:
-			print 'CONFIG_' + s + ' = y'
+			config[s] = 'y'
 	else:
 		dfs = True
 		if node.tag == 'config':
 			if node.attrib.has_key('name'):
-				name = node.attrib['name'].upper()
-
-				if node.attrib.has_key('string'):
-					key = 'CONFIG_' + name
-					if config.has_key(key) == False:
+				key = node.attrib['name']
+				if config.has_key(key) == False:
+					if node.attrib.has_key('string'):
 						config[key] = '"' + node.attrib['string'] + '"'
-				elif node.attrib.has_key('bool'):
-					if node.attrib['bool'] == "y":
-						print 'CONFIG_%s = %s' % (name, node.attrib['bool'])
+					elif node.attrib.has_key('bool'):
+						if node.attrib['bool'] == "y":
+							config[key] = node.attrib['bool']
+						else:
+							dfs = False
+					elif node.attrib.has_key('int'):
+						config[key] = node.attrib['int']
 					else:
-						dfs = False
-				elif node.attrib.has_key('int'):
-					print 'CONFIG_%s = %s' % (name, node.attrib['int'])
-				else:
-					print 'Invalid node!'
-					print node
+						print 'Invalid node!'
+						print node
 	
 		if dfs == True:
 			lst = node.getchildren()
@@ -82,9 +84,15 @@ if __name__ == "__main__":
 
 	for line in fcfg:
 		if re.match(r'^CONFIG_', line) <> None:
-			elem = line.replace('\n', '').split('=') #\s+=\s+
+			elem = re.split('\s*=\s*', re.sub('^CONFIG_', '', line.replace('\n','')))
 			config[elem[0]] = elem[1]
 
 	fcfg.close()
 
+	for x in config:
+		print 'CONFIG_' + x + ' = ' + config[x]
 	parse_tree("build/configs/configs.xml")
+	print
+	print
+	for x in config:
+		print 'CONFIG_' + x + ' = ' + config[x]

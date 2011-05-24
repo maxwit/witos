@@ -1,47 +1,47 @@
 <?xml version="1.0"?>
 <config version="1.0">
-	<choice name="arch" default="arm">
-		<config name="arm" bool="y">
+	<choice name="ARCH" default="arm">
+		<config name="ARM" bool="y">
 			<config name="ARCH" string="arm"/>
-			<config name="corss_compile" string="arm-maxwit-linux-gnueabi-"/>
-			<choice name="plat">
+			<config name="CORSS_COMPILE" string="arm-maxwit-linux-gnueabi-"/>
+			<choice name="PLAT">
 				<config name="AT91SAM9261" bool="y">
-					<config name="arch_ver" string="armv5te"/>
-					<config name="console_name" string="ttyS"/>
+					<config name="ARCH_VER" string="armv5te"/>
+					<config name="CONSOLE_NAME" string="ttyS"/>
 					<config name="UART_INDEX" int="0"/>
 					<config name="NAND_ECC_MODE" string="NAND_ECC_SW"/>
-					<choice name="board" default="AT91SAM9261EK">
+					<choice name="BOARD" default="AT91SAM9261EK">
 						<config name="AT91SAM9261EK" bool="y">
-							<config name="board" string="ATMEL AT91SAM9261EK"/>
-							<config name="mach_type" int="848"/>
+							<config name="BOARD" string="ATMEL AT91SAM9261EK"/>
+							<config name="MACH_TYPE" int="848"/>
 							<select>NAND_AT91 MMC_AT91</select>
 						</config>
 					</choice>
 				</config>
-				<config name="omap3530" bool="y">
-					<config name="arch_ver" string="armv7-a"/>
-					<config name="console_name" string="ttyO"/>
-					<choice name="board" default="evm3530">
-						<config name="beagle" bool="y">
-							<config name="board" string="Beagle Board"/>
-							<config name="mach_type" int="1546"/>
+				<config name="OMAP3530" bool="y">
+					<config name="ARCH_VER" string="armv7-a"/>
+					<config name="CONSOLE_NAME" string="ttyO"/>
+					<choice name="BOARD" default="evm3530">
+						<config name="BEAGLE" bool="y">
+							<config name="BOARD" string="Beagle Board"/>
+							<config name="MACH_TYPE" int="1546"/>
 							<config name="UART_INDEX" int="0"/>
 							<select>SMSC91</select>
 						</config>
-						<config name="evm3530" bool="y">
-							<config name="board" string="EVM3530 Board"/>
+						<config name="EVM3530" bool="y">
+							<config name="BOARD" string="EVM3530 Board"/>
 							<config name="MACH_TYPE" int="1546"/>
 							<config name="UART_INDEX" int="2"/>
 							<select>DM9000 ABC</select>
 						</config>
 					</choice>
 				</config>
-				<config name="s3c6410" bool="y">
-					<config name="arch_ver" string="armv6k"/>
-					<choice name="board">
-						<config name="mw61" bool="y">
-							<config name="board" string="MW61 MID"/>
-							<config name="mach_type" int="1234"/>
+				<config name="S3C6410" bool="y">
+					<config name="ARCH_VER" string="armv6k"/>
+					<choice name="BOARD">
+						<config name="MW61" bool="y">
+							<config name="BOARD" string="MW61 MID"/>
+							<config name="MACH_TYPE" int="1234"/>
 							<select>DM9000</select>
 						</config>
 					</choice>
@@ -49,10 +49,10 @@
 			</choice>
 		</config>
 
-		<config name="mips" bool="y">
+		<config name="MIPS" bool="y">
 		</config>
 
-		<config name="x86" bool="y">
+		<config name="X86" bool="y">
 		</config>
 	</choice>
 	<config name="UART" bool="y">
