@@ -7,7 +7,7 @@
 # http://maxwit.googlecode.com
 #
 
-import os,sys,re
+import os, sys, re
 from xml.etree import ElementTree
 
 config = {}
@@ -75,8 +75,13 @@ if __name__ == "__main__":
 		print 'cannot run as root!'
 		exit(1)
 
+	if len(sys.argv) <> 2:
+		print "Usage: ..."
+		exit(1)
+
+	fn = 'build/configs/arm/' + sys.argv[1]
 	try:
-		fcfg = open(".config")
+		fcfg = open(fn)
 	except:
 		print 'fail to open .config'
 		parse_tree("build/configs/configs.xml")
