@@ -89,10 +89,7 @@ if __name__ == "__main__":
 
 	fcfg.close()
 
-	for x in config:
-		print 'CONFIG_' + x + ' = ' + config[x]
 	parse_tree("build/configs/configs.xml")
-	print
-	print
+
 	for x in config:
 		print 'CONFIG_' + x + ' = ' + config[x]
