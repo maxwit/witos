@@ -51,6 +51,9 @@ include/autoconf.h: .config
 	@./build/generate/dotconfig.sh $@
 	@echo
 
+defconfig:
+	@./build/generate/defconfig.py
+
 #####echo "******************"
 #####echo "*   .config      *"
 #####echo "******************"
