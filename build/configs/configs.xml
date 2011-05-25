@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <config version="1.0">
-	<choice name="ARCH" default="arm">
+	<choice name="ARCH" default="ARM">
 		<config name="ARM" bool="y">
-			<config name="ARCH" string="arm"/>
+			<!--config name="ARCH" string="ARM"/-->
 			<config name="CORSS_COMPILE" string="arm-maxwit-linux-gnueabi-"/>
 			<choice name="PLAT">
 				<config name="AT91SAM9261" bool="y">
@@ -21,7 +21,7 @@
 				<config name="OMAP3530" bool="y">
 					<config name="ARCH_VER" string="armv7-a"/>
 					<config name="CONSOLE_NAME" string="ttyO"/>
-					<choice name="BOARD" default="evm3530">
+					<choice name="BOARD" default="EVM3530">
 						<config name="BEAGLE" bool="y">
 							<config name="BOARD" string="Beagle Board"/>
 							<config name="MACH_TYPE" int="1546"/>

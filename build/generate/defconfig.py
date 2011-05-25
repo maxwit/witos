@@ -131,6 +131,9 @@ if __name__ == "__main__":
 
 	parse_config("build/configs/configs.xml")
 
+	# print config
+	# print 'configure %s (%s).' % (config['BOARD'], config['ARCH'])
+
 	try:
 		fd_dot_cfg = open('.config', 'w')
 	except:
