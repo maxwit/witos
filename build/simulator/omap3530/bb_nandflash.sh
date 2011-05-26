@@ -34,8 +34,10 @@ flash_image_pages=131072
 
 bl1_page_offset=0
 bl2_page_offset=256
-kernel_page_offset=1280
-rootfs_page_offset=3328
+# kernel_page_offset=1280
+kernel_page_offset=1344
+#rootfs_page_offset=3328
+rootfs_page_offset=4416
 
 flash_image_name=$2
 bl1_image_name=$1
@@ -131,7 +133,7 @@ case ${1} in
 	g-bios-bh.bin)
 		put_bl2 ${1}
 		;;
-	kernel)
+	zImage)
 		put_kernel ${1}
 		;;
 	rootfs)
