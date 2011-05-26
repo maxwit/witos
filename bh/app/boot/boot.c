@@ -431,16 +431,16 @@ static int show_boot_args(void *tag_base)
 		switch (arm_tag->hdr.tag)
 		{
 		case ATAG_CORE:
-			printf("****** ATAG Begin ******\n");
+			printf("ATAG Begin\n");
 			break;
 
 		case ATAG_CMDLINE:
-			printf("Kernel command line:\n%s\n", arm_tag->u.cmdline.cmdline);
+			printf("Kernel Command Line\n%s\n", arm_tag->u.cmdline.cmdline);
 			// printf("Kernel command line\n");
 			break;
 
 		case ATAG_MEM:
-			printf("Memory: [0x%08x - 0x%08x]\n",
+			printf("Memory\n[0x%08x - 0x%08x]\n",
 				arm_tag->u.mem.start, arm_tag->u.mem.start + arm_tag->u.mem.size);
 			break;
 
@@ -450,7 +450,7 @@ static int show_boot_args(void *tag_base)
 			break;
 
 		case ATAG_NONE:
-			printf("******  ATAG End  ******\n");
+			printf("ATAG End\n");
 			return 0;
 
 		default: // fixme
@@ -468,7 +468,7 @@ static int show_boot_args(void *tag_base)
 // fixme!!
 int main(int argc, char *argv[])
 {
-	int  ret = 0, rebuild = 0;
+	int  ret = 0, auto_gen = 1;
 	u32  dev_num;
 	char cmd_line[DEFAULT_KCMDLINE_LEN];
 	BOOL show_args = FALSE;
@@ -479,7 +479,7 @@ int main(int argc, char *argv[])
 	struct tag *arm_tag;
 	LINUX_KERNEL_ENTRY exec_linux = NULL;
 	char *arg, *p;
-	signed char opt;
+	int opt;
 
 	linux_conf = sysconf_get_linux_param();
 	net_conf = sysconf_get_net_info();
@@ -563,12 +563,10 @@ int main(int argc, char *argv[])
 
 		case 'm':
 			string2value(arg, (u32 *)&linux_conf->mach_id);
-
 			break;
 
 		case 'c':
 			strcpy(linux_conf->console_device, arg);
-
 			break;
 
 		case 'v':
@@ -576,15 +574,8 @@ int main(int argc, char *argv[])
 			break;
 
 		case 'l':
-			if (!strcmp(arg, "auto"))
-			{
-				rebuild = 1;
-			}
-			else
-			{
-				strncpy(linux_conf->cmd_line, arg, DEFAULT_KCMDLINE_LEN);
-			}
-
+			auto_gen = 0;
+			strncpy(linux_conf->cmd_line, arg, DEFAULT_KCMDLINE_LEN);
 			break;
 
 		default:
@@ -596,8 +587,10 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (rebuild)
+	if (auto_gen)
+	{
 		build_command_line(linux_conf->cmd_line, DEFAULT_KCMDLINE_LEN);
+	}
 
 	strncpy(cmd_line, linux_conf->cmd_line, DEFAULT_KCMDLINE_LEN);
 
@@ -637,6 +630,7 @@ int main(int argc, char *argv[])
 	}
 
 	arm_tag = begin_setup_atag((void *)ATAG_BASE);
+
 	arm_tag = setup_cmdline_atag(arm_tag, cmd_line);
 
 	if (linux_conf->boot_mode & BM_RAMDISK)
@@ -671,6 +665,7 @@ int main(int argc, char *argv[])
 	{
 		printf("\nMachine ID = %d (0x%x)\n", linux_conf->mach_id, linux_conf->mach_id);
 		show_boot_args((void *)ATAG_BASE);
+
 		return 0;
 	}
 
