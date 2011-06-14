@@ -315,12 +315,11 @@ static int omap3_mmc_init(void)
 {
 	u32 val;
 	int timeout = 0;
-
+#if 0
 	writew(VA(0x48002000 + 0x144), 3 << 3);
 
 	for (val = 0x146; val <= 0x156; val += 2)
 		writew(VA(0x48002000 + val), 1 << 8 | 3 << 3);
-
 	val = readl(VA(0x48002520));
 	val |= 1 << 9 | 3 << 1;
 	writel(VA(0x48002520), val);
@@ -328,6 +327,11 @@ static int omap3_mmc_init(void)
 	val = readl(VA(0x48002274));
 	val |= 1 << 24;
 	writel(VA(0x48002274), val);
+#else
+	for (val = 0x144; val <= 0x156; val += 2)
+		writew(VA(0x48002000 + val), 1 << 8);
+
+#endif
 
 	// Enable Functional and Interface clock for MMC Controller
 	val = readl(VA(CM_FCLKEN1_CORE));

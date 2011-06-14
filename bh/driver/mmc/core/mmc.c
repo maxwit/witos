@@ -50,23 +50,6 @@ int mmc_read_blk(struct mmc_host *host, u8 *buf, int start)
 
 	udelay(1000);
 
-#ifdef CONFIG_DEBUG
-	int i;
-
-	for (i = 0; i < MMC_BLK_SIZE / 4; i++)
-	{
-		printf("%08x", ((u32*)buf)[i]);
-
-		if ((i + 1)% 8)
-		{
-			printf(" ");
-		}
-		else
-		{
-			printf("\n");
-		}
-	}
-#endif
 
 	return 0;
 }

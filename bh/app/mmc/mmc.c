@@ -126,6 +126,22 @@ static int dump(int argc, char *argv[])
 		printf("Error: Fail to Read!\n");
 		return ret;
 	}
+	
+	int i;
+
+	for (i = 0; i < BLK_LEN / 4; i++)
+	{
+		printf("%08x", ((u32*)buf)[i]);
+
+		if ((i + 1)% 8)
+		{
+			printf(" ");
+		}
+		else
+		{
+			printf("\n");
+		}
+	}
 
 	return 0;
 }
