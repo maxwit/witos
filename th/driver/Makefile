@@ -1,3 +1,3 @@
 dir-y += uart
 dir-$(CONFIG_NAND) += nand
-#dir-$(CONFIG_MMC) += mmc
+dir-$(CONFIG_MMC) += mmc
