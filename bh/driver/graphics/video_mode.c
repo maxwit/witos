@@ -38,6 +38,18 @@ static const struct lcd_vmode g_lcd_vm_tab[] =
 		.hfp = 21,
 		.hpw = 6,
 	},
+	{
+		.model  = "qemu_display",
+		.width  = 800,
+		.height = 600,
+		.pix_clk = 9000000, // fixme!!!!
+		.vbp = 4,
+		.vfp = 4,
+		.vpw = 2,
+		.hbp = 38,
+		.hfp = 21,
+		.hpw = 6,
+	},
 };
 
 const struct lcd_vmode *lcd_get_vmode_by_id(int lcd_id)
