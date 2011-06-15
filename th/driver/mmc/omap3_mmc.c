@@ -1,7 +1,8 @@
 #include <g-bios.h>
 #include <mmc/mmc.h>
+#include <stdio.h>
 
-// #define CONFIG_MMC_DEBUG
+#define CONFIG_MMC_DEBUG
 
 #define CLK_INITSEQ             0
 #define CLK_400KHZ              1
@@ -58,7 +59,7 @@ static int omap3_mmc_write_data(struct mmc_host *mmc, const void *buf)
 	do
 	{
 		val = omap3_mmc_read(MMCHS_STAT);
-		MMC_PRINT("MMCHS_STAT = 0x%x %s(), line: %d\n", val, __FUNCTION__, __LINE__);
+		MMC_PRINT("MMCHS_STAT = 0x%x %s(), line: 0x%x\n", val, __FUNCTION__, __LINE__);
 		udelay(1000);
 		timeout++;
 	} while (!(val & 1 << 4) && timeout < 5);
@@ -83,7 +84,7 @@ static int omap3_mmc_write_data(struct mmc_host *mmc, const void *buf)
 		val = omap3_mmc_read(MMCHS_STAT);
 		timeout++;
 		udelay(1000);
-		MMC_PRINT("MMCHS_STAT = 0x%x %s(), line: %d\n", val, __FUNCTION__, __LINE__);
+		MMC_PRINT("MMCHS_STAT = 0x%x %s()\n", val, __FUNCTION__);
 		if ((val & (1 << 1)) || timeout > 5)
 			break;
 	}
@@ -99,7 +100,7 @@ static int omap3_mmc_read_data(struct mmc_host *mmc, void *buf)
 	do
 	{
 		val = omap3_mmc_read(MMCHS_STAT);
-		MMC_PRINT("MMCHS_STAT = 0x%x %s(), line: %d\n", val, __FUNCTION__, __LINE__);
+		MMC_PRINT("MMCHS_STAT = 0x%x %s()\n", val, __FUNCTION__);
 		udelay(1000);
 		timeout++;
 	} while (!(val & 1 << 5) && timeout < 5);
@@ -123,7 +124,7 @@ static int omap3_mmc_read_data(struct mmc_host *mmc, void *buf)
 		val = omap3_mmc_read(MMCHS_STAT);
 		timeout++;
 		udelay(1000);
-		MMC_PRINT("MMCHS_STAT = 0x%x %s(), line: %d\n", val, __FUNCTION__, __LINE__);
+		MMC_PRINT("MMCHS_STAT = 0x%x %s()\n", val, __FUNCTION__);
 		if ((val & (1 << 1)) || timeout > 5)
 			break;
 	}
@@ -176,7 +177,7 @@ static int omap3_send_cmd(struct mmc_host *mmc, u32 index, u32 arg, RESP type)
 		{
 			val = omap3_mmc_read(MMCHS_PSTATE);
 			timeout++;
-			MMC_PRINT("MMCHS_PSTATE = 0x%x %s(), line:%d\n", val,__FUNCTION__, __LINE__);
+			MMC_PRINT("MMCHS_PSTATE = 0x%x %s()\n", val,__FUNCTION__);
 		} while ((val & (1 << 1)) && (timeout < 10));
 
 		if (timeout == 10)
@@ -190,7 +191,7 @@ static int omap3_send_cmd(struct mmc_host *mmc, u32 index, u32 arg, RESP type)
 			do
 			{
 				val = omap3_mmc_read(MMCHS_SYSCTL);
-				MMC_PRINT("MMCHS_SYSCTL = %x, line: %d\n", val, __LINE__);
+				MMC_PRINT("MMCHS_SYSCTL = %x, %s()\n", val, __func__);
 			} while (val & (1 << 26));
 
 			continue;
@@ -205,13 +206,16 @@ static int omap3_send_cmd(struct mmc_host *mmc, u32 index, u32 arg, RESP type)
 	omap3_mmc_write(MMCHS_ARG, arg);
 	omap3_mmc_write(MMCHS_CMD, cval);
 
+
 	while (1)
 	{
-		val = omap3_mmc_read(MMCHS_STAT);
+
+		val =  omap3_mmc_read(MMCHS_STAT);
+
 		if (val & (1 << 16))
 		{
 
-			MMC_PRINT("Command %d send ERROR! reset command line!\n", index);
+			MMC_PRINT("Command %x arg = 0x%x timeout! MMCHS_STAT = 0x%x, reset command line!\n", index, arg, val);
 
 			if (1)
 			{
@@ -223,7 +227,7 @@ static int omap3_send_cmd(struct mmc_host *mmc, u32 index, u32 arg, RESP type)
 				do
 				{
 					val = omap3_mmc_read(MMCHS_SYSCTL);
-					MMC_PRINT("MMCHS_SYSCTL = %x, line: %d\n", val, __LINE__);
+					MMC_PRINT("MMCHS_SYSCTL = %x, %s()\n", val, __func__);
 				} while (val & (1 << 25));
 
 			}
@@ -238,12 +242,12 @@ static int omap3_send_cmd(struct mmc_host *mmc, u32 index, u32 arg, RESP type)
 			mmc->resp[1] = omap3_mmc_read(MMCHS_RSP32);
 			mmc->resp[2] = omap3_mmc_read(MMCHS_RSP54);
 			mmc->resp[3] = omap3_mmc_read(MMCHS_RSP76);
+
 			break;
 		}
 	}
-
 #ifdef CONFIG_MMC_DEBUG
-		MMC_PRINT("cmd%d: arg = 0x%x val =0x%x\nresp[0]=0x%8x\nresp[1]=0x%8x\nresp[2]=0x%8x\nresp[3]=0x%8x\n",
+		MMC_PRINT("cmd%x: arg = 0x%x val =0x%x\nresp[0]=0x%x\nresp[1]=0x%x\nresp[2]=0x%x\nresp[3]=0x%x\n",
 			index, arg, cval, mmc->resp[0], mmc->resp[1], mmc->resp[2], mmc->resp[3]);
 #else
 		udelay(8000);
@@ -301,31 +305,18 @@ static void omap3_soft_reset(void)
 	do
 	{
 		val = omap3_mmc_read(MMCHS_SYSCTL);
-		MMC_PRINT("MMCHS_SYSCTL = %x, line: %d\n", val, __LINE__);
+		MMC_PRINT("MMCHS_SYSCTL = %x\n", val);
 	} while (val & (1 << 24));
 
 }
-static int omap3_mmc_init(void)
+
+int mmc_init(void)
 {
 	u32 val;
 	int timeout = 0;
-#if 0
-	writew(VA(0x48002000 + 0x144), 3 << 3);
 
-	for (val = 0x146; val <= 0x156; val += 2)
-		writew(VA(0x48002000 + val), 1 << 8 | 3 << 3);
-	val = readl(VA(0x48002520));
-	val |= 1 << 9 | 3 << 1;
-	writel(VA(0x48002520), val);
-
-	val = readl(VA(0x48002274));
-	val |= 1 << 24;
-	writel(VA(0x48002274), val);
-#else
 	for (val = 0x144; val <= 0x156; val += 2)
 		writew(VA(0x48002000 + val), 1 << 8);
-
-#endif
 
 	// Enable Functional and Interface clock for MMC Controller
 	val = readl(VA(CM_FCLKEN1_CORE));
@@ -344,10 +335,12 @@ static int omap3_mmc_init(void)
 	do
 	{
 		val = omap3_mmc_read(MMCHS_SYSSTATUS);
-		MMC_PRINT("MMCHS_SYSSTATUS = %x, %s(),line: %d\n", val, __FUNCTION__, __LINE__);
+		MMC_PRINT("MMCHS_SYSSTATUS = %x, %s()\n", val, __FUNCTION__, __LINE__);
 	} while (!(val & 1) );
 
 	omap3_soft_reset();
+
+
 
 	val = omap3_mmc_read(MMCHS_CAPA);
 	val |= 3 << 25;
@@ -401,7 +394,7 @@ static int omap3_mmc_init(void)
 	do
 	{
 		val = omap3_mmc_read(MMCHS_STAT);
-		MMC_PRINT("MMCHS_STAT = 0x%x %s(), line:%d\n", val, __FUNCTION__, __LINE__);
+		MMC_PRINT("MMCHS_STAT = 0x%x %s()\n", val, __FUNCTION__);
 	} while (!(val & 1));
 
 	val = omap3_mmc_read(MMCHS_STAT);
@@ -413,11 +406,8 @@ static int omap3_mmc_init(void)
 	val &= ~(1 << 1);
 	omap3_mmc_write(MMCHS_CON, val);
 
-	//Configure clock to 400K = 96M /640
-
 	mmc_register(&omap3_mmc);
 
 	return 0;
 }
 
-DRIVER_INIT(omap3_mmc_init);

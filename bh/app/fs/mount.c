@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <errno.h>
-#include <fs.h>
+#include <fs/fs.h>
 
 int main(int argc, char *argv[])
 {
