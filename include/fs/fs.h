@@ -31,9 +31,9 @@ struct fat_boot_sector {
 	__u8    vol_id[4];
 	__u8    vol_lab[11];
 	__u8    fs_type[8];
-	__u8    resv4[418];
+	__u8    resv4[420];
 	__u8    blk_sign[2];
-};
+}__PACKED__;
 
 struct fat_dentry
 {
@@ -51,14 +51,15 @@ struct fat_dentry
 
 struct fat_fs
 {
-	__u32  *fat;
-	__u32  data;
+	// __u32  fat;
+	__u32 data;
+	__u32 root;
+	__u32 clus_size;
 	struct fat_boot_sector dbr;
-	struct fat_dentry *root;
 	struct block_device *bdev;
 };
 
-struct file
+struct fat_file
 {
 	struct fat_dentry *dent;
 	size_t offset;
@@ -68,17 +69,23 @@ struct file
 	struct fat_fs *fs;
 };
 
+
 int fat_mount(struct block_device *bdev, const char *type, unsigned long flags);
+
+struct fat_file *fat_open(const char *name, int flags, ...);
+
+int fat_close(struct fat_file *fp);
+
+int fat_read(struct fat_file *fp, void *buff, size_t size);
+
+int fat_write(struct fat_file *fp, const void *buff, size_t size);
+
+int fat_umount(struct fat_fs *fs, const char *path, const char *type, unsigned long flags);
 
 #define O_RDONLY 0
 #define O_RDWD   0
 
-struct file *fat_open(const char *name, int flags, ...);
+// #define DISK_BLOCK_SIZE 512
+#define MAX_FILE_NAME_LEN 64
 
-int fat_close(struct file *fp);
 
-int fat_read(struct file *fp, void *buff, size_t size);
-
-int fat_write(struct file *fp, const void *buff, size_t size);
-
-int sys_mount(const char *dev_name, const char *type, int flags);

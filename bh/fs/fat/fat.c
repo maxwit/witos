@@ -1,7 +1,65 @@
 #include <malloc.h>
 #include <errno.h>
 #include <string.h>
-#include "fs.h"
+#include <fs/fs.h>
+
+#if 0
+static void show_by_hex(void *buf, u32 size)
+{
+	__u8 *temp = (__u8 *)buf;
+	int i;
+	for (i = 0; i < size; i ++)
+	{
+		if (i % 16 == 0) printf("\n");
+		printf("%02x ", temp[i]);
+	}
+
+	printf("\n");
+	return ;
+}
+#endif
+
+static ssize_t fat_read_block(struct fat_fs *fs, void *buff, int blk_no, size_t off, size_t size)
+{
+	struct block_device *bdev = fs->bdev;
+	struct disk_drive *drive = container_of(bdev, struct disk_drive, bdev);
+
+	size_t buf_len = (off + size + bdev->sect_size - 1) & ~(bdev->sect_size - 1);
+	char blk_buf[buf_len];
+	int start_blk, cur_blk;
+
+	start_blk = blk_no * fs->clus_size / bdev->sect_size;
+
+	for (cur_blk = 0; cur_blk < buf_len / bdev->sect_size; cur_blk++)
+	{
+		drive->get_block(drive, (start_blk + cur_blk) * bdev->sect_size, blk_buf + cur_blk * bdev->sect_size);
+	}
+
+	memcpy(buff, blk_buf + off, size);
+
+	return size;
+}
+
+static __u32 fat_get_fat_table(struct fat_fs *fs, __u32 fat_num)
+{
+	int ret;
+	static __u32 old_fat = ~0;
+	static __u32 fat_catch[2048];
+
+	if (old_fat == ~0 || fat_num <old_fat || fat_num > (fs->clus_size / sizeof(fat_num) + old_fat - 1))
+	{
+		ret = fat_read_block(fs, fat_catch, fs->dbr.resv_size/fs->dbr.sec_per_clus + fat_num * sizeof(fat_num)/ (fs->clus_size),
+			0, fs->clus_size);
+		if (ret < 0)
+		{
+			return -1;
+		}
+
+		old_fat = (fat_num / fs->clus_size / sizeof(fat_num)) * (fs->clus_size / sizeof(fat_num));
+	}
+
+	return fat_catch[fat_num % (fs->clus_size / sizeof(fat_num))];
+}
 
 int fat_mount(struct block_device *bdev, const char *type, unsigned long flags)
 {
@@ -11,18 +69,27 @@ int fat_mount(struct block_device *bdev, const char *type, unsigned long flags)
 	__u32 data_off;
 	struct fat_fs *fs;
 	struct fat_boot_sector *dbr;
-	struct fat_dentry *root;
-	__u32  *fat;
-	size_t fat_len;
+
+	__u32 root;
+
 	struct disk_drive *drive = container_of(bdev, struct disk_drive, bdev);
 
 	fs = malloc(sizeof(*fs));
 
-	dbr = &fs->dbr; // mark
-	// if ...
+	if (fs == NULL)
+	{
+		DPRINT("%s(): no mem\n", __func__);
+		return -ENOMEM;
+	}
+
+	dbr = &fs->dbr;
 
 	ret = drive->get_block(drive, 0, dbr);
-	// if ...
+	if (ret < 0)
+	{
+		DPRINT("%s(): read dbr err\n", __func__);
+		return ret;
+	}
 
 	blk_size = dbr->sector_size[1] << 8 | dbr->sector_size[0];
 
@@ -34,107 +101,199 @@ int fat_mount(struct block_device *bdev, const char *type, unsigned long flags)
 
 	// TODO: check if bk_size != drive->sect_size ...
 
-	data_off = (dbr->resv_size + dbr->fats * dbr->fat32_length) * blk_size;
+	data_off = (dbr->resv_size + dbr->fats * dbr->fat32_length) / dbr->sec_per_clus - 2;	//data 	//is easy to calc if begin 0
 
-	clus_size = blk_size * dbr->sec_per_clus;
+	clus_size = blk_size * dbr->sec_per_clus;	// fat block size
 
-	root = malloc(clus_size);
-	// if
+	root = dbr->root_cluster;
 
-	// part_read(part, root, data_off, clus_size);
-	// while
-	ret = drive->get_block(drive, data_off, root);
-
-	//
-	fat_len = sizeof(*fat) * dbr->fat32_length * blk_size;
-	fat = malloc(fat_len);
-	if (!fat)
-	{
-		DPRINT("%s(): no mem\n", __func__);
-		return -ENOMEM;
-	}
-
-	// part_read(part, fat, dbr->resv_size * blk_size, fat_len);
-	// while ...
-	ret = drive->get_block(drive, dbr->resv_size * blk_size, fat);
-
-	fs->fat  = fat;
 	fs->root = root;
 	fs->bdev = bdev;
 	fs->data = data_off;
+	fs->clus_size = clus_size;
 
 	bdev->fs = fs;
+	bdev->sect_size = blk_size;
 
 	return 0;
 }
 
-int fat_umount(struct part_attr *part, const char *path, const char *type, unsigned long flags)
+int fat_umount(struct fat_fs *fs, const char *path, const char *type, unsigned long flags)
 {
 	// free
 	return 0;
 }
 
-#define FAT_FNAME_LEN 13
-
-static struct fat_dentry *fat_lookup(struct fat_dentry *parent, const char *name)
+static int strxcpy(char *dst, const char *src, __u32 n)
 {
-	struct fat_dentry *dir = parent;
-	char sname[FAT_FNAME_LEN];
+	int i, j;
 
-	while (dir->name[0])
+	for (i = 0, j = 0; i < n; i += 2)
 	{
-		int i = 0, j = 0;
-
-		if (dir->name[0] == (char)0xE5)
+		if (*(src + i) != '\0')
 		{
-			dir++;
-			continue;
+			*(dst + j) = *(src + i);
+			j++;
 		}
-
-		while (j < 11 && dir->name[j] != '\0')
+		else if (*(src + i) == '\0' && *(src + i + 1) == '\0')
 		{
-			if (dir->name[j] == ' ')
-			{
-				if (j >= 8)
-					break;
-
-				j = 8;
-			}
-			else
-			{
-				if (j == 8)
-					sname[i++] = '.';
-
-				sname[i++] = dir->name[j++];
-			}
+			*(dst + j) = '\0';
+			j++;
 		}
-
-		sname[i] = '\0';
-
-		if (!strcasecmp(sname, name))
-		{
-			return dir;
-		}
-		// printf("%s(): file = %s\n", __func__, sname);
-
-		dir++;
 	}
 
+	return j;
+}
+
+int fat_find_next_file(struct fat_fs *fs, __u32 *block_num, char *name, struct fat_dentry *dir, char *buf)
+{
+	char *fn_pos = name;
+	static struct fat_dentry *dir_pos;
+	static __u32 old_block_num;
+
+	memset(fn_pos, 0, MAX_FILE_NAME_LEN);
+
+	do
+	{
+		if ((*block_num != old_block_num) || dir_pos - (struct fat_dentry *)buf == fs->clus_size / sizeof(*dir_pos))	//find next cluster
+		{
+			old_block_num = *block_num;
+
+			if (*block_num > 0x0ffffff8 || *block_num == 0)
+			{
+				return -1;
+			}
+
+			if (dir_pos - (struct fat_dentry *)buf == fs->clus_size / sizeof(*dir_pos))
+			{
+				*block_num = fat_get_fat_table(fs, *block_num);
+				if (*block_num < 0)
+				{
+					goto L2;
+				}
+				old_block_num = *block_num;
+			}
+
+			fat_read_block(fs, buf, fs->data + *block_num, 0, fs->clus_size);
+
+			dir_pos = (struct fat_dentry *)buf;
+		}
+
+		switch (*(char *)dir_pos)
+		{
+
+		case 0xe5:
+			break;
+
+		case  0:
+			goto L2;
+			break;
+
+		default:
+			switch (dir_pos->attr)
+			{
+			case 0x10:
+			case 0x20:
+				if (!fn_pos[0])
+				{
+					int temp1 = strchr((char *)dir_pos, ' ') - (char *)dir_pos;
+					memcpy(fn_pos, (char *)dir_pos, temp1);
+					int temp2 = strchr((char *)dir_pos + 8, ' ') - (char *)dir_pos - 8;
+					if (temp2 != 0){
+						*(fn_pos + temp1) = '.';
+						temp1++;
+						memcpy(fn_pos + temp1, (char *)dir_pos + 8, temp2);
+					}
+					*(fn_pos + temp1 + temp2) = '\0';
+					*(fn_pos + temp1 + temp2 + 1) = '\0';
+
+				}
+				goto L1;
+				break;
+
+			case 0x0f:
+				strxcpy(fn_pos + ((((char *)dir_pos)[0] & 0x0f) - 1) * 13,(char *)dir_pos + 1, 10);
+				strxcpy(fn_pos + ((((char *)dir_pos)[0] & 0x0f) - 1) * 13 + 5, (char *)dir_pos + 14, 12);
+				strxcpy(fn_pos + ((((char *)dir_pos)[0] & 0x0f) - 1) * 13 + 11, (char *)dir_pos + 28, 4);
+				break;
+
+			default:
+				break;
+			}
+		}
+
+		dir_pos++;
+	}while(*(char *)dir_pos);
+
+L2:
+	return -1;
+
+L1:
+	memcpy(dir, dir_pos, sizeof(*dir_pos));
+	dir_pos++;
+	return 1;
+}
+
+
+static struct fat_dentry *fat_lookup(struct fat_fs *fs, __u32 parent, const char *name)
+{
+	struct fat_dentry *dir;
+	int ret;
+	char buf[fs->clus_size];
+	char sname[MAX_FILE_NAME_LEN];
+
+	dir = (struct fat_dentry *)malloc(sizeof(*dir));
+	if (dir == NULL)
+	{
+		DPRINT("%s(): malloc err\n", __func__);
+		return NULL;
+	}
+
+	while (1)
+	{
+		// fixme
+		ret = fat_find_next_file(fs, &parent, sname, dir, buf);
+		if (ret < 0)
+		{
+			DPRINT("can't find file");
+			goto err;
+		}
+
+		if (strcmp(sname, name) == 0)
+		{
+			name = strchr(name, '/');
+			if (name != NULL)	// last file
+			{
+				if (dir->attr == 0x10)
+				{
+					parent = dir->clus_hi << 16 | dir->clus_lo;
+					continue;
+				}
+				else
+				{
+					goto err;
+				}
+			}
+			return dir;
+		}
+	}
+
+err:
+	free(dir);
 	return NULL;
 }
 
 #define MAX_FILE_NAME_SIZE 256
 
-// name = "mmcblock0p1:a.c"
-struct file *fat_open(const char *name, int flags, ...)
+struct fat_file *fat_open(const char *name, int flags, ...)
 {
 	struct fat_dentry *dir;
-	struct file *fp;
+	struct fat_file *fp;
+	struct fat_fs *fs;
 	struct block_device *bdev;
-	char dev_name[MAX_FILE_NAME_SIZE];
+	char dev_name[MAX_FILE_NAME_LEN];
 	int count;
 
-	//
 	count = 0;
 	while (*name != ':' && *name != '\0')
 	{
@@ -143,7 +302,7 @@ struct file *fat_open(const char *name, int flags, ...)
 		name++;
 		count++;
 
-		if (count == MAX_FILE_NAME_SIZE)
+		if (count == MAX_FILE_NAME_LEN)
 		{
 			DPRINT("%s(): file name length error!\n", __func__);
 			return NULL;
@@ -161,20 +320,9 @@ struct file *fat_open(const char *name, int flags, ...)
 	name++;
 
 	bdev = get_bdev_by_name(dev_name);
+	fs = bdev->fs;
+	dir = fat_lookup(fs, fs->root, name);
 
-	if (NULL == bdev)
-	{
-		DPRINT("%s(): No block device \"%s\"!\n", __func__, dev_name);
-		return NULL;
-	}
-
-	if (NULL == bdev->fs)
-	{
-		DPRINT("%s(): block device \"%s\" not mounted!\n", __func__, dev_name);
-		return NULL;
-	}
-
-	dir = fat_lookup(bdev->fs->root, name);
 	if (!dir)
 		return NULL;
 
@@ -182,67 +330,77 @@ struct file *fat_open(const char *name, int flags, ...)
 
 	fp->dent = dir;
 	fp->offset = 0;
-	fp->fs = bdev->fs;
+	fp->fs = fs;
 
 	return fp;
 }
 
-int fat_close(struct file *fp)
+int fat_close(struct fat_file *fp)
 {
 	free(fp);
 	return 0;
 }
 
-int fat_read(struct file *fp, void *buff, size_t size)
+int fat_read(struct fat_file *fp, void *buff, size_t size)
 {
 	__u32 clus_num, clus_size;
-	struct fat_boot_sector *dbr;
-	struct fat_dentry *dir = fp->dent;
 	struct fat_fs *fs = fp->fs;
-	struct disk_drive *drive;
 	size_t pos;
+	size_t count = 0;
+	size_t tmp_size;
 
-	dbr = &fs->dbr;
-	drive = container_of(fp->fs->bdev, struct disk_drive, bdev);
+	clus_size = fp->fs->clus_size;
+	clus_num = fp->dent->clus_hi << 16 | fp->dent->clus_lo;
+	pos = fp->offset;
 
-	clus_num = dir->clus_hi << 16 | dir->clus_lo;
-	printf("%s(): cluster = %d\n", __func__, clus_num);
+	if (size + pos > fp->dent->size)
+	{
+		size = fp->dent->size - pos;
+	}
 
-	//
-	clus_size = fs->bdev->sect_size * dbr->sec_per_clus;
+	while (pos / clus_size)
+	{
+		clus_num = fat_get_fat_table(fs, clus_num);
+		if (clus_num < 0)
+		{
+			return -1;
+		}
+		pos-= clus_size;
+	}
 
-	if (size > dir->size)
-		size = dir->size;
+	while (size - count > 0)
+	{
+		if (size + pos - count > clus_size)
+		{
+			tmp_size = clus_size - pos;
+		}
+		else
+		{
+			tmp_size = size - count;
+		}
 
-	pos = fs->data + (clus_num - 2) * clus_size + fp->offset;
-	// part_read(part, buff,  fs->data + (clus_num - 2) * clus_size + fp->offset, size);
-	drive->get_block(drive, pos, buff);
-	fp->offset += size;
+		tmp_size = fat_read_block(fs, (u8 *)buff + count, fs->data + clus_num, pos, tmp_size);
+		if (tmp_size < 0)
+		{
+			break;
+		}
+		count += tmp_size;
+		printf("loading ... %2d\%\r", (count * 100) / size);
 
-	return size;
+		clus_num = fat_get_fat_table(fs, clus_num);
+		if (clus_num < 0)
+		{
+			break;
+		}
+
+		pos = 0;
+	}
+
+	return count;
 }
 
-int fat_write(struct file *fp, const void *buff, size_t size)
+int fat_write(struct fat_file *fp, const void *buff, size_t size)
 {
 	return 0;
 }
 
-#if 0
-int sys_mount(const char *dev_name, const char *type, int flags)
-{
-	int ret;
-	struct block_device *bdev;
-
-	bdev = get_bdev_by_name(dev_name);
-	if (NULL == bdev)
-	{
-		DPRINT("fail to open block device \"%s\"!\n", dev_name);
-		return -ENODEV;
-	}
-
-	ret = fat_mount(bdev, type, flags);
-
-
-	return ret;
-}
-#endif
