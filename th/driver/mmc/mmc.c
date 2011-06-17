@@ -61,17 +61,17 @@ int mmc_write_blk(struct mmc_host *host, const u8 *buf, int start)
 int mmc_decode_cid(struct mmc_host *host)
 	{
 		char *name = host->card.card_name;
-	
+
 		name[0] = (char)(host->resp[3]) & 0xff;
 		name[1] = host->resp[2] >> 24;
 		name[2] = (host->resp[2] >> 16) & 0xff;
 		name[3] = (host->resp[2] >> 8) & 0xff;
 		name[4] = host->resp[2] & 0xff;
 		name[5] = '\0';
-	
+
 		if (!name[0])
 			return -1;
-	
+
 		return 0;
 	}
 
@@ -106,7 +106,7 @@ int mmc_sd_detect_card(struct mmc_host *host)
 
 	/*acmd41*/
 	// ret = mmc_send_app_op_cond(host, val, NULL);
-	
+
 	for (i = 0; i < MMC_CMD_RETRIES; i++)
 	{
 		ret = host->send_cmd(host, MMC_APP_CMD, 0, R1);
@@ -129,7 +129,7 @@ int mmc_sd_detect_card(struct mmc_host *host)
 	ret = host->send_cmd(host, MMC_ALL_SEND_CID, 0, R2);
 	if (ret)
 		goto out;
-	
+
 	// memcpy(host->card.raw_cid, host->resp, sizeof(u32) * 4);
 
 	ret = mmc_decode_cid(host);
@@ -161,7 +161,7 @@ int mmc_register(struct mmc_host *host)
 	host->card.rca = host->resp[0] >> 16;
 
 #if 0
-	/*cmd9*/	
+	/*cmd9*/
 	ret = host->send_cmd(host, MMC_SEND_CSD, host->card.rca << 16, R2);
 	if (ret)
 		goto out;
@@ -181,12 +181,12 @@ int mmc_register(struct mmc_host *host)
 	printf("Init Sucess!\n");
 	return 0;
 
-	
+
 	//mmc_app_set_bus_width(host,SD_BUS_WIDTH_4);
 
 	//ret = mmc_set_block_len(host, MMC_BLK_SIZE);
 
-	
+
 out:
 	return ret;
 }
@@ -194,7 +194,7 @@ out:
 static int mmc_loader(struct loader_opt *opt)
 {
 	mmc_init();
-	
+
 	mmc_read_blk(g_mmc_host, opt->load_addr, 0);
 	printf("Loader Sucess!\n");
 
