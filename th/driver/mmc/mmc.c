@@ -59,21 +59,21 @@ int mmc_write_blk(struct mmc_host *host, const u8 *buf, int start)
 }
 
 int mmc_decode_cid(struct mmc_host *host)
-	{
-		char *name = host->card.card_name;
+{
+	char *name = host->card.card_name;
 
-		name[0] = (char)(host->resp[3]) & 0xff;
-		name[1] = host->resp[2] >> 24;
-		name[2] = (host->resp[2] >> 16) & 0xff;
-		name[3] = (host->resp[2] >> 8) & 0xff;
-		name[4] = host->resp[2] & 0xff;
-		name[5] = '\0';
+	name[0] = (char)(host->resp[3]) & 0xff;
+	name[1] = host->resp[2] >> 24;
+	name[2] = (host->resp[2] >> 16) & 0xff;
+	name[3] = (host->resp[2] >> 8) & 0xff;
+	name[4] = host->resp[2] & 0xff;
+	name[5] = '\0';
 
-		if (!name[0])
-			return -1;
+	if (!name[0])
+		return -1;
 
-		return 0;
-	}
+	return 0;
+}
 
 
 
