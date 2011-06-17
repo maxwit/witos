@@ -40,6 +40,11 @@ int mmc_read_blk(struct mmc_host *host, u8 *buf, int start)
 {
 	int ret = 0;
 
+	if (host->card.raw_csd[3] & 3 << 29)
+	{
+		start = start >> 9;
+	}
+
 	ret = host->send_cmd(host, MMC_READ_SINGLE_BLOCK, start, R1);
 	if (ret < 0)
 		return ret;
@@ -57,6 +62,11 @@ int mmc_read_blk(struct mmc_host *host, u8 *buf, int start)
 int mmc_write_blk(struct mmc_host *host, const u8 *buf, int start)
 {
 	int ret = 0;
+
+	if (host->card.raw_csd[3] & 3 << 29)
+	{
+		start = start >> 9;
+	}
 
 	ret = host->send_cmd(host, MMC_WRITE_BLOCK, start, R1);
 	if (ret < 0)
@@ -173,6 +183,10 @@ int mmc_sd_detect_card(struct mmc_host *host)
 		goto out;
 
 	ret = mmc_select_card(host);
+	if (ret)
+		goto out;
+
+	ret = mmc_switch_width(host);
 	if (ret)
 		goto out;
 

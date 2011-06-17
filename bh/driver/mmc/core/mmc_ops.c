@@ -104,6 +104,26 @@ static int mmc_app_cmd(struct mmc_host *host)
 	return ret;
 }
 
+int mmc_switch_width(struct mmc_host *host)
+{
+	struct mmc_command cmd;
+	int ret = 0;
+
+	ret = mmc_app_cmd(host);
+	if (ret)
+		return ret;
+
+	memset(&cmd, 0, sizeof(struct mmc_command));
+
+	cmd.index = MMC_SWITCH;
+	cmd.arg = 0x2;
+	cmd.resp = R1;
+
+	ret = host->send_cmd(host, cmd.index, cmd.arg, cmd.resp);
+
+	return ret;
+}
+
 int mmc_send_app_op_cond(struct mmc_host *host, u32 ocr, u32 *rocr)
 {
 	int i = 0, ret = 0;

@@ -22,6 +22,8 @@
 #define BM_RAMDISK     (1 << 8)
 #define BM_FLASHDISK   (2 << 8)
 #define BM_NFS         (4 << 8)
+#define BM_MMC         (8 << 8)
+#define BM_TFTP        (16 << 8)
 
 // Linux kernel and ramdisk
 #define NFS_PATH_LEN   256

@@ -41,7 +41,7 @@ static struct mmc_host omap3_mmc = {
 
 static void omap3_set_hclk(void)
 {
-	mmc_clock_config(CLK_MISC, 5);
+	mmc_clock_config(CLK_MISC, 20);
 
 }
 
@@ -358,7 +358,7 @@ static int omap3_mmc_init(void)
 			omap3_mmc_read(MMCHS_CUR_CAPA));
 
 	omap3_mmc_write(MMCHS_CON, 0x1);
-	omap3_mmc_write(MMCHS_HCTL, 6 << 9);
+	omap3_mmc_write(MMCHS_HCTL, 6 << 9 | 1 << 1);
 	val = omap3_mmc_read(MMCHS_SYSCTL);
 	val |= 1;
 	omap3_mmc_write(MMCHS_SYSCTL, val);
