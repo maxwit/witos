@@ -5,7 +5,6 @@
 int main(int argc, char *argv[])
 {
 	int ret;
-	struct block_device *bdev;
 
 	if (argc != 2)
 	{
@@ -13,15 +12,7 @@ int main(int argc, char *argv[])
 		return -EINVAL;
 	}
 
-	bdev = get_bdev_by_name(argv[1]);
-	if (NULL == bdev)
-	{
-		printf("fail to open block device \"%s\"!\n", argv[1]);
-		return -ENODEV;
-	}
-
-	ret = fat_mount("vfat", 0, bdev);
-
+	ret = fat_mount("vfat", 0, argv[1]);
 
 	return ret;
 }

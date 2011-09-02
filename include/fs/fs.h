@@ -71,7 +71,7 @@ struct fat_file
 };
 
 
-int fat_mount(const char *type, unsigned long flags, struct block_device *bdev);
+int fat_mount(const char *type, unsigned long flags, const char *bdev_name);
 
 struct fat_file *fat_open(const char *name, int flags, ...);
 

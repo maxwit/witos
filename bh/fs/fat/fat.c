@@ -61,7 +61,7 @@ static __u32 fat_get_fat_table(struct fat_fs *fs, __u32 fat_num)
 	return fat_catch[fat_num % (fs->clus_size / sizeof(fat_num))];
 }
 
-int fat_mount(const char *type, unsigned long flags, struct block_device *bdev)
+int fat_mount(const char *type, unsigned long flags, const char *bdev_name)
 {
 	int ret;
 	__u16 blk_size;
@@ -69,8 +69,15 @@ int fat_mount(const char *type, unsigned long flags, struct block_device *bdev)
 	__u32 data_off;
 	struct fat_fs *fs;
 	struct fat_boot_sector *dbr;
-
+	struct block_device *bdev;
 	__u32 root;
+
+	bdev = get_bdev_by_name(bdev_name);
+	if (NULL == bdev)
+	{
+		DPRINT("fail to open block device \"%s\"!\n", bdev_name);
+		return -ENODEV;
+	}
 
 	struct disk_drive *drive = container_of(bdev, struct disk_drive, bdev);
 

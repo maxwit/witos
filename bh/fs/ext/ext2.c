@@ -1,10 +1,12 @@
+#if 0
 #include <unistd.h>
 #include <fcntl.h>
+#endif
 #include <stdio.h>
 #include <malloc.h>
 #include <string.h>
 #include <errno.h>
-#include "block.h"
+#include <drive.h>
 #include "ext2.h"
 
 #ifndef min
@@ -28,13 +30,15 @@ static ssize_t ext2_read_block(struct ext2_file_system *fs, void *buff, int blk_
 {
 	struct block_device *bdev = fs->bdev;
 	struct ext2_super_block *sb = &fs->sb;
-	size_t buf_len = (off + size + DISK_BLOCK_SIZE - 1) & ~(DISK_BLOCK_SIZE - 1);
+	size_t buf_len = (off + size + bdev->sect_size - 1) & ~(bdev->sect_size - 1);
 	char blk_buf[buf_len];
 	int start_blk = blk_no << (sb->s_log_block_size + 1), cur_blk;
+	struct disk_drive *drive = container_of(bdev, struct disk_drive, bdev);
 
-	for (cur_blk = 0; cur_blk < buf_len / DISK_BLOCK_SIZE; cur_blk++)
+	for (cur_blk = 0; cur_blk < buf_len / bdev->sect_size; cur_blk++)
 	{
-		bdev->get_block(bdev, start_blk + cur_blk, blk_buf + cur_blk * DISK_BLOCK_SIZE);
+		// bdev->get_block(bdev, start_blk + cur_blk, blk_buf + cur_blk * bdev->sect_size);
+		drive->get_block(drive, start_blk + cur_blk, blk_buf + cur_blk * bdev->sect_size);
 	}
 
 	memcpy(buff, blk_buf + off, size);
@@ -115,14 +119,14 @@ static size_t get_dind_block(struct ext2_file_system *fs,
 }
 
 static size_t get_tind_block(struct ext2_file_system *fs,
-			struct ext2_inode *inode,ssize_t start_block, __le32 block_indexs[], size_t len)
+			struct ext2_inode *inode, ssize_t start_block, __le32 block_indexs[], size_t len)
 {
 	size_t block_size = 1 << (fs->sb.s_log_block_size + 10);
 	size_t index_per_block = block_size / sizeof(__le32);
 	__le32 buff[index_per_block];
 	__le32 dbuff[index_per_block];
 	__le32 tbuff[index_per_block];
-	int i, j, k, h;
+	int i = 0 /*? fixme*/, j, k, h;
 
 	if(len <= 0)
 		return 0;
@@ -243,29 +247,37 @@ struct ext2_file_system *ext2_get_file_system(const char *name)
 	return g_ext2_fs;
 }
 
-struct ext2_dir_entry_2 *ext2_mount(const char *dev_name, const char *path, const char *type)
+struct ext2_dir_entry_2 *ext2_mount(const char *type, unsigned long flags, const char *bdev_name)
 {
 	struct block_device *bdev;
 	struct ext2_file_system *fs = malloc(sizeof(*fs));
 	struct ext2_super_block *sb = &fs->sb;
 	struct ext2_dir_entry_2 *root;
 	struct ext2_group_desc *gdt;
-	char buff[DISK_BLOCK_SIZE];
 	int gdt_num;
 	int blk_is;
+	int ret;
 
-	bdev = bdev_open(dev_name);
-	if (bdev == NULL)
+	bdev = get_bdev_by_name(bdev_name);
+	if (NULL == bdev)
 	{
-		char str[64];
-
-		sprintf(str, "open(%s)", dev_name);
-		perror(str);
-
+		DPRINT("fail to open block device \"%s\"!\n", bdev_name);
+		// return -ENODEV;
 		return NULL;
 	}
 
-	bdev->get_block(bdev, 2, buff);
+	char buff[bdev->sect_size];
+
+	struct disk_drive *drive = container_of(bdev, struct disk_drive, bdev);
+
+	ret = drive->get_block(drive, 2, buff);
+	if (ret < 0)
+	{
+		DPRINT("%s(): read dbr err\n", __func__);
+		// return ret;
+		return NULL;
+	}
+
 	memcpy(sb, buff, sizeof(*sb));
 
 	if (sb->s_magic != 0xef53)
@@ -318,7 +330,7 @@ int ext2_umount(const char *path)
 	if (NULL == fs)
 		return -ENOENT;
 
-	bdev_close(fs->bdev);
+	// bdev_close(fs->bdev);
 
 	// free fs-> ...
 

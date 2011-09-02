@@ -127,7 +127,6 @@ static int mmc_load_image(PART_TYPE type, const char image_name[], u8 **buff_ptr
 	int ret;
 	int i;
 	u8 *image_buf;
-	struct block_device *bdev;
 	struct fat_file *fd;
 	char dev_name[MAX_FILE_NAME_LEN];
 
@@ -160,8 +159,7 @@ static int mmc_load_image(PART_TYPE type, const char image_name[], u8 **buff_ptr
 
 	dev_name[i] = '\0';
 
-	bdev = get_bdev_by_name(dev_name);
-	ret = fat_mount("vfat", 0, bdev);
+	ret = fat_mount("vfat", 0, dev_name);
 	if (ret < 0)
 	{
 		printf("fat_mount error, ret = %d\n", ret);
