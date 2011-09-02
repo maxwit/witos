@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
 	dev = argv[1];
 	fn  = argv[2];
 
-	dir = ext2_mount("ext2", 0, dev);
+	dir = mount("ext2", 0, dev);
 
 	fp = ext2_open(fn, 0);
 	if (NULL == fp)
