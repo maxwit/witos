@@ -2,22 +2,9 @@
 #include <errno.h>
 #include <string.h>
 #include <fs/fs.h>
+#include "fat.h"
 
-#if 0
-static void show_by_hex(void *buf, u32 size)
-{
-	__u8 *temp = (__u8 *)buf;
-	int i;
-	for (i = 0; i < size; i ++)
-	{
-		if (i % 16 == 0) printf("\n");
-		printf("%02x ", temp[i]);
-	}
-
-	printf("\n");
-	return ;
-}
-#endif
+// int fat_mount(struct file_system_type *fs_type, unsigned long flags, struct block_device *bdev);
 
 static ssize_t fat_read_block(struct fat_fs *fs, void *buff, int blk_no, size_t off, size_t size)
 {
@@ -61,7 +48,7 @@ static __u32 fat_get_fat_table(struct fat_fs *fs, __u32 fat_num)
 	return fat_catch[fat_num % (fs->clus_size / sizeof(fat_num))];
 }
 
-int fat_mount(const char *type, unsigned long flags, const char *bdev_name)
+static int fat_mount(struct file_system_type *fs_type, unsigned long flags, struct block_device *bdev)
 {
 	int ret;
 	__u16 blk_size;
@@ -69,15 +56,7 @@ int fat_mount(const char *type, unsigned long flags, const char *bdev_name)
 	__u32 data_off;
 	struct fat_fs *fs;
 	struct fat_boot_sector *dbr;
-	struct block_device *bdev;
 	__u32 root;
-
-	bdev = get_bdev_by_name(bdev_name);
-	if (NULL == bdev)
-	{
-		DPRINT("fail to open block device \"%s\"!\n", bdev_name);
-		return -ENODEV;
-	}
 
 	struct disk_drive *drive = container_of(bdev, struct disk_drive, bdev);
 
@@ -125,11 +104,13 @@ int fat_mount(const char *type, unsigned long flags, const char *bdev_name)
 	return 0;
 }
 
-int fat_umount(struct fat_fs *fs, const char *path, const char *type, unsigned long flags)
+#if 0
+static int fat_umount(struct fat_fs *fs, const char *path, const char *type, unsigned long flags)
 {
 	// free
 	return 0;
 }
+#endif
 
 static int strxcpy(char *dst, const char *src, __u32 n)
 {
@@ -407,3 +388,16 @@ int fat_write(struct fat_file *fp, const void *buff, size_t size)
 {
 	return 0;
 }
+
+static int __INIT__ fat_fs_init(void)
+{
+	static struct file_system_type fat_fs_type =
+	{
+		.name  = "vfat",
+		.mount = fat_mount,
+	};
+
+	return file_system_type_register(&fat_fs_type);
+}
+
+SUBSYS_INIT(fat_fs_init);

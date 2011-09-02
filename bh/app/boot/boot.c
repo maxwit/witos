@@ -124,6 +124,8 @@ static int boot_usage(void)
 
 static int mmc_load_image(PART_TYPE type, const char image_name[], u8 **buff_ptr, u32 *buff_len)
 {
+	return 0;
+#if 0
 	int ret;
 	int i;
 	u8 *image_buf;
@@ -159,7 +161,7 @@ static int mmc_load_image(PART_TYPE type, const char image_name[], u8 **buff_ptr
 
 	dev_name[i] = '\0';
 
-	ret = fat_mount("vfat", 0, dev_name);
+	ret = mount("vfat", 0, dev_name, NULL);
 	if (ret < 0)
 	{
 		printf("fat_mount error, ret = %d\n", ret);
@@ -196,6 +198,7 @@ L1:
 	free(image_buf);
 L0:
 	return ret;
+#endif
 }
 
 static int part_load_image(PART_TYPE type, u8 **buff_ptr, u32 *buff_len)

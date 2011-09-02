@@ -7,6 +7,7 @@
 #include <string.h>
 #include <errno.h>
 #include <drive.h>
+#include <fs/fs.h>
 #include "ext2.h"
 
 #ifndef min
@@ -25,6 +26,8 @@ struct ext2_file_system
 
 // TODO:  remove it!
 static struct ext2_file_system *g_ext2_fs;
+
+// int ext2_mount(struct file_system_type *fs_type, unsigned long flags, struct block_device *bdev);
 
 static ssize_t ext2_read_block(struct ext2_file_system *fs, void *buff, int blk_no, size_t off, size_t size)
 {
@@ -247,9 +250,8 @@ struct ext2_file_system *ext2_get_file_system(const char *name)
 	return g_ext2_fs;
 }
 
-int ext2_mount(const char *type, unsigned long flags, const char *bdev_name)
+static int ext2_mount(struct file_system_type *fs_type, unsigned long flags, struct block_device *bdev)
 {
-	struct block_device *bdev;
 	struct ext2_file_system *fs = malloc(sizeof(*fs));
 	struct ext2_super_block *sb = &fs->sb;
 	struct ext2_dir_entry_2 *root;
@@ -257,14 +259,6 @@ int ext2_mount(const char *type, unsigned long flags, const char *bdev_name)
 	int gdt_num;
 	int blk_is;
 	int ret;
-
-	bdev = get_bdev_by_name(bdev_name);
-	if (NULL == bdev)
-	{
-		DPRINT("fail to open block device \"%s\"!\n", bdev_name);
-		return -ENODEV;
-	}
-
 	char buff[bdev->sect_size];
 
 	struct disk_drive *drive = container_of(bdev, struct disk_drive, bdev);
@@ -319,8 +313,9 @@ int ext2_mount(const char *type, unsigned long flags, const char *bdev_name)
 	return 0;
 }
 
+#if 0
 // fixme: free all resources
-int ext2_umount(const char *path)
+static int ext2_umount(const char *path)
 {
 	struct ext2_file_system *fs;
 
@@ -336,6 +331,7 @@ int ext2_umount(const char *path)
 
 	return 0;
 }
+#endif
 
 static struct ext2_dir_entry_2 *ext2_lookup(struct ext2_inode *parent, const char *name)
 {
@@ -494,3 +490,16 @@ ssize_t ext2_read(struct ext2_file *file, void *buff, size_t size)
 
 	return real_size;
 }
+
+static int __INIT__ ext2_fs_init(void)
+{
+	static struct file_system_type ext2_fs_type =
+	{
+		.name  = "ext2",
+		.mount = ext2_mount,
+	};
+
+	return file_system_type_register(&ext2_fs_type);
+}
+
+SUBSYS_INIT(ext2_fs_init);

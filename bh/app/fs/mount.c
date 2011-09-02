@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
 		return -EINVAL;
 	}
 
-	ret = fat_mount("vfat", 0, argv[1]);
+	ret = mount("vfat", 0, argv[1], NULL);
 
 	return ret;
 }
