@@ -1,11 +1,11 @@
 #pragma once
 
-#if 0
+#if CONFIG_HOST_DEMO
 #include <linux/types.h>
 
 typedef unsigned char   __u8;
-typedef unsigned short  __u16, __le16;
-typedef unsigned int    __u32, __le32;
+typedef unsigned short  __u16;
+typedef unsigned int    __u32;
 #endif
 
 typedef unsigned short  __le16;
@@ -219,7 +219,7 @@ struct ext2_file
 	struct ext2_file_system *fs;
 };
 
-struct ext2_dir_entry_2 *ext2_mount(const char *type, unsigned long flags, const char *dev_name);
+int ext2_mount(const char *type, unsigned long flags, const char *dev_name);
 int ext2_umount(const char *path);
 
 struct ext2_file *ext2_open(const char *name, int flags, ...);

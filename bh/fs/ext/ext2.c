@@ -247,7 +247,7 @@ struct ext2_file_system *ext2_get_file_system(const char *name)
 	return g_ext2_fs;
 }
 
-struct ext2_dir_entry_2 *ext2_mount(const char *type, unsigned long flags, const char *bdev_name)
+int ext2_mount(const char *type, unsigned long flags, const char *bdev_name)
 {
 	struct block_device *bdev;
 	struct ext2_file_system *fs = malloc(sizeof(*fs));
@@ -262,8 +262,7 @@ struct ext2_dir_entry_2 *ext2_mount(const char *type, unsigned long flags, const
 	if (NULL == bdev)
 	{
 		DPRINT("fail to open block device \"%s\"!\n", bdev_name);
-		// return -ENODEV;
-		return NULL;
+		return -ENODEV;
 	}
 
 	char buff[bdev->sect_size];
@@ -274,8 +273,7 @@ struct ext2_dir_entry_2 *ext2_mount(const char *type, unsigned long flags, const
 	if (ret < 0)
 	{
 		DPRINT("%s(): read dbr err\n", __func__);
-		// return ret;
-		return NULL;
+		return ret;
 	}
 
 	memcpy(sb, buff, sizeof(*sb));
@@ -283,7 +281,7 @@ struct ext2_dir_entry_2 *ext2_mount(const char *type, unsigned long flags, const
 	if (sb->s_magic != 0xef53)
 	{
 		printf("magic = %x\n", sb->s_magic);
-		return NULL;
+		return -EINVAL;
 	}
 
 	blk_is = (1 << (sb->s_log_block_size + 10)) / sb->s_inode_size;
@@ -299,7 +297,7 @@ struct ext2_dir_entry_2 *ext2_mount(const char *type, unsigned long flags, const
 	gdt = malloc(gdt_num * sizeof(struct ext2_group_desc));
 	if (NULL == gdt)
 	{
-		return NULL;
+		return -ENOMEM;
 	}
 
 	ext2_read_block(fs, gdt, sb->s_first_data_block + 1, 0, gdt_num * sizeof(struct ext2_group_desc));
@@ -318,7 +316,7 @@ struct ext2_dir_entry_2 *ext2_mount(const char *type, unsigned long flags, const
 
 	g_ext2_fs = fs;
 
-	return root;
+	return 0;
 }
 
 // fixme: free all resources
