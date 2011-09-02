@@ -20,7 +20,7 @@ int main(int argc, char *argv[])
 		return -ENODEV;
 	}
 
-	ret = fat_mount(bdev, "vfat", 0);
+	ret = fat_mount("vfat", 0, bdev);
 
 
 	return ret;

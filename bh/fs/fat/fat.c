@@ -61,7 +61,7 @@ static __u32 fat_get_fat_table(struct fat_fs *fs, __u32 fat_num)
 	return fat_catch[fat_num % (fs->clus_size / sizeof(fat_num))];
 }
 
-int fat_mount(struct block_device *bdev, const char *type, unsigned long flags)
+int fat_mount(const char *type, unsigned long flags, struct block_device *bdev)
 {
 	int ret;
 	__u16 blk_size;
@@ -145,7 +145,7 @@ static int strxcpy(char *dst, const char *src, __u32 n)
 	return j;
 }
 
-int fat_find_next_file(struct fat_fs *fs, __u32 *block_num, char *name, struct fat_dentry *dir, char *buf)
+static int fat_find_next_file(struct fat_fs *fs, __u32 *block_num, char *name, struct fat_dentry *dir, char *buf)
 {
 	char *fn_pos = name;
 	static struct fat_dentry *dir_pos;
@@ -169,7 +169,7 @@ int fat_find_next_file(struct fat_fs *fs, __u32 *block_num, char *name, struct f
 				*block_num = fat_get_fat_table(fs, *block_num);
 				if (*block_num < 0)
 				{
-					goto L2;
+					goto L1;
 				}
 				old_block_num = *block_num;
 			}
@@ -181,12 +181,11 @@ int fat_find_next_file(struct fat_fs *fs, __u32 *block_num, char *name, struct f
 
 		switch (*(char *)dir_pos)
 		{
-
 		case 0xe5:
 			break;
 
 		case  0:
-			goto L2;
+			goto L1;
 			break;
 
 		default:
@@ -196,20 +195,24 @@ int fat_find_next_file(struct fat_fs *fs, __u32 *block_num, char *name, struct f
 			case 0x20:
 				if (!fn_pos[0])
 				{
-					int temp1 = strchr((char *)dir_pos, ' ') - (char *)dir_pos;
+					int temp1, temp2;
+
+					temp1 = strchr((char *)dir_pos, ' ') - (char *)dir_pos;
 					memcpy(fn_pos, (char *)dir_pos, temp1);
-					int temp2 = strchr((char *)dir_pos + 8, ' ') - (char *)dir_pos - 8;
-					if (temp2 != 0){
+					temp2 = strchr((char *)dir_pos + 8, ' ') - (char *)dir_pos - 8;
+					if (temp2 != 0)
+					{
 						*(fn_pos + temp1) = '.';
 						temp1++;
 						memcpy(fn_pos + temp1, (char *)dir_pos + 8, temp2);
 					}
 					*(fn_pos + temp1 + temp2) = '\0';
 					*(fn_pos + temp1 + temp2 + 1) = '\0';
-
 				}
-				goto L1;
-				break;
+
+				memcpy(dir, dir_pos, sizeof(*dir_pos));
+				dir_pos++;
+				return 1;
 
 			case 0x0f:
 				strxcpy(fn_pos + ((((char *)dir_pos)[0] & 0x0f) - 1) * 13,(char *)dir_pos + 1, 10);
@@ -225,15 +228,9 @@ int fat_find_next_file(struct fat_fs *fs, __u32 *block_num, char *name, struct f
 		dir_pos++;
 	}while(*(char *)dir_pos);
 
-L2:
-	return -1;
-
 L1:
-	memcpy(dir, dir_pos, sizeof(*dir_pos));
-	dir_pos++;
-	return 1;
+	return -1;
 }
-
 
 static struct fat_dentry *fat_lookup(struct fat_fs *fs, __u32 parent, const char *name)
 {
@@ -403,4 +400,3 @@ int fat_write(struct fat_file *fp, const void *buff, size_t size)
 {
 	return 0;
 }
-

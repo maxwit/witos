@@ -3,7 +3,8 @@
 #include <types.h>
 #include <drive.h>
 
-struct fat_boot_sector {
+struct fat_boot_sector
+{
 	__u8	ignored[3];
 	__u8	system_id[8];
 	__u8	sector_size[2];
@@ -70,7 +71,7 @@ struct fat_file
 };
 
 
-int fat_mount(struct block_device *bdev, const char *type, unsigned long flags);
+int fat_mount(const char *type, unsigned long flags, struct block_device *bdev);
 
 struct fat_file *fat_open(const char *name, int flags, ...);
 
@@ -87,5 +88,3 @@ int fat_umount(struct fat_fs *fs, const char *path, const char *type, unsigned l
 
 // #define DISK_BLOCK_SIZE 512
 #define MAX_FILE_NAME_LEN 64
-
-
