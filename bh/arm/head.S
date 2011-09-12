@@ -83,6 +83,11 @@ skip_move:
 	beq   bss_init
 #ifdef CONFIG_IRQ_SUPPORT
 	mov   r2, #(handle_reset - _start)
+#ifdef CONFIG_OMAP3530
+	ldr   r0, =INT_VECTOR_RAM_BASE
+	add   r1, r1, #4
+	sub   r2, r2, #4
+#endif
 	bl    memcpy
 #endif
 

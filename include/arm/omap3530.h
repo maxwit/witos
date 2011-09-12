@@ -17,3 +17,12 @@
 #define L3_CLK  MHz(133)
 #define L4_CLK  MHz(66.5)
 #define HCLK_RATE  L3_CLK
+
+#define INT_VECTOR_RAM_BASE 0x4020FFC8
+
+#ifndef __ASSEMBLY__
+#include <types.h>
+
+int omap3530_irq_init(void);
+
+#endif

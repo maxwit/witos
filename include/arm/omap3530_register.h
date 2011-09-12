@@ -75,14 +75,24 @@
 #define GPIO1_BASE		0x48310000
 #define GPIO_BASE(i)	(0x49050000 + 0x2000 * (i - 2)) // i = 2 - 6
 #define GPIO_OE			0x34
+#define GPIO_IRQ_STATUS1(gpio_index) \
+	(((gpio_index) == 0) ? 0x48310018 : 0x49050000 + ((gpio_index) - 1) * 0x2000 + 0x18)
+
+#define GPIO_IRQ_ENABLE1(gpio_index) \
+	(((gpio_index) == 0) ? 0x4831001c : 0x49050000 + ((gpio_index) - 1) * 0x2000 + 0x1c)
+
+#define GPIO_IRQ_CLEENABLE1(gpio_index) \
+	(((gpio_index) == 0) < 2) ? 0x48310060 : 0x49050000 + ((gpio_index) - 1) * 0x2000 + 0x60)
+
+#define GPIO_IRQ_SETENABLE1(gpio_index) \
+	(((gpio_index) == 0) ? 0x48310064 : 0x49050000 + ((gpio_index) - 1) * 0x2000 + 0x64)
 
 #define GPMC_BASE			0x6E000000
 //#define	GPMC_REG_ADDR(reg)			(reg + GPMC_BASE)
-
+#define GPMC_IRQ_STATUS		 0x018
 #define GPMC_SYSSTATUS			 0x014
 #define GPMC_CONFIG				 0x050
 #define GPMC_STATUS				 0x054
-
 #define GPMC_CONFIG1_0			 0x060
 #define GPMC_CONFIG7_0			 0x078
 #define GPMC_NAND_COMMAND_0		 0x07C
@@ -105,6 +115,22 @@
 #define GPMC_CONFIG_7 0x018
 
 #define GPMC_CS_BASE(x) ((128 * (x)) << 20)
+
+// INTC
+#define INTC_PINS	96
+#define MAX_IRQ_NUM	(INTC_PINS + 32 * 6)
+#define GPIO_IRQ(n)		(INTC_PINS + n)
+
+#define INTCPS_BASE	0x48200000
+#define INTCPS_SYSCONFIG	0x010
+#define INTCPS_SIR_IRQ		0x040
+#define INTCPS_CONTROL		0x048
+#define INTCPS_IDLE			0x050
+#define INTCPS_MIRN(n)		(0x084 + 0x20 * (n))
+#define INTCPS_MIRN_CLEN(n)	(0x088 + 0x20 * (n))
+#define INTCPS_MIRN_SETN(n)	(0x08c + 0x20 * (n))
+#define INTCPS_ISR_CLEN(n)	(0x094 + 0x20 * (n))
+#define INTCPS_ILRM(n)		(0x100 + 0x04 * (n))
 
 #define SDRC_BASE 0x6d000000
 #define SDRC_SYSCONFIG	0x010

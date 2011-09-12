@@ -48,7 +48,7 @@ static const struct part_attr omap3530_part_tab[] =
 
 static int __INIT__ omap3530_init(void)
 {
-	u32 val4;
+	u32 val, val4;
 #ifdef CONFIG_LAN9220
 	u16 val2;
 #endif
@@ -112,6 +112,26 @@ static int __INIT__ omap3530_init(void)
 	val2 = readw(VA(PADCONF_GPMC_NADV_ALE));
 	val2 |= 0x0E00;
 	writew(VA(PADCONF_GPMC_NADV_ALE), val2);
+#endif
+
+	// enable gpio1's clock(function,interface and auto wakeup clock)
+	val = readl(VA(0x48004c00));
+	val |= 1 << 3;
+	writel(VA(0x48004c00), val);
+
+	val = readl(VA(0x48004c10));
+	val |= 1 << 3;
+	writel(VA(0x48004c10), val);
+
+	val = readl(VA(0x48004c30));
+	val |= 1 << 3;
+	writel(VA(0x48004c30), val);
+
+#ifdef CONFIG_IRQ_SUPPORT
+
+	omap3530_irq_init();
+
+	irq_enable();
 #endif
 
 	return 0;
