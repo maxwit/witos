@@ -93,15 +93,19 @@ int disk_drive_register(struct disk_drive *drive)
 	num = msdos_part_scan(drive, part_tab);
 	// if num < 0 ...
 
+	printf("%s:", drive->bdev.dev.name);
+
 	for (i = 0; i < num; i++)
 	{
 		slave = zalloc(sizeof(*slave));
 		// if ...
 
-		snprintf(slave->bdev.dev.name, PART_NAME_LEN, "%sp%d", drive->bdev.dev.name, i);
+		snprintf(slave->bdev.dev.name, PART_NAME_LEN, "%sp%d", drive->bdev.dev.name, i + 1);
+		printf(" %s", slave->bdev.dev.name);
 
 		slave->bdev.bdev_base = part_tab[i].part_base;
 		slave->bdev.bdev_size = part_tab[i].part_size;
+		slave->bdev.sect_size = drive->bdev.sect_size;
 
 		slave->master = drive;
 		list_add_tail(&slave->slave_node, &drive->slave_list);
@@ -112,6 +116,7 @@ int disk_drive_register(struct disk_drive *drive)
 		ret = block_device_register(&slave->bdev);
 		// if ret < 0 ...
 	}
+	printf("\n");
 
 	list_add_tail(&drive->master_node, &g_master_list);
 

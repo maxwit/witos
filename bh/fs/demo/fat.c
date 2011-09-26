@@ -141,7 +141,8 @@ static int fat_find_next_file(struct fat_fs *fs,
 
 	do
 	{
-		if ((*block_num != old_block_num) || dir_pos - (struct fat_dentry *)buf == fs->clus_size / sizeof(*dir_pos)) // find next cluster
+		if (*block_num != old_block_num
+			|| dir_pos - (struct fat_dentry *)buf == fs->clus_size / sizeof(*dir_pos)) // find next cluster
 		{
 			old_block_num = *block_num;
 
@@ -165,6 +166,8 @@ static int fat_find_next_file(struct fat_fs *fs,
 			dir_pos = (struct fat_dentry *)buf;
 		}
 
+		DPRINT("name = %s, attribute = %d\n", dir_pos->name, dir_pos->attr);
+
 		switch ((__u8)dir_pos->name[0])
 		{
 		case 0xe5:
@@ -185,7 +188,7 @@ static int fat_find_next_file(struct fat_fs *fs,
 					for (i = 0; i < 8 && dir_pos->name[i] != ' '; i++)
 							name[i] = dir_pos->name[i];
 
-					name[i++] = '.';
+					name[i++] = '.'; // fixme
 
 					for (j = 8; j < 11 && dir_pos->name[j] != ' '; j++, i++)
 						name[i]	= dir_pos->name[j];
@@ -209,7 +212,7 @@ static int fat_find_next_file(struct fat_fs *fs,
 		}
 
 		dir_pos++;
-	}while (dir_pos->name[0]);
+	}while(dir_pos->name[0]);
 
 L1:
 	return -1;
@@ -232,9 +235,11 @@ static struct fat_dentry *fat_lookup(struct fat_fs *fs, __u32 parent, const char
 	{
 		// fixme
 		ret = fat_find_next_file(fs, &parent, sname, dir);
+		printf("%s(): ret = %d, sname = %s\n",
+			__func__, ret, sname);
 		if (ret < 0)
 		{
-			DPRINT("%s(): can't find file \"%s\"\n", __func__, name);
+			DPRINT("can't find file\n");
 			goto err;
 		}
 
@@ -384,7 +389,7 @@ int fat_write(struct fat_file *fp, const void *buff, size_t size)
 	return 0;
 }
 
-static int __INIT__ fat_fs_init(void)
+int fat_fs_init(void)
 {
 	static struct file_system_type fat_fs_type =
 	{
@@ -394,5 +399,3 @@ static int __INIT__ fat_fs_init(void)
 
 	return file_system_type_register(&fat_fs_type);
 }
-
-SUBSYS_INIT(fat_fs_init);

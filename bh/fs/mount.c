@@ -1,4 +1,9 @@
+#include <errno.h>
+#include <stdio.h>
+#include <string.h>
 #include <fs/fs.h>
+
+// #define DPRINT printf
 
 int mount(const char *type, unsigned long flags, const char *bdev_name, const char *path)
 {
@@ -17,6 +22,7 @@ int mount(const char *type, unsigned long flags, const char *bdev_name, const ch
 	{
 		return -ENOENT;
 	}
+	printf("%s() line %d\n", __func__, __LINE__);
 
 	return fs_type->mount(fs_type, flags, bdev);
 }

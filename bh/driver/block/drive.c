@@ -84,10 +84,11 @@ int disk_drive_register(struct disk_drive *drive)
 		slave = zalloc(sizeof(*slave));
 		// if ...
 
-		snprintf(slave->bdev.dev.name, PART_NAME_LEN, "%sp%d", drive->bdev.dev.name, i);
+		snprintf(slave->bdev.dev.name, PART_NAME_LEN, "%sp%d", drive->bdev.dev.name, i + 1);
 
 		slave->bdev.bdev_base = part_tab[i].part_base;
 		slave->bdev.bdev_size = part_tab[i].part_size;
+		slave->bdev.sect_size = drive->bdev.sect_size;
 
 		slave->master = drive;
 		list_add_tail(&slave->slave_node, &drive->slave_list);
