@@ -19,7 +19,7 @@ static int foo_get_block(struct disk_drive *drive, int start, void *buff)
 {
 	struct foo_drive *foo = container_of(drive, struct foo_drive, drive);
 
-	lseek(foo->fd, start * BLK_LEN, SEEK_SET);
+	lseek(foo->fd, start, SEEK_SET);
 	read(foo->fd, buff, BLK_LEN);
 
 	return BLK_LEN;

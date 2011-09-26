@@ -57,6 +57,7 @@ int main(int argc, char *argv[])
 	printf("%s() line %d\n", __func__, __LINE__);
 
 	len = ext2_read(fp, buff, BUF_LEN);
+	printf("data:\n\t%s\n", buff);
 
 	if (len > 0)
 	{

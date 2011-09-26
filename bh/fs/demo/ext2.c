@@ -41,7 +41,7 @@ static ssize_t ext2_read_block(struct ext2_file_system *fs, void *buff, int blk_
 	for (cur_blk = 0; cur_blk < buf_len / bdev->sect_size; cur_blk++)
 	{
 		// bdev->get_block(bdev, start_blk + cur_blk, blk_buf + cur_blk * bdev->sect_size);
-		drive->get_block(drive, start_blk + cur_blk, blk_buf + cur_blk * bdev->sect_size);
+		drive->get_block(drive, (start_blk + cur_blk) * bdev->sect_size, blk_buf + cur_blk * bdev->sect_size);
 	}
 
 	memcpy(buff, blk_buf + off, size);
@@ -263,7 +263,7 @@ static int ext2_mount(struct file_system_type *fs_type, unsigned long flags, str
 
 	struct disk_drive *drive = container_of(bdev, struct disk_drive, bdev);
 
-	ret = drive->get_block(drive, 2, buff);
+	ret = drive->get_block(drive, 2 * bdev->sect_size, buff);
 	if (ret < 0)
 	{
 		DPRINT("%s(): read dbr err\n", __func__);
