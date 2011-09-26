@@ -17,7 +17,7 @@ struct msdos_part
 
 static struct list_node g_master_list;
 
-// fixme to support extened partion
+// fixme: to support extended partion
 static int msdos_part_scan(struct disk_drive *drive, struct part_attr part_tab[])
 {
 	int i;
@@ -36,7 +36,9 @@ static int msdos_part_scan(struct disk_drive *drive, struct part_attr part_tab[]
 		if (dos_pt[i].lba_size == 0)
 			break;
 
-		// fixme
+		// fixme:
+		// 1. fix part_type
+		// 2. support size large than 4G
 		part_tab[i].part_type = PT_NONE;
 		part_tab[i].part_name[0] = '\0';
 

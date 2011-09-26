@@ -1,4 +1,6 @@
 #pragma once
+#include <types.h>
+#include <list.h>
 #include <device.h>
 
 typedef enum
@@ -48,6 +50,5 @@ struct block_device
 };
 
 int block_device_register(struct block_device *bdev);
-struct list_node *get_bdev_list(void);
 
 struct block_device *get_bdev_by_name(const char *name);

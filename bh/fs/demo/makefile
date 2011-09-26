@@ -1,13 +1,20 @@
-CFLAGS = -Wall -g
+CFLAGS = -Wall -g -I../../../include #-D__arm__
 CC = gcc
 
-SRCS = $(wildcard *.c)
-OBJS = $(SRCS:%.c=%.o)
+#SRCS = $(wildcard *.c)
+#OBJS = $(SRCS:%.c=%.o)
 
-demo: $(OBJS) ext.o
+COMMON_OBJS = block.o drive.o foo_drv.o
+
+all: fat_demo
+
+ext_demo: $(COMMON_OBJS) ext_demo.o
 	gcc $^ -o $@
 
-ext.o: ../ext2/ext.c
+fat_demo: $(COMMON_OBJS) #fat_demo.o
+
+%.o: %.c
+	gcc $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -fv demo $(OBJS)
+	@rm -fv *.o fat_demo ext_demo

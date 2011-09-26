@@ -195,7 +195,7 @@ int net_tftp_load(struct tftp_opt *opt)
 			ret = -EIO;
 			goto L1;
 		}
-	}while (TFTP_PKT_LEN == pkt_len);
+	} while (TFTP_PKT_LEN == pkt_len);
 
 L1:
 #ifdef TFTP_VERBOSE

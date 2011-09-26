@@ -3,11 +3,6 @@
 
 static struct list_node g_bdev_list;
 
-struct list_node *get_bdev_list(void)
-{
-	return &g_bdev_list;
-}
-
 struct block_device *get_bdev_by_name(const char *name)
 {
 	struct list_node *iter;

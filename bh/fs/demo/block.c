@@ -1,54 +1,36 @@
-#include <malloc.h>
-#include <fcntl.h>
-#include <unistd.h>
+#include <block.h>
+#include <list.h>
 #include <string.h>
-#include "block.h"
-#include "ext2.h"
 
-static ssize_t emul_read_block(struct block_device *bdev, int blk_no, void *buff);
+static struct list_node g_bdev_list;
 
-struct block_device *bdev_open(const char *name)
+struct block_device *get_bdev_by_name(const char *name)
 {
-	int fd;
+	struct list_node *iter;
 	struct block_device *bdev;
 
-	fd = open(name, O_RDWR);
-	if (fd < 0)
+	list_for_each(iter, &g_bdev_list)
 	{
-		return NULL;
+		bdev = container_of(iter, struct block_device, bdev_node);
+		if (!strcmp(bdev->dev.name, name))
+			return bdev;
 	}
 
-	bdev = malloc(sizeof(*bdev));
-
-	bdev->name = name;
-	bdev->fd   = fd;
-	bdev->get_block = emul_read_block;
-
-	return bdev;
+	return NULL;
 }
 
-int bdev_close(struct block_device *bdev)
+int block_device_register(struct block_device *bdev)
 {
-	int ret;
+	// printf("%s(): registering %s\n", __func__, bdev->dev.name);
 
-	ret = close(bdev->fd);
-	free(bdev);
+	list_add_tail(&bdev->bdev_node, &g_bdev_list);
 
-	return ret;
+	return 0;
 }
 
-static ssize_t emul_read_block(struct block_device *bdev, int blk_no, void *buff)
+int block_device_init(void)
 {
-#if 1
-	lseek(bdev->fd, blk_no * DISK_BLOCK_SIZE, SEEK_SET);
-	read(bdev->fd, buff, DISK_BLOCK_SIZE);
+	list_head_init(&g_bdev_list);
 
-	return DISK_BLOCK_SIZE;
-#else
-	lseek(bdev->fd, blk_no * DISK_BLOCK_SIZE + off, SEEK_SET);
-	return read(bdev->fd, buff, size);
-#endif
+	return 0;
 }
-	// memcpy(&sblk, buff, sizeof(sblk));
-	// printf("sizeof(sblk) = %d\n", sizeof(sblk));
-	// printf("%x %s\n", sblk.s_magic, sblk.s_volume_name);

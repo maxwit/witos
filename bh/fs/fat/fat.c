@@ -4,8 +4,6 @@
 #include <fs/fs.h>
 #include "fat.h"
 
-// int fat_mount(struct file_system_type *fs_type, unsigned long flags, struct block_device *bdev);
-
 static ssize_t fat_read_block(struct fat_fs *fs, void *buff, int blk_no, size_t off, size_t size)
 {
 	struct block_device *bdev = fs->bdev;
@@ -33,14 +31,13 @@ static __u32 fat_get_fat_table(struct fat_fs *fs, __u32 fat_num)
 	static __u32 old_fat = ~0;
 	static __u32 fat_catch[2048];
 
-	if (old_fat == ~0 || fat_num <old_fat || fat_num > (fs->clus_size / sizeof(fat_num) + old_fat - 1))
+	if (old_fat == ~0 || fat_num < old_fat || fat_num > (fs->clus_size / sizeof(fat_num) + old_fat - 1))
 	{
-		ret = fat_read_block(fs, fat_catch, fs->dbr.resv_size/fs->dbr.sec_per_clus + fat_num * sizeof(fat_num)/ (fs->clus_size),
+		ret = fat_read_block(fs, fat_catch, fs->dbr.resv_size / fs->dbr.sec_per_clus + fat_num * sizeof(fat_num) / (fs->clus_size),
 			0, fs->clus_size);
+
 		if (ret < 0)
-		{
-			return -1;
-		}
+			return ret;
 
 		old_fat = (fat_num / fs->clus_size / sizeof(fat_num)) * (fs->clus_size / sizeof(fat_num));
 	}
@@ -87,9 +84,9 @@ static int fat_mount(struct file_system_type *fs_type, unsigned long flags, stru
 
 	// TODO: check if bk_size != drive->sect_size ...
 
-	data_off = (dbr->resv_size + dbr->fats * dbr->fat32_length) / dbr->sec_per_clus - 2;	//data 	//is easy to calc if begin 0
+	data_off = (dbr->resv_size + dbr->fats * dbr->fat32_length) / dbr->sec_per_clus - 2;
 
-	clus_size = blk_size * dbr->sec_per_clus;	// fat block size
+	clus_size = blk_size * dbr->sec_per_clus; // fat block size
 
 	root = dbr->root_cluster;
 
@@ -143,7 +140,7 @@ static int fat_find_next_file(struct fat_fs *fs, __u32 *block_num, char *name, s
 
 	do
 	{
-		if ((*block_num != old_block_num) || dir_pos - (struct fat_dentry *)buf == fs->clus_size / sizeof(*dir_pos))	//find next cluster
+		if ((*block_num != old_block_num) || dir_pos - (struct fat_dentry *)buf == fs->clus_size / sizeof(*dir_pos) // find next cluster
 		{
 			old_block_num = *block_num;
 
@@ -172,9 +169,8 @@ static int fat_find_next_file(struct fat_fs *fs, __u32 *block_num, char *name, s
 		case 0xe5:
 			break;
 
-		case  0:
+		case 0x0:
 			goto L1;
-			break;
 
 		default:
 			switch (dir_pos->attr)
@@ -313,9 +309,9 @@ struct fat_file *fat_open(const char *name, int flags, ...)
 
 	fp = malloc(sizeof(*fp));
 
+	fp->fs = fs;
 	fp->dent = dir;
 	fp->offset = 0;
-	fp->fs = fs;
 
 	return fp;
 }
@@ -343,17 +339,19 @@ int fat_read(struct fat_file *fp, void *buff, size_t size)
 		size = fp->dent->size - pos;
 	}
 
-	while (pos / clus_size)
+	while (pos >= clus_size)
 	{
 		clus_num = fat_get_fat_table(fs, clus_num);
+
+#if 0
 		if (clus_num < 0)
-		{
-			return -1;
-		}
-		pos-= clus_size;
+			return clus_num;
+#endif
+
+		pos -= clus_size;
 	}
 
-	while (size - count > 0)
+	while (size > count)
 	{
 		if (size + pos - count > clus_size)
 		{
@@ -364,13 +362,12 @@ int fat_read(struct fat_file *fp, void *buff, size_t size)
 			tmp_size = size - count;
 		}
 
-		tmp_size = fat_read_block(fs, (u8 *)buff + count, fs->data + clus_num, pos, tmp_size);
+		tmp_size = fat_read_block(fs, buff + count, fs->data + clus_num, pos, tmp_size);
 		if (tmp_size < 0)
 		{
 			break;
 		}
 		count += tmp_size;
-		printf("loading ... %2d\%\r", (count * 100) / size);
 
 		clus_num = fat_get_fat_table(fs, clus_num);
 		if (clus_num < 0)
