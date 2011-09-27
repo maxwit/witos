@@ -71,19 +71,19 @@ static int drive_put_block(struct disk_drive *drive, int start, const void *buff
 
 int disk_drive_register(struct disk_drive *drive)
 {
-	int ret, num, i;
+	int ret, i;
 	struct part_attr part_tab[MSDOS_MAX_PARTS];
 	struct disk_drive *slave;
 
 	ret = block_device_register(&drive->bdev);
 	// if ret < 0 ...
 
-	num = msdos_part_scan(drive, part_tab);
-	// if num < 0 ...
+	ret = msdos_part_scan(drive, part_tab);
+	// if ret < 0 ...
 
 	printf("%s:", drive->bdev.dev.name);
 
-	for (i = 0; i < num; i++)
+	for (i = 0; i < ret; i++)
 	{
 		slave = zalloc(sizeof(*slave));
 		// if ...
@@ -108,7 +108,7 @@ int disk_drive_register(struct disk_drive *drive)
 
 	list_add_tail(&drive->master_node, &g_master_list);
 
-	return 0;
+	return ret;
 }
 
 #ifdef CONFIG_HOST_DEMO

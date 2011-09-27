@@ -6,8 +6,8 @@
 
 #define MAX_FDS 256
 
-static struct file_system_type *fs_type_list = NULL;
-static struct mount_point *g_mnt_list = NULL;
+static struct file_system_type *fs_type_list;
+static struct mount_point *g_mnt_list;
 static struct file *fd_array[MAX_FDS];
 
 int file_system_type_register(struct file_system_type *fs_type)

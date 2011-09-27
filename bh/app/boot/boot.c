@@ -327,7 +327,6 @@ static int build_command_line(char *cmd_line, size_t max_len)
 {
 	int ret = 0;
 	char *str = cmd_line;
-	struct image_info   *image_conf;
 	struct net_config   *net_conf;
 	struct linux_config *linux_conf;
 	struct flash_chip       *flash;
@@ -345,7 +344,6 @@ static int build_command_line(char *cmd_line, size_t max_len)
 
 	memset(cmd_line, 0, max_len);
 
-	image_conf = sysconf_get_image_info();
 	net_conf = sysconf_get_net_info();
 	linux_conf = sysconf_get_linux_param();
 
