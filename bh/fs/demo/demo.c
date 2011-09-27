@@ -10,14 +10,8 @@
 int block_device_init();
 int disk_drive_init();
 int foo_drv_init(const char *);
-
-static int fs_init(void)
-{
-	int ext2_fs_init(void);
-	int fat_fs_init(void);
-
-	return ext2_fs_init() && fat_fs_init();
-}
+int ext2_fs_init(void);
+int fat_fs_init(void);
 
 int main(int argc, char *argv[])
 {
@@ -45,16 +39,25 @@ int main(int argc, char *argv[])
 		return ret;
 	}
 
-	fs_init();
+	ret = ext2_fs_init();
+	if (ret < 0)
+	{
+		return ret;
+	}
+
+	ret = fat_fs_init();
+	if (ret < 0)
+	{
+		return ret;
+	}
 
 	ret = demo_mount(type, 0, part, MNTPT);
 	if (ret < 0)
 	{
-		printf("fail to mount foo0p2! (ret = %d)\n", ret);
+		printf("fail to mount %s with %s! (ret = %d)\n", part, type, ret);
 		return ret;
 	}
 
-	// snprintf(path, BUF_LEN, "foo0p2:%s", path);
 	fd = demo_open(path, 0);
 	if (fd < 0)
 	{
