@@ -3,7 +3,8 @@
 #ifdef __arm__
 #include <arm/types.h>
 #else
-#error "arch not supported yet"
+#include <arm/types.h> // fixme
+// #error "arch not supported yet"
 #endif
 
 #define MKFOURCC(a, b, c, d)    (((a) << 24) | (b) << 16 | ((c) << 8) | (d))

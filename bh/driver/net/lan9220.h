@@ -3,7 +3,15 @@
 // CONFIG_LAN9220_BASE ...
 #if defined(CONFIG_BOARD_EVM3530)
 #define LAN9220_BASE 0x2c000000
+// fixme
+#define LAN9220_IRQ_NUM 0
 #endif
+
+#define MAC_CR         0x1
+#define ADDRH           0x2
+#define ADDRL            0x3
+#define MII_ACC	       0x6
+#define MII_DATA	0x7
 
 #define RX_DATA_PORT	0x00
 #define TX_DATA_PORT	0x20

@@ -2,8 +2,10 @@
 #include <mmc/mmc_ops.h>
 
 #define BLKNR 1
-#define BSIZE 512
+#define MMC_BLK_SIZE 512
 #define MMC_HOST_NUM 5
+
+static int mmc_card_count = 0; // fixme
 
 static struct mmc_host *g_mmc_host[MMC_HOST_NUM];
 
@@ -14,7 +16,7 @@ int mmc_erase_blk(struct mmc_host *host, int start)
 	if (ret < 0)
 		goto out;
 
-	ret = host->send_cmd(host, 33, start + BSIZE, R1);
+	ret = host->send_cmd(host, 33, start + MMC_BLK_SIZE, R1);
 	if (ret < 0)
 		goto out;
 
@@ -38,6 +40,11 @@ int mmc_read_blk(struct mmc_host *host, u8 *buf, int start)
 {
 	int ret = 0;
 
+	if (host->card.raw_csd[3] & 3 << 29)
+	{
+		start = start >> 9;
+	}
+
 	ret = host->send_cmd(host, MMC_READ_SINGLE_BLOCK, start, R1);
 	if (ret < 0)
 		return ret;
@@ -48,32 +55,18 @@ int mmc_read_blk(struct mmc_host *host, u8 *buf, int start)
 
 	udelay(1000);
 
-	if (1)
-	{
-		int i;
-
-		for (i = 0; i < BSIZE / 4; i++)
-		{
-			printf("%08x", ((u32*)buf)[i]);
-
-			if ((i + 1)% 8)
-			{
-				printf(" ");
-			}
-			else
-			{
-				printf("\n");
-			}
-		}
-	}
 
 	return 0;
-
 }
 
 int mmc_write_blk(struct mmc_host *host, const u8 *buf, int start)
 {
 	int ret = 0;
+
+	if (host->card.raw_csd[3] & 3 << 29)
+	{
+		start = start >> 9;
+	}
 
 	ret = host->send_cmd(host, MMC_WRITE_BLOCK, start, R1);
 	if (ret < 0)
@@ -84,8 +77,8 @@ int mmc_write_blk(struct mmc_host *host, const u8 *buf, int start)
 		return ret;
 
 	udelay(1000);
-	return 0;
 
+	return 0;
 }
 
 int mmc_decode_cid(struct mmc_host *host)
@@ -106,32 +99,38 @@ int mmc_decode_cid(struct mmc_host *host)
 	return 0;
 }
 
-static int mmc_get_block(struct block_device *blkdev, int idx, u8 buff[])
+static int mmc_get_block(struct disk_drive *drive, int start, void *buff)
 {
-	struct mmc_card *card = container_of(blkdev, struct mmc_card, blkdev);
+	struct mmc_card *card = container_of(drive, struct mmc_card, drive);
 
-	return mmc_read_blk(card->host, buff, idx);
+	return mmc_read_blk(card->host, buff, start);
 }
 
-static int mmc_put_block(struct block_device *blkdev, int idx, const u8 buff[])
+static int mmc_put_block(struct disk_drive *drive, int start, const void *buff)
 {
-	struct mmc_card *card = container_of(blkdev, struct mmc_card, blkdev);
+	struct mmc_card *card = container_of(drive, struct mmc_card, drive);
 
-	return mmc_write_blk(card->host, buff, idx);
+	return mmc_write_blk(card->host, buff, start);
 }
 
-static int mmc_register_blkdev(struct mmc_card *card)
+static int mmc_card_register(struct mmc_card *card)
 {
-	struct block_device *blkdev = &card->blkdev;
+	struct disk_drive *drive = &card->drive;
 
-	// fixme
-	blkdev->blk_size  = BSIZE;
-	blkdev->dev_size  = 0;
+	sprintf(drive->bdev.dev.name, "mmcblock%d", mmc_card_count);
+	mmc_card_count++;
 
-	blkdev->get_block = mmc_get_block;
-	blkdev->put_block = mmc_put_block;
+	// TODO: fix size
+	drive->bdev.bdev_base = 0;
+	drive->bdev.bdev_size = 0;
+	drive->bdev.sect_size = MMC_BLK_SIZE;
 
-	return block_device_register(&card->blkdev);
+	list_head_init(&drive->slave_list);
+
+	drive->get_block = mmc_get_block;
+	drive->put_block = mmc_put_block;
+
+	return disk_drive_register(&card->drive);
 }
 
 int mmc_sd_detect_card(struct mmc_host *host)
@@ -187,6 +186,10 @@ int mmc_sd_detect_card(struct mmc_host *host)
 	if (ret)
 		goto out;
 
+	ret = mmc_switch_width(host);
+	if (ret)
+		goto out;
+
 	if (host->set_hclk)
 		host->set_hclk();
 	else
@@ -196,9 +199,9 @@ int mmc_sd_detect_card(struct mmc_host *host)
 
 	//mmc_app_set_bus_width(host,SD_BUS_WIDTH_4);
 
-	//ret = mmc_set_block_len(host, BSIZE);
+	//ret = mmc_set_block_len(host, MMC_BLK_SIZE);
 
-	ret = mmc_register_blkdev(card);
+	ret = mmc_card_register(card);
 
 	return 0;
 out:

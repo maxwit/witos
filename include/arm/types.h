@@ -1,8 +1,8 @@
 #pragma once
 
-typedef unsigned char    u8;
-typedef unsigned short   u16;
-typedef unsigned int     u32, size_t, UINT32_T;
+typedef unsigned char    u8, __u8;
+typedef unsigned short   u16, __u16;
+typedef unsigned int     u32, __u32, size_t;
 typedef int              ssize_t;
 typedef enum {FALSE, TRUE} BOOL;
 

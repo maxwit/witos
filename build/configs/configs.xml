@@ -1,0 +1,84 @@
+<?xml version="1.0"?>
+<config version="1.0">
+	<choice name="ARCH" default="ARM">
+		<config name="ARM" bool="y">
+			<!--config name="ARCH" string="ARM"/-->
+			<config name="CORSS_COMPILE" string="arm-maxwit-linux-gnueabi-"/>
+			<choice name="PLAT">
+				<config name="AT91SAM9261" bool="y">
+					<config name="ARCH_VER" string="armv5te"/>
+					<config name="CONSOLE_NAME" string="ttyS"/>
+					<config name="UART_INDEX" int="0"/>
+					<config name="NAND_ECC_MODE" string="NAND_ECC_SW"/>
+					<choice name="BOARD" default="AT91SAM9261EK">
+						<config name="AT91SAM9261EK" bool="y">
+							<config name="BOARD" string="ATMEL AT91SAM9261EK"/>
+							<config name="MACH_TYPE" int="848"/>
+							<select>NAND_AT91 MMC_AT91</select>
+						</config>
+					</choice>
+				</config>
+				<config name="OMAP3530" bool="y">
+					<config name="ARCH_VER" string="armv7-a"/>
+					<config name="CONSOLE_NAME" string="ttyO"/>
+					<choice name="BOARD" default="EVM3530">
+						<config name="BEAGLE" bool="y">
+							<config name="BOARD" string="Beagle Board"/>
+							<config name="MACH_TYPE" int="1546"/>
+							<config name="UART_INDEX" int="0"/>
+							<select>SMSC91</select>
+						</config>
+						<config name="EVM3530" bool="y">
+							<config name="BOARD" string="EVM3530 Board"/>
+							<config name="MACH_TYPE" int="1546"/>
+							<config name="UART_INDEX" int="2"/>
+							<select>DM9000 ABC</select>
+						</config>
+					</choice>
+				</config>
+				<config name="S3C6410" bool="y">
+					<config name="ARCH_VER" string="armv6k"/>
+					<choice name="BOARD">
+						<config name="MW61" bool="y">
+							<config name="BOARD" string="MW61 MID"/>
+							<config name="MACH_TYPE" int="1234"/>
+							<select>DM9000</select>
+						</config>
+					</choice>
+				</config>
+			</choice>
+		</config>
+
+		<config name="MIPS" bool="y">
+		</config>
+
+		<config name="X86" bool="y">
+		</config>
+	</choice>
+	<config name="UART" bool="y">
+		<config name="KERMIT_SUPPORT" bool="y"/>
+		<config name="YMODEM_SUPPORT" bool="n"/>
+	</config>
+	<config name="FLASH" bool="n">
+		<config name="NOR" bool="n">
+		</config>
+		<config name="NAND" bool="n">
+			<config name="NAND_AT91" bool="n">
+				<config name="NAND_ECC_MODE" string="NAND_ECC_SW"/>
+			</config>
+			<config name="NAND_S3C" bool="n">
+				<config name="NAND_ECC_MODE" string="NAND_ECC_HW"/>
+			</config>
+			<config name="NAND_OMAP2" bool="n">
+				<config name="NAND_ECC_MODE" string="NAND_ECC_HW"/>
+			</config>
+		</config>
+	</config>
+	<config name="MMC" bool="n">
+		<config name="MMC_AT91" bool="n"/>
+	</config>
+	<config name="NET" bool="y">
+		<config name="NFS_ROOT" string="/maxwit/target/rootfs"/>
+		<config name="IMAGE_PATH" string="/var/lib/tftpboot"/>
+	</config>
+</config>

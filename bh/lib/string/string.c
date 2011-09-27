@@ -84,6 +84,21 @@ int strncmp(const char *pstr1, const char *pstr2, size_t count)
 	return *pstr1 - *pstr2;
 }
 
+// fixme!!
+int strcasecmp (const char *pstr1, const char *pstr2)
+{
+	while (*pstr1 == *pstr2)
+	{
+		if ('\0' == *pstr1)
+			return 0;
+
+		pstr1++;
+		pstr2++;
+	}
+
+	return *pstr1 - *pstr2;
+}
+
 char *strcat(char *pdst, const char *psrc)
 {
 	char *iter;

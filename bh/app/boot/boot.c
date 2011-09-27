@@ -5,6 +5,8 @@
 #include <uart/uart.h>
 #include <flash/part.h>
 #include "atag.h"
+#include <fs/fs.h>
+#include <mmc/mmc.h>
 
 #define LINUX_IMAGE_NAME     "zImage"
 #define CONFIG_RAM_BANK_NUM  1 // fixme!
@@ -105,6 +107,7 @@ static int boot_usage(void)
 	printf("Usage: boot [options] \n"
 		"\noptions:\n"
 		"\t-t [kernel_image_name]:  download kernel image via tftp\n"
+		"\t-s <mmc:kernel_image_name>:  load kernel image via mmc\n"
 		"\t-f [<part_num>]:  root=/dev/mtdblock<part_num>\n"
 		"\t-n [nfs_server:/path/to/nfs/root]:  boot via NFS\n"
 		"\t-l [kernel command line]:  boot via spcified CmdLine\n"
@@ -117,6 +120,85 @@ static int boot_usage(void)
 		);
 
 	return 0;
+}
+
+static int mmc_load_image(PART_TYPE type, const char image_name[], u8 **buff_ptr, u32 *buff_len)
+{
+	return 0;
+#if 0
+	int ret;
+	int i;
+	u8 *image_buf;
+	struct fat_file *fd;
+	char dev_name[MAX_FILE_NAME_LEN];
+
+	printf("loading %s image via mmc card:\n",
+		type == PT_OS_LINUX ? "linux" : "ramdisk");
+
+	image_buf = malloc(MB(3)); //fixme!!!
+	if (image_buf == NULL)
+	{
+		printf("%s(): fail to malloc buffer!\n", __func__);
+		ret = -ENOMEM;
+		goto L0;
+	}
+
+	for (i = 0; i < MAX_FILE_NAME_LEN; i++)
+	{
+		if (image_name[i] == ':' || image_name[i] == '\0')
+		{
+			break;
+		}
+
+		dev_name[i] = image_name[i];
+	}
+	if (i == MAX_FILE_NAME_LEN)
+	{
+		DPRINT("%s(): file name length error!\n", __func__);
+		ret = -EINVAL;
+		goto L1;
+	}
+
+	dev_name[i] = '\0';
+
+	ret = mount("vfat", 0, dev_name, NULL);
+	if (ret < 0)
+	{
+		printf("fat_mount error, ret = %d\n", ret);
+		goto L1;
+	}
+
+	fd = fat_open(image_name, 0);
+	if (fd == NULL)
+	{
+		printf("fat open error\n");
+		goto L1;
+	}
+
+	ret = fat_read(fd, image_buf, MB(3));
+	if (ret < 0)
+	{
+		printf("fail to read file %s\n", image_name);
+		ret = -EINVAL;
+		goto L2;
+	}
+
+	*buff_ptr = image_buf;
+	*buff_len = ret;
+
+	printf("load image OK, image size %d\n", ret);
+
+	fat_close(fd);
+
+	return 0;
+L2:
+	fat_close(fd);
+	// fat_umount(struct part_attr * part,const char * path,const char * type,unsigned long flags)
+L1:
+	free(image_buf);
+L0:
+	return ret;
+#endif
 }
 
 static int part_load_image(PART_TYPE type, u8 **buff_ptr, u32 *buff_len)
@@ -245,7 +327,6 @@ static int build_command_line(char *cmd_line, size_t max_len)
 {
 	int ret = 0;
 	char *str = cmd_line;
-	struct image_info   *image_conf;
 	struct net_config   *net_conf;
 	struct linux_config *linux_conf;
 	struct flash_chip       *flash;
@@ -263,7 +344,6 @@ static int build_command_line(char *cmd_line, size_t max_len)
 
 	memset(cmd_line, 0, max_len);
 
-	image_conf = sysconf_get_image_info();
 	net_conf = sysconf_get_net_info();
 	linux_conf = sysconf_get_linux_param();
 
@@ -484,19 +564,31 @@ int main(int argc, char *argv[])
 	linux_conf = sysconf_get_linux_param();
 	net_conf = sysconf_get_net_info();
 
-	while ((opt = getopt(argc, argv, "t::r::f::n::m:c:vl:h", &arg)) != -1)
+	while ((opt = getopt(argc, argv, "t::s:r::f::n::m:c:vl:h", &arg)) != -1)
 	{
 		switch (opt)
 		{
 		case 't':
 			if (arg == NULL)
 			{
+				linux_conf->boot_mode = BM_FLASHDISK;
 				linux_conf->kernel_image[0] = '\0';
 			}
 			else
 			{
+				linux_conf->boot_mode = BM_TFTP;
 				strcpy(linux_conf->kernel_image, arg);
 			}
+
+			break;
+
+		case 's':
+			linux_conf->boot_mode = BM_MMC;
+
+			if (arg == NULL)
+				break;
+
+			strcpy(linux_conf->kernel_image, arg);
 
 			break;
 
@@ -533,7 +625,7 @@ int main(int argc, char *argv[])
 			break;
 
 		case 'n':
-			linux_conf->boot_mode = BM_NFS;
+			linux_conf->boot_mode |= BM_NFS;
 
 			if (arg == NULL)
 				break;
@@ -603,9 +695,13 @@ int main(int argc, char *argv[])
 
 	if (!show_args)
 	{
-		if (linux_conf->kernel_image[0] != '\0') // fixme for error return (i.e. permission denied)
+		if (linux_conf->boot_mode & BM_TFTP)
 		{
 			ret = tftp_load_image(PT_OS_LINUX, linux_conf->kernel_image, &kernel_image, &image_size);
+		}
+		else if (linux_conf->boot_mode & BM_MMC)
+		{
+			ret = mmc_load_image(PT_OS_LINUX, linux_conf->kernel_image, &kernel_image, &image_size);
 		}
 		else
 		{

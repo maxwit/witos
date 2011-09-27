@@ -12,3 +12,4 @@ logo.c
 *.pyc
 doc/tex/vol1/g-bios_develop_manual_vol1.pdf
 doc/tex/vol3/g-bios_develop_manual_vol3.pdf
+*.img

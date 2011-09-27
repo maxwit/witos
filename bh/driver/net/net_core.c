@@ -21,7 +21,7 @@ static void ether_send_packet(struct sock_buff *skb, const u8 mac[], u16 eth_typ
 
 struct socket *search_socket(const struct udp_header *, const struct ip_header *);
 
-static BOOL __INLINE__ ip_is_bcast(u32 ip)
+static inline BOOL ip_is_bcast(u32 ip)
 {
 	u32 mask;
 	int ret;
@@ -34,11 +34,11 @@ static BOOL __INLINE__ ip_is_bcast(u32 ip)
 
 	if (~(mask | ip) == 0)
 		return TRUE;
-	else
-		return FALSE;
+
+	return FALSE;
 }
 
-static void __INLINE__ mac_fill_bcast(u8 mac[])
+static inline void mac_fill_bcast(u8 mac[])
 {
 	memset(mac,(u8)0xff, MAC_ADR_LEN);
 }
@@ -93,16 +93,16 @@ void udp_send_packet(struct sock_buff *skb)
 	udp_hdr->src_port = skb->sock->addr.sin_port;
 	udp_hdr->des_port = skb->remote_addr.sin_port;
 	udp_hdr->udp_len  = CPU_TO_BE16(skb->size);
-	udp_hdr->chksum  = 0;
+	udp_hdr->chksum   = 0;
 
 	ip_send_packet(skb, PROT_UDP);
 }
 
 struct sock_buff *udp_recv_packet(struct socket *sock)
 {
-	struct list_node *first;
-	struct sock_buff *skb;
 	u32 psr;
+	struct sock_buff *skb;
+	struct list_node *qu = &sock->rx_qu;
 
 	while (1)
 	{
@@ -116,7 +116,7 @@ struct sock_buff *udp_recv_packet(struct socket *sock)
 		netif_rx_poll();
 
 		lock_irq_psr(psr);
-		if (!list_is_empty(&sock->rx_qu))
+		if (!list_is_empty(qu))
 		{
 			unlock_irq_psr(psr);
 			break;
@@ -127,11 +127,10 @@ struct sock_buff *udp_recv_packet(struct socket *sock)
 	}
 
 	lock_irq_psr(psr);
-	first = sock->rx_qu.next;
-	list_del_node(first);
+	list_del_node(qu->next);
 	unlock_irq_psr(psr);
 
-	skb = container_of(first, struct sock_buff, node);
+	skb = container_of(qu->next, struct sock_buff, node);
 
 	return skb;
 }
@@ -150,11 +149,7 @@ static int udp_layer_deliver(struct sock_buff *skb, const struct ip_header *ip_h
 
 	if (NULL == sock)
 	{
-		u8 *ip;
-
-		ip = (u8 *)ip_hdr->src_ip;
 		skb_free(skb);
-
 		return -ENODEV;
 	}
 
@@ -176,11 +171,11 @@ static int init_ping_packet(struct ping_packet *ping_pkt,
 	if (NULL == ping_pkt || NULL == buff)
 	    return -EINVAL;
 
-	ping_pkt->type    = type;
-	ping_pkt->code    = 0;
+	ping_pkt->type   = type;
+	ping_pkt->code   = 0;
 	ping_pkt->chksum = 0;
 	ping_pkt->id     = id;
-	ping_pkt->seqno   = seq;
+	ping_pkt->seqno  = seq;
 
 	data = (char *)ping_pkt + hdr_len;
 
@@ -193,8 +188,8 @@ static int init_ping_packet(struct ping_packet *ping_pkt,
 
 int ping_send(struct sock_buff *rx_skb, const struct ip_header *ip_hdr, u8 type)
 {
-	u8   ping_buff[PING_PACKET_LENGTH];
-	u32 hdr_len = sizeof(struct ping_packet);
+	u8 ping_buff[PING_PACKET_LENGTH];
+	size_t hdr_len = sizeof(struct ping_packet);
 	struct socket sock;
 	struct sock_buff *tx_skb;
 	struct ether_header *eth_head;
@@ -376,30 +371,30 @@ int ip_layer_deliver(struct sock_buff *skb)
 	return ip_hdr->up_prot;
 }
 
-void ip_send_packet(struct sock_buff *skb, u8 bProtocal)
+void ip_send_packet(struct sock_buff *skb, u8 prot)
 {
-	struct udp_header *udp_hdr;
+	// struct udp_header *udp_hdr;
 	struct ip_header *ip_hdr;
 	struct eth_addr *remote_addr = NULL;
 	u8 mac[MAC_ADR_LEN];
 	u8 *pmac = NULL;
 	u32 nip;
 
-	udp_hdr = (struct udp_header*)skb->data;
+	// udp_hdr = (struct udp_header*)skb->data;
 
 	skb->data -= IP_HDR_LEN;
 	skb->size += IP_HDR_LEN;
 
 	ip_hdr = (struct ip_header *)skb->data;
 
-	ip_hdr->ver_len  = 0x45;
-	ip_hdr->tos        = 0;
-	ip_hdr->total_len   = (u16)CPU_TO_BE16((u16)skb->size);
-	ip_hdr->id         = (u16)CPU_TO_BE16(0); //
-	ip_hdr->flag_frag   = (u16)CPU_TO_BE16(0x4000);
-	ip_hdr->ttl = 0xff;
-	ip_hdr->up_prot     = bProtocal;
-	ip_hdr->chksum     = 0;
+	ip_hdr->ver_len   = 0x45;
+	ip_hdr->tos       = 0;
+	ip_hdr->total_len = (u16)CPU_TO_BE16((u16)skb->size);
+	ip_hdr->id        = (u16)CPU_TO_BE16(0); //
+	ip_hdr->flag_frag = (u16)CPU_TO_BE16(0x4000);
+	ip_hdr->ttl       = 0xff;
+	ip_hdr->up_prot   = prot;
+	ip_hdr->chksum    = 0;
 
 	memcpy(ip_hdr->src_ip, &skb->sock->addr.sin_addr, IPV4_ADR_LEN);
 
@@ -423,7 +418,7 @@ void ip_send_packet(struct sock_buff *skb, u8 bProtocal)
 			remote_addr = gethostaddr(skb->remote_addr.sin_addr.s_addr);
 			if (NULL == remote_addr)
 			{
-				printf("%s(): addr error!\n", __func__);
+				DPRINT("%s(): addr error!\n", __func__);
 				return;
 			}
 		}
@@ -455,7 +450,7 @@ void arp_send_packet(const u8 nip[], const u8 *mac, u16 op_code)
 	arp_pkt->prot_type = ETH_TYPE_IP;
 	arp_pkt->hard_size = MAC_ADR_LEN;
 	arp_pkt->prot_size = IPV4_ADR_LEN;
-	arp_pkt->op_code = op_code;
+	arp_pkt->op_code   = op_code;
 
 	ndev_ioctl(NULL, NIOC_GET_MAC, mac_addr); //fixme for failure
 	memcpy(arp_pkt->src_mac, mac_addr, MAC_ADR_LEN);
@@ -498,7 +493,7 @@ static int arp_recv_packet(struct sock_buff *skb)
 			);
 #endif
 
-	switch(arp_pkt->op_code)
+	switch (arp_pkt->op_code)
 	{
 	case ARP_OP_REP:
 		if (getaddr(ip) == NULL)

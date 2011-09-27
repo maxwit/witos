@@ -3,15 +3,13 @@
 #include <flash/part.h>
 #include <sysconf.h>
 
-//static char app_option[][CMD_OPTION_LEN] = {"a", "m", "s", "h", "0"};
-
 static void tftp_usage(void)
 {
-		printf("Usage: tftp [option <value>] [-f] <filename>\n"
+	printf("Usage: tftp [option <value>] [-f] <filename>\n"
 		"\noptions:\n"
 		"  -a   \tmemory address [needed in few cases]\n"
 		"  -m   \tonly download to memory, without writing to storage\n"
-//		"  -f   \tfile name for download\n"
+		"  -f   \tfile name for download\n"
 		"  -s   \ttftp server ip\n"
 		"  -h   \tthis help\n");
 }

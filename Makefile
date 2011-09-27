@@ -13,14 +13,14 @@ LD = $(CROSS_COMPILE)ld
 OBJDUMP = $(CROSS_COMPILE)objdump
 OBJCOPY = $(CROSS_COMPILE)objcopy
 
-ASFLAGS = $(CFLAGS) -D__ASSEMBLY__
-
 # fxime: to add "-mtune=xxx"
-CFLAGS = -ffreestanding -nostdinc -nostdlib -fno-builtin -I$(TOP_DIR)/include -include g-bios.h -DGBIOS_VER_MAJOR=$(MAJOR_VER) -DGBIOS_VER_MINOR=$(MINOR_VER) -mno-thumb-interwork -march=$(CONFIG_ARCH_VER) -mabi=aapcs-linux -O2 -mpoke-function-name -DGBH_START_BLK=$(CONFIG_GBH_START_BLK) -DGBH_START_MEM=$(CONFIG_GBH_START_MEM) -Wall -Werror-implicit-function-declaration
+CFLAGS = -ffreestanding -nostdinc -nostdlib -fno-builtin -I$(TOP_DIR)/include -include g-bios.h -DGBIOS_VER_MAJOR=$(MAJOR_VER) -DGBIOS_VER_MINOR=$(MINOR_VER) -mno-thumb-interwork -march=$(CONFIG_ARCH_VER) -mabi=aapcs-linux -O2 -mpoke-function-name -DGBH_START_BLK=$(CONFIG_GBH_START_BLK) -DGBH_START_MEM=$(CONFIG_GBH_START_MEM) -Wall -Werror-implicit-function-declaration -D__G_BIOS__
 
 #ifeq ($(CONFIG_DEBUG),y)
 #	CFLAGS += -DCONFIG_DEBUG
 #endif
+
+ASFLAGS = $(CFLAGS) -D__ASSEMBLY__
 
 LDFLAGS = -m armelf_linux_eabi
 
@@ -48,7 +48,8 @@ include/autoconf.h: .config
 # fixme
 %_defconfig:
 	@echo
-	@./build/generate/dotconfig.sh $@
+	@#./build/generate/dotconfig.sh $@
+	@./build/generate/defconfig.py $@
 	@echo
 
 #####echo "******************"

@@ -18,6 +18,8 @@ int strcmp(const char *, const char *);
 
 int strncmp(const char *, const char *, size_t);
 
+int strcasecmp (const char *pstr1, const char *pstr2);
+
 char *strcpy(char *, const char *);
 
 char *strcat(char *, const char *);
@@ -52,4 +54,3 @@ int string2value(const char *str, u32 *val);
 int str_to_ip(u8 ip_val[], const char *ip_str);
 int ip_to_str(char ip_str[], const u32 ip);
 int str_to_mac(u8 mac[], const char *str);
-

@@ -102,11 +102,9 @@ static int send_dhcp_request(int sockfd, struct dhcp_packet *packet, struct sock
 // fixme!!!
 long random(void)
 {
-	int ret;
 	u8 mac_addr[MAC_ADR_LEN];
 
-	ret = ndev_ioctl(NULL, NIOC_GET_MAC, mac_addr);
-	// if ret < 0 ...
+	ndev_ioctl(NULL, NIOC_GET_MAC, mac_addr);
 
 	// just get a random number, mac addr is a random num
 	return mac_addr[4] << 24 | mac_addr[3] << 16 | mac_addr[2] << 8 | mac_addr[1];
@@ -266,12 +264,12 @@ int main(int argc, char *argv[])
 	ip_to_str(ip_str, packet.yiaddr);
 	printf("local  ip: %s\n", ip_str);
 
-	close(sockfd);
+	sk_close(sockfd);
 
 	return 0;
 
 ERROR:
-	close(sockfd);
+	sk_close(sockfd);
 
 	return ret;
 }

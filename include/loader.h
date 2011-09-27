@@ -8,6 +8,7 @@
 #define LM_KERMIT    'k'
 #define LM_YMODEM    'y'
 #define LM_RAM       'r'
+#define LM_MMC       'm'
 
 #define __GBIOS_LOADER__    __attribute__((section(".gbios_loader")))
 
