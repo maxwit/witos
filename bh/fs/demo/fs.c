@@ -39,7 +39,7 @@ struct file_system_type *file_system_type_get(const char *name)
 	return NULL;
 }
 
-int mount(const char *type, unsigned long flags, const char *bdev_name, const char *path)
+int demo_mount(const char *type, unsigned long flags, const char *bdev_name, const char *path)
 {
 	int ret;
 	struct block_device *bdev;
@@ -94,12 +94,12 @@ L1:
 	return ret;
 }
 
-int umount(const char *mnt)
+int demo_umount(const char *mnt)
 {
 	return 0;
 }
 
-int open(const char *const name, int flags, ...)
+int demo_open(const char *const name, int flags, ...)
 {
 	int fd;
 	const char *fn;
@@ -149,7 +149,7 @@ int open(const char *const name, int flags, ...)
 	return fd;
 }
 
-int close(int fd)
+int demo_close(int fd)
 {
 	struct file *fp;
 
@@ -164,7 +164,7 @@ int close(int fd)
 	return fp->fops->close(fp);
 }
 
-int read(int fd, void *buff, size_t size)
+int demo_read(int fd, void *buff, size_t size)
 {
 	struct file *fp;
 
@@ -179,7 +179,7 @@ int read(int fd, void *buff, size_t size)
 	return fp->fops->read(fp, buff, size);
 }
 
-int write(int fd, const void *buff, size_t size)
+int demo_write(int fd, const void *buff, size_t size)
 {
 	struct file *fp;
 

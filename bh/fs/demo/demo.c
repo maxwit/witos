@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
 
 	fs_init();
 
-	ret = mount(type, 0, part, MNTPT);
+	ret = demo_mount(type, 0, part, MNTPT);
 	if (ret < 0)
 	{
 		printf("fail to mount foo0p2! (ret = %d)\n", ret);
@@ -55,14 +55,14 @@ int main(int argc, char *argv[])
 	}
 
 	// snprintf(path, BUF_LEN, "foo0p2:%s", path);
-	fd = open(path, 0);
+	fd = demo_open(path, 0);
 	if (fd < 0)
 	{
 		printf("fail to open %s\n", path);
 		return fd;
 	}
 
-	len = read(fd, buff, BUF_LEN);
+	len = demo_read(fd, buff, BUF_LEN);
 
 	if (len > 0)
 	{
@@ -71,9 +71,9 @@ int main(int argc, char *argv[])
 	}
 	printf("%s() line %d\n", __func__, __LINE__);
 
-	close(fd);
+	demo_close(fd);
 
-	umount(MNTPT);
+	demo_umount(MNTPT);
 
 	return 0;
 }

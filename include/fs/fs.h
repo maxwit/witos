@@ -33,9 +33,9 @@ struct mount_point
 	struct mount_point *next;
 };
 
-int mount(const char *type, unsigned long flags, const char *bdev_name, const char *path);
+int demo_mount(const char *type, unsigned long flags, const char *bdev_name, const char *path);
 
-int umount(const char *mnt);
+int demo_umount(const char *mnt);
 
 //////////////////////////////////
 struct file
@@ -56,7 +56,7 @@ struct file_operations
 };
 
 ///////////
-int open(const char *const name, int flags, ...);
-int close(int fd);
-int read(int fd,void * buff,size_t size);
-int write(int fd,const void * buff,size_t size);
+int demo_open(const char *const name, int flags, ...);
+int demo_close(int fd);
+int demo_read(int fd,void * buff,size_t size);
+int demo_write(int fd,const void * buff,size_t size);
