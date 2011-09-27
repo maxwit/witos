@@ -1,5 +1,7 @@
 #pragma once
 
+#include <fs/fs.h>
+
 #if CONFIG_HOST_DEMO
 #include <linux/types.h>
 
@@ -214,12 +216,8 @@ struct block_device;
 
 struct ext2_file
 {
-	size_t pos;
+	struct file f;
+
 	struct ext2_dir_entry_2 *dentry;
 	struct ext2_file_system *fs;
 };
-
-struct ext2_file *ext2_open(const char *name, int flags, ...);
-int ext2_close(struct ext2_file *file);
-
-ssize_t ext2_read(struct ext2_file *file, void *buff, size_t size);

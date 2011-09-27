@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
 {
 	int ret;
 	const char *dev, *fn;
-	struct fat_file *fp;
+	struct file *fp;
 	char buff[LEN];
 
 	dev = (argc >= 2) ? argv[1] : "hd.img";

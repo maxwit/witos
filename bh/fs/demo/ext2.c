@@ -286,6 +286,7 @@ static int ext2_mount(struct file_system_type *fs_type, unsigned long flags, str
 		sb->s_inode_size, (1 << (sb->s_log_block_size + 10)), blk_is);
 
 	fs->bdev = bdev;
+	bdev->fs = fs;
 
 	gdt_num = (sb->s_blocks_count + sb->s_blocks_per_group - 1) / sb->s_blocks_per_group;;
 	gdt = malloc(gdt_num * sizeof(struct ext2_group_desc));
@@ -385,53 +386,42 @@ static inline int mnt_of_path(const char *path, char mnt[])
 	return 0;
 }
 
-struct ext2_file *ext2_open(const char *name, int flags, ...)
+static struct file *ext2_open(void *file_sys, const char *name, int flags, int mode)
 {
-	struct ext2_file_system *fs;
+	struct ext2_file_system *fs = file_sys;
 	struct ext2_dir_entry_2 *dir, *de;
 	struct ext2_inode *parent;
-	struct ext2_file *file;
-	char mnt[MAX_MNT_LEN];
-	int ret;
-
-	ret =  mnt_of_path(name, mnt);
-	// if ...
-
-	fs = ext2_get_file_system(mnt);
-	if (NULL == fs)
-	{
-		printf("\"%s\" not mounted!\n", mnt);
-		return NULL;
-	}
+	struct ext2_file *ext2_fp;
 
 	dir = fs->root;
 
 	parent = ext2_read_inode(fs, dir->inode);
 	//
 
-	name += ret;
-
 	de = ext2_lookup(parent, name);
 	if (NULL == de)
 		return NULL;
 
-	file = malloc(sizeof(*file));
+	ext2_fp = malloc(sizeof(*ext2_fp));
 	// if
 
-	file->pos = 0;
-	file->dentry = de;
-	file->fs = fs;
+	ext2_fp->dentry = de;
+	ext2_fp->fs = fs;
 
-	return file;
+	return &ext2_fp->f;
 }
 
-int ext2_close(struct ext2_file *file)
+static int ext2_close(struct file *fp)
 {
+	struct ext2_file *ext2_fp = container_of(fp, struct ext2_file, f);
+
 	// free(inode, dentry, ...)
-	free(file);
+	free(ext2_fp);
+
 	return 0;
 }
 
+#if 0
 // fixme: to support "where"
 ssize_t ext2_lseek(struct ext2_file *file, ssize_t off, int where)
 {
@@ -444,32 +434,35 @@ ssize_t ext2_lseek(struct ext2_file *file, ssize_t off, int where)
 
 	return file->pos;
 }
+#endif
 
-ssize_t ext2_read(struct ext2_file *file, void *buff, size_t size)
+static ssize_t ext2_read(struct file *fp, void *buff, size_t size)
 {
-	struct ext2_file_system *fs = file->fs;
+	ssize_t i, len;
+	size_t blocks;
+	size_t offset, real_size, block_size;
 	struct ext2_inode *inode;
-	ssize_t len;
-	size_t  blocks;
-	size_t  offset, real_size, block_size;
-	ssize_t i;
+	struct ext2_file_system *fs;
+	struct ext2_file *ext2_fp = container_of(fp, struct ext2_file, f);
 
-	inode = ext2_read_inode(fs, file->dentry->inode);
+	fs = ext2_fp->fs;
 
-	if (file->pos == inode->i_size)
+	inode = ext2_read_inode(fs, ext2_fp->dentry->inode);
+
+	if (fp->pos == inode->i_size)
 		return 0;
 
 	block_size = 1 << (fs->sb.s_log_block_size + 10);
 	char tmp_buff[block_size];
 
-	real_size = min(size, inode->i_size - file->pos);
+	real_size = min(size, inode->i_size - fp->pos);
 
 	blocks = (real_size + (block_size - 1)) / block_size;
 	__le32 block_indexs[blocks];
 
-	get_block_indexs(fs, inode, file->pos / block_size, block_indexs, blocks);
+	get_block_indexs(fs, inode, fp->pos / block_size, block_indexs, blocks);
 
-	offset = file->pos % block_size;
+	offset = fp->pos % block_size;
 	len = block_size - offset;
 
 	for(i = 0; i < blocks; i++)
@@ -483,7 +476,7 @@ ssize_t ext2_read(struct ext2_file *file, void *buff, size_t size)
 
 		memcpy(buff, tmp_buff, len);
 		buff += len;
-		file->pos += len;
+		fp->pos += len;
 		offset = 0;
 		len = block_size;
 	}
@@ -491,13 +484,27 @@ ssize_t ext2_read(struct ext2_file *file, void *buff, size_t size)
 	return real_size;
 }
 
+static int ext2_write(struct file *fp, const void *buff, size_t size)
+{
+	return 0;
+}
+
+static const struct file_operations ext2_fops =
+{
+	.open  = ext2_open,
+	.close = ext2_close,
+	.read  = ext2_read,
+	.write = ext2_write,
+};
+
+static struct file_system_type ext2_fs_type =
+{
+	.name  = "ext2",
+	.mount = ext2_mount,
+	.fops  = &ext2_fops,
+};
+
 int ext2_fs_init(void)
 {
-	static struct file_system_type ext2_fs_type =
-	{
-		.name  = "ext2",
-		.mount = ext2_mount,
-	};
-
 	return file_system_type_register(&ext2_fs_type);
 }

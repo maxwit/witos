@@ -10,14 +10,19 @@ int block_device_init();
 int disk_drive_init();
 int foo_drv_init(const char *);
 
-int ext2_fs_init(void);
+static int fs_init(void)
+{
+	int ext2_fs_init(void);
+	int fat_fs_init(void);
+
+	return ext2_fs_init() && fat_fs_init();
+}
 
 int mount(const char *type, unsigned long flags, const char *bdev_name, const char *path);
 
 int main(int argc, char *argv[])
 {
-	int ret;
-	struct file *fp;
+	int ret, fd;
 	const char *dev, *fn;
 	char path[BUF_LEN];
 	ssize_t len;
@@ -36,8 +41,7 @@ int main(int argc, char *argv[])
 	disk_drive_init();
 	foo_drv_init(dev);
 
-	ext2_fs_init();
-	printf("%s() line %d\n", __func__, __LINE__);
+	fs_init();
 
 	ret = mount("ext2", 0, "foo0p2", 0);
 	if (ret < 0)
@@ -45,19 +49,16 @@ int main(int argc, char *argv[])
 		printf("fail to mount foo0p2! (ret = %d)\n", ret);
 		return ret;
 	}
-	printf("%s() line %d\n", __func__, __LINE__);
 
 	// snprintf(path, BUF_LEN, "foo0p2:%s", fn);
-	fp = ext2_open(fn, 0);
-	if (NULL == fp)
+	fd = open(fn, 0);
+	if (fd < 0)
 	{
 		printf("fail to open %s\n", path);
-		return -ENOENT;
+		return fd;
 	}
-	printf("%s() line %d\n", __func__, __LINE__);
 
-	len = ext2_read(fp, buff, BUF_LEN);
-	printf("data:\n\t%s\n", buff);
+	len = read(fd, buff, BUF_LEN);
 
 	if (len > 0)
 	{
@@ -66,7 +67,7 @@ int main(int argc, char *argv[])
 	}
 	printf("%s() line %d\n", __func__, __LINE__);
 
-	ext2_close(fp);
+	close(fd);
 
 	// ext2_umount("somewhere");
 

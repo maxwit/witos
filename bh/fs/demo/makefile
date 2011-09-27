@@ -4,9 +4,12 @@ CC = gcc
 #SRCS = $(wildcard *.c)
 #OBJS = $(SRCS:%.c=%.o)
 
-COMMON_OBJS = block.o drive.o foo_drv.o mount.o
+COMMON_OBJS = block.o drive.o foo_drv.o fs.o
 
-all: fat_demo ext_demo
+all: demo
+
+demo: $(COMMON_OBJS) fat.o ext2.o demo.o
+	gcc $^ -o $@
 
 ext_demo: $(COMMON_OBJS) ext2.o ext2_demo.o
 	gcc $^ -o $@
@@ -17,4 +20,4 @@ fat_demo: $(COMMON_OBJS) fat.o fat_demo.o
 	gcc $(CFLAGS) -c $< -o $@
 
 clean:
-	@rm -fv *.o fat_demo ext_demo
+	@rm -fv *.o fat_demo ext2_demo demo

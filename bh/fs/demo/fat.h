@@ -2,6 +2,7 @@
 
 #include <types.h>
 #include <drive.h>
+#include <fs/fs.h>
 
 struct fat_boot_sector
 {
@@ -62,18 +63,9 @@ struct fat_fs
 
 struct fat_file
 {
-	struct fat_dentry *dent;
-	size_t offset;
-	int    mode;
+	struct file f;
 
+	struct fat_dentry *dent;
 	// fixme: remove it
 	struct fat_fs *fs;
 };
-
-struct fat_file *fat_open(const char *name, int flags, ...);
-
-int fat_close(struct fat_file *fp);
-
-int fat_read(struct fat_file *fp, void *buff, size_t size);
-
-int fat_write(struct fat_file *fp, const void *buff, size_t size);

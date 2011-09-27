@@ -96,7 +96,7 @@ static int fat_mount(struct file_system_type *fs_type, unsigned long flags, stru
 	fs->clus_size = clus_size;
 
 	bdev->fs = fs;
-	bdev->sect_size = blk_size;
+	bdev->sect_size = blk_size; // fixme
 
 	return 0;
 }
@@ -269,77 +269,54 @@ err:
 
 #define MAX_FILE_NAME_SIZE 256
 
-struct fat_file *fat_open(const char *name, int flags, ...)
+// fixme
+static struct file *fat_open(void *file_sys, const char *name, int flags, int mode)
 {
 	struct fat_dentry *dir;
 	struct fat_file *fp;
-	struct fat_fs *fs;
-	struct block_device *bdev;
-	char dev_name[MAX_FILE_NAME_LEN];
-	int count;
+	struct fat_fs *fs = file_sys;
 
-	count = 0;
-	while (*name != ':' && *name != '\0')
-	{
-		dev_name[count] = *name;
-
-		name++;
-		count++;
-
-		if (count == MAX_FILE_NAME_LEN)
-		{
-			DPRINT("%s(): file name length error!\n", __func__);
-			return NULL;
-		}
-	}
-
-	dev_name[count] = '\0';
-
-	if (*name == '\0')
-	{
-		DPRINT("%s(): Invalid file name \"%s\"!\n", __func__, dev_name);
-		return NULL;
-	}
-
-	name++;
-
-	bdev = get_bdev_by_name(dev_name);
-	fs = bdev->fs;
 	dir = fat_lookup(fs, fs->root, name);
 
 	if (!dir)
 		return NULL;
 
 	fp = malloc(sizeof(*fp));
+	// if NULL
 
 	fp->fs = fs;
 	fp->dent = dir;
-	fp->offset = 0;
 
-	return fp;
+	return &fp->f;
 }
 
-int fat_close(struct fat_file *fp)
+static int fat_close(struct file *fp)
 {
-	free(fp);
+	struct fat_file *fat_fp = container_of(fp, struct fat_file, f);
+
+	free(fat_fp);
+
 	return 0;
 }
 
-int fat_read(struct fat_file *fp, void *buff, size_t size)
+static int fat_read(struct file *fp, void *buff, size_t size)
 {
 	__u32 clus_num, clus_size;
-	struct fat_fs *fs = fp->fs;
 	size_t pos;
 	size_t count = 0;
 	size_t tmp_size;
+	struct fat_fs *fs;
+	struct fat_file *fat_fp = container_of(fp, struct fat_file, f);
 
-	clus_size = fp->fs->clus_size;
-	clus_num = fp->dent->clus_hi << 16 | fp->dent->clus_lo;
-	pos = fp->offset;
+	fs = fat_fp->fs;
 
-	if (size + pos > fp->dent->size)
+	clus_size = fat_fp->fs->clus_size;
+	clus_num = fat_fp->dent->clus_hi << 16 | fat_fp->dent->clus_lo;
+	pos = fp->pos;
+
+	if (size + pos > fat_fp->dent->size)
 	{
-		size = fp->dent->size - pos;
+		size = fat_fp->dent->size - pos;
 	}
 
 	while (pos >= clus_size)
@@ -384,18 +361,27 @@ int fat_read(struct fat_file *fp, void *buff, size_t size)
 	return count;
 }
 
-int fat_write(struct fat_file *fp, const void *buff, size_t size)
+static int fat_write(struct file *fp, const void *buff, size_t size)
 {
 	return 0;
 }
 
+static const struct file_operations fat_fops =
+{
+	.open  = fat_open,
+	.close = fat_close,
+	.read  = fat_read,
+	.write = fat_write,
+};
+
+static struct file_system_type fat_fs_type =
+{
+	.name  = "vfat",
+	.mount = fat_mount,
+	.fops  = &fat_fops,
+};
+
 int fat_fs_init(void)
 {
-	static struct file_system_type fat_fs_type =
-	{
-		.name  = "vfat",
-		.mount = fat_mount,
-	};
-
 	return file_system_type_register(&fat_fs_type);
 }

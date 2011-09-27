@@ -1,4 +1,5 @@
 #pragma once
+
 #include <types.h>
 #include <list.h>
 #include <device.h>
@@ -34,9 +35,6 @@ struct part_attr
 	char  part_name[PART_NAME_LEN];
 };
 
-// fixme
-struct fat_fs;
-
 struct block_device
 {
 	struct device dev;
@@ -45,7 +43,8 @@ struct block_device
 	size_t bdev_size;
 	size_t sect_size;
 
-	struct fat_fs *fs;
+	// struct fat_fs *fs;
+	void *fs; // fixme
 	struct list_node bdev_node;
 };
 
