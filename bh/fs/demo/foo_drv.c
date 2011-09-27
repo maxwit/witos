@@ -59,12 +59,11 @@ static struct foo_drive foo;
 int foo_drv_init(const char *fn)
 {
 	int fd;
-	int perror(const char *);
 
 	fd = open(fn, O_RDWR);
 	if (fd < 0)
 	{
-		perror(fn);
+		printf("fail to open \"%s\"! (errno = %d)\n", fn, fd);
 		return fd;
 	}
 

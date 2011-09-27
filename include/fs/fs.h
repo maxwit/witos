@@ -35,6 +35,8 @@ struct mount_point
 
 int mount(const char *type, unsigned long flags, const char *bdev_name, const char *path);
 
+int umount(const char *mnt);
+
 //////////////////////////////////
 struct file
 {
@@ -52,3 +54,9 @@ struct file_operations
 	int (*write)(struct file *, const void *, size_t);
 	// ...
 };
+
+///////////
+int open(const char *const name, int flags, ...);
+int close(int fd);
+int read(int fd,void * buff,size_t size);
+int write(int fd,const void * buff,size_t size);

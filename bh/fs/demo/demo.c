@@ -5,6 +5,7 @@
 #include "ext2.h"
 
 #define BUF_LEN 512
+#define MNTPT   "c"
 
 int block_device_init();
 int disk_drive_init();
@@ -18,40 +19,43 @@ static int fs_init(void)
 	return ext2_fs_init() && fat_fs_init();
 }
 
-int mount(const char *type, unsigned long flags, const char *bdev_name, const char *path);
-
 int main(int argc, char *argv[])
 {
 	int ret, fd;
-	const char *dev, *fn;
-	char path[BUF_LEN];
 	ssize_t len;
-	char buff[BUF_LEN];
+	const char *disk, *type;
+	char buff[BUF_LEN], part[BUF_LEN], path[BUF_LEN];
 
-	if (argc != 3)
+	if (argc != 5)
 	{
-		printf("usage ..\n");
+		printf("usage:\n\t%s disk partno type file\n", argv[0]);
 		return -EINVAL;
 	}
 
-	dev = argv[1];
-	fn  = argv[2];
+	disk = argv[1];
+	snprintf(part, BUF_LEN, "foo0p%s", argv[2]);
+	type = argv[3];
+	snprintf(path, BUF_LEN, MNTPT ":%s", argv[4]);
 
 	block_device_init();
 	disk_drive_init();
-	foo_drv_init(dev);
+	ret = foo_drv_init(disk);
+	if (ret < 0)
+	{
+		return ret;
+	}
 
 	fs_init();
 
-	ret = mount("ext2", 0, "foo0p2", 0);
+	ret = mount(type, 0, part, MNTPT);
 	if (ret < 0)
 	{
 		printf("fail to mount foo0p2! (ret = %d)\n", ret);
 		return ret;
 	}
 
-	// snprintf(path, BUF_LEN, "foo0p2:%s", fn);
-	fd = open(fn, 0);
+	// snprintf(path, BUF_LEN, "foo0p2:%s", path);
+	fd = open(path, 0);
 	if (fd < 0)
 	{
 		printf("fail to open %s\n", path);
@@ -69,7 +73,7 @@ int main(int argc, char *argv[])
 
 	close(fd);
 
-	// ext2_umount("somewhere");
+	umount(MNTPT);
 
 	return 0;
 }

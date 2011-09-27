@@ -94,6 +94,11 @@ L1:
 	return ret;
 }
 
+int umount(const char *mnt)
+{
+	return 0;
+}
+
 int open(const char *const name, int flags, ...)
 {
 	int fd;
