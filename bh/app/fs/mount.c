@@ -5,20 +5,22 @@
 int main(int argc, char *argv[])
 {
 	int ret;
-	const char *bdev_name;
+	const char *bdev, *type, *path;
 
-	if (argc != 2)
+	if (argc != 5)
 	{
-		printf("Usage:\n\t%s device\n", argv[0]);
+		printf("Usage:\n\t%s -t type device path\n", argv[0]);
 		return -EINVAL;
 	}
 
-	bdev_name = argv[1];
+	type = argv[2];
+	bdev = argv[3];
+	path = argv[4];
 
-	ret = mount("vfat", 0, bdev_name, NULL);
+	ret = mount(type, 0, bdev, path);
 	if (ret < 0)
 	{
-		printf("fail to mount %s (ret = %d)\n", bdev_name, ret);
+		printf("fail to mount %s (ret = %d)\n", bdev, ret);
 	}
 
 	return ret;

@@ -41,7 +41,7 @@ alloc_sock:
 }
 
 // fix for full destroy
-int close(int fd)
+int sk_close(int fd)
 {
 	if (fd < 1 || fd >= MAX_SOCK_NUM || NULL == g_sock_fds[fd])
 	{

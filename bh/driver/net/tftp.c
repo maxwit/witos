@@ -202,7 +202,7 @@ L1:
 	printf("\n");
 #endif
 
-	close(sockfd);
+	sk_close(sockfd);
 	free(remote_addr);
 	free(local_addr);
 

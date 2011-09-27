@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <block.h>
 #include <drive.h>
+#include <malloc.h>
+#include <string.h>
 
 #define MBR_PART_TAB_OFF 0x1BE
 #define MSDOS_MAX_PARTS 16
@@ -79,12 +81,15 @@ int disk_drive_register(struct disk_drive *drive)
 	num = msdos_part_scan(drive, part_tab);
 	// if num < 0 ...
 
+	printf("%s:", drive->bdev.dev.name);
+
 	for (i = 0; i < num; i++)
 	{
 		slave = zalloc(sizeof(*slave));
 		// if ...
 
 		snprintf(slave->bdev.dev.name, PART_NAME_LEN, "%sp%d", drive->bdev.dev.name, i + 1);
+		printf(" %s", slave->bdev.dev.name);
 
 		slave->bdev.bdev_base = part_tab[i].part_base;
 		slave->bdev.bdev_size = part_tab[i].part_size;
@@ -99,16 +104,23 @@ int disk_drive_register(struct disk_drive *drive)
 		ret = block_device_register(&slave->bdev);
 		// if ret < 0 ...
 	}
+	printf("\n");
 
 	list_add_tail(&drive->master_node, &g_master_list);
 
 	return 0;
 }
 
+#ifdef CONFIG_HOST_DEMO
+int disk_drive_init(void)
+#else
 static int __INIT__ disk_drive_init(void)
+#endif
 {
 	list_head_init(&g_master_list);
 	return 0;
 }
 
+#ifndef CONFIG_HOST_DEMO
 SUBSYS_INIT(disk_drive_init);
+#endif

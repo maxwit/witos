@@ -1,3 +1,3 @@
-obj-y += image.o mount.o
-dir-y += fat
-dir-y += ext
+obj-$(CONFIG_FS) += image.o fs.o
+dir-$(CONFIG_FS) += fat
+dir-$(CONFIG_FS) += ext

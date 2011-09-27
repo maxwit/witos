@@ -17,7 +17,7 @@ struct file_system_type
 	const struct file_operations *fops;
 	struct file_system_type *next;
 
-	int (*mount)(struct file_system_type *, unsigned long, struct block_device *);	
+	int (*mount)(struct file_system_type *, unsigned long, struct block_device *);
 };
 
 int file_system_type_register(struct file_system_type *);
@@ -33,9 +33,13 @@ struct mount_point
 	struct mount_point *next;
 };
 
-int demo_mount(const char *type, unsigned long flags, const char *bdev_name, const char *path);
-
-int demo_umount(const char *mnt);
+#ifdef __G_BIOS__
+int mount(const char *type, unsigned long flags, const char *bdev_name, const char *path);
+int umount(const char *mnt);
+#else
+int gb_mount(const char *type, unsigned long flags, const char *bdev_name, const char *path);
+int gb_umount(const char *mnt);
+#endif
 
 //////////////////////////////////
 struct file
@@ -56,7 +60,14 @@ struct file_operations
 };
 
 ///////////
-int demo_open(const char *const name, int flags, ...);
-int demo_close(int fd);
-int demo_read(int fd,void * buff,size_t size);
-int demo_write(int fd,const void * buff,size_t size);
+#ifdef __G_BIOS__
+int open(const char *const name, int flags, ...);
+int close(int fd);
+int read(int fd,void * buff,size_t size);
+int write(int fd,const void * buff,size_t size);
+#else
+int gb_open(const char *const name, int flags, ...);
+int gb_close(int fd);
+int gb_read(int fd,void * buff,size_t size);
+int gb_write(int fd,const void * buff,size_t size);
+#endif

@@ -318,7 +318,7 @@ long recv(int fd, void *buf, u32 n);
 
 long recvfrom(int fd, void *buf, u32 n, int flags, struct sockaddr *src_addr, socklen_t *addrlen);
 
-int close(int fd);
+int sk_close(int fd);
 
 struct net_device *net_get_dev(const char *ifx_name);
 

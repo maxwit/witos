@@ -96,7 +96,7 @@ static int fat_mount(struct file_system_type *fs_type, unsigned long flags, stru
 	fs->clus_size = clus_size;
 
 	bdev->fs = fs;
-	bdev->sect_size = blk_size;
+	bdev->sect_size = blk_size; // fixme
 
 	return 0;
 }
@@ -141,7 +141,8 @@ static int fat_find_next_file(struct fat_fs *fs,
 
 	do
 	{
-		if ((*block_num != old_block_num) || dir_pos - (struct fat_dentry *)buf == fs->clus_size / sizeof(*dir_pos)) // find next cluster
+		if (*block_num != old_block_num
+			|| dir_pos - (struct fat_dentry *)buf == fs->clus_size / sizeof(*dir_pos)) // find next cluster
 		{
 			old_block_num = *block_num;
 
@@ -165,6 +166,8 @@ static int fat_find_next_file(struct fat_fs *fs,
 			dir_pos = (struct fat_dentry *)buf;
 		}
 
+		DPRINT("name = %s, attribute = %d\n", dir_pos->name, dir_pos->attr);
+
 		switch ((__u8)dir_pos->name[0])
 		{
 		case 0xe5:
@@ -185,7 +188,7 @@ static int fat_find_next_file(struct fat_fs *fs,
 					for (i = 0; i < 8 && dir_pos->name[i] != ' '; i++)
 							name[i] = dir_pos->name[i];
 
-					name[i++] = '.';
+					name[i++] = '.'; // fixme
 
 					for (j = 8; j < 11 && dir_pos->name[j] != ' '; j++, i++)
 						name[i]	= dir_pos->name[j];
@@ -209,7 +212,7 @@ static int fat_find_next_file(struct fat_fs *fs,
 		}
 
 		dir_pos++;
-	}while (dir_pos->name[0]);
+	}while(dir_pos->name[0]);
 
 L1:
 	return -1;
@@ -232,9 +235,11 @@ static struct fat_dentry *fat_lookup(struct fat_fs *fs, __u32 parent, const char
 	{
 		// fixme
 		ret = fat_find_next_file(fs, &parent, sname, dir);
+		printf("%s(): ret = %d, sname = %s\n",
+			__func__, ret, sname);
 		if (ret < 0)
 		{
-			DPRINT("%s(): can't find file \"%s\"\n", __func__, name);
+			DPRINT("can't find file\n");
 			goto err;
 		}
 
@@ -264,77 +269,54 @@ err:
 
 #define MAX_FILE_NAME_SIZE 256
 
-struct fat_file *fat_open(const char *name, int flags, ...)
+// fixme
+static struct file *fat_open(void *file_sys, const char *name, int flags, int mode)
 {
 	struct fat_dentry *dir;
 	struct fat_file *fp;
-	struct fat_fs *fs;
-	struct block_device *bdev;
-	char dev_name[MAX_FILE_NAME_LEN];
-	int count;
+	struct fat_fs *fs = file_sys;
 
-	count = 0;
-	while (*name != ':' && *name != '\0')
-	{
-		dev_name[count] = *name;
-
-		name++;
-		count++;
-
-		if (count == MAX_FILE_NAME_LEN)
-		{
-			DPRINT("%s(): file name length error!\n", __func__);
-			return NULL;
-		}
-	}
-
-	dev_name[count] = '\0';
-
-	if (*name == '\0')
-	{
-		DPRINT("%s(): Invalid file name \"%s\"!\n", __func__, dev_name);
-		return NULL;
-	}
-
-	name++;
-
-	bdev = get_bdev_by_name(dev_name);
-	fs = bdev->fs;
 	dir = fat_lookup(fs, fs->root, name);
 
 	if (!dir)
 		return NULL;
 
 	fp = malloc(sizeof(*fp));
+	// if NULL
 
 	fp->fs = fs;
 	fp->dent = dir;
-	fp->offset = 0;
 
-	return fp;
+	return &fp->f;
 }
 
-int fat_close(struct fat_file *fp)
+static int fat_close(struct file *fp)
 {
-	free(fp);
+	struct fat_file *fat_fp = container_of(fp, struct fat_file, f);
+
+	free(fat_fp);
+
 	return 0;
 }
 
-int fat_read(struct fat_file *fp, void *buff, size_t size)
+static int fat_read(struct file *fp, void *buff, size_t size)
 {
 	__u32 clus_num, clus_size;
-	struct fat_fs *fs = fp->fs;
 	size_t pos;
 	size_t count = 0;
 	size_t tmp_size;
+	struct fat_fs *fs;
+	struct fat_file *fat_fp = container_of(fp, struct fat_file, f);
 
-	clus_size = fp->fs->clus_size;
-	clus_num = fp->dent->clus_hi << 16 | fp->dent->clus_lo;
-	pos = fp->offset;
+	fs = fat_fp->fs;
 
-	if (size + pos > fp->dent->size)
+	clus_size = fat_fp->fs->clus_size;
+	clus_num = fat_fp->dent->clus_hi << 16 | fat_fp->dent->clus_lo;
+	pos = fp->pos;
+
+	if (size + pos > fat_fp->dent->size)
 	{
-		size = fp->dent->size - pos;
+		size = fat_fp->dent->size - pos;
 	}
 
 	while (pos >= clus_size)
@@ -379,20 +361,35 @@ int fat_read(struct fat_file *fp, void *buff, size_t size)
 	return count;
 }
 
-int fat_write(struct fat_file *fp, const void *buff, size_t size)
+static int fat_write(struct file *fp, const void *buff, size_t size)
 {
 	return 0;
 }
 
-static int __INIT__ fat_fs_init(void)
+static const struct file_operations fat_fops =
 {
-	static struct file_system_type fat_fs_type =
-	{
-		.name  = "vfat",
-		.mount = fat_mount,
-	};
+	.open  = fat_open,
+	.close = fat_close,
+	.read  = fat_read,
+	.write = fat_write,
+};
 
+static struct file_system_type fat_fs_type =
+{
+	.name  = "vfat",
+	.mount = fat_mount,
+	.fops  = &fat_fops,
+};
+
+#ifdef __G_BIOS__
+static int __INIT__ fat_fs_init(void)
+#else
+int fat_fs_init(void)
+#endif
+{
 	return file_system_type_register(&fat_fs_type);
 }
 
+#ifdef __G_BIOS__
 SUBSYS_INIT(fat_fs_init);
+#endif

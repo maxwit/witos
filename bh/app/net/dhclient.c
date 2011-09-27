@@ -266,12 +266,12 @@ int main(int argc, char *argv[])
 	ip_to_str(ip_str, packet.yiaddr);
 	printf("local  ip: %s\n", ip_str);
 
-	close(sockfd);
+	sk_close(sockfd);
 
 	return 0;
 
 ERROR:
-	close(sockfd);
+	sk_close(sockfd);
 
 	return ret;
 }

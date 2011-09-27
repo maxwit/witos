@@ -39,7 +39,11 @@ struct file_system_type *file_system_type_get(const char *name)
 	return NULL;
 }
 
-int demo_mount(const char *type, unsigned long flags, const char *bdev_name, const char *path)
+#ifdef __G_BIOS__
+int mount(const char *type, unsigned long flags, const char *bdev_name, const char *path)
+#else
+int gb_mount(const char *type, unsigned long flags, const char *bdev_name, const char *path)
+#endif
 {
 	int ret;
 	struct block_device *bdev;
@@ -94,12 +98,20 @@ L1:
 	return ret;
 }
 
-int demo_umount(const char *mnt)
+#ifdef __G_BIOS__
+int umount(const char *mnt)
+#else
+int gb_umount(const char *mnt)
+#endif
 {
 	return 0;
 }
 
-int demo_open(const char *const name, int flags, ...)
+#ifdef __G_BIOS__
+int open(const char *const name, int flags, ...)
+#else
+int gb_open(const char *const name, int flags, ...)
+#endif
 {
 	int fd;
 	const char *fn;
@@ -149,7 +161,11 @@ int demo_open(const char *const name, int flags, ...)
 	return fd;
 }
 
-int demo_close(int fd)
+#ifdef __G_BIOS__
+int close(int fd)
+#else
+int gb_close(int fd)
+#endif
 {
 	struct file *fp;
 
@@ -164,7 +180,11 @@ int demo_close(int fd)
 	return fp->fops->close(fp);
 }
 
-int demo_read(int fd, void *buff, size_t size)
+#ifdef __G_BIOS__
+int read(int fd, void *buff, size_t size)
+#else
+int gb_read(int fd, void *buff, size_t size)
+#endif
 {
 	struct file *fp;
 
@@ -179,7 +199,11 @@ int demo_read(int fd, void *buff, size_t size)
 	return fp->fops->read(fp, buff, size);
 }
 
-int demo_write(int fd, const void *buff, size_t size)
+#ifdef __G_BIOS__
+int write(int fd, const void *buff, size_t size)
+#else
+int gb_write(int fd, const void *buff, size_t size)
+#endif
 {
 	struct file *fp;
 
