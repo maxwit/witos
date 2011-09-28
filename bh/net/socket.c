@@ -30,6 +30,8 @@ alloc_sock:
 		return -ENOMEM;
 	}
 
+	sock->type = type;
+
 	memset(&sock->addr, 0, sizeof(struct sockaddr));
 
 	list_head_init(&sock->tx_qu);
@@ -103,9 +105,13 @@ int bind(int fd, const struct sockaddr *addr, socklen_t len)
 	return 0;
 }
 
+// fixme
+void tcp_send_packet(struct sock_buff * skb);
+
 int connect(int fd, const struct sockaddr *addr, socklen_t len)
 {
 	struct socket *sock;
+	struct sock_buff *skb;
 
 	sock = get_sock(fd);
 
@@ -115,7 +121,14 @@ int connect(int fd, const struct sockaddr *addr, socklen_t len)
 		return -EINVAL;
 	}
 
-	memcpy(&sock->addr, addr, len);
+	skb = skb_alloc(ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN, 0);
+
+	skb->sock = sock;
+	skb->remote_addr = *(struct sockaddr_in *)addr;
+
+	// memcpy(skb->data, buf, n);
+
+	tcp_send_packet(skb);
 
 	return 0;
 }

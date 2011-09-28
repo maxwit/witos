@@ -80,6 +80,35 @@ static void dump_sock_buff(const struct sock_buff *skb)
 }
 #endif
 
+//----------------- TCP Layer -----------------
+void tcp_send_packet(struct sock_buff *skb)
+{
+	struct tcp_header *tcp_hdr;
+
+	skb->data -= TCP_HDR_LEN;
+	skb->size += TCP_HDR_LEN;
+
+	tcp_hdr = (struct tcp_header *)skb->data;
+	//
+	tcp_hdr->src_port = skb->sock->addr.sin_port;
+	tcp_hdr->dst_port = skb->remote_addr.sin_port;
+	tcp_hdr->seq_num = 0;
+	tcp_hdr->ack_num = 0;
+	tcp_hdr->hdr_len = 5;
+	tcp_hdr->resv    = 0;
+	tcp_hdr->flg_urg = 0;
+	tcp_hdr->flg_ack = 0;
+	tcp_hdr->flg_psh = 0;
+	tcp_hdr->flg_rst = 0;
+	tcp_hdr->flg_syn = 1;
+	tcp_hdr->flg_fin = 0;
+	tcp_hdr->win_size = CPU_TO_BE16(32792);
+	tcp_hdr->check_sum = 0;
+	tcp_hdr->urg_pt = 0;
+
+	ip_send_packet(skb, PROT_TCP);
+}
+
 //----------------- UDP Layer -----------------
 void udp_send_packet(struct sock_buff *skb)
 {

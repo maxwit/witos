@@ -70,6 +70,8 @@ enum __flags_type
 #define MAX_ETH_LEN     (1500 + ETH_HDR_LEN)
 #define MIN_ETH_LEN     46
 
+#define TCP_HDR_LEN     20
+
 // ping
 #define PING_PACKET_LENGTH		64
 #define PING_MAX_TIMES    		3
@@ -165,6 +167,26 @@ struct udp_header
 	u16 udp_len;
 	u16 chksum;
 };
+
+struct tcp_header
+{
+	__u16 src_port;
+	__u16 dst_port;
+	__u32 seq_num;
+	__u32 ack_num;
+	__u16 hdr_len:4;
+	__u16 resv:6;
+	__u16 flg_urg:1;
+	__u16 flg_ack:1;
+	__u16 flg_psh:1;
+	__u16 flg_rst:1;
+	__u16 flg_syn:1;
+	__u16 flg_fin:1;
+	__u16 win_size;
+	__u16 check_sum;
+	__u16 urg_pt;
+};
+
 ///////////////////////////////////
 
 typedef u32 socklen_t;
@@ -201,6 +223,7 @@ struct sockaddr_in
 
 struct socket
 {
+	int type;
 	struct list_node tx_qu, rx_qu;
 	struct sockaddr_in addr;
 };
