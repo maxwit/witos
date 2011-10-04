@@ -53,3 +53,6 @@ CONFIG_DM9000=y
 
 # OS Booting
 CONFIG_MACH_TYPE=2330
+
+#File systems
+CONFIG_FS = y

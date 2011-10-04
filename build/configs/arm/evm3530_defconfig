@@ -53,3 +53,6 @@ CONFIG_LAN9220=y
 
 # OS Booting
 CONFIG_MACH_TYPE=1535
+
+#File systems
+CONFIG_FS = y
