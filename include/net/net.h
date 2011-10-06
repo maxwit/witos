@@ -221,11 +221,16 @@ struct sockaddr_in
 				sizeof(struct in_addr)];
 };
 
+enum {
+	SA_SRC,
+	SA_DST
+};
+
 struct socket
 {
 	int type;
 	struct list_node tx_qu, rx_qu;
-	struct sockaddr_in addr;
+	struct sockaddr_in saddr[2]; // fixme: sockaddr instead
 };
 
 struct eth_addr
@@ -261,7 +266,7 @@ struct sock_buff
 
 	struct list_node node;
 	struct socket *sock;
-	struct sockaddr_in remote_addr;
+	// struct sockaddr_in remote_addr;
 };
 
 struct net_device_stat
@@ -359,7 +364,7 @@ int netif_rx_poll();
 #define netif_rx_poll()
 #endif
 
-int ping_request(struct socket *socket, struct eth_addr *remote_addr);
+// int ping_request(struct socket *socket, struct eth_addr *remote_addr);
 
 // int ping_request(struct socket *socket);
 

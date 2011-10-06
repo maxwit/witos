@@ -31,9 +31,7 @@ alloc_sock:
 	}
 
 	sock->type = type;
-
-	memset(&sock->addr, 0, sizeof(struct sockaddr));
-
+	memset(sock->saddr, 0, sizeof(sock->saddr));
 	list_head_init(&sock->tx_qu);
 	list_head_init(&sock->rx_qu);
 
@@ -100,7 +98,7 @@ int bind(int fd, const struct sockaddr *addr, socklen_t len)
 		return -EINVAL;
 	}
 
-	memcpy(&sock->addr, addr, len);
+	memcpy(&sock->saddr[SA_SRC], addr, len);
 
 	return 0;
 }
@@ -112,21 +110,24 @@ int connect(int fd, const struct sockaddr *addr, socklen_t len)
 {
 	struct socket *sock;
 	struct sock_buff *skb;
+	static char buff[20] = {0x02, 0x04, 0x40, 0x0c, 0x04, 0x02, 0x08, 0x0a, 0x00, 0x95, 0x7b, 0xea, 0x00, 0x00, 0x00, 0x00, 0x01, 0x03, 0x03, 0x06};
 
 	sock = get_sock(fd);
 
 	if (NULL == sock)
 	{
-		// printf
-		return -EINVAL;
+		// DPRINT
+		return -ENOENT;
 	}
 
-	skb = skb_alloc(ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN, 0);
+	memcpy(&sock->saddr[SA_DST], addr, len);
+
+	skb = skb_alloc(ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN, 20);
+	// if null
 
 	skb->sock = sock;
-	skb->remote_addr = *(struct sockaddr_in *)addr;
 
-	// memcpy(skb->data, buf, n);
+	memcpy(skb->data, buff, 20);
 
 	tcp_send_packet(skb);
 
@@ -134,8 +135,8 @@ int connect(int fd, const struct sockaddr *addr, socklen_t len)
 }
 
 //
-ssize_t sendto(int fd, const void *buf, u32 n, int flags,
-					const struct sockaddr *dest_addr, socklen_t addrlen)
+ssize_t sendto(int fd, const void *buff, u32 buff_size, int flags,
+			const struct sockaddr *dest_addr, socklen_t addr_size)
 {
 	struct socket *sock;
 	struct sock_buff *skb;
@@ -148,17 +149,51 @@ ssize_t sendto(int fd, const void *buf, u32 n, int flags,
 		return -EINVAL;
 	}
 
-	skb = skb_alloc(ETH_HDR_LEN + IP_HDR_LEN + UDP_HDR_LEN, n);
+	memcpy(&sock->saddr[SA_DST], dest_addr, addr_size);
+
+	skb = skb_alloc(ETH_HDR_LEN + IP_HDR_LEN + UDP_HDR_LEN, buff_size);
+	// if null
 
 	skb->sock = sock;
-	skb->remote_addr = *(struct sockaddr_in *)dest_addr;
 
-	memcpy(skb->data, buf, n);
+	memcpy(skb->data, buff, buff_size);
 
 	udp_send_packet(skb);
 
-	return n;
+	return buff_size;
+}
 
+long recvfrom(int fd, void *buf, u32 n, int flags,
+		struct sockaddr *src_addr, socklen_t *addrlen)
+{
+	struct socket *sock;
+	struct sock_buff *skb;
+	u32 pkt_len;
+
+	sock = get_sock(fd);
+
+	if (NULL == sock)
+	{
+		return -EINVAL;
+	}
+
+	skb = udp_recv_packet(sock);
+	if(NULL == skb)
+		return 0;
+
+	// fixme !
+	pkt_len   = skb->size <= n ? skb->size : n;
+
+	// fixme
+	// if (sizeof(skb->remote_addr) > *addrlen) return -EINVAL;
+	*addrlen = sizeof(struct sockaddr_in);
+	memcpy(src_addr, &sock->saddr[SA_DST], *addrlen);
+
+	memcpy(buf, skb->data, pkt_len);
+
+	skb_free(skb);
+
+	return pkt_len;
 }
 
 long send(int fd, const void *buf, u32 n)
@@ -183,39 +218,6 @@ long send(int fd, const void *buf, u32 n)
 	udp_send_packet(skb);
 
 	return n;
-}
-
-long recvfrom(int fd, void *buf, u32 n, int flags,
-				struct sockaddr *src_addr, socklen_t *addrlen)
-{
-	struct socket *sock;
-	struct sock_buff *skb;
-	u32 pkt_len;
-
-	sock = get_sock(fd);
-
-	if (NULL == sock)
-	{
-		return -EINVAL;
-	}
-
-	skb = udp_recv_packet(sock);
-	if(NULL == skb)
-		return 0;
-
-	// fixme !
-	pkt_len   = skb->size <= n ? skb->size : n;
-
-	// fixme
-	// if (sizeof(skb->remote_addr) > *addrlen) return -EINVAL;
-	*addrlen = sizeof(skb->remote_addr);
-	memcpy(src_addr, &skb->remote_addr, *addrlen);
-
-	memcpy(buf, skb->data, pkt_len);
-
-	skb_free(skb);
-
-	return pkt_len;
 }
 
 //
@@ -270,7 +272,7 @@ struct socket *search_socket(const struct udp_header *udp_pkt, const struct ip_h
 		if (NULL == sock)
 			continue;
 
-		sk_adr = &sock->addr;
+		sk_adr = &sock->saddr[SA_SRC];
 
 #if 0
 		if (memcmp(sk_adr->sin_addr, ip_pkt->src_ip, 4) != 0)

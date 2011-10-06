@@ -17,6 +17,43 @@ static const char *g_arp_desc[] = {"N/A", "Request", "Reply"};
 #endif
 static int ndev_count = 0;
 
+struct pseudo_header
+{
+	u8   src_ip[IPV4_ADR_LEN];
+	u8   des_ip[IPV4_ADR_LEN];
+	u16 protocol;
+	u16 len;
+	u8 buff[0];
+}__PACKED__;
+
+static struct pseudo_header *make_pseudo_header(struct sock_buff *skb,
+								const void *buff, u16 size)
+{
+	struct pseudo_header *pse_hdr;
+	u32 src_ip;
+	u16 hdr_len = 12; // sock->p_info->tcpinfo->len_flags >> 10;
+
+	pse_hdr = malloc(hdr_len + size);
+	if (NULL == pse_hdr)
+		return NULL;
+
+	ndev_ioctl(NULL, NIOC_GET_IP, &src_ip);
+	memcpy(pse_hdr->src_ip, &src_ip, IPV4_ADR_LEN);
+
+//	memcpy(pse_hdr->des_ip, &skb->remote_addr.sin_addr, IPV4_ADR_LEN);
+
+//	if (SOCK_STREAM == sock->p_info->type)
+		pse_hdr->protocol = CPU_TO_BE16(PROT_TCP);
+//	else
+//		pse_hdr->protocol = PROT_UDP;
+
+	pse_hdr->len = CPU_TO_BE16(size);
+
+	memcpy(pse_hdr->buff, buff, size);
+
+	return pse_hdr;
+}
+
 static void ether_send_packet(struct sock_buff *skb, const u8 mac[], u16 eth_type);
 
 struct socket *search_socket(const struct udp_header *, const struct ip_header *);
@@ -81,20 +118,28 @@ static void dump_sock_buff(const struct sock_buff *skb)
 #endif
 
 //----------------- TCP Layer -----------------
+static __u8 buff[] = {
+	0xd1, 0xd6, 0x15, 0x87, 0x2e, 0x6c, 0xc0, 0x06, 0x00, 0x00, 
+	0x00, 0x00, 0xa0, 0x02, 0x80, 0x18, 0xfe, 0x30, 0x00, 0x00, 
+	0x02, 0x04, 0x40, 0x0c, 0x04, 0x02, 0x08, 0x0a, 0x00, 0x9a, 
+	0x0b, 0x54, 0x00, 0x00, 0x00, 0x00, 0x01, 0x03, 0x03, 0x06};
+
 void tcp_send_packet(struct sock_buff *skb)
 {
 	struct tcp_header *tcp_hdr;
+	struct pseudo_header *pse_hdr;
 
 	skb->data -= TCP_HDR_LEN;
 	skb->size += TCP_HDR_LEN;
 
 	tcp_hdr = (struct tcp_header *)skb->data;
 	//
+#if 0
 	tcp_hdr->src_port = skb->sock->addr.sin_port;
 	tcp_hdr->dst_port = skb->remote_addr.sin_port;
 	tcp_hdr->seq_num = 0;
 	tcp_hdr->ack_num = 0;
-	tcp_hdr->hdr_len = 5;
+	tcp_hdr->hdr_len = 10;
 	tcp_hdr->resv    = 0;
 	tcp_hdr->flg_urg = 0;
 	tcp_hdr->flg_ack = 0;
@@ -106,6 +151,16 @@ void tcp_send_packet(struct sock_buff *skb)
 	tcp_hdr->check_sum = 0;
 	tcp_hdr->urg_pt = 0;
 
+	// tcp_hdr->check_sum = ~net_calc_checksum(tcp_hdr, 40);
+#endif
+
+	memcpy(skb->data, buff, 40);
+	tcp_hdr->check_sum = 0;
+
+	pse_hdr = make_pseudo_header(skb, tcp_hdr, skb->size);
+	tcp_hdr->check_sum = ~net_calc_checksum(pse_hdr, sizeof(*pse_hdr) + skb->size);
+	free(pse_hdr);
+
 	ip_send_packet(skb, PROT_TCP);
 }
 
@@ -113,14 +168,15 @@ void tcp_send_packet(struct sock_buff *skb)
 void udp_send_packet(struct sock_buff *skb)
 {
 	struct udp_header *udp_hdr;
+	struct socket *sock = skb->sock;
 
 	skb->data -= UDP_HDR_LEN;
 	skb->size += UDP_HDR_LEN;
 
 	udp_hdr = (struct udp_header *)skb->data;
 	//
-	udp_hdr->src_port = skb->sock->addr.sin_port;
-	udp_hdr->des_port = skb->remote_addr.sin_port;
+	udp_hdr->src_port = sock->saddr[SA_SRC].sin_port;
+	udp_hdr->des_port = sock->saddr[SA_DST].sin_port;
 	udp_hdr->udp_len  = CPU_TO_BE16(skb->size);
 	udp_hdr->chksum   = 0;
 
@@ -175,16 +231,14 @@ static int udp_layer_deliver(struct sock_buff *skb, const struct ip_header *ip_h
 	skb->size -= UDP_HDR_LEN;
 
 	sock = search_socket(udp_hdr, ip_hdr);
-
 	if (NULL == sock)
 	{
 		skb_free(skb);
 		return -ENODEV;
 	}
 
-	// sock->addr.des_port = udp_hdr->src_port;
-	memcpy(&skb->remote_addr.sin_addr.s_addr, ip_hdr->src_ip, IPV4_ADR_LEN);
-	skb->remote_addr.sin_port = udp_hdr->src_port;
+	memcpy(&sock->saddr[SA_DST].sin_addr, ip_hdr->src_ip, IPV4_ADR_LEN);
+	sock->saddr[SA_DST].sin_port = udp_hdr->src_port;
 
 	list_add_tail(&skb->node, &sock->rx_qu);
 
@@ -237,8 +291,9 @@ int ping_send(struct sock_buff *rx_skb, const struct ip_header *ip_hdr, u8 type)
 	    return -EBUSY;
 	}
 
-	memcpy(&tx_skb->remote_addr.sin_addr, ip_hdr->src_ip, IPV4_ADR_LEN);
-	memcpy(&sock.addr.sin_addr, ip_hdr->des_ip, IPV4_ADR_LEN);
+	// ?
+	memcpy(&sock.saddr[SA_DST].sin_addr, ip_hdr->src_ip, IPV4_ADR_LEN);
+	memcpy(&sock.saddr[SA_SRC].sin_addr, ip_hdr->des_ip, IPV4_ADR_LEN);
 
 	tx_skb->sock = &sock;
 
@@ -251,7 +306,7 @@ int ping_send(struct sock_buff *rx_skb, const struct ip_header *ip_hdr, u8 type)
 	return 0;
 }
 
-int ping_recv(struct sock_buff *rx_skb, const struct ip_header *ip_hdr)
+static int ping_recv(struct sock_buff *rx_skb, const struct ip_header *ip_hdr)
 {
 	struct ping_packet *ping_hdr;
 
@@ -269,6 +324,7 @@ int ping_recv(struct sock_buff *rx_skb, const struct ip_header *ip_hdr)
 	return 0;
 }
 
+#if 0
 int ping_request(struct socket *socket, struct eth_addr *remote_addr)
 {
 	int i, j;
@@ -307,6 +363,7 @@ int ping_request(struct socket *socket, struct eth_addr *remote_addr)
 
 	return 0;
 }
+#endif
 
 static int icmp_deliver(struct sock_buff *skb, const struct ip_header *ip_hdr)
 {
@@ -402,14 +459,12 @@ int ip_layer_deliver(struct sock_buff *skb)
 
 void ip_send_packet(struct sock_buff *skb, u8 prot)
 {
-	// struct udp_header *udp_hdr;
-	struct ip_header *ip_hdr;
-	struct eth_addr *remote_addr = NULL;
 	u8 mac[MAC_ADR_LEN];
 	u8 *pmac = NULL;
 	u32 nip;
-
-	// udp_hdr = (struct udp_header*)skb->data;
+	struct ip_header *ip_hdr;
+	struct eth_addr *remote_addr = NULL;
+	struct socket *sock = skb->sock;
 
 	skb->data -= IP_HDR_LEN;
 	skb->size += IP_HDR_LEN;
@@ -425,13 +480,12 @@ void ip_send_packet(struct sock_buff *skb, u8 prot)
 	ip_hdr->up_prot   = prot;
 	ip_hdr->chksum    = 0;
 
-	memcpy(ip_hdr->src_ip, &skb->sock->addr.sin_addr, IPV4_ADR_LEN);
-
-	memcpy(ip_hdr->des_ip, &skb->remote_addr.sin_addr, IPV4_ADR_LEN);
+	memcpy(ip_hdr->src_ip, &sock->saddr[SA_SRC].sin_addr, IPV4_ADR_LEN);
+	memcpy(ip_hdr->des_ip, &sock->saddr[SA_DST].sin_addr, IPV4_ADR_LEN);
 
 	ip_hdr->chksum = ~net_calc_checksum(ip_hdr, IP_HDR_LEN);
 
-	nip = skb->remote_addr.sin_addr.s_addr;
+	nip = sock->saddr[SA_DST].sin_addr.s_addr;
 
 	if (ip_is_bcast(BE32_TO_CPU(nip)))
 	{
@@ -444,7 +498,7 @@ void ip_send_packet(struct sock_buff *skb, u8 prot)
 
 		if (NULL == remote_addr)
 	    {
-			remote_addr = gethostaddr(skb->remote_addr.sin_addr.s_addr);
+			remote_addr = gethostaddr(sock->saddr[SA_DST].sin_addr.s_addr);
 			if (NULL == remote_addr)
 			{
 				DPRINT("%s(): addr error!\n", __func__);
@@ -612,12 +666,14 @@ void ether_send_packet(struct sock_buff *skb, const u8 mac[], u16 eth_type)
 	struct ether_header *eth_head;
 	u8 mac_addr[MAC_ADR_LEN];
 
+	printf("%s() line %d\n", __func__, __LINE__);
 	skb->data -= ETH_HDR_LEN;
 	skb->size += ETH_HDR_LEN;
 
 	if (skb->data != skb->head)
 	{
-		printf("skb len error!\n");
+		printf("%s(): skb len error! (data = 0x%p, head = 0x%p)\n",
+			__func__, skb->data, skb->head);
 		return;
 	}
 
@@ -697,6 +753,8 @@ struct eth_addr *getaddr(u32 nip)
 
 	list_for_each(iter, &g_host_list)
 	{
+		printf("%s() line %d: iter = %p, head = %p\n",
+			__func__, __LINE__, iter, &g_host_list);
 		host = container_of(iter, struct host_addr, node);
 
 		dip = (u32 *)host->in_addr.ip;
