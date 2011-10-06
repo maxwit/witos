@@ -19,44 +19,53 @@ static int ndev_count = 0;
 
 struct pseudo_header
 {
-	u8   src_ip[IPV4_ADR_LEN];
-	u8   des_ip[IPV4_ADR_LEN];
-	u16 protocol;
-	u16 len;
-	u8 buff[0];
-}__PACKED__;
+	u8  src_ip[IPV4_ADR_LEN];
+	u8  des_ip[IPV4_ADR_LEN];
+	u8  zero;
+	u8  prot;
+	u16 size;
+};
 
-static struct pseudo_header *make_pseudo_header(struct sock_buff *skb,
-								const void *buff, u16 size)
+int pseudo_calculate_checksum(struct sock_buff *skb, u16 *checksum)
 {
 	struct pseudo_header *pse_hdr;
-	u32 src_ip;
-	u16 hdr_len = 12; // sock->p_info->tcpinfo->len_flags >> 10;
+	struct socket *sock = skb->sock;
 
-	pse_hdr = malloc(hdr_len + size);
-	if (NULL == pse_hdr)
-		return NULL;
+	pse_hdr = (struct pseudo_header *)skb->data - 1;
 
-	ndev_ioctl(NULL, NIOC_GET_IP, &src_ip);
-	memcpy(pse_hdr->src_ip, &src_ip, IPV4_ADR_LEN);
+	memcpy(pse_hdr->src_ip, &sock->saddr[SA_SRC].sin_addr, IPV4_ADR_LEN);
+	memcpy(pse_hdr->des_ip, &sock->saddr[SA_DST].sin_addr, IPV4_ADR_LEN);
+	pse_hdr->zero = 0;
 
-//	memcpy(pse_hdr->des_ip, &skb->remote_addr.sin_addr, IPV4_ADR_LEN);
+	switch (sock->type)
+	{
+	case SOCK_STREAM:
+		pse_hdr->prot = PROT_TCP;
+		// checksum = &((struct tcp_header *)skb->data)->checksum;
+		break;
 
-//	if (SOCK_STREAM == sock->p_info->type)
-		pse_hdr->protocol = CPU_TO_BE16(PROT_TCP);
-//	else
-//		pse_hdr->protocol = PROT_UDP;
+	case SOCK_DGRAM:
+		pse_hdr->prot = PROT_UDP;
+		// checksum = &((struct udp_header *)skb->data)->checksum;
+		break;
 
-	pse_hdr->len = CPU_TO_BE16(size);
+	default:
+		return -EINVAL;
+	}
 
-	memcpy(pse_hdr->buff, buff, size);
+	pse_hdr->size = CPU_TO_BE16(skb->size);
 
-	return pse_hdr;
+	// *checksum = 0;
+	*checksum = ~ net_calc_checksum(pse_hdr, sizeof(*pse_hdr) + skb->size);
+
+	return 0;
 }
 
 static void ether_send_packet(struct sock_buff *skb, const u8 mac[], u16 eth_type);
 
-struct socket *search_socket(const struct udp_header *, const struct ip_header *);
+struct socket *udp_search_socket(const struct udp_header *, const struct ip_header *);
+
+struct socket *tcp_search_socket(const struct tcp_header *, const struct ip_header *);
 
 static inline BOOL ip_is_bcast(u32 ip)
 {
@@ -117,49 +126,82 @@ static void dump_sock_buff(const struct sock_buff *skb)
 }
 #endif
 
-//----------------- TCP Layer -----------------
-static __u8 buff[] = {
-	0xd1, 0xd6, 0x15, 0x87, 0x2e, 0x6c, 0xc0, 0x06, 0x00, 0x00, 
-	0x00, 0x00, 0xa0, 0x02, 0x80, 0x18, 0xfe, 0x30, 0x00, 0x00, 
-	0x02, 0x04, 0x40, 0x0c, 0x04, 0x02, 0x08, 0x0a, 0x00, 0x9a, 
-	0x0b, 0x54, 0x00, 0x00, 0x00, 0x00, 0x01, 0x03, 0x03, 0x06};
+#if 0
+void tcp_make_pkg(struct sock_buff *skb, u16 flag)
+{
+	skb->data -= TCP_HDR_LEN + opt_len;
+	skb->size += TCP_HDR_LEN + opt_len;
 
+	tcp_hdr = (struct tcp_header *)skb->data;
+	//
+	tcp_hdr->src_port = sock->saddr[SA_SRC].sin_port;
+	tcp_hdr->dst_port = sock->saddr[SA_DST].sin_port;
+	tcp_hdr->seq_num  = CPU_TO_BE32(1);
+	tcp_hdr->ack_num  = 0;
+	tcp_hdr->hdr_len  = (TCP_HDR_LEN + opt_len) / 4;
+	tcp_hdr->reserve1 = 0;
+	tcp_hdr->reserve2 = 0;
+	tcp_hdr->flg_urg  = 0;
+	tcp_hdr->flg_ack  = 0;
+	tcp_hdr->flg_psh  = 0;
+	tcp_hdr->flg_rst  = 0;
+	tcp_hdr->flg_syn  = 1;
+	tcp_hdr->flg_fin  = 0;
+	tcp_hdr->win_size = 0; // CPU_TO_BE16(32792);
+	tcp_hdr->checksum = 0;
+	tcp_hdr->urg_ptr  = 0;
+
+	if (opt_len > 0)
+		memset(tcp_hdr->options, 0x0, opt_len);
+
+	pseudo_calculate_checksum(skb, &tcp_hdr->checksum);
+
+}
+#endif
+
+//----------------- TCP Layer -----------------
 void tcp_send_packet(struct sock_buff *skb)
 {
 	struct tcp_header *tcp_hdr;
-	struct pseudo_header *pse_hdr;
 
 	skb->data -= TCP_HDR_LEN;
 	skb->size += TCP_HDR_LEN;
 
 	tcp_hdr = (struct tcp_header *)skb->data;
 	//
-#if 0
-	tcp_hdr->src_port = skb->sock->addr.sin_port;
-	tcp_hdr->dst_port = skb->remote_addr.sin_port;
-	tcp_hdr->seq_num = 0;
-	tcp_hdr->ack_num = 0;
-	tcp_hdr->hdr_len = 10;
-	tcp_hdr->resv    = 0;
-	tcp_hdr->flg_urg = 0;
-	tcp_hdr->flg_ack = 0;
-	tcp_hdr->flg_psh = 0;
-	tcp_hdr->flg_rst = 0;
-	tcp_hdr->flg_syn = 1;
-	tcp_hdr->flg_fin = 0;
-	tcp_hdr->win_size = CPU_TO_BE16(32792);
-	tcp_hdr->check_sum = 0;
-	tcp_hdr->urg_pt = 0;
+#if 1
+	struct socket *sock = skb->sock;
 
-	// tcp_hdr->check_sum = ~net_calc_checksum(tcp_hdr, 40);
+	tcp_hdr->src_port = sock->saddr[SA_SRC].sin_port;
+	tcp_hdr->dst_port = sock->saddr[SA_DST].sin_port;
+	tcp_hdr->seq_num  = CPU_TO_BE32(1);
+	tcp_hdr->ack_num  = 0;
+	tcp_hdr->hdr_len  = 5;
+	tcp_hdr->reserve1 = 0;
+	tcp_hdr->reserve2 = 0;
+	tcp_hdr->flg_urg  = 0;
+	tcp_hdr->flg_ack  = 0;
+	tcp_hdr->flg_psh  = 0;
+	tcp_hdr->flg_rst  = 0;
+	tcp_hdr->flg_syn  = 1;
+	tcp_hdr->flg_fin  = 0;
+	tcp_hdr->win_size = 0; // CPU_TO_BE16(32792);
+	tcp_hdr->checksum = 0;
+	tcp_hdr->urg_ptr  = 0;
+#else
+	static __u8 buff[] = {
+		0xd1, 0xd6, 0x15, 0x87, 0x2e, 0x6c, 0xc0, 0x06, 0x00, 0x00, 
+		0x00, 0x00, 0xa0, 0x02, 0x80, 0x18, 0xfe, 0x30, 0x00, 0x00, 
+		//0x02, 0x04, 0x40, 0x0c, 0x04, 0x02, 0x08, 0x0a, 0x00, 0x9a, 
+		//0x0b, 0x54, 0x00, 0x00, 0x00, 0x00, 0x01, 0x03, 0x03, 0x06
+		};
+
+	memcpy(skb->data, buff, 20);
+	tcp_hdr->checksum = 0;
 #endif
+	// memset(skb->data + 20, 0x0f, 20);
 
-	memcpy(skb->data, buff, 40);
-	tcp_hdr->check_sum = 0;
-
-	pse_hdr = make_pseudo_header(skb, tcp_hdr, skb->size);
-	tcp_hdr->check_sum = ~net_calc_checksum(pse_hdr, sizeof(*pse_hdr) + skb->size);
-	free(pse_hdr);
+	pseudo_calculate_checksum(skb, &tcp_hdr->checksum);
 
 	ip_send_packet(skb, PROT_TCP);
 }
@@ -176,9 +218,9 @@ void udp_send_packet(struct sock_buff *skb)
 	udp_hdr = (struct udp_header *)skb->data;
 	//
 	udp_hdr->src_port = sock->saddr[SA_SRC].sin_port;
-	udp_hdr->des_port = sock->saddr[SA_DST].sin_port;
+	udp_hdr->dst_port = sock->saddr[SA_DST].sin_port;
 	udp_hdr->udp_len  = CPU_TO_BE16(skb->size);
-	udp_hdr->chksum   = 0;
+	udp_hdr->checksum = 0;
 
 	ip_send_packet(skb, PROT_UDP);
 }
@@ -187,7 +229,7 @@ struct sock_buff *udp_recv_packet(struct socket *sock)
 {
 	u32 psr;
 	struct sock_buff *skb;
-	struct list_node *qu = &sock->rx_qu;
+	struct list_node *first;
 
 	while (1)
 	{
@@ -201,7 +243,7 @@ struct sock_buff *udp_recv_packet(struct socket *sock)
 		netif_rx_poll();
 
 		lock_irq_psr(psr);
-		if (!list_is_empty(qu))
+		if (!list_is_empty(&sock->rx_qu))
 		{
 			unlock_irq_psr(psr);
 			break;
@@ -212,10 +254,11 @@ struct sock_buff *udp_recv_packet(struct socket *sock)
 	}
 
 	lock_irq_psr(psr);
-	list_del_node(qu->next);
+	first = sock->rx_qu.next;
+	list_del_node(first);
 	unlock_irq_psr(psr);
 
-	skb = container_of(qu->next, struct sock_buff, node);
+	skb = container_of(first, struct sock_buff, node);
 
 	return skb;
 }
@@ -230,15 +273,82 @@ static int udp_layer_deliver(struct sock_buff *skb, const struct ip_header *ip_h
 	skb->data += UDP_HDR_LEN;
 	skb->size -= UDP_HDR_LEN;
 
-	sock = search_socket(udp_hdr, ip_hdr);
+	sock = udp_search_socket(udp_hdr, ip_hdr);
 	if (NULL == sock)
 	{
 		skb_free(skb);
-		return -ENODEV;
+		return -ENOENT;
 	}
 
 	memcpy(&sock->saddr[SA_DST].sin_addr, ip_hdr->src_ip, IPV4_ADR_LEN);
 	sock->saddr[SA_DST].sin_port = udp_hdr->src_port;
+
+	list_add_tail(&skb->node, &sock->rx_qu);
+
+	return 0;
+}
+
+struct sock_buff *tcp_recv_packet(struct socket *sock)
+{
+	u32 psr;
+	struct sock_buff *skb;
+	struct list_node *first;
+
+	while (1)
+	{
+		int ret;
+		char key;
+
+		ret = uart_read(CONFIG_DBGU_ID, (u8 *)&key, 1, WAIT_ASYNC);
+		if (ret > 0 && key == CHAR_CTRL_C)
+			return NULL;
+
+		netif_rx_poll();
+
+		lock_irq_psr(psr);
+		if (!list_is_empty(&sock->rx_qu))
+		{
+			unlock_irq_psr(psr);
+			break;
+		}
+		unlock_irq_psr(psr);
+
+		udelay(10);
+	}
+
+	lock_irq_psr(psr);
+	first = sock->rx_qu.next;
+	list_del_node(first);
+	unlock_irq_psr(psr);
+
+	skb = container_of(first, struct sock_buff, node);
+
+	return skb;
+}
+
+static int tcp_layer_deliver(struct sock_buff *skb, const struct ip_header *ip_hdr)
+{
+	struct tcp_header *tcp_hdr;
+	struct socket *sock;
+
+	tcp_hdr = (struct tcp_header *)skb->data;
+
+// fixme
+#if 0
+	int hdr_len;
+
+	hdr_len = tcp_hdr->hdr_len << 2;
+
+	skb->data += hdr_len;
+	skb->size -= hdr_len;
+#endif
+
+	sock = tcp_search_socket(tcp_hdr, ip_hdr);
+	if (NULL == sock)
+	{
+		skb_free(skb);
+		return -ENOENT;
+	}
 
 	list_add_tail(&skb->node, &sock->rx_qu);
 
@@ -434,8 +544,8 @@ int ip_layer_deliver(struct sock_buff *skb)
 		break;
 
 	case PROT_TCP:
-		// printf("\tTCP received!\n");
-		skb_free(skb);
+		printf("\tTCP received!\n");
+		tcp_layer_deliver(skb, ip_hdr);
 		break;
 
 	case PROT_IGMP:
@@ -666,7 +776,6 @@ void ether_send_packet(struct sock_buff *skb, const u8 mac[], u16 eth_type)
 	struct ether_header *eth_head;
 	u8 mac_addr[MAC_ADR_LEN];
 
-	printf("%s() line %d\n", __func__, __LINE__);
 	skb->data -= ETH_HDR_LEN;
 	skb->size += ETH_HDR_LEN;
 
@@ -693,7 +802,7 @@ void ether_send_packet(struct sock_buff *skb, const u8 mac[], u16 eth_type)
 
 u16 net_calc_checksum(const void *buff, u32 size)
 {
-	u32 n;
+	int n;
 	u32	chksum;
 	const u16 *p;
 
@@ -705,7 +814,7 @@ u16 net_calc_checksum(const void *buff, u32 size)
 	chksum = (chksum & 0xffff) + (chksum >> 16);
 	chksum = (chksum & 0xffff) + (chksum >> 16);
 
-	return (chksum & 0xffff);
+	return chksum & 0xffff;
 }
 
 // fixme!

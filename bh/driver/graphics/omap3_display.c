@@ -53,7 +53,6 @@ static int __INIT__ omap3530_display_init(void)
 {
 	void *va;
 	u32 dma;
-	u32 val;
 	const struct lcd_vmode *vm;
 	struct display *disp;
 

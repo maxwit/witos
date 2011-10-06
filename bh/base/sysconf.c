@@ -46,7 +46,7 @@ struct linux_config *sysconf_get_linux_param(void)
 	return &g_sysconf_data.linux_conf;
 }
 
-static u32 sysconf_check_sum(u32 *new_sum)
+static u32 sysconf_checksum(u32 *new_sum)
 {
 	u32 old_sum = g_sysconf_data.checksum;
 
@@ -126,7 +126,7 @@ int sysconf_reset(void)
 	memset(image_conf, 0x0, sizeof(*image_conf) * MAX_FLASH_PARTS);
 
 	// generate checksum
-	sysconf_check_sum(NULL);
+	sysconf_checksum(NULL);
 
 	//fixme
 	return 0;
@@ -176,7 +176,7 @@ static int __INIT__ sysconf_load(void)
 
 	memcpy(&g_sysconf_data, conf_buff, sizeof(struct sysconf_data));
 
-	old_sum = sysconf_check_sum(&new_sum);
+	old_sum = sysconf_checksum(&new_sum);
 
 	if (old_sum != new_sum)
 	{
@@ -223,7 +223,7 @@ int sysconf_save(void)
 		goto L1;
 	}
 
-	sysconf_check_sum(NULL);
+	sysconf_checksum(NULL);
 
 	conf_buff = (u8 *)malloc(conf_size);
 	if (NULL == conf_buff)

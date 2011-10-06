@@ -163,9 +163,9 @@ struct ping_packet
 struct udp_header
 {
 	u16 src_port;
-	u16 des_port;
+	u16 dst_port;
 	u16 udp_len;
-	u16 chksum;
+	u16 checksum;
 };
 
 struct tcp_header
@@ -174,17 +174,19 @@ struct tcp_header
 	__u16 dst_port;
 	__u32 seq_num;
 	__u32 ack_num;
+	__u16 reserve1:4;
 	__u16 hdr_len:4;
-	__u16 resv:6;
-	__u16 flg_urg:1;
-	__u16 flg_ack:1;
-	__u16 flg_psh:1;
-	__u16 flg_rst:1;
-	__u16 flg_syn:1;
 	__u16 flg_fin:1;
+	__u16 flg_syn:1;
+	__u16 flg_rst:1;
+	__u16 flg_psh:1;
+	__u16 flg_ack:1;
+	__u16 flg_urg:1;
+	__u16 reserve2:2;
 	__u16 win_size;
-	__u16 check_sum;
-	__u16 urg_pt;
+	__u16 checksum;
+	__u16 urg_ptr;
+	__u8  options[0];
 };
 
 ///////////////////////////////////
@@ -246,7 +248,7 @@ struct sockaddr
 	u8  des_ip[4];
 	u8  des_mac[6];
 
-	u16 des_port;
+	u16 dst_port;
 	u16 src_port;
 };
 

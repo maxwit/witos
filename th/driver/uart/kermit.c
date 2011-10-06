@@ -29,7 +29,7 @@
 static void send_ack_packet(u32 seq, char type)
 {
 	u8 buff[KERM_ACK_LEN];
-	int index = 0, check_sum = 0;
+	int index = 0, checksum = 0;
 
 	buff[index++] = MARK_START;
 	buff[index++] = ENC_PRINT(3);
@@ -40,11 +40,11 @@ static void send_ack_packet(u32 seq, char type)
 	index = 1;
 	while (buff[index])
 	{
-		check_sum += buff[index];
+		checksum += buff[index];
 		index++;
 	}
 
-	buff[index++] = (KERM_KEY_SPACE + (0x3f & (check_sum + (0x03 & (check_sum >> 6))))) & 0xff;
+	buff[index++] = (KERM_KEY_SPACE + (0x3f & (checksum + (0x03 & (checksum >> 6))))) & 0xff;
 	buff[index++] = KERM_KEY_TERM;
 	buff[index] = '\0';
 
@@ -60,7 +60,7 @@ int kermit_load(struct loader_opt *opt)
 {
 	u8 buff[KERM_BUF_LEN];
 	u8 curr_char;
-	int index, count, check_sum, len, seq, real_seq = 0;
+	int index, count, checksum, len, seq, real_seq = 0;
 	int type = KERM_TYPE_BREAK; // fixme
 	u8 *curr_addr = (u8 *)opt->load_addr;
 
@@ -94,12 +94,12 @@ int kermit_load(struct loader_opt *opt)
 
 		/* length decode */
 		len = buff[index++];
-		check_sum = len;
+		checksum = len;
 		len -= KERM_KEY_SPACE;
 
 		/* sequence decode */
 		seq = buff[index++];
-		check_sum += seq;
+		checksum += seq;
 		seq -= KERM_KEY_SPACE;
 
 		if (seq != real_seq)
@@ -116,7 +116,7 @@ int kermit_load(struct loader_opt *opt)
 
 		/* get package type */
 		type = buff[index++];
-		check_sum += type;
+		checksum += type;
 
 		if (len) // fixme: handle extended length
 			len -= 2;
@@ -124,7 +124,7 @@ int kermit_load(struct loader_opt *opt)
 		while (len > 1)
 		{
 			curr_char = buff[index++];
-			check_sum += curr_char;
+			checksum += curr_char;
 			len--;
 
 			if (type != KERM_TYPE_DATA)
@@ -133,7 +133,7 @@ int kermit_load(struct loader_opt *opt)
 			if (curr_char == KERM_KEY_SHARP) /* '#' */
 			{
 				curr_char = buff[index++];
-				check_sum += curr_char;
+				checksum += curr_char;
 				len--;
 
 				if (0x40 == (curr_char & 0x60))
@@ -148,7 +148,7 @@ int kermit_load(struct loader_opt *opt)
 
 		/* checksum */
 		curr_char = buff[index++];
-		if (curr_char != (KERM_KEY_SPACE + (0x3f & (check_sum + (0x03 & (check_sum >> 6))))))
+		if (curr_char != (KERM_KEY_SPACE + (0x3f & (checksum + (0x03 & (checksum >> 6))))))
 		{
 #ifdef CONFIG_DEBUG
 			// while (1)

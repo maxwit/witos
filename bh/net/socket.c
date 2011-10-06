@@ -106,11 +106,19 @@ int bind(int fd, const struct sockaddr *addr, socklen_t len)
 // fixme
 void tcp_send_packet(struct sock_buff * skb);
 
+int pseudo_calculate_checksum(struct sock_buff *skb, u16 *checksum);
+
+struct sock_buff *tcp_recv_packet(struct socket *sock);
+
+// fixme!
+static __u32 seq_num = 1, ack_num;
+
 int connect(int fd, const struct sockaddr *addr, socklen_t len)
 {
 	struct socket *sock;
 	struct sock_buff *skb;
-	static char buff[20] = {0x02, 0x04, 0x40, 0x0c, 0x04, 0x02, 0x08, 0x0a, 0x00, 0x95, 0x7b, 0xea, 0x00, 0x00, 0x00, 0x00, 0x01, 0x03, 0x03, 0x06};
+	struct tcp_header *tcp_hdr;
+	int opt_len;
 
 	sock = get_sock(fd);
 
@@ -122,14 +130,99 @@ int connect(int fd, const struct sockaddr *addr, socklen_t len)
 
 	memcpy(&sock->saddr[SA_DST], addr, len);
 
-	skb = skb_alloc(ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN, 20);
+	// SYN
+	opt_len = 20;
+	skb = skb_alloc(ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN + opt_len, 0);
 	// if null
 
 	skb->sock = sock;
 
-	memcpy(skb->data, buff, 20);
+	skb->data -= TCP_HDR_LEN + opt_len;
+	skb->size += TCP_HDR_LEN + opt_len;
 
-	tcp_send_packet(skb);
+	tcp_hdr = (struct tcp_header *)skb->data;
+	//
+	tcp_hdr->src_port = sock->saddr[SA_SRC].sin_port;
+	tcp_hdr->dst_port = sock->saddr[SA_DST].sin_port;
+	tcp_hdr->seq_num  = CPU_TO_BE32(seq_num);
+	tcp_hdr->ack_num  = 0;
+	tcp_hdr->hdr_len  = (TCP_HDR_LEN + opt_len) / 4;
+	tcp_hdr->reserve1 = 0;
+	tcp_hdr->reserve2 = 0;
+	tcp_hdr->flg_urg  = 0;
+	tcp_hdr->flg_ack  = 0;
+	tcp_hdr->flg_psh  = 0;
+	tcp_hdr->flg_rst  = 0;
+	tcp_hdr->flg_syn  = 1;
+	tcp_hdr->flg_fin  = 0;
+	tcp_hdr->win_size = 0; // CPU_TO_BE16(32792);
+	tcp_hdr->checksum = 0;
+	tcp_hdr->urg_ptr  = 0;
+
+	if (opt_len > 0)
+		memset(tcp_hdr->options, 0x0, opt_len);
+
+	pseudo_calculate_checksum(skb, &tcp_hdr->checksum);
+
+	ip_send_packet(skb, PROT_TCP);
+
+	// SYN | ACK
+	skb = tcp_recv_packet(sock);
+
+	if (!skb)
+	{
+		printf("tcp_recv_packet() failed!\n");
+		return -ETIMEDOUT; // fixme
+	}
+
+	tcp_hdr = (struct tcp_header *)skb->data;
+
+	DPRINT("%s() 0x%08x: src_port = 0x%x, dst_port = 0x%x, flags = 0x%08x\n",
+		__func__, skb->data, tcp_hdr->src_port, tcp_hdr->dst_port, *(&tcp_hdr->ack_num + 1));
+
+	if (!tcp_hdr->flg_ack || !tcp_hdr->flg_syn)
+		return -EIO;
+
+	seq_num++; 
+	ack_num = BE32_TO_CPU(tcp_hdr->seq_num) + 1;
+
+	skb_free(skb);
+
+	// ACK
+	opt_len = 12;
+	skb = skb_alloc(ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN + opt_len, 0);
+	// if null
+
+	skb->sock = sock;
+
+	skb->data -= TCP_HDR_LEN + opt_len;
+	skb->size += TCP_HDR_LEN + opt_len;
+
+	tcp_hdr = (struct tcp_header *)skb->data;
+	//
+	tcp_hdr->src_port = sock->saddr[SA_SRC].sin_port;
+	tcp_hdr->dst_port = sock->saddr[SA_DST].sin_port;
+	tcp_hdr->seq_num  = CPU_TO_BE32(seq_num);
+	tcp_hdr->ack_num  = CPU_TO_BE32(ack_num);
+	tcp_hdr->hdr_len  = (TCP_HDR_LEN + opt_len) / 4;
+	tcp_hdr->reserve1 = 0;
+	tcp_hdr->reserve2 = 0;
+	tcp_hdr->flg_urg  = 0;
+	tcp_hdr->flg_ack  = 1;
+	tcp_hdr->flg_psh  = 0;
+	tcp_hdr->flg_rst  = 0;
+	tcp_hdr->flg_syn  = 0;
+	tcp_hdr->flg_fin  = 0;
+	tcp_hdr->win_size = CPU_TO_BE16(32832);
+	tcp_hdr->checksum = 0;
+	tcp_hdr->urg_ptr  = 0;
+
+	if (opt_len > 0)
+		memset(tcp_hdr->options, 0x0, opt_len);
+
+	pseudo_calculate_checksum(skb, &tcp_hdr->checksum);
+
+	ip_send_packet(skb, PROT_TCP);
 
 	return 0;
 }
@@ -200,6 +293,8 @@ long send(int fd, const void *buf, u32 n)
 {
 	struct socket *sock;
 	struct sock_buff *skb;
+	int opt_len;
+	struct tcp_header *tcp_hdr;
 
 	sock = get_sock(fd);
 
@@ -209,13 +304,42 @@ long send(int fd, const void *buf, u32 n)
 		return -EINVAL;
 	}
 
-	skb = skb_alloc(ETH_HDR_LEN + IP_HDR_LEN + UDP_HDR_LEN, n);
-
-	skb->sock = sock;
+	opt_len = 12;
+	skb = skb_alloc(ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN + opt_len, n);
+	// if null
 
 	memcpy(skb->data, buf, n);
+	skb->sock = sock;
 
-	udp_send_packet(skb);
+	// TCP xmit
+	skb->data -= TCP_HDR_LEN + opt_len;
+	skb->size += TCP_HDR_LEN + opt_len;
+
+	tcp_hdr = (struct tcp_header *)skb->data;
+	//
+	tcp_hdr->src_port = sock->saddr[SA_SRC].sin_port;
+	tcp_hdr->dst_port = sock->saddr[SA_DST].sin_port;
+	tcp_hdr->seq_num  = CPU_TO_BE32(seq_num);
+	tcp_hdr->ack_num  = CPU_TO_BE32(ack_num);
+	tcp_hdr->hdr_len  = (TCP_HDR_LEN + opt_len) / 4;
+	tcp_hdr->reserve1 = 0;
+	tcp_hdr->reserve2 = 0;
+	tcp_hdr->flg_urg  = 0;
+	tcp_hdr->flg_ack  = 1;
+	tcp_hdr->flg_psh  = 1;
+	tcp_hdr->flg_rst  = 0;
+	tcp_hdr->flg_syn  = 0;
+	tcp_hdr->flg_fin  = 0;
+	tcp_hdr->win_size = CPU_TO_BE16(32832);
+	tcp_hdr->checksum = 0;
+	tcp_hdr->urg_ptr  = 0;
+
+	if (opt_len > 0)
+		memset(tcp_hdr->options, 0x0, opt_len);
+
+	pseudo_calculate_checksum(skb, &tcp_hdr->checksum);
+
+	ip_send_packet(skb, PROT_TCP);
 
 	return n;
 }
@@ -256,11 +380,86 @@ struct socket *get_sock(int fd)
 	return g_sock_fds[fd];
 }
 
-struct socket *search_socket(const struct udp_header *udp_pkt, const struct ip_header *ip_pkt)
+struct socket *tcp_search_socket(const struct tcp_header *tcp_pkt, const struct ip_header *ip_pkt)
 {
 	int fd;
 	struct socket *sock;
-	struct sockaddr_in *sk_adr;
+	struct sockaddr_in *saddr;
+	// u32 src_ip;
+
+	// ndev_ioctl(NULL, NIOC_GET_IP, &src_ip);
+
+	for (fd = 1; fd < MAX_SOCK_NUM; fd++)
+	{
+		sock = g_sock_fds[fd];
+
+		if (NULL == sock)
+			continue;
+
+		saddr = &sock->saddr[SA_SRC];
+
+		if (sock->type != SOCK_STREAM)
+			continue;
+
+#if 0
+		if (memcmp(saddr->sin_addr, ip_pkt->src_ip, 4) != 0)
+		{
+			printf("sock = 0x%x, des ip is %d (NOT %d.%d.%d.%d, %02x.%02x.%02x.%02x.%02x.%02x)\n",
+				saddr,
+				ip_pkt->src_ip[3],
+				saddr->des_ip[0],
+				saddr->des_ip[1],
+				saddr->des_ip[2],
+				saddr->des_ip[3],
+				saddr->des_mac[0],
+				saddr->des_mac[1],
+				saddr->des_mac[2],
+				saddr->des_mac[3],
+				saddr->des_mac[4],
+				saddr->des_mac[5]
+				);
+			continue;
+		}
+#endif
+
+		if (saddr->sin_port != tcp_pkt->dst_port)
+		{
+#if 0
+			printf("from %d, src port: 0x%x != 0x%x\n", ip_pkt->src_ip[3], BE16_TO_CPU(saddr->src_port), BE16_TO_CPU(tcp_pkt->dst_port));
+#endif
+			continue;
+		}
+
+#if 0
+		if (memcmp(&src_ip, ip_pkt->des_ip, 4) != 0)
+		{
+			printf("src ip: %d.%d.%d.%d\n",
+				ip_pkt->des_ip[0],
+				ip_pkt->des_ip[1],
+				ip_pkt->des_ip[2],
+				ip_pkt->des_ip[3]
+				);
+
+			continue;
+		}
+#endif
+
+#if 0
+		memcmp(&sock->saddr[SA_DST].sin_addr, ip_hdr->src_ip, IPV4_ADR_LEN);
+		memcmp(sock->saddr[SA_DST].sin_port = tcp_hdr->src_port);
+#endif
+
+		return sock;
+	}
+
+	return NULL;
+}
+
+struct socket *udp_search_socket(const struct udp_header *udp_pkt, const struct ip_header *ip_pkt)
+{
+	int fd;
+	struct socket *sock;
+	struct sockaddr_in *saddr;
 	u32 src_ip;
 
 	ndev_ioctl(NULL, NIOC_GET_IP, &src_ip);
@@ -272,33 +471,36 @@ struct socket *search_socket(const struct udp_header *udp_pkt, const struct ip_h
 		if (NULL == sock)
 			continue;
 
-		sk_adr = &sock->saddr[SA_SRC];
+		saddr = &sock->saddr[SA_SRC];
+
+		if (sock->type != SOCK_DGRAM)
+			continue;
 
 #if 0
-		if (memcmp(sk_adr->sin_addr, ip_pkt->src_ip, 4) != 0)
+		if (memcmp(saddr->sin_addr, ip_pkt->src_ip, 4) != 0)
 		{
 			printf("sock = 0x%x, des ip is %d (NOT %d.%d.%d.%d, %02x.%02x.%02x.%02x.%02x.%02x)\n",
-				sk_adr,
+				saddr,
 				ip_pkt->src_ip[3],
-				sk_adr->des_ip[0],
-				sk_adr->des_ip[1],
-				sk_adr->des_ip[2],
-				sk_adr->des_ip[3],
-				sk_adr->des_mac[0],
-				sk_adr->des_mac[1],
-				sk_adr->des_mac[2],
-				sk_adr->des_mac[3],
-				sk_adr->des_mac[4],
-				sk_adr->des_mac[5]
+				saddr->des_ip[0],
+				saddr->des_ip[1],
+				saddr->des_ip[2],
+				saddr->des_ip[3],
+				saddr->des_mac[0],
+				saddr->des_mac[1],
+				saddr->des_mac[2],
+				saddr->des_mac[3],
+				saddr->des_mac[4],
+				saddr->des_mac[5]
 				);
 			continue;
 		}
 #endif
 
-		if (sk_adr->sin_port != udp_pkt->des_port)
+		if (saddr->sin_port != udp_pkt->dst_port)
 		{
 #if 0
-			printf("from %d, src port: 0x%x != 0x%x\n", ip_pkt->src_ip[3], BE16_TO_CPU(sk_adr->src_port), BE16_TO_CPU(udp_pkt->des_port));
+			printf("from %d, src port: 0x%x != 0x%x\n", ip_pkt->src_ip[3], BE16_TO_CPU(saddr->src_port), BE16_TO_CPU(udp_pkt->dst_port));
 #endif
 			continue;
 		}
@@ -327,9 +529,6 @@ void socket_init(void)
 {
 	int fd;
 
-	g_sock_fds[0] = NULL;//(struct socket *)g_sock_fds;
-
-	for (fd = 1; fd < MAX_SOCK_NUM; fd++)
+	for (fd = 0; fd < MAX_SOCK_NUM; fd++)
 		g_sock_fds[fd] = NULL;
-
 }
