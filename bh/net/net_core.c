@@ -253,6 +253,8 @@ struct sock_buff *udp_recv_packet(struct socket *sock)
 		udelay(10);
 	}
 
+	skb = container_of(qu->next, struct sock_buff, node);
+
 	lock_irq_psr(psr);
 	first = sock->rx_qu.next;
 	list_del_node(first);
