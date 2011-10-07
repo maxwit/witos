@@ -55,15 +55,117 @@ static void free_skb_list(struct list_node *qu)
 	}
 }
 
+// fixme
+void tcp_send_packet(struct sock_buff * skb);
+
+int pseudo_calculate_checksum(struct sock_buff *skb, u16 *checksum);
+
+struct sock_buff *tcp_recv_packet(struct socket *sock);
+
+// fixme!
+static __u32 seq_num = 1, ack_num;
+
 int sk_close(int fd)
 {
 	struct socket *sock;
+	struct sock_buff *skb;
+	struct tcp_header *tcp_hdr;
+	int opt_len;
 
 	sock = get_sock(fd);
 	if (NULL == sock)
 		return -EINVAL;
 
 	// TODO:  add code here
+
+	opt_len = 0;
+	skb = skb_alloc(ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN + opt_len, 0);
+
+	skb->sock = sock;
+
+	skb->data -= TCP_HDR_LEN + opt_len;
+	skb->size += TCP_HDR_LEN + opt_len;
+
+	tcp_hdr = (struct tcp_header *)skb->data;
+	//
+	tcp_hdr->src_port = sock->saddr[SA_SRC].sin_port;
+	tcp_hdr->dst_port = sock->saddr[SA_DST].sin_port;
+	tcp_hdr->seq_num  = CPU_TO_BE32(seq_num);
+	tcp_hdr->ack_num  = CPU_TO_BE32(ack_num);
+	tcp_hdr->hdr_len  = (TCP_HDR_LEN + opt_len) / 4;
+	tcp_hdr->reserve1 = 0;
+	tcp_hdr->reserve2 = 0;
+	tcp_hdr->flg_urg  = 0;
+	tcp_hdr->flg_ack  = 1;
+	tcp_hdr->flg_psh  = 0;
+	tcp_hdr->flg_rst  = 0;
+	tcp_hdr->flg_syn  = 0;
+	tcp_hdr->flg_fin  = 1;
+	tcp_hdr->win_size = 0; // CPU_TO_BE16(32792);
+	tcp_hdr->checksum = 0;
+	tcp_hdr->urg_ptr  = 0;
+
+	if (opt_len > 0)
+		memset(tcp_hdr->options, 0x0, opt_len);
+
+	pseudo_calculate_checksum(skb, &tcp_hdr->checksum);
+
+	ip_send_packet(skb, PROT_TCP);
+
+	while (1)
+	{
+		skb = tcp_recv_packet(sock);
+		if (!skb)
+		{
+			printf("tcp_recv_packet() failed!\n");
+			return -ETIMEDOUT; // fixme
+		}
+
+		tcp_hdr = (struct tcp_header *)skb->data;
+		if (tcp_hdr->flg_ack && tcp_hdr->flg_fin)
+			break;
+	}
+
+	seq_num++;
+	ack_num = BE32_TO_CPU(tcp_hdr->seq_num) + 1;
+
+	skb_free(skb);
+
+	// ACK
+	opt_len = 0;
+	skb = skb_alloc(ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN + opt_len, 0);
+	// if null
+
+	skb->sock = sock;
+
+	skb->data -= TCP_HDR_LEN + opt_len;
+	skb->size += TCP_HDR_LEN + opt_len;
+
+	tcp_hdr = (struct tcp_header *)skb->data;
+	//
+	tcp_hdr->src_port = sock->saddr[SA_SRC].sin_port;
+	tcp_hdr->dst_port = sock->saddr[SA_DST].sin_port;
+	tcp_hdr->seq_num  = CPU_TO_BE32(seq_num);
+	tcp_hdr->ack_num  = CPU_TO_BE32(ack_num);
+	tcp_hdr->hdr_len  = (TCP_HDR_LEN + opt_len) / 4;
+	tcp_hdr->reserve1 = 0;
+	tcp_hdr->reserve2 = 0;
+	tcp_hdr->flg_urg  = 0;
+	tcp_hdr->flg_ack  = 1;
+	tcp_hdr->flg_psh  = 0;
+	tcp_hdr->flg_rst  = 0;
+	tcp_hdr->flg_syn  = 0;
+	tcp_hdr->flg_fin  = 0;
+	tcp_hdr->win_size = CPU_TO_BE16(32832);
+	tcp_hdr->checksum = 0;
+	tcp_hdr->urg_ptr  = 0;
+
+	if (opt_len > 0)
+		memset(tcp_hdr->options, 0x0, opt_len);
+
+	pseudo_calculate_checksum(skb, &tcp_hdr->checksum);
+
+	ip_send_packet(skb, PROT_TCP);
 
 	free_skb_list(&sock->rx_qu);
 	free_skb_list(&sock->tx_qu);
@@ -143,16 +245,6 @@ int bind(int fd, const struct sockaddr *addr, socklen_t len)
 	return ret;
 }
 
-// fixme
-void tcp_send_packet(struct sock_buff * skb);
-
-int pseudo_calculate_checksum(struct sock_buff *skb, u16 *checksum);
-
-struct sock_buff *tcp_recv_packet(struct socket *sock);
-
-// fixme!
-static __u32 seq_num = 1, ack_num;
-
 int connect(int fd, const struct sockaddr *addr, socklen_t len)
 {
 	struct socket *sock;
@@ -223,7 +315,7 @@ int connect(int fd, const struct sockaddr *addr, socklen_t len)
 	if (!tcp_hdr->flg_ack || !tcp_hdr->flg_syn)
 		return -EIO;
 
-	seq_num++; 
+	seq_num++;
 	ack_num = BE32_TO_CPU(tcp_hdr->seq_num) + 1;
 
 	skb_free(skb);
@@ -344,7 +436,7 @@ long send(int fd, const void *buf, u32 n)
 		return -EINVAL;
 	}
 
-	opt_len = 12;
+	opt_len = 0;
 	skb = skb_alloc(ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN + opt_len, n);
 	// if null
 
@@ -380,6 +472,8 @@ long send(int fd, const void *buf, u32 n)
 	pseudo_calculate_checksum(skb, &tcp_hdr->checksum);
 
 	ip_send_packet(skb, PROT_TCP);
+
+	seq_num += n;
 
 	return n;
 }

@@ -4,7 +4,7 @@
 #include <sysconf.h>
 #include <net/net.h>
 
-#define DEF_SVR_PORT 5511
+#define DEF_SVR_PORT 5512
 
 int main(int argc, char *argv[])
 {
@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
 	connect(fd, (struct sockaddr *)&remote_addr, sizeof(remote_addr));
 
 	msg = "MaxWit g-bios";
-	send(fd, msg, strlen(msg));
+	//send(fd, msg, strlen(msg));
 
 	sk_close(fd);
 
