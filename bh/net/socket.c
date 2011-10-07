@@ -40,16 +40,36 @@ alloc_sock:
 	return fd;
 }
 
-// fix for full destroy
+static void free_skb_list(struct list_node *qu)
+{
+	struct list_node *first;
+	struct sock_buff *skb;
+
+	while (!list_is_empty(qu))
+	{
+		first = qu->next;
+
+		list_del_node(first);
+		skb = container_of(first, struct sock_buff, node);
+		skb_free(skb);
+	}
+}
+
 int sk_close(int fd)
 {
-	if (fd < 1 || fd >= MAX_SOCK_NUM || NULL == g_sock_fds[fd])
-	{
-		printf("%s: invalid fd!\n", __func__);
-		return -EINVAL;
-	}
+	struct socket *sock;
 
-	SAFE_FREE(g_sock_fds[fd]);
+	sock = get_sock(fd);
+	if (NULL == sock)
+		return -EINVAL;
+
+	// TODO:  add code here
+
+	free_skb_list(&sock->rx_qu);
+	free_skb_list(&sock->tx_qu);
+	free(sock);
+
+	g_sock_fds[fd] = NULL;
 
 	return 0;
 }
@@ -352,7 +372,6 @@ long recv(int fd, void *buf, u32 n)
 	u32 pkt_len;
 
 	sock = get_sock(fd);
-
 	if (NULL == sock)
 	{
 		return -EINVAL;
@@ -372,7 +391,7 @@ long recv(int fd, void *buf, u32 n)
 	return pkt_len;
 }
 
-struct socket *get_sock(int fd)
+static inline struct socket *get_sock(int fd)
 {
 	if (fd <= 0 || fd >= MAX_SOCK_NUM)
 		return NULL;

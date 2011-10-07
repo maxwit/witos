@@ -56,7 +56,7 @@ int pseudo_calculate_checksum(struct sock_buff *skb, u16 *checksum)
 	pse_hdr->size = CPU_TO_BE16(skb->size);
 
 	// *checksum = 0;
-	*checksum = ~ net_calc_checksum(pse_hdr, sizeof(*pse_hdr) + skb->size);
+	*checksum = ~net_calc_checksum(pse_hdr, sizeof(*pse_hdr) + skb->size);
 
 	return 0;
 }
