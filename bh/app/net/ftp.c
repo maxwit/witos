@@ -4,14 +4,15 @@
 #include <sysconf.h>
 #include <net/net.h>
 
-#define DEF_SVR_PORT 5512
+#define MAX_LEN 512
+#define DEF_SVR_PORT 5511
 
 int main(int argc, char *argv[])
 {
 	int fd, ret;
 	__u32 svr_ip;
 	struct sockaddr_in local_addr, remote_addr;
-	const char *msg;
+	char msg[MAX_LEN];
 
 	// fixme: getopt and endian
 	if (argc == 2)
@@ -34,10 +35,9 @@ int main(int argc, char *argv[])
 
 	connect(fd, (struct sockaddr *)&remote_addr, sizeof(remote_addr));
 
-	msg = "MaxWit g-bios";
-	//send(fd, msg, strlen(msg));
+	ret = recv(fd, msg, MAX_LEN, 0);
 
 	sk_close(fd);
 
-	return ret;
+	return 0;
 }

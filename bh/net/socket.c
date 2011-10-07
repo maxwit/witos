@@ -421,7 +421,7 @@ long recvfrom(int fd, void *buf, u32 n, int flags,
 	return pkt_len;
 }
 
-long send(int fd, const void *buf, u32 n)
+ssize_t send(int fd, const void *buf, size_t n, int flag)
 {
 	struct socket *sock;
 	struct sock_buff *skb;
@@ -478,12 +478,12 @@ long send(int fd, const void *buf, u32 n)
 	return n;
 }
 
-//
-long recv(int fd, void *buf, u32 n)
+ssize_t recv(int fd, void *buf, size_t n, int flag)
 {
+	u32 pkt_len = -1;
 	struct socket *sock;
 	struct sock_buff *skb;
-	u32 pkt_len;
+	struct tcp_header *tcp_hdr;
 
 	sock = get_sock(fd);
 	if (NULL == sock)
@@ -491,16 +491,69 @@ long recv(int fd, void *buf, u32 n)
 		return -EINVAL;
 	}
 
-	skb = udp_recv_packet(sock);
-	if(NULL == skb)
-		return 0;
+	while (1)
+	{
+		int ret;
+		char key;
 
-	// fixme !
-	pkt_len   = skb->size <= n ? skb->size : n;
+		ret = uart_read(CONFIG_DBGU_ID, (u8 *)&key, 1, WAIT_ASYNC);
+		if (ret > 0 && key == CHAR_CTRL_C)
+			return 0;
 
-	memcpy(buf, skb->data, pkt_len);
+		skb = tcp_recv_packet(sock);
+		if (skb == NULL)
+		{
+			break;
+		}
 
-	skb_free(skb);
+		tcp_hdr = (struct tcp_header *)skb->data;
+
+		skb->data += tcp_hdr->hdr_len * 4;
+		skb->size -= tcp_hdr->hdr_len * 4;
+		// fixme !
+		pkt_len = skb->size <= n ? skb->size : n;
+
+		memcpy(buf, skb->data, pkt_len);
+		printf("%s", buf);
+
+		ack_num = BE32_TO_CPU(tcp_hdr->seq_num) + pkt_len + 1;
+
+		skb_free(skb);
+		if (pkt_len < n)  //fixme
+		{
+			break;
+		}
+	}
+
+	// ACK
+	skb = skb_alloc(ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN, 0);
+	skb->sock = sock;
+
+	skb->data -= TCP_HDR_LEN;
+	skb->size += TCP_HDR_LEN;
+	tcp_hdr = (struct tcp_header *)skb->data;
+
+	// memset(tcp_hdr, 0, sizeof(*tcp_hdr));
+	tcp_hdr->src_port = sock->saddr[SA_SRC].sin_port;
+	tcp_hdr->dst_port = sock->saddr[SA_DST].sin_port;
+	tcp_hdr->seq_num  = CPU_TO_BE32(seq_num);
+	tcp_hdr->ack_num  = CPU_TO_BE32(ack_num);
+	tcp_hdr->hdr_len  = skb->size / 4 & 0x0F;
+	tcp_hdr->flg_fin  = 0;
+	tcp_hdr->flg_syn  = 0;
+	tcp_hdr->flg_rst  = 0;
+	tcp_hdr->flg_psh  = 0;
+	tcp_hdr->flg_ack  = 1;
+	tcp_hdr->flg_urg  = 0;
+	tcp_hdr->reserve1 = 0;
+	tcp_hdr->reserve2 = 0;
+	tcp_hdr->win_size = CPU_TO_BE16(14600);
+	tcp_hdr->urg_ptr  = 0;
+	tcp_hdr->checksum = 0;
+
+	pseudo_calculate_checksum(skb, &tcp_hdr->checksum);
+
+	ip_send_packet(skb, PROT_TCP);
 
 	return pkt_len;
 }

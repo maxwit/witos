@@ -346,11 +346,11 @@ int bind(int fd, const struct sockaddr *addr, socklen_t len);
 
 int connect(int fd, const struct sockaddr *addr, socklen_t len);
 
-long send(int fd, const void *buf, u32 n);
+ssize_t send(int fd, const void *buf, size_t n, int flag);
+
+ssize_t recv(int fd, void *buf, size_t n, int flag);
 
 ssize_t sendto(int fd, const void *buf, u32 n, int flags, const struct sockaddr *dest_addr, socklen_t addrlen);
-
-long recv(int fd, void *buf, u32 n);
 
 long recvfrom(int fd, void *buf, u32 n, int flags, struct sockaddr *src_addr, socklen_t *addrlen);
 
