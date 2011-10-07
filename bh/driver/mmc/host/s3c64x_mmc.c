@@ -279,7 +279,7 @@ static int s3c6410_mmc_init(void)
 	return 0;
 }
 
-#ifdef CONFIG_GBH
+#ifndef CONFIG_GTH
 DRIVER_INIT(s3c6410_mmc_init);
 #endif
 
