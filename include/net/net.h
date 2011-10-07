@@ -2,13 +2,14 @@
 #include <types.h>
 #include <list.h>
 
-struct mii_phy;
+// struct mii_phy;
 
 // fixme
 
 #define	PF_INET		2	/* IP protocol family.  */
-
 #define	AF_INET		PF_INET /*Address family*/
+
+#define INADDR_ANY  0
 
 enum __socket_type
 {
@@ -202,7 +203,7 @@ typedef unsigned short sa_family_t;
 
 struct sockaddr
 {
-	__SOCKADDR_COMMON(sa);
+	__SOCKADDR_COMMON(sa_);
 	char sa_data[14];
 };
 
@@ -213,7 +214,7 @@ struct in_addr
 
 struct sockaddr_in
 {
-	__SOCKADDR_COMMON(sin);
+	__SOCKADDR_COMMON(sin_);
 	unsigned short sin_port;
 	struct in_addr sin_addr;
 
@@ -314,6 +315,11 @@ struct net_device
 	u16 (*mdio_read)(struct net_device *ndev, u8 mii_id, u8 reg);
 	void (*mdio_write)(struct net_device *ndev, u8 mii_id, u8 reg, u16 val);
 };
+
+__u16 htons(__u16 val);
+__u32 htonl(__u32 val);
+__u16 ntohs(__u16 val);
+__u32 ntohl(__u32 val);
 
 struct sock_buff *skb_alloc(u32 prot_len, u32 data_len);
 

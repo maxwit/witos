@@ -108,19 +108,39 @@ struct eth_addr *gethostaddr(const u32 nip)
 
 int bind(int fd, const struct sockaddr *addr, socklen_t len)
 {
+	int ret = 0;
 	struct socket *sock;
+	const struct sockaddr_in *sa;
+	struct sockaddr_in *sin;
 
 	sock = get_sock(fd);
-
 	if (NULL == sock)
 	{
 		// printf
 		return -EINVAL;
 	}
 
-	memcpy(&sock->saddr[SA_SRC], addr, len);
+	sin = &sock->saddr[SA_SRC];
 
-	return 0;
+	sin->sin_family = addr->sa_family;
+
+	switch (addr->sa_family)
+	{
+	case AF_INET:
+	default: // fixme: move default down
+		sa = (const struct sockaddr_in *)addr;
+
+		sin->sin_port = sa->sin_port ? sa->sin_port : htons(55555); // fixme: NetPortAlloc
+
+		if (sa->sin_addr.s_addr == htonl(INADDR_ANY))
+			ret = ndev_ioctl(NULL, NIOC_GET_IP, &sin->sin_addr.s_addr);
+		else
+			sin->sin_addr = sa->sin_addr;
+
+		break;
+	}
+
+	return ret;
 }
 
 // fixme

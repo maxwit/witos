@@ -23,13 +23,13 @@ int main(int argc, char *argv[])
 	// if
 
 	memset(&local_addr, 0, sizeof(local_addr));
-	local_addr.sin_port = CPU_TO_BE16(55555); // fixme: NetPortAlloc
-	ret = ndev_ioctl(NULL, NIOC_GET_IP, &local_addr.sin_addr.s_addr);
+	local_addr.sin_family = AF_INET;
+	local_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
 	ret = bind(fd, (struct sockaddr *)&local_addr, sizeof(local_addr));
 
 	memset(&remote_addr, 0, sizeof(remote_addr));
-	remote_addr.sin_port = CPU_TO_BE16(DEF_SVR_PORT);
+	remote_addr.sin_port = htons(DEF_SVR_PORT);
 	remote_addr.sin_addr.s_addr = svr_ip;
 
 	connect(fd, (struct sockaddr *)&remote_addr, sizeof(remote_addr));

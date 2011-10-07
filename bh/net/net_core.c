@@ -1142,6 +1142,27 @@ int ndev_ioctl(struct net_device *ndev, int cmd, void *arg)
 	return 0;
 }
 
+__u16 htons(__u16 val)
+{
+	return CPU_TO_BE16(val);
+}
+
+__u32 htonl(__u32 val)
+{
+	return CPU_TO_BE32(val);
+}
+
+__u16 ntohs(__u16 val)
+{
+	return BE16_TO_CPU(val);
+}
+
+__u32 ntohl(__u32 val)
+{
+	return BE32_TO_CPU(val);
+}
+
+
 void socket_init(void);
 
 static int __INIT__ net_core_init(void)
