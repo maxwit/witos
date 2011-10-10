@@ -9,14 +9,6 @@ struct host_addr
 	struct list_node node;
 };
 
-static struct list_node g_host_list;
-static struct list_node g_ndev_list;
-static struct net_device *g_curr_ndev; // fixme
-#ifdef CONFIG_DEBUG
-static const char *g_arp_desc[] = {"N/A", "Request", "Reply"};
-#endif
-static int ndev_count = 0;
-
 struct pseudo_header
 {
 	u8  src_ip[IPV4_ADR_LEN];
@@ -26,7 +18,15 @@ struct pseudo_header
 	u16 size;
 };
 
-int pseudo_calculate_checksum(struct sock_buff *skb, u16 *checksum)
+static struct list_node g_host_list;
+static struct list_node g_ndev_list;
+static struct net_device *g_curr_ndev; // fixme
+#ifdef CONFIG_DEBUG
+static const char *g_arp_desc[] = {"N/A", "Request", "Reply"};
+#endif
+static int ndev_count = 0;
+
+static int pseudo_calculate_checksum(struct sock_buff *skb, u16 *checksum)
 {
 	struct pseudo_header *pse_hdr;
 	struct socket *sock = skb->sock;
@@ -41,12 +41,10 @@ int pseudo_calculate_checksum(struct sock_buff *skb, u16 *checksum)
 	{
 	case SOCK_STREAM:
 		pse_hdr->prot = PROT_TCP;
-		// checksum = &((struct tcp_header *)skb->data)->checksum;
 		break;
 
 	case SOCK_DGRAM:
 		pse_hdr->prot = PROT_UDP;
-		// checksum = &((struct udp_header *)skb->data)->checksum;
 		break;
 
 	default:
@@ -55,7 +53,11 @@ int pseudo_calculate_checksum(struct sock_buff *skb, u16 *checksum)
 
 	pse_hdr->size = CPU_TO_BE16(skb->size);
 
-	// *checksum = 0;
+	if (skb->size & 1)
+	{
+		skb->data[skb->size] = 0;
+	}
+
 	*checksum = ~net_calc_checksum(pse_hdr, sizeof(*pse_hdr) + skb->size);
 
 	return 0;
@@ -160,50 +162,56 @@ void tcp_make_pkg(struct sock_buff *skb, u16 flag)
 #endif
 
 //----------------- TCP Layer -----------------
-void tcp_send_packet(struct sock_buff *skb)
-{
-	struct tcp_header *tcp_hdr;
 
-	skb->data -= TCP_HDR_LEN;
-	skb->size += TCP_HDR_LEN;
+void tcp_send_packet(struct sock_buff *skb, __u16 flags, void *opt, size_t opt_len)
+{
+	__u16 size = skb->size;
+	struct tcp_header *tcp_hdr;
+	struct socket *sock = skb->sock;
+
+	skb->data -= TCP_HDR_LEN + opt_len;
+	skb->size += TCP_HDR_LEN + opt_len;
 
 	tcp_hdr = (struct tcp_header *)skb->data;
 	//
-#if 1
-	struct socket *sock = skb->sock;
-
 	tcp_hdr->src_port = sock->saddr[SA_SRC].sin_port;
 	tcp_hdr->dst_port = sock->saddr[SA_DST].sin_port;
-	tcp_hdr->seq_num  = CPU_TO_BE32(1);
-	tcp_hdr->ack_num  = 0;
-	tcp_hdr->hdr_len  = 5;
+	tcp_hdr->seq_num  = htonl(sock->seq_num);
+	tcp_hdr->ack_num  = htonl(sock->ack_num);
+	tcp_hdr->hdr_len  = (TCP_HDR_LEN + opt_len) >> 2;
 	tcp_hdr->reserve1 = 0;
 	tcp_hdr->reserve2 = 0;
-	tcp_hdr->flg_urg  = 0;
-	tcp_hdr->flg_ack  = 0;
-	tcp_hdr->flg_psh  = 0;
-	tcp_hdr->flg_rst  = 0;
-	tcp_hdr->flg_syn  = 1;
-	tcp_hdr->flg_fin  = 0;
-	tcp_hdr->win_size = 0; // CPU_TO_BE16(32792);
+	tcp_hdr->flg_urg  = !!(flags & FLG_URG);
+	tcp_hdr->flg_ack  = !!(flags & FLG_ACK);
+	tcp_hdr->flg_psh  = !!(flags & FLG_PSH);
+	tcp_hdr->flg_rst  = !!(flags & FLG_RST);
+	tcp_hdr->flg_syn  = !!(flags & FLG_SYN);
+	tcp_hdr->flg_fin  = !!(flags & FLG_FIN);
+	// fixme!!!
+	if (flags & FLG_ACK)
+		tcp_hdr->win_size = CPU_TO_BE16(457);
+	else
+		tcp_hdr->win_size = CPU_TO_BE16(14600);
 	tcp_hdr->checksum = 0;
 	tcp_hdr->urg_ptr  = 0;
-#else
-	static __u8 buff[] = {
-		0xd1, 0xd6, 0x15, 0x87, 0x2e, 0x6c, 0xc0, 0x06, 0x00, 0x00, 
-		0x00, 0x00, 0xa0, 0x02, 0x80, 0x18, 0xfe, 0x30, 0x00, 0x00, 
-		//0x02, 0x04, 0x40, 0x0c, 0x04, 0x02, 0x08, 0x0a, 0x00, 0x9a, 
-		//0x0b, 0x54, 0x00, 0x00, 0x00, 0x00, 0x01, 0x03, 0x03, 0x06
-		};
 
-	memcpy(skb->data, buff, 20);
-	tcp_hdr->checksum = 0;
-#endif
-	// memset(skb->data + 20, 0x0f, 20);
+	if (opt_len > 0)
+		memcpy(tcp_hdr->options, opt, opt_len);
 
 	pseudo_calculate_checksum(skb, &tcp_hdr->checksum);
 
 	ip_send_packet(skb, PROT_TCP);
+
+	if (flags & (FLG_SYN | FLG_FIN))
+	{
+		sock->seq_num++;
+	}
+
+	if (flags & FLG_PSH)
+	{
+		sock->seq_num += size;
+		sock->state = TCP_STATE_PSH; //  fix for FIN | PSH
+	}
 }
 
 //----------------- UDP Layer -----------------
@@ -328,20 +336,19 @@ struct sock_buff *tcp_recv_packet(struct socket *sock)
 
 static int tcp_layer_deliver(struct sock_buff *skb, const struct ip_header *ip_hdr)
 {
+	__u16 hdr_len;
 	struct tcp_header *tcp_hdr;
 	struct socket *sock;
 
 	tcp_hdr = (struct tcp_header *)skb->data;
 
-// fixme
-#if 0
-	int hdr_len;
-
 	hdr_len = tcp_hdr->hdr_len << 2;
 
 	skb->data += hdr_len;
 	skb->size -= hdr_len;
-#endif
+
+	DPRINT("%s(): src_port = 0x%x, dst_port = 0x%x, flags = 0x%08x\n",
+		__func__, tcp_hdr->src_port, tcp_hdr->dst_port, *(&tcp_hdr->ack_num + 1));
 
 	sock = tcp_search_socket(tcp_hdr, ip_hdr);
 	if (NULL == sock)
@@ -350,7 +357,79 @@ static int tcp_layer_deliver(struct sock_buff *skb, const struct ip_header *ip_h
 		return -ENOENT;
 	}
 
-	list_add_tail(&skb->node, &sock->rx_qu);
+	skb->sock = sock;
+
+	if (tcp_hdr->flg_syn)
+	{
+		sock->ack_num = BE32_TO_CPU(tcp_hdr->seq_num) + 1;
+
+		if (tcp_hdr->flg_ack)
+		{
+#if 0
+			opt_len = hdr_len - TCP_HDR_LEN;
+			__u32 ts;
+
+			// NOP
+			opt[0] = 1;
+			opt[1] = 1;
+
+			// Time stamp
+			opt[2] = 8;
+			opt[3] = 10;
+
+			// tsv++;
+			ts = htonl(tsv);
+			memcpy(opt + 4, &ts, 4);
+			memcpy(opt + 8, tcp_hdr->options + 8, 4);
+#endif
+			skb_free(skb);
+
+			skb = skb_alloc(ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN, 0);
+			// if null
+			skb->sock = sock;
+
+			tcp_send_packet(skb, FLG_ACK, NULL, 0);
+
+			sock->state = TCP_STATE_SYN_ACK;
+		}
+		else
+		{
+			// TODO: add code here
+			printf("%s() line %d: SYN not supported!\n", __func__, __LINE__);
+		}
+	}
+	else
+	{
+		if (tcp_hdr->flg_fin)
+		{
+			sock->ack_num = BE32_TO_CPU(tcp_hdr->seq_num) + 1;
+			if (tcp_hdr->flg_psh)
+			{
+				sock->ack_num += skb->size;
+			}
+			skb_free(skb);
+
+			skb = skb_alloc(ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN, 0);
+			// if null
+			skb->sock = sock;
+			tcp_send_packet(skb, FLG_ACK, NULL, 0);
+
+			sock->state = TCP_STATE_FIN_GET;
+		}
+		else if (tcp_hdr->flg_ack && !tcp_hdr->flg_psh)
+		{
+			skb_free(skb);
+
+			if (sock->state == TCP_STATE_PSH)
+				sock->state = TCP_STATE_PSH_ACK;
+		}
+
+		if (tcp_hdr->flg_psh)
+		{
+			list_add_tail(&skb->node, &sock->rx_qu);
+			sock->ack_num = BE32_TO_CPU(tcp_hdr->seq_num) + skb->size;
+		}
+	}
 
 	return 0;
 }
@@ -544,7 +623,7 @@ int ip_layer_deliver(struct sock_buff *skb)
 		break;
 
 	case PROT_TCP:
-		printf("\tTCP received!\n");
+		// printf("\tTCP received!\n");
 		tcp_layer_deliver(skb, ip_hdr);
 		break;
 
@@ -575,6 +654,7 @@ void ip_send_packet(struct sock_buff *skb, u8 prot)
 	struct ip_header *ip_hdr;
 	struct eth_addr *remote_addr = NULL;
 	struct socket *sock = skb->sock;
+	static __u16 ip_id = 1;
 
 	skb->data -= IP_HDR_LEN;
 	skb->size += IP_HDR_LEN;
@@ -584,11 +664,13 @@ void ip_send_packet(struct sock_buff *skb, u8 prot)
 	ip_hdr->ver_len   = 0x45;
 	ip_hdr->tos       = 0;
 	ip_hdr->total_len = (u16)CPU_TO_BE16((u16)skb->size);
-	ip_hdr->id        = (u16)CPU_TO_BE16(0); //
+	ip_hdr->id        = (u16)CPU_TO_BE16(ip_id); //
 	ip_hdr->flag_frag = (u16)CPU_TO_BE16(0x4000);
-	ip_hdr->ttl       = 0xff;
+	ip_hdr->ttl       = 64;
 	ip_hdr->up_prot   = prot;
 	ip_hdr->chksum    = 0;
+
+	ip_id++;
 
 	memcpy(ip_hdr->src_ip, &sock->saddr[SA_SRC].sin_addr, IPV4_ADR_LEN);
 	memcpy(ip_hdr->des_ip, &sock->saddr[SA_DST].sin_addr, IPV4_ADR_LEN);
@@ -826,16 +908,16 @@ struct sock_buff *skb_alloc(u32 prot_len, u32 data_len)
 	if (NULL == skb)
 		return NULL;
 
-	skb->head = malloc(prot_len + data_len);
+	skb->head = malloc((prot_len + data_len + 1) & ~1);
 	if (NULL == skb->head)
 	{
-		printf("%s(): malloc failed (size = %d bytes)!\n", __func__, prot_len + data_len);
+		DPRINT("%s(): malloc failed (size = %d bytes)!\n",
+			__func__, prot_len + data_len);
 		return NULL;
 	}
 
 	skb->data = skb->head + prot_len;
-	//skb-->pSkbTail = skb->data + data_len;
-	skb->size  = data_len;
+	skb->size = data_len;
 
 	list_head_init(&skb->node);
 
@@ -862,8 +944,6 @@ struct eth_addr *getaddr(u32 nip)
 
 	list_for_each(iter, &g_host_list)
 	{
-		printf("%s() line %d: iter = %p, head = %p\n",
-			__func__, __LINE__, iter, &g_host_list);
 		host = container_of(iter, struct host_addr, node);
 
 		dip = (u32 *)host->in_addr.ip;
@@ -1141,27 +1221,6 @@ int ndev_ioctl(struct net_device *ndev, int cmd, void *arg)
 
 	return 0;
 }
-
-__u16 htons(__u16 val)
-{
-	return CPU_TO_BE16(val);
-}
-
-__u32 htonl(__u32 val)
-{
-	return CPU_TO_BE32(val);
-}
-
-__u16 ntohs(__u16 val)
-{
-	return BE16_TO_CPU(val);
-}
-
-__u32 ntohl(__u32 val)
-{
-	return BE32_TO_CPU(val);
-}
-
 
 void socket_init(void);
 

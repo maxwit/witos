@@ -1,11 +1,9 @@
 #pragma once
+
 #include <types.h>
 #include <list.h>
 
-// struct mii_phy;
-
 // fixme
-
 #define	PF_INET		2	/* IP protocol family.  */
 #define	AF_INET		PF_INET /*Address family*/
 
@@ -74,9 +72,9 @@ enum __flags_type
 #define TCP_HDR_LEN     20
 
 // ping
-#define PING_PACKET_LENGTH		64
-#define PING_MAX_TIMES    		3
-#define PING_DEFUALT_PID   		1
+#define PING_PACKET_LENGTH      64
+#define PING_MAX_TIMES          3
+#define PING_DEFUALT_PID        1
 
 // std ports:
 #define STD_PORT_TFTP   69
@@ -138,9 +136,9 @@ struct ip_header
 };
 
 //
-#define ICMP_TYPE_ECHO_REPLY     	0
-#define ICMP_TYPE_DEST_UNREACHABLE	3
-#define ICMP_TYPE_ECHO_REQUEST   	8
+#define ICMP_TYPE_ECHO_REPLY         0
+#define ICMP_TYPE_DEST_UNREACHABLE   3
+#define ICMP_TYPE_ECHO_REQUEST       8
 
 //
 struct icmp_packet
@@ -169,6 +167,13 @@ struct udp_header
 	u16 checksum;
 };
 
+#define FLG_FIN  (1 << 0)
+#define FLG_SYN  (1 << 1)
+#define FLG_RST  (1 << 2)
+#define FLG_PSH  (1 << 3)
+#define FLG_ACK  (1 << 4)
+#define FLG_URG  (1 << 5)
+
 struct tcp_header
 {
 	__u16 src_port;
@@ -193,9 +198,6 @@ struct tcp_header
 ///////////////////////////////////
 
 typedef u32 socklen_t;
-
-#if 1
-
 typedef unsigned short sa_family_t;
 
 #define __SOCKADDR_COMMON(sa_prefix) \
@@ -229,11 +231,23 @@ enum {
 	SA_DST
 };
 
+enum tcp_state
+{
+	TCP_STATE_NONE,
+	TCP_STATE_SYN_ACK,
+	TCP_STATE_PSH,
+	TCP_STATE_PSH_ACK,
+	TCP_STATE_FIN_ACK,
+	TCP_STATE_FIN_GET,
+};
+
 struct socket
 {
 	int type;
 	struct list_node tx_qu, rx_qu;
 	struct sockaddr_in saddr[2]; // fixme: sockaddr instead
+	enum tcp_state state;
+	__u32 seq_num, ack_num;
 };
 
 struct eth_addr
@@ -241,25 +255,6 @@ struct eth_addr
 	u8  ip[4];
 	u8  mac[6];
 };
-
-#else
-
-struct sockaddr
-{
-	u8  des_ip[4];
-	u8  des_mac[6];
-
-	u16 dst_port;
-	u16 src_port;
-};
-
-struct socket
-{
-	struct list_node tx_qu, rx_qu;
-	struct sockaddr addr;
-};
-
-#endif
 
 struct sock_buff
 {
@@ -316,44 +311,51 @@ struct net_device
 	void (*mdio_write)(struct net_device *ndev, u8 mii_id, u8 reg, u16 val);
 };
 
-__u16 htons(__u16 val);
-__u32 htonl(__u32 val);
-__u16 ntohs(__u16 val);
-__u32 ntohl(__u32 val);
+static inline __u16 htons(__u16 val)
+{
+	return CPU_TO_BE16(val);
+}
+
+static inline __u32 htonl(__u32 val)
+{
+	return CPU_TO_BE32(val);
+}
+
+static inline __u16 ntohs(__u16 val)
+{
+	return BE16_TO_CPU(val);
+}
+
+static inline __u32 ntohl(__u32 val)
+{
+	return BE32_TO_CPU(val);
+}
 
 struct sock_buff *skb_alloc(u32 prot_len, u32 data_len);
 
 void skb_free(struct sock_buff * skb);
 
 ///////////
+struct eth_addr *getaddr(u32 nip);
 struct eth_addr *gethostaddr(const u32 nip);
 
-void udp_send_packet(struct sock_buff *skb);
-
-struct sock_buff *udp_recv_packet(struct socket *sock);
-
+void arp_send_packet(const u8 nip[], const u8 *mac, u16 op_code);
 void ip_send_packet(struct sock_buff *skb, u8 bProtocal);
+void udp_send_packet(struct sock_buff *skb);
+void tcp_send_packet(struct sock_buff *skb, __u16 flags, void *opt, size_t opt_len);
 
 int ip_layer_deliver(struct sock_buff *skb);
 
-void arp_send_packet(const u8 nip[], const u8 *mac, u16 op_code);
+struct sock_buff *udp_recv_packet(struct socket *sock);
+struct sock_buff *tcp_recv_packet(struct socket *sock);
 
 int socket(int domain, int type, int protocol);
-
-struct eth_addr *getaddr(u32 nip);
-
 int bind(int fd, const struct sockaddr *addr, socklen_t len);
-
 int connect(int fd, const struct sockaddr *addr, socklen_t len);
-
 ssize_t send(int fd, const void *buf, size_t n, int flag);
-
 ssize_t recv(int fd, void *buf, size_t n, int flag);
-
 ssize_t sendto(int fd, const void *buf, u32 n, int flags, const struct sockaddr *dest_addr, socklen_t addrlen);
-
 long recvfrom(int fd, void *buf, u32 n, int flags, struct sockaddr *src_addr, socklen_t *addrlen);
-
 int sk_close(int fd);
 
 struct net_device *net_get_dev(const char *ifx_name);
