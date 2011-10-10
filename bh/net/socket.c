@@ -64,7 +64,7 @@ alloc_sock:
 
 	if (NULL == sock)
 	{
-		printf("%s: fail to alloc socket!\n", __func__);
+		DPRINT("%s: fail to alloc socket!\n", __func__);
 		return -ENOMEM;
 	}
 
@@ -98,8 +98,8 @@ static void free_skb_list(struct list_node *qu)
 
 int sk_close(int fd)
 {
-	__u32 psr;
 	int ret;
+	__u32 psr;
 	struct socket *sock;
 	struct sock_buff *skb;
 
@@ -135,10 +135,10 @@ int sk_close(int fd)
 			return ret;
 	}
 
+	// fixme
 	if (TCPS_TIME_WAIT == sock->state)
 		ret = tcp_wait_for_state(sock, TCPS_CLOSED);
 
-	// fixme: free resource
 	if (TCPS_CLOSED != sock->state)
 		DPRINT("%s(): Warning! (state = %d)\n", __func__, sock->state);
 	{

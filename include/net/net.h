@@ -180,6 +180,7 @@ struct tcp_header
 	__u16 dst_port;
 	__u32 seq_num;
 	__u32 ack_num;
+#if 0
 	__u16 reserve1:4;
 	__u16 hdr_len:4;
 	__u16 flg_fin:1;
@@ -189,6 +190,16 @@ struct tcp_header
 	__u16 flg_ack:1;
 	__u16 flg_urg:1;
 	__u16 reserve2:2;
+#else
+#if __BYTE_ORDER == __BIG_ENDIAN
+	__u8 hdr_len: 4;
+	__u8 reserve: 4;
+#else
+	__u8 reserve: 4;
+	__u8 hdr_len: 4;
+#endif
+	__u8 flags;
+#endif
 	__u16 win_size;
 	__u16 checksum;
 	__u16 urg_ptr;
@@ -355,7 +366,7 @@ struct eth_addr *gethostaddr(const u32 nip);
 void arp_send_packet(const u8 nip[], const u8 *mac, u16 op_code);
 void ip_send_packet(struct sock_buff *skb, u8 bProtocal);
 void udp_send_packet(struct sock_buff *skb);
-void tcp_send_packet(struct sock_buff *skb, __u16 flags, struct tcp_option *opt);
+void tcp_send_packet(struct sock_buff *skb, __u8 flags, struct tcp_option *opt);
 
 int ip_layer_deliver(struct sock_buff *skb);
 
