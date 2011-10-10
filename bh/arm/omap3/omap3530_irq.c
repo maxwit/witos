@@ -112,7 +112,7 @@ static void omap3530_handle(struct int_pin *pin, u32 irq)
 			irq_status = readl(VA(GPMC_BASE + GPMC_IRQ_STATUS));
 			writel(VA(GPMC_BASE + GPMC_IRQ_STATUS), irq_status);
 			break;
-		
+
 		case GPIO_IRQ(0) ...  GPIO_IRQ(191):
 			irq = (irq - INTC_PINS) >> 5;
 			irq_status = readl(VA(GPIO_IRQ_STATUS1(irq)));
@@ -122,20 +122,20 @@ static void omap3530_handle(struct int_pin *pin, u32 irq)
 		default:
 			break;
 	}
-	
+
 	writel(VA(INTCPS_BASE + INTCPS_CONTROL), 0x1);
 }
 
 int omap3530_irq_init(void)
 {
 	int irq_num;
-	
+
 	// reset the inc
 	writel(VA(INTCPS_BASE + INTCPS_SYSCONFIG), 0x1 << 1);
 	while (readl(VA(INTCPS_BASE + INTCPS_SYSCONFIG)) & (0x1 << 1));
 
 	writel(VA(INTCPS_BASE + INTCPS_SYSCONFIG), 0x1);
-	
+
 	for (irq_num = 0; irq_num < MAX_IRQ_NUM; irq_num++)
 	{
 		irq_assoc_intctl(irq_num, &omap3530_intctl);

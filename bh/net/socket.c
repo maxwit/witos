@@ -110,7 +110,7 @@ int sk_close(int fd)
 	if (TCPS_ESTABLISHED == sock->state || \
 		TCPS_SYN_RCVD == sock->state || \
 		TCPS_CLOSE_WAIT == sock->state)
-	{	
+	{
 		enum tcp_state last_state;
 
 		skb = skb_alloc(ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN, 0);
@@ -350,7 +350,7 @@ int connect(int fd, const struct sockaddr *addr, socklen_t len)
 	skb = skb_alloc(ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN, 0);
 	// if null
 	skb->sock = sock;
-	
+
 	lock_irq_psr(psr);
 	tcp_send_packet(skb, FLG_SYN, NULL);
 	sock->state = TCPS_SYN_SENT;

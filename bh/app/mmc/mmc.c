@@ -126,7 +126,7 @@ static int dump(int argc, char *argv[])
 		printf("Error: Fail to Read!\n");
 		return ret;
 	}
-	
+
 	int i;
 
 	for (i = 0; i < BLK_LEN / 4; i++)

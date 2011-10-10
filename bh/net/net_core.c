@@ -367,7 +367,7 @@ static int tcp_layer_deliver(struct sock_buff *skb, const struct ip_header *ip_h
 			skb = skb_alloc(ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN, 0);
 			// if null
 			skb->sock = sock;
-			
+
 			tcp_send_packet(skb, FLG_ACK, NULL);
 
 			if (TCPS_SYN_SENT == sock->state)
