@@ -29,7 +29,23 @@ static inline __u16 port_alloc(int type)
 static inline void port_free(__u16 port)
 {
 }
-//
+
+static int tcp_wait_for_state(const struct socket *sock, enum tcp_state state)
+{
+	int to;
+
+	for (to = 0; to < 100; to++)
+	{
+		netif_rx_poll();
+		if (sock->state == state)
+			return 0;
+
+		mdelay(100);
+	}
+
+	return -ETIMEDOUT;
+}
+
 int socket(int domain, int type, int protocol)
 {
 	int fd;
@@ -53,7 +69,7 @@ alloc_sock:
 	}
 
 	sock->type = type;
-	sock->state = TCP_STATE_NONE;	
+	sock->state = TCPS_CLOSED;
 	sock->seq_num = 1; // fixme
 	sock->ack_num = 0;
 	memset(sock->saddr, 0, sizeof(sock->saddr));
@@ -82,35 +98,57 @@ static void free_skb_list(struct list_node *qu)
 
 int sk_close(int fd)
 {
+	__u32 psr;
+	int ret;
 	struct socket *sock;
 	struct sock_buff *skb;
-	__u32 psr;
 
 	sock = get_sock(fd);
 	if (NULL == sock)
 		return -EINVAL;
 
-	// [FIN, ACK]
-	skb = skb_alloc(ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN, 0);
-	// if null
-	skb->sock = sock;
+	if (TCPS_ESTABLISHED == sock->state || \
+		TCPS_SYN_RCVD == sock->state || \
+		TCPS_CLOSE_WAIT == sock->state)
+	{	
+		enum tcp_state last_state;
 
-	tcp_send_packet(skb, FLG_FIN | FLG_ACK, NULL, 0);
+		skb = skb_alloc(ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN, 0);
+		// if null
+		skb->sock = sock;
 
-	while (1)
-	{
-		netif_rx_poll();
-		if (sock->state == TCP_STATE_FIN_GET)
-			break;
+		lock_irq_psr(psr);
+		tcp_send_packet(skb, FLG_FIN | FLG_ACK, NULL);
+		if (TCPS_CLOSE_WAIT == sock->state)
+			sock->state = TCPS_LAST_ACK;
+		else
+			sock->state = TCPS_FIN_WAIT1;
+		last_state = sock->state;
+		unlock_irq_psr(psr);
+
+		if (TCPS_LAST_ACK == last_state)
+			ret = tcp_wait_for_state(sock, TCPS_CLOSED);
+		else
+			ret = tcp_wait_for_state(sock, TCPS_TIME_WAIT);
+
+		if (ret < 0)
+			return ret;
 	}
 
+	if (TCPS_TIME_WAIT == sock->state)
+		ret = tcp_wait_for_state(sock, TCPS_CLOSED);
+
 	// fixme: free resource
-	lock_irq_psr(psr);
-	free_skb_list(&sock->rx_qu);
-	free_skb_list(&sock->tx_qu);
-	free(sock);
-	unlock_irq_psr(psr);
-	g_sock_fds[fd] = NULL;
+	if (TCPS_CLOSED != sock->state)
+		DPRINT("%s(): Warning! (state = %d)\n", __func__, sock->state);
+	{
+		lock_irq_psr(psr);
+		free_skb_list(&sock->rx_qu);
+		free_skb_list(&sock->tx_qu);
+		free(sock);
+		unlock_irq_psr(psr);
+		g_sock_fds[fd] = NULL;
+	}
 
 	return 0;
 }
@@ -234,8 +272,6 @@ long recvfrom(int fd, void *buf, u32 n, int flags,
 	// fixme !
 	pkt_len   = skb->size <= n ? skb->size : n;
 
-	// fixme
-	// if (sizeof(skb->remote_addr) > *addrlen) return -EINVAL;
 	*addrlen = sizeof(struct sockaddr_in);
 	memcpy(src_addr, &sock->saddr[SA_DST], *addrlen);
 
@@ -296,7 +332,8 @@ static void tcp_make_option(u8 *opt, u16 size)
 
 int connect(int fd, const struct sockaddr *addr, socklen_t len)
 {
-	int to;
+	int ret;
+	__u32 psr;
 	struct socket *sock;
 	struct sock_buff *skb;
 
@@ -313,19 +350,18 @@ int connect(int fd, const struct sockaddr *addr, socklen_t len)
 	skb = skb_alloc(ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN, 0);
 	// if null
 	skb->sock = sock;
+	
+	lock_irq_psr(psr);
+	tcp_send_packet(skb, FLG_SYN, NULL);
+	sock->state = TCPS_SYN_SENT;
+	unlock_irq_psr(psr);
 
-	tcp_send_packet(skb, FLG_SYN, NULL, 0);
+	ret = tcp_wait_for_state(sock, TCPS_ESTABLISHED);
 
-	for (to = 0; to < 100; to++)
-	{
-		netif_rx_poll();
-		if (sock->state == TCP_STATE_SYN_ACK)
-			return 0;
+	if (ret < 0)
+		sock->state = TCPS_CLOSED;
 
-		mdelay(100);
-	}
-
-	return -ETIMEDOUT;
+	return ret;
 }
 
 ssize_t send(int fd, const void *buf, size_t n, int flag)
@@ -335,22 +371,23 @@ ssize_t send(int fd, const void *buf, size_t n, int flag)
 
 	sock = get_sock(fd);
 	if (NULL == sock)
-	{
 		return -EINVAL;
-	}
+
+	if (TCPS_ESTABLISHED != sock->state)
+		return -EIO;
 
 	skb = skb_alloc(ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN, n);
 	// if null
 	skb->sock = sock;
 	memcpy(skb->data, buf, n);
 
-	tcp_send_packet(skb, FLG_PSH | FLG_ACK, NULL, 0);
+	tcp_send_packet(skb, FLG_PSH | FLG_ACK, NULL);
 
 #if 0
 	for (time_out = 0; time_out < 10; time_out++)
 	{
 		netif_rx_poll();
-		if (sock->state == TCP_STATE_PSH_ACK)
+		if (sock->state == 1)
 			break;
 
 		mdelay(100);
@@ -369,9 +406,10 @@ ssize_t recv(int fd, void *buf, size_t n, int flag)
 
 	sock = get_sock(fd);
 	if (NULL == sock)
-	{
 		return -ENOENT;
-	}
+
+	if (TCPS_ESTABLISHED != sock->state)
+		return -EIO;
 
 	skb = tcp_recv_packet(sock);
 	if (skb == NULL)

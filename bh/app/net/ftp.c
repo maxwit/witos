@@ -34,7 +34,9 @@ int main(int argc, char *argv[])
 	remote_addr.sin_port = htons(DEF_SVR_PORT);
 	remote_addr.sin_addr.s_addr = svr_ip;
 
-	connect(fd, (struct sockaddr *)&remote_addr, sizeof(remote_addr));
+	ret = connect(fd, (struct sockaddr *)&remote_addr, sizeof(remote_addr));
+	if (ret < 0)
+		goto L1;
 
 	send(fd, "abc", 3, 0);
 	send(fd, "123", 2, 0);
@@ -49,6 +51,7 @@ int main(int argc, char *argv[])
 		printf("%d bytes received: %s\n", ret, msg);
 	}
 
+L1:
 	sk_close(fd);
 
 	return ret;

@@ -163,11 +163,13 @@ void tcp_make_pkg(struct sock_buff *skb, u16 flag)
 
 //----------------- TCP Layer -----------------
 
-void tcp_send_packet(struct sock_buff *skb, __u16 flags, void *opt, size_t opt_len)
+void tcp_send_packet(struct sock_buff *skb, __u16 flags, struct tcp_option *opt)
 {
-	__u16 size = skb->size;
+	__u16 size = skb->size, opt_len;
 	struct tcp_header *tcp_hdr;
 	struct socket *sock = skb->sock;
+
+	opt_len = opt ? opt->len : 0;
 
 	skb->data -= TCP_HDR_LEN + opt_len;
 	skb->size += TCP_HDR_LEN + opt_len;
@@ -203,15 +205,10 @@ void tcp_send_packet(struct sock_buff *skb, __u16 flags, void *opt, size_t opt_l
 	ip_send_packet(skb, PROT_TCP);
 
 	if (flags & (FLG_SYN | FLG_FIN))
-	{
 		sock->seq_num++;
-	}
 
 	if (flags & FLG_PSH)
-	{
 		sock->seq_num += size;
-		sock->state = TCP_STATE_PSH; //  fix for FIN | PSH
-	}
 }
 
 //----------------- UDP Layer -----------------
@@ -365,32 +362,18 @@ static int tcp_layer_deliver(struct sock_buff *skb, const struct ip_header *ip_h
 
 		if (tcp_hdr->flg_ack)
 		{
-#if 0
-			opt_len = hdr_len - TCP_HDR_LEN;
-			__u32 ts;
-
-			// NOP
-			opt[0] = 1;
-			opt[1] = 1;
-
-			// Time stamp
-			opt[2] = 8;
-			opt[3] = 10;
-
-			// tsv++;
-			ts = htonl(tsv);
-			memcpy(opt + 4, &ts, 4);
-			memcpy(opt + 8, tcp_hdr->options + 8, 4);
-#endif
 			skb_free(skb);
 
 			skb = skb_alloc(ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN, 0);
 			// if null
 			skb->sock = sock;
+			
+			tcp_send_packet(skb, FLG_ACK, NULL);
 
-			tcp_send_packet(skb, FLG_ACK, NULL, 0);
-
-			sock->state = TCP_STATE_SYN_ACK;
+			if (TCPS_SYN_SENT == sock->state)
+				sock->state = TCPS_ESTABLISHED;
+			else
+				BUG();
 		}
 		else
 		{
@@ -403,25 +386,43 @@ static int tcp_layer_deliver(struct sock_buff *skb, const struct ip_header *ip_h
 		if (tcp_hdr->flg_fin)
 		{
 			sock->ack_num = BE32_TO_CPU(tcp_hdr->seq_num) + 1;
+#if 0
 			if (tcp_hdr->flg_psh)
 			{
 				sock->ack_num += skb->size;
 			}
+#endif
 			skb_free(skb);
 
 			skb = skb_alloc(ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN, 0);
 			// if null
 			skb->sock = sock;
-			tcp_send_packet(skb, FLG_ACK, NULL, 0);
+			tcp_send_packet(skb, FLG_ACK, NULL);
 
-			sock->state = TCP_STATE_FIN_GET;
+			if (TCPS_FIN_WAIT1 == sock->state)
+			{
+				if (tcp_hdr->flg_ack)
+					sock->state = TCPS_TIME_WAIT;
+				else
+					sock->state = TCPS_CLOSING;
+			}
+			else if (TCPS_FIN_WAIT2 == sock->state)
+				sock->state = TCPS_TIME_WAIT;
+			else if (TCPS_ESTABLISHED == sock->state)
+				sock->state = TCPS_CLOSE_WAIT;
+			else
+				BUG();
 		}
 		else if (tcp_hdr->flg_ack && !tcp_hdr->flg_psh)
 		{
 			skb_free(skb);
 
-			if (sock->state == TCP_STATE_PSH)
-				sock->state = TCP_STATE_PSH_ACK;
+			if (TCPS_FIN_WAIT1 == sock->state)
+				sock->state = TCPS_FIN_WAIT2;
+			else if (TCPS_CLOSING == sock->state)
+				sock->state = TCPS_TIME_WAIT;
+			else if (TCPS_LAST_ACK == sock->state)
+				sock->state = TCPS_CLOSED;
 		}
 
 		if (tcp_hdr->flg_psh)
@@ -758,15 +759,9 @@ static int arp_recv_packet(struct sock_buff *skb)
 
 	memcpy(&ip, arp_pkt->src_ip, 4);
 
-#ifdef CONFIG_DEBUG
-	printf("\t%s ARP received from: %d.%d.%d.%d\n",
-			g_arp_desc[BE16_TO_CPU(arp_pkt->op_code)],
-			arp_pkt->src_ip[0],
-			arp_pkt->src_ip[1],
-			arp_pkt->src_ip[2],
-			arp_pkt->src_ip[3]
-			);
-#endif
+	DPRINT("\t%s ARP received from: %d.%d.%d.%d\n",
+		g_arp_desc[BE16_TO_CPU(arp_pkt->op_code)],
+		arp_pkt->src_ip[0], arp_pkt->src_ip[1], arp_pkt->src_ip[2], arp_pkt->src_ip[3]);
 
 	switch (arp_pkt->op_code)
 	{
@@ -844,8 +839,8 @@ int netif_rx(struct sock_buff *skb)
 		break;
 
 	default:
-		// printf("\tframe type error (= 0x%04x)!\n", eth_head->frame_type);
-		// skb_free(skb);
+		// DPRINT("\tframe type error (= 0x%04x)!\n", eth_head->frame_type);
+		skb_free(skb);
 		break;
 	}
 

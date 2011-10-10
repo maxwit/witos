@@ -195,6 +195,13 @@ struct tcp_header
 	__u8  options[0];
 };
 
+#define MAX_TCP_OPT_LEN 64
+
+struct tcp_option
+{
+	__u8 opt[MAX_TCP_OPT_LEN];
+	__u16 len;
+};
 ///////////////////////////////////
 
 typedef u32 socklen_t;
@@ -233,12 +240,17 @@ enum {
 
 enum tcp_state
 {
-	TCP_STATE_NONE,
-	TCP_STATE_SYN_ACK,
-	TCP_STATE_PSH,
-	TCP_STATE_PSH_ACK,
-	TCP_STATE_FIN_ACK,
-	TCP_STATE_FIN_GET,
+	TCPS_CLOSED,
+	TCPS_LISTEN,
+	TCPS_SYN_SENT,
+	TCPS_SYN_RCVD,
+	TCPS_ESTABLISHED,
+	TCPS_CLOSE_WAIT,
+	TCPS_FIN_WAIT1,
+	TCPS_CLOSING,
+	TCPS_LAST_ACK,
+	TCPS_FIN_WAIT2,
+	TCPS_TIME_WAIT,
 };
 
 struct socket
@@ -247,6 +259,7 @@ struct socket
 	struct list_node tx_qu, rx_qu;
 	struct sockaddr_in saddr[2]; // fixme: sockaddr instead
 	enum tcp_state state;
+	// int tmp;
 	__u32 seq_num, ack_num;
 };
 
@@ -342,7 +355,7 @@ struct eth_addr *gethostaddr(const u32 nip);
 void arp_send_packet(const u8 nip[], const u8 *mac, u16 op_code);
 void ip_send_packet(struct sock_buff *skb, u8 bProtocal);
 void udp_send_packet(struct sock_buff *skb);
-void tcp_send_packet(struct sock_buff *skb, __u16 flags, void *opt, size_t opt_len);
+void tcp_send_packet(struct sock_buff *skb, __u16 flags, struct tcp_option *opt);
 
 int ip_layer_deliver(struct sock_buff *skb);
 
