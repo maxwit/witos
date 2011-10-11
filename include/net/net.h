@@ -191,7 +191,7 @@ struct tcp_header
 	__u16 flg_urg:1;
 	__u16 reserve2:2;
 #else
-#if __LITTLE_ENDIAN
+#ifdef __LITTLE_ENDIAN
 	__u8 reserve: 4;
 	__u8 hdr_len: 4;
 #else

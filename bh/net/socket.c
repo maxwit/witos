@@ -137,10 +137,13 @@ int sk_close(int fd)
 
 	// fixme
 	if (TCPS_TIME_WAIT == sock->state)
+	{
 		ret = tcp_wait_for_state(sock, TCPS_CLOSED);
+		if (ret < 0)
+			sock->state = TCPS_CLOSED;
+	}
 
-	if (TCPS_CLOSED != sock->state)
-		DPRINT("%s(): Warning! (state = %d)\n", __func__, sock->state);
+	if (TCPS_CLOSED == sock->state)
 	{
 		lock_irq_psr(psr);
 		free_skb_list(&sock->rx_qu);
@@ -148,6 +151,11 @@ int sk_close(int fd)
 		free(sock);
 		unlock_irq_psr(psr);
 		g_sock_fds[fd] = NULL;
+	}
+	else
+	{
+		printf("%s(): Warning! (state = %d)\n", __func__, sock->state);
+		return -EINVAL;
 	}
 
 	return 0;
