@@ -929,7 +929,8 @@ int netif_rx(struct sock_buff *skb)
 		break;
 
 	case ETH_TYPE_RARP:
-		// printf("\tRARP packet received.\n");
+		DPRINT("\tRARP packet received.\n");
+		skb_free(skb);
 		break;
 
 	case ETH_TYPE_IP:
