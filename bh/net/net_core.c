@@ -128,39 +128,6 @@ static void dump_sock_buff(const struct sock_buff *skb)
 }
 #endif
 
-#if 0
-void tcp_make_pkg(struct sock_buff *skb, u16 flag)
-{
-	skb->data -= TCP_HDR_LEN + opt_len;
-	skb->size += TCP_HDR_LEN + opt_len;
-
-	tcp_hdr = (struct tcp_header *)skb->data;
-	//
-	tcp_hdr->src_port = sock->saddr[SA_SRC].sin_port;
-	tcp_hdr->dst_port = sock->saddr[SA_DST].sin_port;
-	tcp_hdr->seq_num  = CPU_TO_BE32(1);
-	tcp_hdr->ack_num  = 0;
-	tcp_hdr->hdr_len  = (TCP_HDR_LEN + opt_len) / 4;
-	tcp_hdr->reserve1 = 0;
-	tcp_hdr->reserve2 = 0;
-	tcp_hdr->flg_urg  = 0;
-	tcp_hdr->flg_ack  = 0;
-	tcp_hdr->flg_psh  = 0;
-	tcp_hdr->flg_rst  = 0;
-	tcp_hdr->flg_syn  = 1;
-	tcp_hdr->flg_fin  = 0;
-	tcp_hdr->win_size = 0; // CPU_TO_BE16(32792);
-	tcp_hdr->checksum = 0;
-	tcp_hdr->urg_ptr  = 0;
-
-	if (opt_len > 0)
-		memset(tcp_hdr->options, 0x0, opt_len);
-
-	pseudo_calculate_checksum(skb, &tcp_hdr->checksum);
-
-}
-#endif
-
 //----------------- TCP Layer -----------------
 
 void tcp_send_packet(struct sock_buff *skb, __u8 flags, struct tcp_option *opt)
@@ -375,83 +342,6 @@ static int tcp_layer_deliver(struct sock_buff *skb, const struct ip_header *ip_h
 
 	skb->sock = sock;
 
-#if 0
-	if (tcp_hdr->flg_syn)
-	{
-		sock->ack_num = BE32_TO_CPU(tcp_hdr->seq_num) + 1;
-
-		if (tcp_hdr->flg_ack)
-		{
-			skb_free(skb);
-
-			skb = skb_alloc(ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN, 0);
-			// if null
-			skb->sock = sock;
-
-			tcp_send_packet(skb, FLG_ACK, NULL);
-
-			if (TCPS_SYN_SENT == sock->state)
-				sock->state = TCPS_ESTABLISHED;
-			else
-				BUG();
-		}
-		else
-		{
-			// TODO: add code here
-			printf("%s() line %d: SYN not supported!\n", __func__, __LINE__);
-		}
-	}
-	else
-	{
-		if (tcp_hdr->flg_fin)
-		{
-			sock->ack_num = BE32_TO_CPU(tcp_hdr->seq_num) + 1;
-#if 0
-			if (tcp_hdr->flg_psh)
-			{
-				sock->ack_num += skb->size;
-			}
-#endif
-			skb_free(skb);
-
-			skb = skb_alloc(ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN, 0);
-			// if null
-			skb->sock = sock;
-			tcp_send_packet(skb, FLG_ACK, NULL);
-
-			if (TCPS_FIN_WAIT1 == sock->state)
-			{
-				if (tcp_hdr->flg_ack)
-					sock->state = TCPS_TIME_WAIT;
-				else
-					sock->state = TCPS_CLOSING;
-			}
-			else if (TCPS_FIN_WAIT2 == sock->state)
-				sock->state = TCPS_TIME_WAIT;
-			else if (TCPS_ESTABLISHED == sock->state)
-				sock->state = TCPS_CLOSE_WAIT;
-			else
-				BUG();
-		}
-		else if (tcp_hdr->flg_ack && !tcp_hdr->flg_psh)
-		{
-			skb_free(skb);
-
-			if (TCPS_FIN_WAIT1 == sock->state)
-				sock->state = TCPS_FIN_WAIT2;
-			else if (TCPS_CLOSING == sock->state)
-				sock->state = TCPS_TIME_WAIT;
-			else if (TCPS_LAST_ACK == sock->state)
-				sock->state = TCPS_CLOSED;
-		}
-
-		if (tcp_hdr->flg_psh)
-		{
-			list_add_tail(&skb->node, &sock->rx_qu);
-			sock->ack_num = BE32_TO_CPU(tcp_hdr->seq_num) + skb->size;
-		}
-	}
-#else
 	switch (tcp_hdr->flags)
 	{
 	case FLG_SYN:
@@ -529,7 +419,6 @@ static int tcp_layer_deliver(struct sock_buff *skb, const struct ip_header *ip_h
 		printf("%s() line %d\n", __func__, __LINE__);
 		break;
 	}
-#endif
 
 	return 0;
 }
