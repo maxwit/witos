@@ -440,8 +440,8 @@ static int tcp_layer_deliver(struct sock_buff *skb, const struct ip_header *ip_h
 	switch (tcp_hdr->flags)
 	{
 	case FLG_SYN:
-		sock->ack_num = BE32_TO_CPU(tcp_hdr->seq_num) + 1;
 	case FLG_SYN | FLG_ACK:
+		sock->ack_num = BE32_TO_CPU(tcp_hdr->seq_num) + 1;
 		skb_free(skb);
 
 		skb = skb_alloc(ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN, 0);
@@ -449,6 +449,9 @@ static int tcp_layer_deliver(struct sock_buff *skb, const struct ip_header *ip_h
 		skb->sock = sock;
 
 		tcp_send_packet(skb, FLG_ACK, NULL);
+
+		//fixme
+		skb->size = 0;
 
 		if (TCPS_SYN_SENT == sock->state)
 			sock->state = TCPS_ESTABLISHED;
@@ -458,42 +461,52 @@ static int tcp_layer_deliver(struct sock_buff *skb, const struct ip_header *ip_h
 		break;
 
 	case FLG_FIN:
+	case FLG_FIN | FLG_ACK | FLG_PSH:
 	case FLG_FIN | FLG_ACK:
 		sock->ack_num = BE32_TO_CPU(tcp_hdr->seq_num) + 1;
 
-		skb_free(skb);
-
-		skb = skb_alloc(ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN, 0);
-		// if null
-		skb->sock = sock;
-		tcp_send_packet(skb, FLG_ACK, NULL);
-
-		if (TCPS_FIN_WAIT1 == sock->state)
+		if (tcp_hdr->flags & FLG_PSH && skb->size != 0)
 		{
-			if (tcp_hdr->flags & FLG_ACK)
-				sock->state = TCPS_TIME_WAIT;
-			else
-				sock->state = TCPS_CLOSING;
+			sock->ack_num += skb->size - 1;
 		}
-		else if (TCPS_FIN_WAIT2 == sock->state)
-			sock->state = TCPS_TIME_WAIT;
-		else if (TCPS_ESTABLISHED == sock->state)
-			sock->state = TCPS_CLOSE_WAIT;
 		else
-			BUG();
-
+		{
+			if (TCPS_FIN_WAIT1 == sock->state)
+			{
+				if (tcp_hdr->flags & FLG_ACK)
+					sock->state = TCPS_TIME_WAIT;
+				else
+					sock->state = TCPS_CLOSING;
+			}
+			else if (TCPS_FIN_WAIT2 == sock->state)
+				sock->state = TCPS_TIME_WAIT;
+			else if (TCPS_ESTABLISHED == sock->state)
+				sock->state = TCPS_CLOSE_WAIT;
+			else
+				BUG();
+		}
 		break;
 
 	case FLG_ACK:
-		skb_free(skb);
+		if (skb->size == 0)
+		{
+			skb_free(skb);
 
-		if (TCPS_FIN_WAIT1 == sock->state)
-			sock->state = TCPS_FIN_WAIT2;
-		else if (TCPS_CLOSING == sock->state)
-			sock->state = TCPS_TIME_WAIT;
-		else if (TCPS_LAST_ACK == sock->state)
-			sock->state = TCPS_CLOSED;
+			if (TCPS_FIN_WAIT1 == sock->state)
+				sock->state = TCPS_FIN_WAIT2;
+			else if (TCPS_CLOSING == sock->state)
+				sock->state = TCPS_TIME_WAIT;
+			else if (TCPS_LAST_ACK == sock->state)
+				sock->state = TCPS_CLOSED;
+		}
+		else
+		{
+			//fixme
+		}
+		break;
 
+	case FLG_ACK | FLG_PSH:
+		sock->ack_num = BE32_TO_CPU(tcp_hdr->seq_num) + skb->size;
 		break;
 
 	default:
@@ -501,10 +514,16 @@ static int tcp_layer_deliver(struct sock_buff *skb, const struct ip_header *ip_h
 		break;
 	}
 
-	if (tcp_hdr->flags & FLG_PSH)
+	if (tcp_hdr->flags & (FLG_PSH | FLG_FIN) || skb->size > 0)
 	{
 		list_add_tail(&skb->node, &sock->rx_qu);
-		sock->ack_num = BE32_TO_CPU(tcp_hdr->seq_num) + skb->size;
+		// sock->ack_num = BE32_TO_CPU(tcp_hdr->seq_num) + skb->size;
+		// skb_free(skb);
+
+		skb = skb_alloc(ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN, 0);
+		// if null
+		skb->sock = sock;
+		tcp_send_packet(skb, FLG_ACK, NULL);
 	}
 #endif
 
