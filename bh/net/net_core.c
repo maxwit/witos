@@ -531,20 +531,21 @@ static int icmp_deliver(struct sock_buff *skb, const struct ip_header *ip_hdr)
 	ping_hdr = (struct ping_packet *)(skb->data + ((ip_hdr->ver_len & 0xf) << 2));
 	eth_head = (struct ether_header *)(skb->data- ETH_HDR_LEN);
 
-	sock = icmp_search_socket(ping_hdr, ip_hdr);
-	if (NULL == sock)
-	{
-		skb_free(skb);
-		return -ENOENT;
-	}
-
 	switch(ping_hdr->type)
 	{
 	case ICMP_TYPE_ECHO_REQUEST:
+		skb->data += ((ip_hdr->ver_len & 0xf) << 2);
+		skb->size -= ((ip_hdr->ver_len & 0xf) << 2);
 	    ping_send(skb, ip_hdr, ICMP_TYPE_ECHO_REPLY);
 	    break;
 
 	case ICMP_TYPE_ECHO_REPLY:
+		sock = icmp_search_socket(ping_hdr, ip_hdr);
+		if (NULL == sock)
+		{
+			skb_free(skb);
+			return -ENOENT;
+		}
 		list_add_tail(&skb->node, &sock->rx_qu);
 	    break;
 
