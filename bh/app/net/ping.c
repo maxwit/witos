@@ -1,76 +1,25 @@
 #include <sysconf.h>
 #include <net/net.h>
 
-static int init_ping_packet(struct ping_packet *ping_pkt,
-				const u8 *buff, u8 type, u32 size, u16 id, u16 seq)
-{
-	char *data = NULL;
-	u32 hdr_len = sizeof(struct ping_packet);
-
-	if (NULL == ping_pkt || NULL == buff)
-	    return -EINVAL;
-
-	ping_pkt->type   = type;
-	ping_pkt->code   = 0;
-	ping_pkt->chksum = 0;
-	ping_pkt->id     = id;
-	ping_pkt->seqno  = seq;
-
-	data = (char *)ping_pkt + hdr_len;
-
-	memcpy(data, buff, size - hdr_len);
-
-	ping_pkt->chksum = ~net_calc_checksum(ping_pkt, size);
-
-	return 0;
-}
-
-static int ping_request(struct socket *sock, u32 dst_ip)
-{
-	int i, j;
-	u8  ping_buff[PING_PACKET_LENGTH];
-	u32 hdr_len = sizeof(struct ping_packet);
-	struct sock_buff *skb;
-	struct ping_packet *ping_pkt;
-
-	for (i = 0; i < PING_MAX_TIMES; i++)
-	{
-	    skb = skb_alloc(ETH_HDR_LEN + IP_HDR_LEN, PING_PACKET_LENGTH);
-	    if (NULL == skb)
-	    {
-			printf("%s(): skb_alloc failed\n", __func__);
-			return -ENOMEM;
-	    }
-
-	    skb->sock = sock;
-		memcpy(&sock->saddr[SA_DST].sin_addr, &dst_ip, IPV4_ADR_LEN);
-
-	    ping_pkt = (struct ping_packet *)ping_buff;
-
-	    init_ping_packet(ping_pkt, ping_buff + hdr_len,
-			ICMP_TYPE_ECHO_REQUEST, PING_PACKET_LENGTH, CPU_TO_BE16(PING_DEFUALT_PID), CPU_TO_BE16(i + 1));
-
-	    memcpy(skb->data, ping_pkt, PING_PACKET_LENGTH);
-
-		ip_send_packet(skb, PROT_ICMP);
-
-		for (j = 0; j < 10; j++)
-		{
-			mdelay(10);
-			netif_rx_poll();
-		}
-	}
-
-	return 0;
-}
+#define PING_LEN 8
+#define MAX_LEN 512
 
 int main(int argc, char *argv[])
 {
 	int ret;
-	struct socket sock; // fixme
-	char dest_ip[IPV4_STR_LEN];
+	int fd;
 	u32 nip;
-	u32 src_ip;
+	int i, j;
+	u16 seq_num = 1;
+	u8 buf[MAX_LEN];
+	u8 ip_hdr_len;
+	u8  ping_buff[PING_LEN];
+	char dest_ip[IPV4_STR_LEN];
+	struct ping_packet *ping_pkt;
+	struct ip_header *ip;
+	struct sockaddr_in local_addr, dest_addr;
+	u32 hdr_len = sizeof(struct ping_packet);
+	socklen_t addr_len = sizeof(struct sockaddr_in);
 
 	if (1 == argc) // use default server as ping server if no argument supplied.
 	{
@@ -92,30 +41,49 @@ int main(int argc, char *argv[])
 		strcpy(dest_ip, argv[1]);
 	}
 
+	fd = socket(AF_INET, SOCK_RAW, 0);
 	printf("PING %s:\n", dest_ip);
 
-#if 0
-	remote_addr = getaddr(nip);
+	memset(&local_addr, 0, sizeof(local_addr));
+	local_addr.sin_family = AF_INET;
+	local_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+	ret = bind(fd, (struct sockaddr *)&local_addr, sizeof(local_addr));
 
-	// fixme get mac addr in ip layer
-	if (NULL == remote_addr)
+	memset(&dest_addr, 0, sizeof(dest_addr));
+	dest_addr.sin_family = AF_INET;
+	dest_addr.sin_addr.s_addr = nip;
+
+	for (i = 0; i < PING_MAX_TIMES; i++)
 	{
-		remote_addr = gethostaddr(nip);
+	    ping_pkt = (struct ping_packet *)ping_buff;
 
-		if (NULL == remote_addr)
+		ping_pkt->type   = ICMP_TYPE_ECHO_REQUEST;
+		ping_pkt->code   = 0;
+		ping_pkt->chksum = 0;
+		ping_pkt->id     = 0;
+		ping_pkt->seqno  = htons(seq_num++);
+		ping_pkt->chksum = ~net_calc_checksum(ping_pkt, sizeof(ping_buff));
+
+		sendto(fd, ping_buff, sizeof(ping_buff), 0,
+				(struct sockaddr *)&dest_addr, addr_len);
+
+		ret = recvfrom(fd, buf, MAX_LEN, 0,
+				(struct sockaddr *)&dest_addr, &addr_len);
+		if (ret < 0)
 		{
-			printf("Fail to find host %s!\n",dest_ip);
-			return -EIO;
+			printf("recvfrom error\n");
+			return ret;
 		}
+
+		ip = (struct ip_header *)buf;
+		ip_hdr_len = (ip->ver_len & 0xf) << 2;
+		ping_pkt= (struct ping_packet *)(buf + ip_hdr_len);
+
+		printf("%d bytes from %d.%d.%d.%d: icmp_req = %d, ttl = %d\n",
+				ntohs(ip->total_len), ip->src_ip[0], ip->src_ip[1],
+				ip->src_ip[2], ip->src_ip[3], ntohs(ping_pkt->seqno), ip->ttl);
 	}
-#endif
 
-	memset(&sock, 0, sizeof(sock));
-
-	ndev_ioctl(NULL, NIOC_GET_IP, &src_ip);
-	sock.saddr[SA_SRC].sin_addr.s_addr = src_ip;
-
-	ret = ping_request(&sock, nip);
-
+	sk_close(fd);
 	return ret;
 }

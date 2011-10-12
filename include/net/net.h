@@ -267,6 +267,7 @@ enum tcp_state
 struct socket
 {
 	int type;
+	int protocol;
 	struct list_node tx_qu, rx_qu;
 	struct sockaddr_in saddr[2]; // fixme: sockaddr instead
 	enum tcp_state state;
@@ -362,6 +363,8 @@ void skb_free(struct sock_buff * skb);
 ///////////
 struct eth_addr *getaddr(u32 nip);
 struct eth_addr *gethostaddr(const u32 nip);
+
+struct sock_buff *ping_recv_packet(struct socket *sock);
 
 void arp_send_packet(const u8 nip[], const u8 *mac, u16 op_code);
 void ip_send_packet(struct sock_buff *skb, u8 bProtocal);

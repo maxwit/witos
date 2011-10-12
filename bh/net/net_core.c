@@ -69,6 +69,7 @@ struct socket *udp_search_socket(const struct udp_header *, const struct ip_head
 
 struct socket *tcp_search_socket(const struct tcp_header *, const struct ip_header *);
 
+struct socket *icmp_search_socket(const struct ping_packet *ping_pkt, const struct ip_header *ip_pkt);
 static inline BOOL ip_is_bcast(u32 ip)
 {
 	u32 mask;
@@ -202,6 +203,43 @@ void udp_send_packet(struct sock_buff *skb)
 	ip_send_packet(skb, PROT_UDP);
 }
 
+struct sock_buff *ping_recv_packet(struct socket *sock)
+{
+	u32 psr;
+	struct sock_buff *skb;
+	struct list_node *first;
+
+	while (1)
+	{
+		int ret;
+		char key;
+
+		ret = uart_read(CONFIG_DBGU_ID, (u8 *)&key, 1, WAIT_ASYNC);
+		if (ret > 0 && key == CHAR_CTRL_C)
+			return NULL;
+
+		netif_rx_poll();
+
+		lock_irq_psr(psr);
+		if (!list_is_empty(&sock->rx_qu))
+		{
+			unlock_irq_psr(psr);
+			break;
+		}
+		unlock_irq_psr(psr);
+
+		udelay(10);
+	}
+
+	lock_irq_psr(psr);
+	first = sock->rx_qu.next;
+	list_del_node(first);
+	unlock_irq_psr(psr);
+
+	skb = container_of(first, struct sock_buff, node);
+
+	return skb;
+}
 struct sock_buff *udp_recv_packet(struct socket *sock)
 {
 	u32 psr;
@@ -484,83 +522,30 @@ int ping_send(struct sock_buff *rx_skb, const struct ip_header *ip_hdr, u8 type)
 	return 0;
 }
 
-static int ping_recv(struct sock_buff *rx_skb, const struct ip_header *ip_hdr)
-{
-	struct ping_packet *ping_hdr;
-
-	ping_hdr = (struct ping_packet *)rx_skb->data;
-
-	printf("%d bytes from %d.%d.%d.%d: icmp_seq=%d ttl=%d time=12.7 ms\n", // fixme :-)
-	        rx_skb->size,
-	        ip_hdr->src_ip[0],
-	        ip_hdr->src_ip[1],
-	        ip_hdr->src_ip[2],
-	        ip_hdr->src_ip[3],
-	        BE16_TO_CPU(ping_hdr->seqno),
-	        ip_hdr->ttl);
-
-	return 0;
-}
-
-#if 0
-int ping_request(struct socket *socket, struct eth_addr *remote_addr)
-{
-	int i, j;
-	u8  ping_buff[PING_PACKET_LENGTH];
-	u32 hdr_len = sizeof(struct ping_packet);
-	struct sock_buff *skb;
-	struct ping_packet *ping_pkt;
-
-	for (i = 0; i < PING_MAX_TIMES; i++)
-	{
-	    skb = skb_alloc(ETH_HDR_LEN + IP_HDR_LEN, PING_PACKET_LENGTH);
-	    if (NULL == skb)
-	    {
-			printf("%s(): skb_alloc failed\n", __func__);
-			return -ENOMEM;
-	    }
-
-	    skb->sock = socket;
-		memcpy(&skb->remote_addr.sin_addr, remote_addr->ip, IPV4_ADR_LEN);
-
-	    ping_pkt = (struct ping_packet *)ping_buff;
-
-	    init_ping_packet(ping_pkt, ping_buff + hdr_len,
-			ICMP_TYPE_ECHO_REQUEST, PING_PACKET_LENGTH, CPU_TO_BE16(PING_DEFUALT_PID), CPU_TO_BE16(i + 1));
-
-	    memcpy(skb->data, ping_pkt, PING_PACKET_LENGTH);
-
-		ip_send_packet(skb, PROT_ICMP);
-
-		for (j = 0; j < 10; j++)
-		{
-			mdelay(10);
-			netif_rx_poll();
-		}
-	}
-
-	return 0;
-}
-#endif
-
 static int icmp_deliver(struct sock_buff *skb, const struct ip_header *ip_hdr)
 {
 	struct ping_packet *ping_hdr;
 	struct ether_header *eth_head;
+	struct socket *sock;
 
-	ping_hdr = (struct ping_packet *)skb->data;
-	eth_head = (struct ether_header *)(skb->data - IP_HDR_LEN - ETH_HDR_LEN);
+	ping_hdr = (struct ping_packet *)(skb->data + ((ip_hdr->ver_len & 0xf) << 2));
+	eth_head = (struct ether_header *)(skb->data- ETH_HDR_LEN);
+
+	sock = icmp_search_socket(ping_hdr, ip_hdr);
+	if (NULL == sock)
+	{
+		skb_free(skb);
+		return -ENOENT;
+	}
 
 	switch(ping_hdr->type)
 	{
 	case ICMP_TYPE_ECHO_REQUEST:
 	    ping_send(skb, ip_hdr, ICMP_TYPE_ECHO_REPLY);
-
 	    break;
 
 	case ICMP_TYPE_ECHO_REPLY:
-	    ping_recv(skb, ip_hdr);
-
+		list_add_tail(&skb->node, &sock->rx_qu);
 	    break;
 
 	case ICMP_TYPE_DEST_UNREACHABLE:
@@ -576,8 +561,6 @@ static int icmp_deliver(struct sock_buff *skb, const struct ip_header *ip_hdr)
 	default:
 	    break;
 	}
-
-	skb_free(skb);
 
 	return 0;
 }
@@ -608,6 +591,8 @@ int ip_layer_deliver(struct sock_buff *skb)
 
 	case PROT_ICMP:
 		// printf("\n\tICMP received!\n");
+		skb->data -= ip_hdr_len;
+		skb->size += ip_hdr_len;
 		icmp_deliver(skb, ip_hdr);
 		break;
 
