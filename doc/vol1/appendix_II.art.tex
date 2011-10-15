@@ -1,0 +1,35 @@
+\section{S3C24XX系列平台}
+
+\section{AT91SAM系列平台}
+
+\section{S3C64XX系列平台}
+S3C64XX and S5P as cases
+
+\section{OMAP3系列平台}
+\subsection{devkit8000开发板}
+将g-bios烧录到SD卡的步骤如下：
+\begin{enumerate}
+\item make devkit8000\_defconfig
+\item make
+\item make install将g-bios-th.bin以及g-bios-bh.bin拷贝到默认目录/var/lib/tftpboot下
+\item 将SD卡插入PC，创建一个fat32分区，并将其设置为启动分区，具体步骤如下：
+ \begin{enumerate}
+  \item 依据读卡器的不同，sd卡插入后会在dev目录下产生sdb或者mmcblk0文件，执行如下命令sudo fdisk /dev/sdb或者/dev/mmcblk0
+  \item 依照提示，按下n（add a new partition）
+  \item 按下p键（创建primary partition）
+  \item 按下1
+  \item 一路回车
+  \item 按下a键（toggle a bootable flag）
+  \item 按下1
+  \item 按下t键(change a partition's system id)
+  \item 按下l键
+  \item 选择c（W95 FAT32（LBA））
+  \item 按下w键
+  \item 按下q键退出fdisk
+  \item 执行如下命令：sudo mkfs.vfat /dev/sdb1或者/dev/mmcblk0p1，将分区格式成FAT32
+ \end{enumerate}
+\item 将sd卡上的FAT32分区mount到pc上后，将g-bios-th.bin拷贝到sd的FAT32分区上，并将其改名为MLO文件
+\item umount sd卡
+\end{enumerate}
+从SD卡启动方法如下：
+将SD插入开发板，按住boot键，开启电源(此时是从SD卡启动，若直接开启电源，则从NAND启动)
