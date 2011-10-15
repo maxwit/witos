@@ -40,7 +40,7 @@ static int __INIT__ flash_adjust_part_tab(struct flash_chip *host,
 		{
 			if (PT_BL_GBH == new_attr->part_type)
 			{
-				new_attr->part_base = GBH_START_BLK * host->erase_size;
+				new_attr->part_base = CONFIG_GBH_START_BLK * host->erase_size;
 
 				if (new_attr->part_base < curr_base)
 				{
@@ -57,7 +57,7 @@ static int __INIT__ flash_adjust_part_tab(struct flash_chip *host,
 		{
 			// fixme
 			if (PT_BL_GBH == new_attr->part_type && \
-				new_attr->part_base != GBH_START_BLK * host->erase_size)
+				new_attr->part_base != CONFIG_GBH_START_BLK * host->erase_size)
 			{
 				printf("%s() line %d: fixme!\n", __func__, __LINE__);
 			}

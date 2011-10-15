@@ -198,9 +198,9 @@ int nand_load(struct nand_chip *flash)
 	u32 wshift = 0, eshift = 0, shift;
 	u32 bh_len = GBH_LOAD_SIZE;
 #ifdef CONFIG_NAND_16BIT
-	u16 *buff = (u16 *)GBH_START_MEM;
+	u16 *buff = (u16 *)CONFIG_GBH_START_MEM;
 #else
-	u8 *buff = (u8 *)GBH_START_MEM;
+	u8 *buff = (u8 *)CONFIG_GBH_START_MEM;
 #endif
 
 	// yes, calc shift in this way.
@@ -215,13 +215,13 @@ int nand_load(struct nand_chip *flash)
 	if (0 == wshift || 0 == eshift)
 		return -1;
 
-	cur_page = GBH_START_BLK << (eshift - wshift);
+	cur_page = CONFIG_GBH_START_BLK << (eshift - wshift);
 
 	buff = nand_read_page(flash, cur_page, buff);
 
-	if (GBH_MAGIC == *(u32 *)(GBH_START_MEM + GBH_MAGIC_OFFSET))
+	if (GBH_MAGIC == *(u32 *)(CONFIG_GBH_START_MEM + GBH_MAGIC_OFFSET))
 	{
-		bh_len = *(u32 *)(GBH_START_MEM + GBH_SIZE_OFFSET);
+		bh_len = *(u32 *)(CONFIG_GBH_START_MEM + GBH_SIZE_OFFSET);
 #ifdef CONFIG_DEBUG
 		printf("g-bios BH found:) size = 0x%x\n", bh_len);
 #endif

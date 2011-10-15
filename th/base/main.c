@@ -80,7 +80,7 @@ int main(void)
 static inline void boot_bh()
 {
 	printf("\n");
-	((void (*)())GBH_START_MEM)();
+	((void (*)())CONFIG_GBH_START_MEM)();
 }
 
 int load_gbios_bh(char key)
@@ -102,7 +102,7 @@ int load_gbios_bh(char key)
 			// fixme: prompt for RAM/ROM
 			printf("Loading from %s ...\n", loader->prompt);
 
-			loader->load_addr = (void *)GBH_START_MEM;
+			loader->load_addr = (void *)CONFIG_GBH_START_MEM;
 
 			ret = loader->main(loader);
 			if (ret < 0)

@@ -131,7 +131,7 @@ int part_close(struct partition *part)
 
 #if 0
 		case PT_BL_GBIOS:
-			flash_pos = part_base + (GBH_START_BLK << flash->erase_shift) + part->cur_pos;
+			flash_pos = part_base + (CONFIG_GBH_START_BLK << flash->erase_shift) + part->cur_pos;
 			ret = flash_erase(flash, flash_pos, rest, dwEraseFlag);
 			break;
 #endif
@@ -278,7 +278,7 @@ long part_write(struct partition *part, const void *buff, u32 size)
 				break;
 #if 0
 			case PT_BL_GBIOS:
-				flash_pos = part_base + (GBH_START_BLK << flash->erase_shift) + part->cur_pos;
+				flash_pos = part_base + (CONFIG_GBH_START_BLK << flash->erase_shift) + part->cur_pos;
 				break;
 #endif
 			case PT_FS_JFFS2:

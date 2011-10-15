@@ -79,6 +79,6 @@
 	</config>
 	<config name="NET" bool="y">
 		<config name="NFS_ROOT" string="/maxwit/target/rootfs"/>
-		<config name="IMAGE_PATH" string="/var/lib/tftpboot"/>
+		<config name="IMAGE_PATH" string="/maxwit/image"/>
 	</config>
 </config>
