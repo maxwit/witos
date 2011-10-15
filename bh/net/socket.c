@@ -75,6 +75,7 @@ alloc_sock:
 	memset(sock->saddr, 0, sizeof(sock->saddr));
 	list_head_init(&sock->tx_qu);
 	list_head_init(&sock->rx_qu);
+	sock->protocol = protocol;
 
 	g_sock_fds[fd] = sock;
 
@@ -247,14 +248,22 @@ ssize_t sendto(int fd, const void *buff, u32 buff_size, int flags,
 
 	memcpy(&sock->saddr[SA_DST], dest_addr, addr_size);
 
-	skb = skb_alloc(ETH_HDR_LEN + IP_HDR_LEN + UDP_HDR_LEN, buff_size);
-	// if null
+	switch (sock->type)
+	{
+	case SOCK_RAW:
+		skb = skb_alloc(ETH_HDR_LEN + IP_HDR_LEN, buff_size);
+		skb->sock = sock;
+		memcpy(skb->data, buff, buff_size);
+		ip_send_packet(skb, PROT_ICMP);
+		break;
 
-	skb->sock = sock;
-
-	memcpy(skb->data, buff, buff_size);
-
-	udp_send_packet(skb);
+	case SOCK_DGRAM:
+		skb = skb_alloc(ETH_HDR_LEN + IP_HDR_LEN + UDP_HDR_LEN, buff_size);
+		skb->sock = sock;
+		memcpy(skb->data, buff, buff_size);
+		udp_send_packet(skb);
+		break;
+	}
 
 	return buff_size;
 }
@@ -263,7 +272,7 @@ long recvfrom(int fd, void *buf, u32 n, int flags,
 		struct sockaddr *src_addr, socklen_t *addrlen)
 {
 	struct socket *sock;
-	struct sock_buff *skb;
+	struct sock_buff *skb = NULL;
 	u32 pkt_len;
 
 	sock = get_sock(fd);
@@ -273,13 +282,22 @@ long recvfrom(int fd, void *buf, u32 n, int flags,
 		return -EINVAL;
 	}
 
-	skb = udp_recv_packet(sock);
+	switch (sock->type)
+	{
+	case SOCK_RAW:
+		skb = ping_recv_packet(sock);
+		break;
+
+	case SOCK_DGRAM:
+		skb = udp_recv_packet(sock);
+		break;
+	}
+
 	if(NULL == skb)
 		return 0;
 
 	// fixme !
 	pkt_len   = skb->size <= n ? skb->size : n;
-
 	*addrlen = sizeof(struct sockaddr_in);
 	memcpy(src_addr, &sock->saddr[SA_DST], *addrlen);
 
@@ -555,6 +573,47 @@ struct socket *udp_search_socket(const struct udp_header *udp_pkt, const struct 
 			continue;
 		}
 
+#if 0
+		if (memcmp(&src_ip, ip_pkt->des_ip, 4) != 0)
+		{
+			printf("src ip: %d.%d.%d.%d\n",
+				ip_pkt->des_ip[0],
+				ip_pkt->des_ip[1],
+				ip_pkt->des_ip[2],
+				ip_pkt->des_ip[3]
+				);
+
+			continue;
+		}
+#endif
+
+		return sock;
+	}
+
+	return NULL;
+}
+
+
+struct socket *icmp_search_socket(const struct ping_packet *ping_pkt, const struct ip_header *ip_pkt)
+{
+	int fd;
+	struct socket *sock;
+	u32 src_ip;
+
+	ndev_ioctl(NULL, NIOC_GET_IP, &src_ip);
+
+	for (fd = 1; fd < MAX_SOCK_NUM; fd++)
+	{
+		sock = g_sock_fds[fd];
+
+		if (NULL == sock)
+			continue;
+
+		if (sock->type != SOCK_RAW)
+			continue;
+
+		if (memcmp(&sock->saddr[SA_DST].sin_addr.s_addr, ip_pkt->src_ip, 4))
+			continue;
 #if 0
 		if (memcmp(&src_ip, ip_pkt->des_ip, 4) != 0)
 		{
