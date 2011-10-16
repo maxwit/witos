@@ -176,7 +176,7 @@ static int __INIT__ cs89x0_init(void)
 		return ret;
 	}
 
-	ndev = net_dev_new(0);
+	ndev = ndev_new(0);
 	// if NULL
 
 	ndev->chip_name = "CS8900A";
@@ -189,7 +189,7 @@ static int __INIT__ cs89x0_init(void)
 
 	irq_register_isr(CONFIG_CS8900_IRQ, cs89x0_isr, ndev);
 
-	ret = net_dev_register(ndev);
+	ret = ndev_register(ndev);
 
 	cs8900_outw(PP_RxCTL, 0x3FC5);
 
