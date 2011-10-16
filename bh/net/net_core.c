@@ -934,6 +934,7 @@ struct list_node *net_get_device_list(void)
 	return &g_ndev_list;
 }
 
+#if 0
 struct net_device *net_get_dev(const char *ifx)
 {
 	struct net_device *ndev;
@@ -951,6 +952,7 @@ struct net_device *net_get_dev(const char *ifx)
 
 	return NULL;
 }
+#endif
 
 int ndev_register(struct net_device *ndev)
 {
