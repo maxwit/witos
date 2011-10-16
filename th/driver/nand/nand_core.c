@@ -192,16 +192,18 @@ static u8 *nand_read_page(struct nand_chip *flash, u32 page_idx, u8 *buff)
 
 // load bottom-half from nand with timeout checking
 __WEAK__
-int nand_load(struct nand_chip *flash)
+int nand_load(struct nand_chip *flash, __u32 start_blk, void *start_mem)
 {
 	u32 cur_page, end_page;
 	u32 wshift = 0, eshift = 0, shift;
-	u32 bh_len = GBH_LOAD_SIZE;
+	u32 bh_len = GBH_LOAD_SIZE; // fixme!!!
 #ifdef CONFIG_NAND_16BIT
-	u16 *buff = (u16 *)CONFIG_GBH_START_MEM;
+	u16 *buff;
 #else
-	u8 *buff = (u8 *)CONFIG_GBH_START_MEM;
+	u8 *buff;
 #endif
+
+	buff = start_mem;
 
 	// yes, calc shift in this way.
 	for (shift = 0; shift < sizeof(long) * 8; shift++)
@@ -215,15 +217,22 @@ int nand_load(struct nand_chip *flash)
 	if (0 == wshift || 0 == eshift)
 		return -1;
 
-	cur_page = CONFIG_GBH_START_BLK << (eshift - wshift);
+	cur_page = start_blk << (eshift - wshift);
 
 	buff = nand_read_page(flash, cur_page, buff);
 
-	if (GBH_MAGIC == *(u32 *)(CONFIG_GBH_START_MEM + GBH_MAGIC_OFFSET))
+	if (GBH_MAGIC == *(u32 *)(start_mem + GBH_MAGIC_OFFSET))
 	{
-		bh_len = *(u32 *)(CONFIG_GBH_START_MEM + GBH_SIZE_OFFSET);
+		bh_len = *(u32 *)(start_mem + GBH_SIZE_OFFSET);
 #ifdef CONFIG_DEBUG
 		printf("g-bios BH found:) size = 0x%x\n", bh_len);
+#endif
+	}
+	else if (G_SYS_MAGIC == *(u32 *)(start_mem + G_SYS_MAGIC_OFFSET))
+	{
+		bh_len = *(u32 *)(start_mem + GBH_SIZE_OFFSET);
+#ifdef CONFIG_DEBUG
+		printf("g-bios sysconf found:) size = 0x%x\n", bh_len);
 #endif
 	}
 #ifdef CONFIG_DEBUG
@@ -233,16 +242,11 @@ int nand_load(struct nand_chip *flash)
 	}
 #endif
 
-	if (bh_len < flash->block_size)
-	{
-		bh_len = flash->block_size;
-	}
-
 	end_page = cur_page + ((bh_len - 1) >> wshift);
 
 #ifdef CONFIG_DEBUG
-	printf("Load size = 0x%x, cur_page = 0x%x, end_page = 0x%x\n",
-		bh_len, cur_page, end_page);
+	printf("Load memory = 0x%x, size = 0x%x, cur_page = 0x%x, end_page = 0x%x\n",
+		start_mem, bh_len, cur_page, end_page);
 #endif
 
 	while (++cur_page <= end_page)
@@ -250,21 +254,28 @@ int nand_load(struct nand_chip *flash)
 		buff = nand_read_page(flash, cur_page, buff);
 	}
 
-	return 0;
+	return (void *)buff - start_mem;
 }
 
 static int nand_loader(struct loader_opt *opt)
 {
 	int ret;
+	struct nand_chip nand = {0}; // nand_chip must be initialized
 
-	// nand_chip must be initialized.
-	struct nand_chip nand = {0};
-
-	// printf("Loading from NAND...\n");
 	ret = nand_init(&nand);
+	if (ret < 0)
+		return ret;
 
-	if (ret >= 0)
-		ret = nand_load(&nand);
+	// it's safer to load sysconf first
+	ret = nand_load(&nand, CONFIG_SYS_START_BLK, (void *)CONFIG_SYS_START_MEM);
+	if (ret < 0)
+		return ret;
+
+	ret = nand_load(&nand, CONFIG_GBH_START_BLK, (void *)CONFIG_GBH_START_MEM);
+	if (ret < 0)
+		return ret;
+
+	// TODO: check overlaop here! (and move the code to upper layer)
 
 	return ret;
 }

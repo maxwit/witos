@@ -72,8 +72,8 @@ struct net_config *sysconf_get_net_info(void);
 
 struct linux_config *sysconf_get_linux_param(void);
 
-int sysconf_reset(void);
+int __INIT__ sysconf_init(void);
 
-int sysconf_activate(void);
+int sysconf_reset(void);
 
 int sysconf_save(void);

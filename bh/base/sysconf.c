@@ -29,33 +29,33 @@ static const struct sysconf_data g_default_sysconf = {
 };
 #endif
 
-static struct sysconf_data g_sysconf_data;
+static struct sysconf_data *g_sysconf_data;
 
 struct image_info *sysconf_get_image_info(void)
 {
-	return g_sysconf_data.image_conf;
+	return g_sysconf_data->image_conf;
 }
 
 struct net_config *sysconf_get_net_info(void)
 {
-	return &g_sysconf_data.net_conf;
+	return &g_sysconf_data->net_conf;
 }
 
 struct linux_config *sysconf_get_linux_param(void)
 {
-	return &g_sysconf_data.linux_conf;
+	return &g_sysconf_data->linux_conf;
 }
 
 static u32 sysconf_checksum(u32 *new_sum)
 {
-	u32 old_sum = g_sysconf_data.checksum;
+	u32 old_sum = g_sysconf_data->checksum;
 
-	g_sysconf_data.checksum = 0;
-	g_sysconf_data.checksum = ~net_calc_checksum(&g_sysconf_data, sizeof(g_sysconf_data));
-	g_sysconf_data.checksum |= GB_SYSCFG_VER << 16;
+	g_sysconf_data->checksum = 0;
+	g_sysconf_data->checksum = ~net_calc_checksum(&g_sysconf_data, sizeof(g_sysconf_data));
+	g_sysconf_data->checksum |= GB_SYSCFG_VER << 16;
 
 	if (NULL != new_sum)
-		*new_sum = g_sysconf_data.checksum;
+		*new_sum = g_sysconf_data->checksum;
 
 	return old_sum;
 }
@@ -134,62 +134,18 @@ int sysconf_reset(void)
 
 static int __INIT__ sysconf_load(void)
 {
-	int ret = 0;
-	u32 conf_size, conf_base;
 	u32 old_sum, new_sum;
-	u8 *conf_buff;
-	struct flash_chip *flash;
-	struct part_attr  *attr;
 
-	flash = flash_open(BOOT_FLASH_ID);
-	if (NULL == flash)
-	{
-		return -ENODEV;
-	}
-
-	attr = flash->conf_attr;
-	if (NULL == attr)
-	{
-		DPRINT("%s(), line %d\n", __func__, __LINE__);
-		return -ENODEV;
-	}
-
-	conf_base = attr->part_base;
-	conf_size = attr->part_size; // fixme
-	// flash->erase_size > sizeof(struct sysconf_data) ? flash->erase_size : sizeof(struct sysconf_data);
-
-	conf_buff = (u8 *)malloc(conf_size);
-	if (NULL == conf_buff)
-	{
-		ret = -ENOMEM;
-		goto L2;
-	}
-
-	DPRINT("%s(): base = 0x%08x, size = 0x%08x\n",
-		__func__, conf_base, conf_size);
-
-	ret = flash_read(flash, conf_buff, conf_base, conf_size);
-	if (ret < 0)
-	{
-		goto L3;
-	}
-
-	memcpy(&g_sysconf_data, conf_buff, sizeof(struct sysconf_data));
+	g_sysconf_data = (struct sysconf_data *)(CONFIG_SYS_START_MEM + 36);
 
 	old_sum = sysconf_checksum(&new_sum);
-
 	if (old_sum != new_sum)
 	{
 		printf("checksum error! (0x%08x != 0x%08x)\n", new_sum, old_sum);
-		ret = -EIO;
+		return -EINVAL;
 	}
 
-L3:
-	free(conf_buff);
-L2:
-	flash_close(flash);
-
-	return ret;
+	return 0;
 }
 
 int sysconf_save(void)
@@ -198,8 +154,7 @@ int sysconf_save(void)
 	u32 conf_base, conf_size;
 	u8 *conf_buff;
 	struct flash_chip *flash;
-	struct part_attr *attr;
-	struct sysconf_data *sysconf = &g_sysconf_data;
+	struct sysconf_data *sysconf = g_sysconf_data;
 
 	flash = flash_open(BOOT_FLASH_ID);
 	if (NULL == flash)
@@ -207,14 +162,8 @@ int sysconf_save(void)
 		return -ENODEV;
 	}
 
-	attr = flash->conf_attr;
-	if (NULL == attr)
-	{
-		return -ENODEV;
-	}
-
-	conf_base = attr->part_base;
-	conf_size = attr->part_size;
+	conf_base = flash->erase_size * CONFIG_SYS_START_BLK;
+	conf_size = *(__u32 *)(CONFIG_SYS_START_MEM + GBH_SIZE_OFFSET); // fixme
 
 	ret = flash_erase(flash, conf_base, conf_size, EDF_ALLOWBB);
 
@@ -278,99 +227,12 @@ int net_set_server_ip(u32 ip)
 	return 0;
 }
 
-int sysconf_activate(void)
-{
-	int idx;
-	struct image_info *image;
-	struct net_config *net_conf;
-	struct net_device *ndev;
-	struct ifx_config *net_ifx;
-	struct flash_chip *flash;
-	struct partition  *part;
-
-	net_conf = sysconf_get_net_info();
-	net_ifx = net_conf->net_ifx;
-
-	idx = 0;
-
-	while (net_ifx->name[0] && idx < MAX_IFX_NUM)
-	{
-		ndev = net_get_dev(net_ifx->name);
-		if (ndev)
-		{
-			int ret;
-
-			ret = ndev_ioctl(ndev, NIOC_SET_IP, (void *)net_ifx->local_ip);
-			//
-			ret = ndev_ioctl(ndev, NIOC_SET_MASK, (void *)net_ifx->net_mask);
-			//
-			ret = ndev_ioctl(ndev, NIOC_SET_MAC, net_ifx->mac_addr);
-			//
-		}
-
-		net_ifx++;
-		idx++;
-	}
-
-	flash = flash_open(BOOT_FLASH_ID);
-	if (!flash)
-	{
-		DPRINT("%s() line %d: fail to open flash[%d]\n",
-			__func__, __LINE__, BOOT_FLASH_ID);
-
-		return -ENODEV;
-	}
-
-	part  = flash->part_tab;
-	image = sysconf_get_image_info();
-
-	for (idx = 0; idx < flash->pt_info->parts; idx++)
-	{
-		part->image = image;
-
-		if (PT_BL_GBH == part->attr->part_type)
-		{
-			part_set_home(idx);
-			part_change(idx);
-		}
-
-		part++;
-		image++;
-	}
-
-	flash_close(flash);
-
-	// ..
-	return 0;
-}
-
-static int __INIT__ sysconf_init(void)
+int __INIT__ sysconf_init(void)
 {
 	int ret;
 
 	ret = sysconf_load();
-
-	if (ret < 0)
-	{
-		printf("%s() failed (errno = %d), setting sysconf to default!\n",
-			__func__, ret);
-
-		sysconf_reset();
-
-		if (ret == -EIO)
-		{
-			ret = sysconf_save();
-
-			if (ret < 0)
-			{
-				printf("sysconf_save() failed (errno = %d)!\n", ret);
-			}
-		}
-	}
-
-	ret = sysconf_activate();
+	// ...
 
 	return ret;
 }
-
-APP_INIT(sysconf_init);

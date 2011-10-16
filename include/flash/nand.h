@@ -51,7 +51,7 @@ struct nand_chip
 
 int nand_init(struct nand_chip *);
 int nand_probe(struct nand_chip *);
-int nand_load(struct nand_chip *);
+int nand_load(struct nand_chip *, __u32, void *);
 
 #else
 

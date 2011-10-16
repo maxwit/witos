@@ -1,3 +1,4 @@
+#include <sysconf.h>
 #include <flash/flash.h>
 #include <flash/part.h>
 
@@ -20,6 +21,7 @@ static int __INIT__ flash_adjust_part_tab(struct flash_chip *host,
 {
 	int index = 0;
 	u32 curr_base;
+	struct linux_config *linux_conf = sysconf_get_linux_param();
 
 	if (parts > MAX_FLASH_PARTS)
 	{
@@ -61,6 +63,11 @@ static int __INIT__ flash_adjust_part_tab(struct flash_chip *host,
 			{
 				printf("%s() line %d: fixme!\n", __func__, __LINE__);
 			}
+			else if (new_attr->part_type >= PT_FS_BEGIN && new_attr->part_type <= PT_FS_END)
+			{
+				linux_conf->root_dev = index;
+				break;
+			}
 
 			new_attr->part_base = attr_tmpl->part_base;
 
@@ -80,11 +87,11 @@ static int __INIT__ flash_adjust_part_tab(struct flash_chip *host,
 			ALIGN_UP(new_attr->part_size, host->erase_size);
 		}
 
+#if 0
 		if (PT_BL_GCONF == new_attr->part_type)
 		{
 			host->conf_attr = new_attr;
 		}
-#if 0
 		else if (PT_OS_LINUX == new_attr->part_type)
 		{
 			u32 end, gap;
@@ -139,21 +146,31 @@ static int __INIT__ flash_adjust_part_tab(struct flash_chip *host,
 
 static int __INIT__ attach_part_info(struct flash_chip *flash, struct part_info *pt_info)
 {
+	int idx;
 	struct partition *part;
 	struct part_attr *attr;
+	struct image_info *image = sysconf_get_image_info();
 
 	flash->pt_info = pt_info;
 
 	part  = flash->part_tab;
 	attr  = pt_info->attr_tab;
 
-	while (part < flash->part_tab + MAX_FLASH_PARTS)
+	for (idx = 0; idx < flash->pt_info->parts; idx++)
 	{
 		part->attr  = attr;
 		part->host  = flash;
+		part->image = image;
+
+		if (PT_BL_GBH == part->attr->part_type)
+		{
+			part_set_home(idx);
+			part_change(idx);
+		}
 
 		part++;
 		attr++;
+		image++;
 	}
 
 	return 0;
