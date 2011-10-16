@@ -1009,7 +1009,7 @@ int ndev_register(struct net_device *ndev)
 	return 0;
 }
 
-struct net_device *ndev_new(u32 chip_size)
+struct net_device *ndev_new(size_t chip_size)
 {
 	struct net_device *ndev;
 	u32 core_size = (sizeof(struct net_device) + WORD_SIZE - 1) & ~(WORD_SIZE - 1);
@@ -1034,13 +1034,19 @@ struct net_device *ndev_new(u32 chip_size)
 #ifndef CONFIG_IRQ_SUPPORT
 int netif_rx_poll()
 {
-	if (!g_curr_ndev)
-		return -ENODEV;
+	int ret = -ENODEV;
+	struct list_node *iter;
+	struct net_device *ndev;
 
-	if (!g_curr_ndev->ndev_poll)
-		return 0;
+	list_for_each(iter, &g_ndev_list)
+	{
+		ndev = container_of(iter, struct net_device, ndev_node);
 
-	return g_curr_ndev->ndev_poll(g_curr_ndev);
+		if (ndev->ndev_poll)
+			ret = ndev->ndev_poll(ndev);
+	}
+
+	return ret;
 }
 #endif
 

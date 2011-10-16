@@ -389,7 +389,7 @@ struct net_device *net_get_dev(const char *ifx_name);
 
 u16 net_calc_checksum(const void *buff, u32 size);
 
-struct net_device *ndev_new(u32 ulChipSize);
+struct net_device *ndev_new(size_t chip_size);
 
 int ndev_register(struct net_device *ndev);
 
