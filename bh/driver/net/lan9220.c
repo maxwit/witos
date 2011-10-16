@@ -264,7 +264,7 @@ static __INIT__ int lan9220_probe(void)
 		break;
 	}
 
-	ndev = net_dev_new(0);
+	ndev = ndev_new(0);
 	if (NULL == ndev)
 	{
 		return -ENOMEM;
@@ -282,7 +282,7 @@ static __INIT__ int lan9220_probe(void)
 	ndev->mdio_write = lan9220_mdio_write;
 #endif
 
-	ret = net_dev_register(ndev);
+	ret = ndev_register(ndev);
 	if (ret < 0)
 	{
 		goto error;

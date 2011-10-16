@@ -276,7 +276,7 @@ static int __INIT__ dm9000_init(void)
 
 	dm9000_reset();
 
-	ndev = net_dev_new(0);
+	ndev = ndev_new(0);
 	if (NULL == ndev)
 		return -ENOMEM;
 
@@ -294,7 +294,7 @@ static int __INIT__ dm9000_init(void)
 
 	ret = irq_register_isr(CONFIG_DM9000_IRQ, dm9000_isr, ndev);
 
-	ret = net_dev_register(ndev);
+	ret = ndev_register(ndev);
 
 	// TODO:  try to manually update when RX/TX done
 	dm9000_reset();

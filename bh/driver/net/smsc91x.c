@@ -192,7 +192,7 @@ static int __INIT__ smsc91x_init(void)
 		return ret;
 	}
 
-	ndev = net_dev_new(0);
+	ndev = ndev_new(0);
 	if (!ndev)
 	{
 		return -ENOMEM;
@@ -203,7 +203,7 @@ static int __INIT__ smsc91x_init(void)
 	ndev->send_packet  = smsc91x_send_packet;
 	ndev->ndev_poll    = smsc91x_poll; // only polling mode supported so far
 
-	ret = net_dev_register(ndev);
+	ret = ndev_register(ndev);
 
 	return ret;
 }

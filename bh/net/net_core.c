@@ -952,7 +952,7 @@ struct net_device *net_get_dev(const char *ifx)
 	return NULL;
 }
 
-int net_dev_register(struct net_device *ndev)
+int ndev_register(struct net_device *ndev)
 {
 	int index;
 	struct mii_phy *phy;
@@ -1009,7 +1009,7 @@ int net_dev_register(struct net_device *ndev)
 	return 0;
 }
 
-struct net_device *net_dev_new(u32 chip_size)
+struct net_device *ndev_new(u32 chip_size)
 {
 	struct net_device *ndev;
 	u32 core_size = (sizeof(struct net_device) + WORD_SIZE - 1) & ~(WORD_SIZE - 1);
