@@ -203,81 +203,6 @@ void udp_send_packet(struct sock_buff *skb)
 	ip_send_packet(skb, PROT_UDP);
 }
 
-struct sock_buff *ping_recv_packet(struct socket *sock)
-{
-	u32 psr;
-	struct sock_buff *skb;
-	struct list_node *first;
-
-	while (1)
-	{
-		int ret;
-		char key;
-
-		ret = uart_read(CONFIG_DBGU_ID, (u8 *)&key, 1, WAIT_ASYNC);
-		if (ret > 0 && key == CHAR_CTRL_C)
-			return NULL;
-
-		ndev_recv_poll();
-
-		lock_irq_psr(psr);
-		if (!list_is_empty(&sock->rx_qu))
-		{
-			unlock_irq_psr(psr);
-			break;
-		}
-		unlock_irq_psr(psr);
-
-		udelay(10);
-	}
-
-	lock_irq_psr(psr);
-	first = sock->rx_qu.next;
-	list_del_node(first);
-	unlock_irq_psr(psr);
-
-	skb = container_of(first, struct sock_buff, node);
-
-	return skb;
-}
-struct sock_buff *udp_recv_packet(struct socket *sock)
-{
-	u32 psr;
-	struct sock_buff *skb;
-	struct list_node *first;
-
-	while (1)
-	{
-		int ret;
-		char key;
-
-		ret = uart_read(CONFIG_DBGU_ID, (u8 *)&key, 1, WAIT_ASYNC);
-		if (ret > 0 && key == CHAR_CTRL_C)
-			return NULL;
-
-		ndev_recv_poll();
-
-		lock_irq_psr(psr);
-		if (!list_is_empty(&sock->rx_qu))
-		{
-			unlock_irq_psr(psr);
-			break;
-		}
-		unlock_irq_psr(psr);
-
-		udelay(10);
-	}
-
-	lock_irq_psr(psr);
-	first = sock->rx_qu.next;
-	list_del_node(first);
-	unlock_irq_psr(psr);
-
-	skb = container_of(first, struct sock_buff, node);
-
-	return skb;
-}
-
 static int udp_layer_deliver(struct sock_buff *skb, const struct ip_header *ip_hdr)
 {
 	struct udp_header *udp_hdr;
@@ -301,44 +226,6 @@ static int udp_layer_deliver(struct sock_buff *skb, const struct ip_header *ip_h
 	list_add_tail(&skb->node, &sock->rx_qu);
 
 	return 0;
-}
-
-struct sock_buff *tcp_recv_packet(struct socket *sock)
-{
-	u32 psr;
-	struct sock_buff *skb;
-	struct list_node *first;
-
-	while (1)
-	{
-		int ret;
-		char key;
-
-		ret = uart_read(CONFIG_DBGU_ID, (u8 *)&key, 1, WAIT_ASYNC);
-		if (ret > 0 && key == CHAR_CTRL_C)
-			return NULL;
-
-		ndev_recv_poll();
-
-		lock_irq_psr(psr);
-		if (!list_is_empty(&sock->rx_qu))
-		{
-			unlock_irq_psr(psr);
-			break;
-		}
-		unlock_irq_psr(psr);
-
-		udelay(10);
-	}
-
-	lock_irq_psr(psr);
-	first = sock->rx_qu.next;
-	list_del_node(first);
-	unlock_irq_psr(psr);
-
-	skb = container_of(first, struct sock_buff, node);
-
-	return skb;
 }
 
 static int tcp_send_ack(struct socket *sock)
