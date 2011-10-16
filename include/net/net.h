@@ -396,16 +396,16 @@ int ndev_register(struct net_device *ndev);
 int netif_rx(struct sock_buff *skb);
 
 #ifndef CONFIG_IRQ_SUPPORT
-int netif_rx_poll();
+int ndev_recv_poll();
 #else
-#define netif_rx_poll()
+#define ndev_recv_poll()
 #endif
 
 // int ping_request(struct socket *socket, struct eth_addr *remote_addr);
 
 // int ping_request(struct socket *socket);
 
-int net_check_link_status();
+int ndev_check_link_status();
 
 struct list_node *net_get_device_list(void);
 

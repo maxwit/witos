@@ -63,7 +63,7 @@ static void __INIT__ show_sys_info(void)
 {
 	printf("%s\n", banner);
 
-	net_check_link_status();
+	ndev_check_link_status();
 }
 
 int main(void)

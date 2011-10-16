@@ -218,7 +218,7 @@ struct sock_buff *ping_recv_packet(struct socket *sock)
 		if (ret > 0 && key == CHAR_CTRL_C)
 			return NULL;
 
-		netif_rx_poll();
+		ndev_recv_poll();
 
 		lock_irq_psr(psr);
 		if (!list_is_empty(&sock->rx_qu))
@@ -255,7 +255,7 @@ struct sock_buff *udp_recv_packet(struct socket *sock)
 		if (ret > 0 && key == CHAR_CTRL_C)
 			return NULL;
 
-		netif_rx_poll();
+		ndev_recv_poll();
 
 		lock_irq_psr(psr);
 		if (!list_is_empty(&sock->rx_qu))
@@ -318,7 +318,7 @@ struct sock_buff *tcp_recv_packet(struct socket *sock)
 		if (ret > 0 && key == CHAR_CTRL_C)
 			return NULL;
 
-		netif_rx_poll();
+		ndev_recv_poll();
 
 		lock_irq_psr(psr);
 		if (!list_is_empty(&sock->rx_qu))
@@ -1045,7 +1045,7 @@ struct net_device *ndev_new(size_t chip_size)
 }
 
 #ifndef CONFIG_IRQ_SUPPORT
-int netif_rx_poll()
+int ndev_recv_poll()
 {
 	int ret = -ENODEV;
 	struct list_node *iter;
@@ -1063,7 +1063,8 @@ int netif_rx_poll()
 }
 #endif
 
-int net_check_link_status()
+// fixme: remove this API
+int ndev_check_link_status()
 {
 	int speed, phy_count;
 	struct net_device *ndev;

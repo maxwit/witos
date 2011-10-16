@@ -36,7 +36,7 @@ static int tcp_wait_for_state(const struct socket *sock, enum tcp_state state)
 
 	for (to = 0; to < 100; to++)
 	{
-		netif_rx_poll();
+		ndev_recv_poll();
 		if (sock->state == state)
 			return 0;
 
@@ -180,7 +180,7 @@ struct eth_addr *gethostaddr(const u32 nip)
 			return NULL;
 		}
 
-		netif_rx_poll();
+		ndev_recv_poll();
 
 		remote_addr = getaddr(nip);
 		if (remote_addr)
@@ -412,7 +412,7 @@ ssize_t send(int fd, const void *buf, size_t n, int flag)
 #if 0
 	for (time_out = 0; time_out < 10; time_out++)
 	{
-		netif_rx_poll();
+		ndev_recv_poll();
 		if (sock->state == 1)
 			break;
 
