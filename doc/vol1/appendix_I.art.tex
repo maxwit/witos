@@ -1,0 +1,79 @@
+\section{Qemu虚拟环境}
+
+\subsection{思路分析}
+\begin{enumerate}
+	\item 环境配置:
+	\begin{itemize}
+		\item Qemu
+		\item Serial tools: minicom/kermit
+	\end{itemize}
+
+	\item g-bios load 机制:
+	\begin{itemize}
+		\item th load bh
+		\item bh load sysconfig and linux kernel.
+	\end{itemize}
+	th 启动成功后，接着检测 bh，如果检测成功即启动 bh 部分，反之则会等待 bh 的烧录（有时间限制）； g-bios 目前支持4种方式的 bh load。
+
+	\item 步骤分析:
+	\begin{itemize}
+		\item 虚拟一块存储介质，将 g-bios th 部分烧录进该虚拟介质（目前 g-bios 已经支持 nand flash image 的制作）；
+		\item 利用虚拟机从该介质启动，并进入 g-bios th 启动菜单界面；
+		\item 此时即可根据菜单提示尽情折腾了...
+	\end{itemize}
+\end{enumerate}
+
+\subsection{具体实例}
+本例采用 mw71 作为虚拟开发板，其他板子方法类似。
+\begin{enumerate}
+	\item 编译 g-bios: \\
+	g-bios 中进入 th load 引导菜单可以通过长按键盘空格键进入，这在硬件平台上是完全可以做到的，但是由于虚拟机的启动比较快，很难做到（多次试验失败）。\\
+	可以通过修改 g-bios th load 部分代码来达到目的。\\
+	具体修改文件为：g-bios/th/base/main.c
+	\lstset{language=[ANSI]C}
+	\begin{lstlisting}[numbers=none]
+		...
+	37	// for(i = 0; i < 0x100; i++)
+	38	while (1)
+		...
+	\end{lstlisting}
+	修改OK后，按如下步骤编译：
+	\begin{lstlisting}[language=sh,numbers=none]
+	$ make mw71_defconfig
+	$ make
+	$ make install  // install g-bios image to /var/lib/tftpboot
+	\end{lstlisting}
+
+	\item 制作 image:
+	\begin{lstlisting}[language=csh,numbers=none]
+	$ cp build/simulators/omap3530/bb_nandflash.sh /var/lib/tftpboot
+	$ ./bb_nandflash.sh g-bios-th.bin mw_flash.img
+	\end{lstlisting}
+	在此 image 中只烧录 g-bios 的 th 部分。
+
+	\item 运行:
+	\begin{lstlisting}[language=csh,numbers=none]
+	$ qemu-system-arm -M mw71 -mtdblock mw_flash.img -serial pty
+	\end{lstlisting}
+	得到如下信息：
+	\begin{lstlisting}[numbers=none]
+	0+1 records out
+	1004 bytes (1.0 kB) copied, 4.2184e-05 s, 23.8 MB/s
+	put bl1 into flash image done!
+	char device redirected to /dev/pts/5
+	\end{lstlisting}
+	根据上面的启动信息，设置 minicom 配置参数( kermit 类似)。
+	\begin{lstlisting}[language=csh,numbers=none]
+	$ cat ~/.minirc.dfl
+	# Machine-generated file - use setup menu in minicom to change parameters.
+	pu port             /dev/pts/5
+	\end{lstlisting}
+	敲入如下命令，待 minicom 启动后敲任意键，即可得到 th 启动界面。
+	\begin{lstlisting}[language=csh,numbers=none]
+	$ sudo minicom
+	\end{lstlisting}
+	接下来进入那比较熟悉的界面，th 部分的 load 方式可以很容易的进行尝试。
+
+\end{enumerate}
+
+\section{Others}

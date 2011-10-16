@@ -934,6 +934,7 @@ struct list_node *net_get_device_list(void)
 	return &g_ndev_list;
 }
 
+#if 0
 struct net_device *net_get_dev(const char *ifx)
 {
 	struct net_device *ndev;
@@ -951,12 +952,13 @@ struct net_device *net_get_dev(const char *ifx)
 
 	return NULL;
 }
+#endif
 
 int ndev_register(struct net_device *ndev)
 {
 	int index;
 	struct mii_phy *phy;
-	static u8 mac_addr[] = CONFIG_MAC_ADDR;
+	struct ifx_config *ifx_cfg = sysconf_get_net_info()->net_ifx;
 
 	if (!ndev || !ndev->send_packet || !ndev->set_mac_addr)
 	{
@@ -968,12 +970,23 @@ int ndev_register(struct net_device *ndev)
 		printf("Warning: chip_name is NOT set!\n");
 	}
 
-	mac_addr[0] = (mac_addr[0] & ~1) + 2; // fixme
-
-	if (ndev_ioctl(ndev, NIOC_SET_MAC, mac_addr) < 0)
+	for (index = 0; ifx_cfg->name[0] && index < MAX_IFX_NUM; index++)
 	{
-		DPRINT("%s(): fail to set MAC address!\n");
-		return -EIO;
+		if (!strncmp(ndev->ifx_name, ifx_cfg->name, NET_NAME_LEN))
+		{
+			int ret;
+
+			ret = ndev_ioctl(ndev, NIOC_SET_IP, (void *)ifx_cfg->local_ip);
+			//
+			ret = ndev_ioctl(ndev, NIOC_SET_MASK, (void *)ifx_cfg->net_mask);
+			//
+			ret = ndev_ioctl(ndev, NIOC_SET_MAC, ifx_cfg->mac_addr);
+			//
+
+			break;
+		}
+
+		ifx_cfg++;
 	}
 
 	list_add_tail(&ndev->ndev_node, &g_ndev_list);
@@ -985,7 +998,7 @@ int ndev_register(struct net_device *ndev)
 	if (!ndev->phy_mask || !ndev->mdio_read || !ndev->mdio_write)
 		return 0;
 
-	// detecting PHY
+	// detect PHY
 	for (index = 0; index < 32; index++)
 	{
 		if (!((1 << index) & ndev->phy_mask))

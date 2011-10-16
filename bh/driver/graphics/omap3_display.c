@@ -31,11 +31,11 @@ static int omap3530_set_vmode(struct display *disp, const struct lcd_vmode *vm)
 	lcd_omap3_writel(DISPC_TIMING_V, vm->vbp << 20 | vm->vfp << 8 | vm->vpw);
 
 	lcd_omap3_writel(DISPC_DIVISOR, 1 << 16 | 2); // fix me
-	lcd_omap3_writel(DISPC_SIZE_LCD, vm->height << 16 | vm->width);
+	lcd_omap3_writel(DISPC_SIZE_LCD, (vm->height - 1) << 16 | (vm->width - 1));
 
 	lcd_omap3_writel(DISPC_GFX_BA0, dma);
 	lcd_omap3_writel(DISPC_GFX_POSITION, 0);
-	lcd_omap3_writel(DISPC_GFX_SIZE, vm->height << 16 | vm->width);
+	lcd_omap3_writel(DISPC_GFX_SIZE, (vm->height - 1) << 16 | (vm->width - 1));
 	lcd_omap3_writel(DISPC_GFX_ATTRIBUTES, fmt << 1 | 1);
 
 	lcd_omap3_writel(DISPC_VID0_BA0, dma);
@@ -45,6 +45,7 @@ static int omap3530_set_vmode(struct display *disp, const struct lcd_vmode *vm)
 
 	lcd_omap3_writel(DISPC_CONTROL,  1 << 16 | 1 << 15 | 1 << 8 | 1 << 3 | 1);
 
+	disp->video_mode = (struct lcd_vmode *)vm;
 
 	return 0;
 }

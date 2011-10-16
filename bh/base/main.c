@@ -1,3 +1,4 @@
+#include <sysconf.h>
 #include <flash/flash.h>
 #include <flash/part.h>
 #include <net/net.h>
@@ -67,6 +68,10 @@ static void __INIT__ show_sys_info(void)
 
 int main(void)
 {
+	int ret;
+
+	ret = sysconf_init();
+
 	sys_init();
 
 	show_sys_info();
@@ -74,5 +79,5 @@ int main(void)
 	printf("\n");
 	exec_shell();
 
-	return -1;
+	return ret;
 }
