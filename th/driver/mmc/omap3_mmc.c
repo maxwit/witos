@@ -340,8 +340,6 @@ int mmc_init(void)
 
 	omap3_soft_reset();
 
-
-
 	val = omap3_mmc_read(MMCHS_CAPA);
 	val |= 3 << 25;
 	omap3_mmc_write(MMCHS_CAPA, val);
@@ -410,4 +408,3 @@ int mmc_init(void)
 
 	return 0;
 }
-

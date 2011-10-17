@@ -41,10 +41,9 @@ struct block_device
 
 	size_t bdev_base;
 	size_t bdev_size;
-	size_t sect_size;
 
-	// struct fat_fs *fs;
 	void *fs; // fixme
+
 	struct list_node bdev_node;
 };
 
