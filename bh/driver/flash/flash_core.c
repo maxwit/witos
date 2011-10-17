@@ -202,47 +202,47 @@ static int part_block_mark_bad(struct flash_chip *slave, u32 off)
 	return master->block_mark_bad(master, slave->bdev.bdev_base + off);
 }
 
-int flash_register(struct flash_chip *master)
+int flash_register(struct flash_chip *flash)
 {
-	int i, n, ret; // ret has no use currently
+	int i, n, ret;
+	struct flash_chip *slave;
 	struct part_attr part_tab[MAX_FLASH_PARTS];
 
-	snprintf(master->bdev.dev.name, MAX_DEV_NAME, "mtdblock%d", g_flash_count);
+	snprintf(flash->bdev.dev.name, MAX_DEV_NAME, "mtdblock%d", g_flash_count);
 	g_flash_count++;
 
-	ret = block_device_register(&master->bdev);
-	list_head_init(&master->slave_list);
-	list_add_tail(&master->master_node, &g_master_list);
+	ret = block_device_register(&flash->bdev);
+	// if ret < 0 ...
+	list_head_init(&flash->slave_list);
+	list_add_tail(&flash->master_node, &g_master_list);
 
-	n = flash_adjust_part_tab(master,
+	n = flash_adjust_part_tab(flash,
 			part_tab, g_part_attr, g_part_num);
-
-	printf("%s:", master->bdev.dev.name);
 
 	for (i = 0; i < n; i++)
 	{
-		struct flash_chip *slave = zalloc(sizeof(*slave));
+		slave = zalloc(sizeof(*slave));
 		if (NULL == slave)
 			return -ENOMEM;
 
 		// fixme
 		snprintf(slave->bdev.dev.name, PART_NAME_LEN, "%sp%d",
-			master->bdev.dev.name, i + 1);
+			flash->bdev.dev.name, i + 1);
 
 		slave->bdev.bdev_base = part_tab[i].part_base;
 		slave->bdev.bdev_size = part_tab[i].part_size;
 
-		slave->write_size  = master->write_size;
-		slave->erase_size  = master->erase_size;
-		slave->chip_size   = master->chip_size;
-		slave->write_shift = master->write_shift;
-		slave->erase_shift = master->erase_shift;
-		slave->chip_shift  = master->chip_shift;
-		slave->type        = master->type;
-		slave->oob_size    = master->oob_size;
-		slave->oob_mode    = master->oob_mode;
-		slave->master	   = master;
-		list_add_tail(&slave->slave_node, &master->slave_list);
+		slave->write_size  = flash->write_size;
+		slave->erase_size  = flash->erase_size;
+		slave->chip_size   = flash->chip_size;
+		slave->write_shift = flash->write_shift;
+		slave->erase_shift = flash->erase_shift;
+		slave->chip_shift  = flash->chip_shift;
+		slave->type        = flash->type;
+		slave->oob_size    = flash->oob_size;
+		slave->oob_mode    = flash->oob_mode;
+		slave->master      = flash;
+		list_add_tail(&slave->slave_node, &flash->slave_list);
 
 		slave->read  = flash_part_read;
 		slave->write = flash_part_write;
@@ -251,15 +251,13 @@ int flash_register(struct flash_chip *master)
 		slave->write_oob = part_write_oob;
 		slave->block_is_bad   = part_block_is_bad;
 		slave->block_mark_bad = part_block_mark_bad;
-		slave->scan_bad_block = master->scan_bad_block;
-
-		printf(" %s", slave->bdev.dev.name);
+		slave->scan_bad_block = flash->scan_bad_block; // fixme
 
 		ret = block_device_register(&slave->bdev);
 	}
 
 #if 0
-	part_show(master);
+	part_show(flash);
 
 	if (PT_BL_GBH == part->attr->part_type)
 	{

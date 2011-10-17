@@ -22,8 +22,10 @@ struct block_device *get_bdev_by_name(const char *name)
 
 int block_device_register(struct block_device *bdev)
 {
-	// printf("%s(): registering %s\n", __func__, bdev->dev.name);
 	list_add_tail(&bdev->bdev_node, &g_bdev_list);
+
+	printf("0x%08x - 0x%08x: %s\n",
+		bdev->bdev_base, bdev->bdev_base + bdev->bdev_size, bdev->dev.name);
 
 	return 0;
 }
