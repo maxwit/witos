@@ -36,7 +36,7 @@ static int tcp_wait_for_state(const struct socket *sock, enum tcp_state state)
 
 	for (to = 0; to < 100; to++)
 	{
-		netif_rx_poll();
+		ndev_recv_poll();
 		if (sock->state == state)
 			return 0;
 
@@ -44,6 +44,44 @@ static int tcp_wait_for_state(const struct socket *sock, enum tcp_state state)
 	}
 
 	return -ETIMEDOUT;
+}
+
+static struct sock_buff *sock_recv_packet(struct socket *sock)
+{
+	u32 psr;
+	struct sock_buff *skb;
+	struct list_node *first;
+
+	while (1)
+	{
+		int ret;
+		char key;
+
+		ret = uart_read(CONFIG_DBGU_ID, (u8 *)&key, 1, WAIT_ASYNC);
+		if (ret > 0 && key == CHAR_CTRL_C)
+			return NULL;
+
+		ndev_recv_poll();
+
+		lock_irq_psr(psr);
+		if (!list_is_empty(&sock->rx_qu))
+		{
+			unlock_irq_psr(psr);
+			break;
+		}
+		unlock_irq_psr(psr);
+
+		udelay(10);
+	}
+
+	lock_irq_psr(psr);
+	first = sock->rx_qu.next;
+	list_del_node(first);
+	unlock_irq_psr(psr);
+
+	skb = container_of(first, struct sock_buff, node);
+
+	return skb;
 }
 
 int socket(int domain, int type, int protocol)
@@ -180,7 +218,7 @@ struct eth_addr *gethostaddr(const u32 nip)
 			return NULL;
 		}
 
-		netif_rx_poll();
+		ndev_recv_poll();
 
 		remote_addr = getaddr(nip);
 		if (remote_addr)
@@ -276,23 +314,12 @@ long recvfrom(int fd, void *buf, u32 n, int flags,
 	u32 pkt_len;
 
 	sock = get_sock(fd);
-
 	if (NULL == sock)
 	{
 		return -EINVAL;
 	}
 
-	switch (sock->type)
-	{
-	case SOCK_RAW:
-		skb = ping_recv_packet(sock);
-		break;
-
-	case SOCK_DGRAM:
-		skb = udp_recv_packet(sock);
-		break;
-	}
-
+	skb = sock_recv_packet(sock);
 	if(NULL == skb)
 		return 0;
 
@@ -412,7 +439,7 @@ ssize_t send(int fd, const void *buf, size_t n, int flag)
 #if 0
 	for (time_out = 0; time_out < 10; time_out++)
 	{
-		netif_rx_poll();
+		ndev_recv_poll();
 		if (sock->state == 1)
 			break;
 
@@ -437,7 +464,7 @@ ssize_t recv(int fd, void *buf, size_t n, int flag)
 	if (TCPS_ESTABLISHED != sock->state)
 		return -EIO;
 
-	skb = tcp_recv_packet(sock);
+	skb = sock_recv_packet(sock);
 	if (skb == NULL)
 	{
 		return -EIO;

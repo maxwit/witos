@@ -1,3 +1,4 @@
+// fix the wolrd!
 #include <sysconf.h>
 #include <getopt.h>
 
@@ -52,8 +53,6 @@ int main(int argc, char *argv[])
 		printf("Fail to reset system config (ret = %d)!\n", ret);
 		return ret;
 	}
-
-	sysconf_activate();
 
 	ret = sysconf_save();
 

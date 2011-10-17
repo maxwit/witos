@@ -36,7 +36,7 @@ static char shell_getchar(void)
 		if (ret > 0)
 			break;
 
-		netif_rx_poll();
+		ndev_recv_poll();
 	}
 
 	return ch;

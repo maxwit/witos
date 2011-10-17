@@ -251,7 +251,7 @@ static int __INIT__ at91_emac_probe(void)
 	struct net_device *ndev;
 	struct at91_emac *emac;
 
-	ndev = net_dev_new(sizeof(*emac));
+	ndev = ndev_new(sizeof(*emac));
 	emac = ndev->chip;
 
 	//
@@ -270,7 +270,7 @@ static int __INIT__ at91_emac_probe(void)
 
 	at91_emac_init(emac);
 
-	ret = net_dev_register(ndev);
+	ret = ndev_register(ndev);
 	if (ret < 0)
 	{
 		// DPRINT ...

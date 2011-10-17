@@ -48,14 +48,6 @@ handle_reset:
 	msr   cpsr, #(ARM_MODE_SVC | ARM_INT_MASK)
 	mov   sp, r0
 
-#if 0
-	bl    cpu_init
-
-	bl    soc_init
-
-	bl    mem_init
-#endif
-
 	ldr   r0, =_start
 	adr   r1, _start
 	cmp   r0, r1

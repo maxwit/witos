@@ -364,17 +364,12 @@ void skb_free(struct sock_buff * skb);
 struct eth_addr *getaddr(u32 nip);
 struct eth_addr *gethostaddr(const u32 nip);
 
-struct sock_buff *ping_recv_packet(struct socket *sock);
-
 void arp_send_packet(const u8 nip[], const u8 *mac, u16 op_code);
 void ip_send_packet(struct sock_buff *skb, u8 bProtocal);
 void udp_send_packet(struct sock_buff *skb);
 void tcp_send_packet(struct sock_buff *skb, __u8 flags, struct tcp_option *opt);
 
 int ip_layer_deliver(struct sock_buff *skb);
-
-struct sock_buff *udp_recv_packet(struct socket *sock);
-struct sock_buff *tcp_recv_packet(struct socket *sock);
 
 int socket(int domain, int type, int protocol);
 int bind(int fd, const struct sockaddr *addr, socklen_t len);
@@ -389,23 +384,23 @@ struct net_device *net_get_dev(const char *ifx_name);
 
 u16 net_calc_checksum(const void *buff, u32 size);
 
-struct net_device *net_dev_new(u32 ulChipSize);
+struct net_device *ndev_new(size_t chip_size);
 
-int net_dev_register(struct net_device *ndev);
+int ndev_register(struct net_device *ndev);
 
 int netif_rx(struct sock_buff *skb);
 
 #ifndef CONFIG_IRQ_SUPPORT
-int netif_rx_poll();
+int ndev_recv_poll();
 #else
-#define netif_rx_poll()
+#define ndev_recv_poll()
 #endif
 
 // int ping_request(struct socket *socket, struct eth_addr *remote_addr);
 
 // int ping_request(struct socket *socket);
 
-int net_check_link_status();
+int ndev_check_link_status();
 
 struct list_node *net_get_device_list(void);
 

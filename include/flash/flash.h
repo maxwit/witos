@@ -180,7 +180,7 @@ struct flash_chip
 	struct partition  part_tab[MAX_FLASH_PARTS];
 	struct part_info  *pt_info;
 
-	struct part_attr  *conf_attr; // fixme: should be cached???
+	// struct part_attr  *conf_attr; // fixme: should be cached???
 
 	int (*read)(struct flash_chip *, u32, u32, u32 *, u8 *);
 	int (*write)(struct flash_chip *, u32, u32 , u32 *, const u8 *);
