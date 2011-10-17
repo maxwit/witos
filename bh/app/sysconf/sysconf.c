@@ -45,15 +45,6 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	// if (!reset_all) return 0;
-
-	ret = sysconf_reset();
-	if (ret < 0)
-	{
-		printf("Fail to reset system config (ret = %d)!\n", ret);
-		return ret;
-	}
-
 	ret = sysconf_save();
 
 	return ret;

@@ -2,7 +2,6 @@
 #include <loader.h>
 #include <uart/uart.h>
 #include <uart/kermit.h>
-#include <flash/part.h>
 #ifdef CONFIG_DEBUG
 #include <stdio.h>
 #endif

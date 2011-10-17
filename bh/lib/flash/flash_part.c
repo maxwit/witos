@@ -1,6 +1,5 @@
 #include <sysconf.h>
 #include <flash/flash.h>
-#include <flash/part.h>
 
 static int g_home_index = -1; // to be removed
 static int g_curr_index = -1;
@@ -544,7 +543,8 @@ const char *part_get_name(const struct part_attr *attr)
 // fixme
 int part_show(const struct flash_chip *flash)
 {
-	int index;
+	int index = 0;
+#if 0
 	struct part_attr attr_tab[MAX_FLASH_PARTS];
 	u32 nIndex, nRootIndex;
 	const char *pBar = "--------------------------------------------------------------------";
@@ -593,6 +593,6 @@ int part_show(const struct flash_chip *flash)
 
 	printf("%s\n", pBar);
 
+#endif
 	return index;
 }
-

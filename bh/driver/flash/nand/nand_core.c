@@ -2017,6 +2017,10 @@ int nand_register(struct nand_chip *nand)
 
 	nand->page_in_buff = -1;
 
+	flash->bdev.bdev_base = 0;
+	flash->bdev.bdev_size = flash->chip_size;
+	flash->bdev.fs = NULL;
+
 	ret = flash_register(flash);
 	if (ret < 0)
 	{
@@ -2050,11 +2054,10 @@ int nand_register(struct nand_chip *nand)
 
 int nand_ctrl_register(struct nand_ctrl *nfc)
 {
-#if 1
 	int idx, ret;
 	struct nand_chip *nand;
 
-	for (idx = 0; idx < nfc->max_slaves; idx++) //
+	for (idx = 0; idx < nfc->max_slaves; idx++)
 	{
 		nand = nand_probe(nfc, idx);
 		if (NULL == nand)
@@ -2064,154 +2067,6 @@ int nand_ctrl_register(struct nand_ctrl *nfc)
 		if (ret < 0)
 			return ret;
 	}
-#else
-	int idx, ret, busw;
-	struct flash_chip *flash;
-	struct nand_chip *nand;
-	char vendor_name[64];
-	char chip_size[32], block_size[32], write_size[32];
-
-	for (idx = 0; idx < nfc->max_slaves; idx++)
-	{
-		int j;
-
-		nand = new_nand_chip(nfc, idx);
-
-		if (NULL == nand)
-			return -ENOMEM;
-
-		ret = probe_nand_chip(nand);
-		if (ret < 0)
-		{
-			delete_nand_chip(nand);
-			break;
-		}
-
-		flash = NAND_TO_FLASH(nand);
-
-		for (j = 0; g_nand_vendor_id[j].id; j++)
-		{
-			if (g_nand_vendor_id[j].id == nand->vendor_id)
-			{
-				strcpy(vendor_name, g_nand_vendor_id[j].name);
-				break;
-			}
-		}
-
-		if (0 == g_nand_vendor_id[j].id)
-			strcpy(vendor_name, "Unknown vendor");
-
-		val_to_hr_str(flash->chip_size, chip_size);
-		val_to_hr_str(flash->erase_size, block_size);
-		val_to_hr_str(flash->write_size, write_size);
-
-		printf("NAND[%d] is detected! flash details:\n"
-			"    vendor ID  = 0x%02x (%s)\n"
-			"    device ID  = 0x%02x (%s)\n"
-			"    chip size  = 0x%08x (%s)\n"
-			"    block size = 0x%08x (%s)\n"
-			"    page size  = 0x%08x (%s)\n"
-			"    oob size   = %d\n",
-			idx,
-			nand->vendor_id, vendor_name,
-			nand->device_id, flash->name,
-			flash->chip_size, chip_size,
-			flash->erase_size, block_size,
-			flash->write_size, write_size,
-			flash->oob_size
-			);
-
-		// fix for name
-
-		flash->chip_shift  = ffs(flash->chip_size) - 1; //fixme: to opt ffs()
-		flash->erase_shift = ffs(flash->erase_size) - 1;
-		flash->write_shift = ffs(flash->write_size) - 1;
-
-		nand->page_num_mask = (flash->chip_size >> flash->write_shift) - 1;
-
-		nand->bbt_erase_shift = ffs(flash->erase_size) - 1;
-		nand->phy_erase_shift = ffs(flash->erase_size) - 1;
-
-		nand->bad_blk_oob_pos = flash->write_size > 512 ? NAND_BBP_LARGE : NAND_BBP_SMALL;
-
-		if ((nand->flags & NAND_4PAGE_ARRAY) && erase_one_block == nfc->erase_block)
-			nfc->erase_block = erase_block_ex;
-
-		if (flash->write_size > 512 && nand_command_small == nfc->command)
-			nfc->command = nand_command_large;
-
-		if (!(nand->flags & NAND_OWN_BUFFERS))
-		{
-			nand->buffers = malloc(sizeof(*nand->buffers));
-
-			if (!nand->buffers)
-				return -ENOMEM;
-
-			nand->oob_buf = nand->buffers->data_buff + flash->write_size;
-		}
-
-		switch (flash->oob_size)
-		{
-		case 8:
-			nfc->soft_oob_layout = &g_oob8_layout;
-			break;
-		case 16:
-			nfc->soft_oob_layout = &g_oob16_layout;
-			break;
-		case 64:
-			nfc->soft_oob_layout = &g_oob64_layout;
-			break;
-		default:
-			printf("No OOB layout defined! OOB Size = %d.\n", flash->oob_size);
-			BUG();
-		}
-
-#if 0
-		if (NAND_ECC_SW == nfc->ecc_mode)
-		{
-			nfc->curr_oob_layout = nfc->soft_oob_layout;
-		}
-		else if (NAND_ECC_SW == nfc->ecc_mode)
-		{
-			// fixme: check hard ecc
-			nfc->curr_oob_layout = nfc->hard_oob_layout;
-		}
-
-		nfc->curr_oob_layout->free_oob_sum = 0;
-
-		for (j = 0; nfc->curr_oob_layout->free_region[j].nOfLen; j++)
-		{
-			nfc->curr_oob_layout->free_oob_sum += nfc->curr_oob_layout->free_region[j].nOfLen;
-		}
-#else
-		nand_set_ecc_mode(nfc, nfc->ecc_mode);
-#endif
-
-		nand->page_in_buff = -1;
-
-		ret = flash_register(flash);
-		if (ret < 0)
-		{
-			printf("%s(): fail to register deivce!\n");
-			// fixme: destroy
-		}
-
-		if (nand->flags & NAND_SKIP_BBTSCAN)
-			return 0;
-
-		printf("Scanning bad blocks:\n");
-		ret = nfc->scan_bad_block(nand);
-		// fixme
-		if (0 == ret)
-		{
-			printf("done!\n");
-		}
-		else
-		{
-			printf("nEccFailedCount!\n");
-		}
-	}
-#endif
 
 	// printf("Total: %d nand %s detected\n", nfc->slaves, nfc->slaves > 1 ? "chips" : "chip");
 

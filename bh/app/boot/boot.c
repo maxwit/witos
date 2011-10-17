@@ -3,7 +3,6 @@
 #include <image.h>
 #include <net/tftp.h>
 #include <uart/uart.h>
-#include <flash/part.h>
 #include "atag.h"
 #include <fs/fs.h>
 #include <mmc/mmc.h>
@@ -14,8 +13,7 @@
 
 typedef void (*LINUX_KERNEL_ENTRY)(int, int, u32);
 
-//static char app_option[][CMD_OPTION_LEN] = {"t", "r", "f", "n", "m", "c", "v", "l", "0"};
-
+#if 0
 static struct tag *begin_setup_atag (void *tag_base)
 {
 	struct tag *cur_tag;
@@ -810,3 +808,9 @@ void __INIT__ auto_boot_linux(void)
 
 	main(1, argv); // fixme
 }
+#else
+int main(int argc, char *argv[])
+{
+	return 0;
+}
+#endif

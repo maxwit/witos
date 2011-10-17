@@ -1,6 +1,5 @@
 #include <getopt.h>
 #include <flash/flash.h>
-#include <flash/part.h>
 #include <uart/uart.h>
 #include <net/net.h>
 
@@ -51,6 +50,10 @@ static void __INLINE__ cmd_backspace(void)
 void show_prompt(void)
 {
 	int d;
+
+#if 1
+	d = 0;
+#else
 	struct partition *part;
 
 	part = part_open(PART_CURR, OP_RDONLY);
@@ -64,6 +67,7 @@ void show_prompt(void)
 		d = part_get_home();
 		printf("set to %d\n", d);
 	}
+#endif
 
 	printf("g-bios: %d# ", d);
 }

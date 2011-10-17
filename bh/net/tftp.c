@@ -1,6 +1,5 @@
 #include <net/tftp.h>
 #include <getopt.h>
-#include <flash/part.h>
 #include <sysconf.h>
 
 struct tftp_packet
@@ -160,6 +159,7 @@ int net_tftp_load(struct tftp_opt *opt)
 					buff_ptr += pkt_len;
 				}
 
+#if 0
 				if (NULL != opt->part)
 				{
 					ret = part_write(opt->part, tftp_pkt->data, pkt_len);
@@ -169,6 +169,7 @@ int net_tftp_load(struct tftp_opt *opt)
 						goto L1;
 					}
 				}
+#endif
 			}
 			else
 			{

@@ -1,7 +1,7 @@
+#include <stdio.h>
 #include <loader.h>
 #include <uart/uart.h>
 #include <uart/ymodem.h>
-#include <flash/part.h>
 
 #define SOH    0x01
 #define STX    0x02

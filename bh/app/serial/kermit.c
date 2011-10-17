@@ -1,7 +1,6 @@
 #include <loader.h>
 #include <uart/ymodem.h>
 #include <uart/kermit.h>
-#include <flash/part.h>
 #include <sysconf.h>
 #include <getopt.h>
 
@@ -45,12 +44,8 @@ int main(int argc, char *argv[])
 
 	if (flag == 0)
 	{
-		if ((part = part_open(PART_CURR, OP_RDWR)) == NULL)
-		{
-			return -EINVAL;
-		}
-
-		ld_opt.part = part;
+		printf("writing back to partition is not supported yet!\n");
+		return -EINVAL;
 	}
 
 	if (strcmp(argv[0], "kermit") == 0)
@@ -61,15 +56,6 @@ int main(int argc, char *argv[])
 	if (strcmp(argv[0], "ymodem") == 0)
 	{
 		size = ymodem_load(&ld_opt);
-	}
-
-	if (flag == 0)
-	{
-		part_set_image(part, ld_opt.file_name, ld_opt.load_size);
-
-		part_close(part);
-
-		sysconf_save();
 	}
 
 	return size;

@@ -1,7 +1,6 @@
 #include <sysconf.h>
 #include <net/net.h>
 #include <flash/flash.h>
-#include <flash/part.h>
 
 struct sysconf_data
 {
@@ -58,78 +57,6 @@ static u32 sysconf_checksum(u32 *new_sum)
 		*new_sum = g_sysconf_data->checksum;
 
 	return old_sum;
-}
-
-int sysconf_reset(void)
-{
-	int i;
-	u8 mac[] = CONFIG_MAC_ADDR;
-	struct image_info *image_conf = sysconf_get_image_info();
-	struct net_config *net_conf = sysconf_get_net_info();
-	struct linux_config *linux_conf = sysconf_get_linux_param();
-	struct flash_chip *flash;
-
-	memset(net_conf, 0x0, sizeof(*net_conf));
-	memset(linux_conf, 0x0, sizeof(*linux_conf));
-
-	// network reset
-	net_conf->server_ip = CONFIG_SERVER_IP;
-	// fixme!!!
-	strncpy(net_conf->net_ifx[0].name, "eth0", NET_NAME_LEN);
-	net_conf->net_ifx[0].local_ip = CONFIG_LOCAL_IP;
-	net_conf->net_ifx[0].net_mask = CONFIG_NET_MASK;
-	memcpy(net_conf->net_ifx[0].mac_addr, mac, MAC_ADR_LEN);
-
-	// linux reset
-	// fixme!!!
-	linux_conf->kernel_image[0] = '\0';
-	linux_conf->ramdisk_image[0] = '\0'; // to be removed
-	linux_conf->boot_mode = BM_FLASHDISK;
-
-	// fixme
-	linux_conf->root_dev = MAX_FLASH_PARTS;
-
-	flash = flash_open(BOOT_FLASH_ID);
-	if (flash)
-	{
-		struct part_info *pt_info = flash->pt_info;
-
-		for (i = 0; i < pt_info->parts; i++)
-		{
-			const struct part_attr *attr = pt_info->attr_tab + i;
-
-			if (attr->part_type >= PT_FS_BEGIN && attr->part_type <= PT_FS_END)
-			{
-				linux_conf->root_dev = i;
-				break;
-			}
-		}
-
-		if (MAX_FLASH_PARTS == linux_conf->root_dev)
-		{
-			printf("Warning: root device not defined!\n");
-			linux_conf->root_dev = 0;
-		}
-
-		flash_close(flash);
-	}
-
-	strncpy(linux_conf->nfs_path, CONFIG_NFS_ROOT, sizeof(linux_conf->nfs_path));
-
-	// fixme: uart as console?
-	snprintf(linux_conf->console_device, CONSOLE_DEV_NAME_LEN,
-			CONFIG_CONSOLE_NAME "%d,115200", CONFIG_UART_INDEX);
-
-	linux_conf->mach_id = CONFIG_MACH_TYPE;
-
-	// image reset
-	memset(image_conf, 0x0, sizeof(*image_conf) * MAX_FLASH_PARTS);
-
-	// generate checksum
-	sysconf_checksum(NULL);
-
-	//fixme
-	return 0;
 }
 
 static int __INIT__ sysconf_load(void)

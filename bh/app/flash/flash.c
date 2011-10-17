@@ -1,11 +1,11 @@
 #include <flash/flash.h>
-#include <flash/part.h>
 #include <getopt.h>
 #include <sysconf.h>
 #include <string.h>
 #include <bar.h>
 #include <app.h>
 
+#if 0
 static void flash_cmd_usage(char *cmd)
 {
 	// TODO:
@@ -227,7 +227,6 @@ static int dump(int argc, char *argv[])
 
 		start += flash->write_size + flash->oob_size;
 		size  -= flash->write_size + flash->oob_size;
-
 		puts("\n");
 	}
 
@@ -675,6 +674,7 @@ static int scanbb(int argc, char *argv[])
 L1:
 	return ret;
 }
+#endif
 
 static void flash_usage(void)
 {
@@ -692,6 +692,7 @@ static void flash_usage(void)
 
 int main(int argc, char *argv[])
 {
+#if 0
 	int i;
 
 	struct cmd_info command[] =
@@ -729,7 +730,9 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
+#endif
 
 	flash_usage();
+
 	return 0;
 }

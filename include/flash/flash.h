@@ -156,7 +156,7 @@ struct flash_chip
 		struct list_node slave_list;
 		struct flash_chip *master;
 	};
-///////////////////////////////////
+
 	int   type;
 	char  name[BLOCK_DEV_NAME_LEN];
 
@@ -176,11 +176,6 @@ struct flash_chip
 
 	FLASH_HOOK_PARAM *callback_args;
 	FLASH_HOOK_FUNC   callback_func;
-
-	struct partition  part_tab[MAX_FLASH_PARTS];
-	struct part_info  *pt_info;
-
-	// struct part_attr  *conf_attr; // fixme: should be cached???
 
 	int (*read)(struct flash_chip *, u32, u32, u32 *, u8 *);
 	int (*write)(struct flash_chip *, u32, u32 , u32 *, const u8 *);
