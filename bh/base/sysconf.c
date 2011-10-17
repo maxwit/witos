@@ -2,6 +2,11 @@
 #include <net/net.h>
 #include <flash/flash.h>
 #include <flash/part.h>
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+#define LEN 128
 
 struct sysconf_data
 {
@@ -226,6 +231,222 @@ int net_set_server_ip(u32 ip)
 
 	return 0;
 }
+
+struct sys_config *g_sys;
+
+static char *search_attr(const char *data, int size, const char *str)
+{
+	int i, j;
+	int len = strlen(str);
+	int is_attr = 1;
+
+	for (i = 0; i < size - len; i++)
+	{
+		if (is_attr)
+		{
+			if (data[i] == '=')
+			{
+				is_attr = 0;
+				continue;
+			}
+
+			if (data[i] != ' ')
+			{
+				for (j = 0; j < len; j++)
+				{
+					if (data[i + j] != str[j])
+						break;
+				}
+
+				if (j == len && (data[i + j] == ' ' || data[i + j] == '='))
+				{
+					return (char *)data + i;
+				}
+			}
+		}
+		else
+		{
+			if (data[i] == '\n')
+				is_attr = 1;
+		}
+	}
+
+	return NULL;
+}
+
+int conf_del_attr(const char *attr)
+{
+	char *p, *q;
+	int mov_len;
+	char *sys_data = (char *)g_sys + g_sys->offset;
+
+	p = search_attr(sys_data, g_sys->size, attr);
+	if (p == NULL)
+	{
+		printf("Attribute \"%s\" is not exist, del attr error!\n", attr);
+		return -1;
+	}
+
+	q = strchr(p, '\n');
+	q++;
+
+	mov_len = g_sys->size - (q - sys_data);
+	memmove(p, q, mov_len);
+
+	g_sys->size -= q - p;
+
+	return 0;
+}
+
+int conf_add_attr(const char *attr, const char *val)
+{
+	char *p;
+	int len;
+	char *sys_data = (char *)g_sys + g_sys->offset;
+
+	p = search_attr(sys_data, g_sys->size, attr);
+	if (p != NULL)
+	{
+		printf("Attribute \"%s\" is exist, add attr error!\n", attr);
+		return -1;
+	}
+
+	p = sys_data + g_sys->size;
+
+	len = sprintf(p, "%s = %s\n", attr, val);
+
+	g_sys->size = g_sys->size + len;
+
+	return 0;
+}
+
+int conf_set_attr(const char *attr, const char *val)
+{
+	char *p, *q;
+	int cur_len, new_len;
+	int t;
+	char *sys_data = (char *)g_sys + g_sys->offset;
+
+	p = search_attr(sys_data, g_sys->size, attr);
+	if (p == NULL)
+	{
+		printf("Attribute \"%s\" is not exist, set attr error\n", attr);
+		return -1;
+	}
+
+	p = strchr(p, '=');
+	p++;
+	q = strchr(p, '\n');
+
+	cur_len = q - p;
+	new_len = strlen(val);
+
+	t = new_len - cur_len;
+
+	if (t != 0)
+	{
+		memmove(q + t, q, g_sys->size - (q - sys_data));
+		g_sys->size += t;
+	}
+
+	memcpy(p, val, new_len);
+
+	return 0;
+}
+
+int conf_get_attr(const char *attr, char val[])
+{
+	const char *p;
+	char *sys_data = (char *)g_sys + g_sys->offset;
+
+	p = search_attr(sys_data, g_sys->size, attr);
+	if (p == NULL)
+	{
+		printf("Attribute \"%s\" is not exist, get attr error!\n", attr);
+		return -1;
+	}
+
+	p = strchr(p, '=');
+	p++;
+
+	while (*p != '\n')
+	{
+		if (*p != ' ')
+		{
+			*val++ = *p;
+		}
+
+		p++;
+	}
+
+	*val = '\0';
+
+	return 0;
+}
+
+int conf_load()
+{
+	// fix me!
+	return 0;
+}
+
+int conf_store()
+{
+	// fix me!
+	return 0;
+}
+
+int conf_list_attr()
+{
+	char attr[LEN];
+	char val[LEN];
+	int i, j;
+	char *p;
+	int is_attr = 1;
+	char *sys_data = (char *)g_sys + g_sys->offset;
+
+	p = sys_data;
+	i = 0;
+	j = 0;
+	while (i < g_sys->size)
+	{
+		if (is_attr)
+		{
+			if (p[i] != ' ' && p[i] != '=')
+			{
+				attr[j++] = p[i];
+			}
+			else if (p[i] == '=')
+			{
+				is_attr = 0;
+				attr[j] = '\0';
+				printf("%s = ", attr);
+				j = 0;
+			}
+
+		}
+		else
+		{
+			if (p[i] != ' ' && p[i] != '\n')
+			{
+				val[j++] = p[i];
+			}
+			else if (p[i] == '\n')
+			{
+				is_attr = 1;
+				val[j] = '\0';
+				printf("%s\n", val);
+				j = 0;
+			}
+
+		}
+
+		i++;
+	}
+
+	return 0;
+}
+
 
 int __INIT__ sysconf_init(void)
 {
