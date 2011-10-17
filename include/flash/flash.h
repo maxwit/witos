@@ -143,20 +143,26 @@ struct partition
 
 struct flash_chip
 {
-	int   type;
-	char  name[BLOCK_DEV_NAME_LEN];
+	struct block_device bdev;
 
 	union
 	{
-		u32 write_size;
-		u32 page_size;
+		struct list_node master_node;
+		struct list_node slave_node;
 	};
+
 	union
 	{
-		u32 erase_size;
-		u32 block_size;
+		struct list_node slave_list;
+		struct flash_chip *master;
 	};
-	u32 chip_size;
+///////////////////////////////////
+	int   type;
+	char  name[BLOCK_DEV_NAME_LEN];
+
+	size_t write_size;
+	size_t erase_size;
+	size_t chip_size; // fixme
 
 	u32 write_shift;
 	u32 erase_shift;

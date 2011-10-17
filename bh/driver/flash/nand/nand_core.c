@@ -1370,7 +1370,7 @@ int nand_erase(struct nand_chip *nand, struct erase_opt *pOpt)
 	pOpt->fail_addr = 0xffffffff;
 
 	nPageIndex     = pOpt->estart >> flash->write_shift;
-	nPagesPerBlock = flash->block_size >> flash->write_shift;
+	nPagesPerBlock = flash->erase_size >> flash->write_shift;
 
 	nfc->select_chip(nand, TRUE);
 
@@ -1464,7 +1464,7 @@ int nand_erase(struct nand_chip *nand, struct erase_opt *pOpt)
 			flash->callback_func(flash, flash->callback_args);
 		}
 
-		nEraseCount -= flash->block_size;
+		nEraseCount -= flash->erase_size;
 		nPageIndex	+= nPagesPerBlock;
 	}
 

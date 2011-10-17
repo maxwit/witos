@@ -130,27 +130,27 @@ static int dump(int argc, char *argv[])
 	// -a xxxblock or -a xxxpage
 	if (start_unit == 'b')
 	{
-		start *= flash->block_size;
+		start *= flash->erase_size;
 	}
 	else if (start_unit == 'p')
 	{
-		start *= flash->page_size;
+		start *= flash->write_size;
 	}
 
 	// -l xxxblock or -l xxxpage
 	if (size_unit == 'b')
 	{
-		size *= flash->block_size;
+		size *= flash->erase_size;
 	}
 	else if (size_unit == 'p')
 	{
-		size *= flash->page_size;
+		size *= flash->write_size;
 	}
 
 	if (size == 0)
 		size = flash->write_size + flash->oob_size;
 
-	ALIGN_UP(size, flash->page_size + flash->oob_size);
+	ALIGN_UP(size, flash->write_size + flash->oob_size);
 
 	if (start)
 	{
@@ -309,21 +309,21 @@ static int read_write(int argc, char *argv[])
 	// -a xxxblock or -a xxxpage
 	if (start_unit == 'b')
 	{
-		start *= flash->block_size;
+		start *= flash->erase_size;
 	}
 	else if (start_unit == 'p')
 	{
-		start *= flash->page_size;
+		start *= flash->write_size;
 	}
 
 	// -l xxxblock or -l xxxpage
 	if (size_unit == 'b')
 	{
-		size *= flash->block_size;
+		size *= flash->erase_size;
 	}
 	else if (size_unit == 'p')
 	{
-		size *= flash->page_size;
+		size *= flash->write_size;
 	}
 
 	if (start + size >= flash->chip_size)
@@ -457,21 +457,21 @@ static int erase(int argc, char *argv[])
 		// -a xxxblock or -a xxxpage
 		if (start_unit == 'b')
 		{
-			start *= flash->block_size;
+			start *= flash->erase_size;
 		}
 		else if (start_unit == 'p')
 		{
-			start *= flash->page_size;
+			start *= flash->write_size;
 		}
 
 		// -l xxxblock or -l xxxpage
 		if (size_unit == 'b')
 		{
-			size *= flash->block_size;
+			size *= flash->erase_size;
 		}
 		else if (size_unit == 'p')
 		{
-			size *= flash->page_size;
+			size *= flash->write_size;
 		}
 	}
 
@@ -485,7 +485,7 @@ static int erase(int argc, char *argv[])
 
 	//aligned:
 	ALIGN_UP(start, flash->write_size);
-	ALIGN_UP(size, flash->block_size);
+	ALIGN_UP(size, flash->erase_size);
 
 	printf("[0x%08x : 0x%08x]\n", start, size);
 	ret = flash_erase(flash, start, size, erase_flags);
