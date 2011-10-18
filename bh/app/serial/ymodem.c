@@ -4,12 +4,19 @@
 #include <sysconf.h>
 #include <getopt.h>
 
-static void uart_load_usage(char *str)
+static void usage(int argc, char *argv[])
 {
-	printf("Usage: %s [OPTION] [ADDR] \n"
-		"Load file to flash or memory only.(defualt load to flash)\n"
-		"\nOPTION:\n"
-		"\t-m : Only load the file to memory(else to flash), and the address is VAL(default file location)\n", str);
+#if 0
+
+Usage: uart <command> [options]
+Load file from uart with ymodem, and write to storage or memory only (default to storage).
+
+options:
+	-m [ADDR]   load data to memory, but not write to storage.
+                if ADDR is not specified, the malloc one
+	-h          display this help.
+
+#endif
 }
 
 int main(int argc, char *argv[])
@@ -24,7 +31,7 @@ int main(int argc, char *argv[])
 	size = 0;
 	part = NULL;
 
-	uart_load_usage(argv[0]);
+	usage(argv[0]);
 	return 0;
 
 	printf("%s loading ...", argv[0]);

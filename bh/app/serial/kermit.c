@@ -7,17 +7,19 @@
 static void uart_load_usage(char *str)
 {
 #if 0
-Usage: kermit [OPTION] [ADDR]
+
+Usage: kermit [options]
 Load file from uart with kermit, and write to storage or memory only(default to storage).
 
-OPTION:
-	-m [ADDR]: Load data to ADDR of memory only.
-	-h : display this help.
+options:
+	-m [ADDR]   load data to memory, but not write to storage.
+                if ADDR is not specified, the malloc one
+	-h          display this help.
 
 #endif
-	printf("Usage: %s [OPTION] [ADDR] \n"
+	printf("Usage: %s [options] [ADDR] \n"
 		"Load file to flash or memory only.(defualt load to flash)\n"
-		"\nOPTION:\n"
+		"\noptions:\n"
 		"\t-m : Only load the file to memory(else to flash), and the address is VAL(default file location)\n", str);
 }
 
