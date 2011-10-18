@@ -10,11 +10,8 @@
 static void flash_cmd_usage(char *cmd)
 {
 	// common options for eash flash command:
-	printf("  -a    start address (in byte)\n"
-		"  -p    start page (write size)\n"
-		"  -b    start block (erase size)\n"
+	printf("  -a    flash address (in byte/page/block/K/M/G)\n"
 		"  -s    size of data\n"
-		"        (in byte as default, page for \"-a\", block for \"-b\")\n"
 		"  -h    this message\n"
 		);
 
@@ -31,6 +28,12 @@ static void flash_cmd_usage(char *cmd)
 	{
 		printf("  -m   memory address\n");
 	}
+	else if (0 == strcmp(cmd, "info"))
+	{
+		// TODO: add usage here!
+	}
+
+	printf("  -h	 this message\n");
 }
 
 static int flash_str_to_val(char * str, u32 * val, char *unit)

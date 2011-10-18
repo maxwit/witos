@@ -7,5 +7,5 @@ dir-y += boot
 dir-y += shell
 dir-y += misc
 dir-$(CONFIG_FS) += fs
-dir-$(CONFIG_MMC) += mmc
+dir-$(CONFIG_MMC) += disk
 dir-$(CONFIG_GRAPHICS) += display

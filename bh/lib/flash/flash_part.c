@@ -535,7 +535,7 @@ const char *part_type2str(u32 type)
 const char *part_get_name(const struct part_attr *attr)
 {
 	if (attr->part_name[0] == '\0')
-	 	return part_type2str(attr->part_type);
+		return part_type2str(attr->part_type);
 
 	return attr->part_name;
 }
