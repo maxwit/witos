@@ -232,7 +232,7 @@ int net_set_server_ip(u32 ip)
 	return 0;
 }
 
-struct sys_config *g_sys;
+static struct sys_config *g_sys;
 
 static char *search_attr(const char *data, int size, const char *str)
 {
@@ -244,29 +244,20 @@ static char *search_attr(const char *data, int size, const char *str)
 	{
 		if (is_attr)
 		{
-			if (data[i] == '=')
-			{
-				is_attr = 0;
-				continue;
-			}
-
 			if (data[i] != ' ')
 			{
-				for (j = 0; j < len; j++)
-				{
-					if (data[i + j] != str[j])
-						break;
-				}
+				for (j = 0; j < len && data[i + j] == str[j]; j++);
 
 				if (j == len && (data[i + j] == ' ' || data[i + j] == '='))
 				{
 					return (char *)data + i;
 				}
+
+				is_attr = 0;
 			}
 		}
-		else
+		else if (data[i] == '\n')
 		{
-			if (data[i] == '\n')
 				is_attr = 1;
 		}
 	}
