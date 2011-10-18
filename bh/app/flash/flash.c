@@ -5,33 +5,31 @@
 #include <bar.h>
 #include <app.h>
 
+// hi SE, pls refer to the git usage!
 
 static void flash_cmd_usage(char *cmd)
 {
-	// TODO:
-	printf("Usage: flash %s [options <value>]\n"
-			"\noptions:\n", cmd);
+	// common options for eash flash command:
+	printf("  -a    start address (in byte)\n"
+		"  -p    start page (write size)\n"
+		"  -b    start block (erase size)\n"
+		"  -s    size of data\n"
+		"        (in byte as default, page for \"-a\", block for \"-b\")\n"
+		"  -h    this message\n"
+		);
 
 	if (0 == strcmp(cmd, "scanbb"))
 	{
-		printf("  -p\t\tset partition number\n"
-				"  -h\t\thelp message\n");
-		return;
+		// TODO: add usage here!
 	}
-
-	printf("  -a\t\tset start address\n"
-			"  -l\t\tset size of data\n"
-			"  -p\t\tset partition number\n"
-			"  -h\t\thelp message\n");
-
-	if (0 == strcmp(cmd, "erase"))
+	else if (0 == strcmp(cmd, "erase"))
 	{
-		printf("  -f\t\tfoce erase allow bad block\n"
-				"  -c\t\t set clean mark\n");
+		printf("  -f    force allow bad block\n"
+			"  -c   cleanmarker size (support JFFS2)\n");
 	}
 	else if (0 == strcmp(cmd, "read") || 0 == strcmp(cmd, "write"))
 	{
-		printf("  -m\t\tset memory address\n");
+		printf("  -m   memory address\n");
 	}
 }
 
@@ -501,15 +499,14 @@ L1:
 
 static void flash_usage(void)
 {
-	printf("Usage: flash command [options <value>]\n"
-			"command:\n"
-			"  dump      \tview one page\n"
-			"  erase     \terase flash\n"
-			"  parterase \terase flash partition\n"
-			"  partshow  \tshow flash partition\n"
-			"  scanbb    \tscan flash bad block\n"
-			"  load      \tscan flash data to mem or display\n"
-//			"  -j   \t\tJffs2 file system.\n"
+	printf("Usage: flash <command> [args]\n"
+			"command list:\n"
+			"  dump      display flash data\n"
+			"  read      load data from flash to memory\n"
+			"  write     store the data from memory to flash\n"
+			"  erase     erase flash\n"
+			"  scanbb    scan flash bad block\n"
+			"  info 	 show the information of partition and host\n"
 			);
 }
 
@@ -686,7 +683,6 @@ static int erase(int argc, char *argv[])
 	u32 start    = 0;
 	u32 size     = 0;
 	u32 dev_num = 0;
-	char dev_name[MAX_DEV_NAME];
 	char start_unit = 0;
 	char size_unit  = 0;
 	struct flash_chip *flash   = NULL;
@@ -814,7 +810,6 @@ static int scanbb(int argc, char *argv[])
 
 int main(int argc, char *argv[])
 {
-#if 1
 	int i;
 
 	struct cmd_info command[] =
@@ -852,7 +847,6 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
-#endif
 
 	flash_usage();
 

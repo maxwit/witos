@@ -74,7 +74,6 @@ int disk_drive_register(struct disk_drive *drive)
 	int ret, i, n;
 	struct disk_drive *slave;
 	struct part_attr part_tab[MSDOS_MAX_PARTS];
-	struct list_node *iter;
 
 	ret = block_device_register(&drive->bdev);
 	// if ret < 0 ...
@@ -108,6 +107,8 @@ int disk_drive_register(struct disk_drive *drive)
 	}
 
 #if 0
+	struct list_node *iter;
+
 	printf("%s:", drive->bdev.dev.name);
 	list_for_each(iter, &drive->slave_list)
 	{
