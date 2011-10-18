@@ -4,7 +4,7 @@
 static int g_home_index = -1; // to be removed
 static int g_curr_index = -1;
 
-static __INLINE__ struct partition *get_flash_part(struct flash_chip *flash, int num)
+static inline struct partition *get_flash_part(struct flash_chip *flash, int num)
 {
 	return flash->part_tab + num;
 }
@@ -358,7 +358,7 @@ static struct part_attr *PartGetAttr(struct part_info *pt_info, int nFreeIndex)
 	return pt_info->attr_tab + nFreeIndex;
 }
 
-static BOOL __INLINE__ PartProtected(PART_TYPE epart_type)
+static BOOL inline PartProtected(PART_TYPE epart_type)
 {
 	return PT_BL_GTH == epart_type;
 }

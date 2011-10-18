@@ -42,7 +42,7 @@ static char shell_getchar(void)
 }
 
 // fixme
-static void __INLINE__ cmd_backspace(void)
+static void inline cmd_backspace(void)
 {
 	printf("\033[D\033[1P");
 }
@@ -85,7 +85,7 @@ void show_prompt(void)
 	printf("g-bios: %s# ", pwd);
 }
 
-static int __INLINE__ get_pre_space_count(char *buf)
+static int inline get_pre_space_count(char *buf)
 {
 	int pre_space_count = 0;
 
@@ -98,7 +98,7 @@ static int __INLINE__ get_pre_space_count(char *buf)
 	return pre_space_count;
 }
 
-static int __INLINE__ get_mid_space_count(char *buf)
+static int inline get_mid_space_count(char *buf)
 {
 	int mid_space_count = 0;
 

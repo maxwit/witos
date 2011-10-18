@@ -52,30 +52,30 @@ const char *part_get_name(const struct part_attr *part);
 int part_get_index(const struct partition *part);
 
 #if 0
-static int __INLINE__ part_get_attr(const struct partition *part, struct part_attr *attr)
+static int inline part_get_attr(const struct partition *part, struct part_attr *attr)
 {
 	*attr = *part->attr;
 	return 0;
 }
 
-static void __INLINE__ part_set_attr(const struct partition *part, struct part_attr *attr)
+static void inline part_set_attr(const struct partition *part, struct part_attr *attr)
 {
 	*part->attr = *attr;
 }
 #endif
 
-static int __INLINE__ part_get_type(const struct partition *part)
+static int inline part_get_type(const struct partition *part)
 {
 	BUG_ON(NULL == part || NULL == part->attr)
 	return part->attr->part_type;
 }
 
-static int __INLINE__ part_get_base(struct partition *part)
+static int inline part_get_base(struct partition *part)
 {
 	return part->attr->part_base;
 }
 
-static int __INLINE__ part_get_size(struct partition *part)
+static int inline part_get_size(struct partition *part)
 {
 	return part->attr->part_size;
 }

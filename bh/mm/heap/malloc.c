@@ -15,17 +15,17 @@ struct mem_region
 
 static struct list_node g_free_region_list;
 
-static __INLINE__ struct mem_region *get_successor(struct mem_region *region)
+static inline struct mem_region *get_successor(struct mem_region *region)
 {
 	return (struct mem_region *)((u8 *)region + DWORD_SIZE + GET_SIZE(region));
 }
 
-static __INLINE__ struct mem_region *get_predeccessor(struct mem_region *region)
+static inline struct mem_region *get_predeccessor(struct mem_region *region)
 {
 	return (struct mem_region *)((u8 *)region - (region->pre_size & ~(WORD_SIZE - 1)) - DWORD_SIZE);
 }
 
-static void __INLINE__ region_set_size(struct mem_region *region, u32 size)
+static void inline region_set_size(struct mem_region *region, u32 size)
 {
 	struct mem_region *succ_region;
 

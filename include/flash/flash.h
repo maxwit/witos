@@ -194,12 +194,12 @@ struct flash_chip
 	OOB_MODE oob_mode;
 };
 
-static u32 __INLINE__ flash_write_is_align(struct flash_chip *flash, u32 size)
+static u32 inline flash_write_is_align(struct flash_chip *flash, u32 size)
 {
 	return (size + flash->write_size - 1) & ~(flash->write_size - 1);
 }
 
-static u32 __INLINE__ flash_erase_is_align(struct flash_chip *flash, u32 size)
+static u32 inline flash_erase_is_align(struct flash_chip *flash, u32 size)
 {
 	return (size + flash->erase_size - 1) & ~(flash->erase_size - 1);
 }
