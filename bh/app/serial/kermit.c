@@ -4,6 +4,14 @@
 #include <sysconf.h>
 #include <getopt.h>
 
+static void uart_load_usage(char *str)
+{
+	printf("Usage: %s [OPTION] [ADDR] \n"
+		"Load file to flash or memory only.(defualt load to flash)\n"
+		"\nOPTION:\n"
+		"\t-m : Only load the file to memory(else to flash), and the address is VAL(default file location)\n", str);
+}
+
 int main(int argc, char *argv[])
 {
 	int size, ret;
@@ -16,7 +24,8 @@ int main(int argc, char *argv[])
 	size = 0;
 	part = NULL;
 
-	printf("%s loading ...", argv[0]);
+	uart_load_usage(argv[0]);
+	return 0;
 
 	memset(&ld_opt, 0x0, sizeof(ld_opt));
 

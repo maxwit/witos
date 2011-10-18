@@ -1,9 +1,16 @@
 #include <stdio.h>
 
+static void mw_usage(void)
+{
+	printf("Usage: mw <ADDR> <VAL>\n"
+		"Write the VAL to ADDR of memory.\n");
+}
+
 int main(int argc, char *argv[])
 {
 	u32 addr, val;
 
+	mw_usage();
 #if 0
 	if (argc != 3)
 	{
