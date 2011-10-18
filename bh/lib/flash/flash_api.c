@@ -1,16 +1,18 @@
-#include <flash/flash.h>
 #ifdef CONFIG_DEBUG
 #include <stdio.h>
 #endif
+#include <flash/flash.h>
 
-struct flash_chip *flash_open(unsigned int num)
+struct flash_chip *flash_open(const char *name)
 {
 	struct flash_chip *flash;
+	struct block_device *bdev;
 
-	flash = flash_get(num);
-
-	if (NULL == flash)
+	bdev = get_bdev_by_name(name);
+	if (!bdev)
 		return NULL;
+
+	flash = container_of(bdev, struct flash_chip, bdev);
 
 	flash->callback_func = NULL;
 	flash->oob_mode = FLASH_OOB_PLACE;
@@ -223,4 +225,3 @@ int flash_erase(struct flash_chip *flash, u32 start, u32 size, u32 flags)
 
 	return ret;
 }
-

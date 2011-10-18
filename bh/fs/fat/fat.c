@@ -382,14 +382,14 @@ static struct file_system_type fat_fs_type =
 };
 
 #ifdef __G_BIOS__
-static int __INIT__ fat_fs_init(void)
+static int __INIT__ fat32_init(void)
 #else
-int fat_fs_init(void)
+int fat32_init(void)
 #endif
 {
 	return file_system_type_register(&fat_fs_type);
 }
 
 #ifdef __G_BIOS__
-SUBSYS_INIT(fat_fs_init);
+SUBSYS_INIT(fat32_init);
 #endif

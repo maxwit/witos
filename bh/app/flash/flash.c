@@ -5,7 +5,7 @@
 #include <bar.h>
 #include <app.h>
 
-#if 0
+
 static void flash_cmd_usage(char *cmd)
 {
 	// TODO:
@@ -59,184 +59,7 @@ static int flash_str_to_val(char * str, u32 * val, char *unit)
 
 	return string2value(str, val);
 }
-
-static int dump(int argc, char *argv[])
-{
-	u8  *p, *buff;
-	int ch;
-	char *optarg;
-	int ret   = 0;
-	int flag  = 0;
-	u32 start = 0;
-	int size  = 0;
-	char start_unit = 0;
-	char size_unit  = 0;
-	u32  part_num = PART_CURR;
-	struct flash_chip *flash;
-	struct partition *part;
-
-	while ((ch = getopt(argc, argv, "p:a:l:h", &optarg)) != -1)
-	{
-		switch (ch)
-		{
-		case 'a':
-			if (flag || (flash_str_to_val(optarg, &start, &start_unit) < 0))
-			{
-				printf("Invalid argument: \"%s\"\n", optarg);
-				flash_cmd_usage(argv[0]);
-				return -EINVAL;
-			}
-
-			flag = 1;
-
-			break;
-
-		case 'l':
-			if (flag == 2 || flash_str_to_val(optarg, (u32 *)&size, &size_unit) < 0)
-			{
-				printf("Invalid argument: \"%s\"\n", optarg);
-				flash_cmd_usage(argv[0]);
-				return -EINVAL;
-			}
-
-			break;
-
-		case 'p':
-			if (flag || string2value(optarg, &part_num) < 0)
-			{
-				printf("Invalid argument: \"%s\"\n", optarg);
-				flash_cmd_usage(argv[0]);
-				return -EINVAL;
-			}
-
-			flag = 2;
-
-			break;
-
-		default:
-			ret = -EINVAL;
-		case 'h':
-			flash_cmd_usage(argv[0]);
-			return ret;
-		}
-	}
-
-	part = part_open(part_num, OP_RDONLY);
-	BUG_ON(NULL == part);
-
-	flash = part->host;
-	BUG_ON(NULL == flash);
-
-	// -a xxxblock or -a xxxpage
-	if (start_unit == 'b')
-	{
-		start *= flash->erase_size;
-	}
-	else if (start_unit == 'p')
-	{
-		start *= flash->write_size;
-	}
-
-	// -l xxxblock or -l xxxpage
-	if (size_unit == 'b')
-	{
-		size *= flash->erase_size;
-	}
-	else if (size_unit == 'p')
-	{
-		size *= flash->write_size;
-	}
-
-	if (size == 0)
-		size = flash->write_size + flash->oob_size;
-
-	ALIGN_UP(size, flash->write_size + flash->oob_size);
-
-	if (start)
-	{
-		if (start + size >= flash->chip_size)
-		{
-			printf("Address 0x%08x overflow!\n", start);
-			part_close(part);
-			return -EINVAL;
-		}
-	}
-	else
-	{
-		start = part_get_base(part);
-	}
-
-	part_close(part);
-
-	buff = (u8 *)malloc(size);
-	if (NULL == buff)
-	{
-		return -ENOMEM;
-	}
-
-	start &= ~(flash->write_size - 1);
-
-	ret = flash_ioctl(flash, FLASH_IOCS_OOB_MODE, (void *)FLASH_OOB_RAW);
-	// if ret < 0
-	ret = flash_read(flash, buff, start, size);
-
-	if (ret < 0)
-	{
-		printf("%s(): line %d execute flash_read_raw() error!\n"
-			"error = %d\n", __func__, __LINE__, ret);
-
-		goto L1;
-	}
-
-	DPRINT("Flash 0x%08x ==> RAM 0x%08x, Expected length 0x%08x, Real length 0x%08x\n\n",
-		   start, buff, size, ret);
-
-	p = buff;
-
-	while (size > 0)
-	{
-		int i;
-
-		printf("Page @ 0x%08x:\n", start);
-
-		i = flash->write_size >> 4;
-
-		while (i--)
-		{
-			printf( "\t%02x %02x %02x %02x %02x %02x %02x %02x"
-				"  %02x %02x %02x %02x %02x %02x %02x %02x\n",
-				p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7],
-				p[8], p[9], p[10], p[11], p[12], p[13], p[14], p[15]);
-
-			p += 16;
-		}
-
-		printf("OOB @ 0x%08x + 0x08x:\n", start, flash->write_size);
-
-		i = flash->oob_size >> 4;
-
-		while (i--)
-		{
-			printf( "\t%02x %02x %02x %02x %02x %02x %02x %02x"
-				"  %02x %02x %02x %02x %02x %02x %02x %02x\n",
-				p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7],
-				p[8], p[9], p[10], p[11], p[12], p[13], p[14], p[15]);
-
-			p += 16;
-		}
-
-		start += flash->write_size + flash->oob_size;
-		size  -= flash->write_size + flash->oob_size;
-		puts("\n");
-	}
-
-L1:
-	free(buff);
-
-	// flash_close(flash);
-
-	return ret;
-}
+#if 0
 
 static int read_write(int argc, char *argv[])
 {
@@ -690,9 +513,308 @@ static void flash_usage(void)
 			);
 }
 
+static int dump(int argc, char *argv[])
+{
+	u8	*p, *buff;
+	int ch;
+	char *optarg;
+	int ret   = 0;
+	int flag  = 0;
+	u32 start = 0;
+	int size  = 0;
+	char start_unit = 0;
+	char size_unit	= 0;
+	struct flash_chip *flash;
+
+	while ((ch = getopt(argc, argv, "p:a:l:h", &optarg)) != -1)
+	{
+		switch (ch)
+		{
+		case 'a':
+			if (flag || (flash_str_to_val(optarg, &start, &start_unit) < 0))
+			{
+				printf("Invalid argument: \"%s\"\n", optarg);
+				flash_cmd_usage(argv[0]);
+				return -EINVAL;
+			}
+
+			flag = 1;
+
+			break;
+
+		case 'l':
+			if (flag == 2 || flash_str_to_val(optarg, (u32 *)&size, &size_unit) < 0)
+			{
+				printf("Invalid argument: \"%s\"\n", optarg);
+				flash_cmd_usage(argv[0]);
+				return -EINVAL;
+			}
+
+			break;
+
+
+		default:
+			ret = -EINVAL;
+		case 'h':
+			flash_cmd_usage(argv[0]);
+			return ret;
+		}
+	}
+
+	flash = flash_open("mtdblock0");
+	BUG_ON(NULL == flash);
+
+	// -a xxxblock or -a xxxpage
+	if (start_unit == 'b')
+	{
+		start *= flash->erase_size;
+	}
+	else if (start_unit == 'p')
+	{
+		start *= flash->write_size;
+	}
+
+	// -l xxxblock or -l xxxpage
+	if (size_unit == 'b')
+	{
+		size *= flash->erase_size;
+	}
+	else if (size_unit == 'p')
+	{
+		size *= flash->write_size;
+	}
+
+	if (size == 0)
+		size = flash->write_size + flash->oob_size;
+
+	ALIGN_UP(size, flash->write_size + flash->oob_size);
+
+	if (start)
+	{
+		if (start + size >= flash->chip_size)
+		{
+			printf("Address 0x%08x overflow!\n", start);
+			flash_close(flash);
+			return -EINVAL;
+		}
+	}
+	else
+	{
+		start = flash->bdev.bdev_base;
+	}
+
+	flash_close(flash);
+
+	buff = (u8 *)malloc(size);
+	if (NULL == buff)
+	{
+		return -ENOMEM;
+	}
+
+	start &= ~(flash->write_size - 1);
+
+	ret = flash_ioctl(flash, FLASH_IOCS_OOB_MODE, (void *)FLASH_OOB_RAW);
+	// if ret < 0
+	ret = flash_read(flash, buff, start, size);
+
+	if (ret < 0)
+	{
+		printf("%s(): line %d execute flash_read_raw() error!\n"
+			"error = %d\n", __func__, __LINE__, ret);
+
+		goto L1;
+	}
+
+	DPRINT("Flash 0x%08x ==> RAM 0x%08x, Expected length 0x%08x, Real length 0x%08x\n\n",
+		   start, buff, size, ret);
+
+	p = buff;
+
+	while (size > 0)
+	{
+		int i;
+
+		printf("Page @ 0x%08x:\n", start);
+
+		i = flash->write_size >> 4;
+
+		while (i--)
+		{
+			printf( "\t%02x %02x %02x %02x %02x %02x %02x %02x"
+				"  %02x %02x %02x %02x %02x %02x %02x %02x\n",
+				p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7],
+				p[8], p[9], p[10], p[11], p[12], p[13], p[14], p[15]);
+
+			p += 16;
+		}
+
+		printf("OOB @ 0x%08x + 0x08x:\n", start, flash->write_size);
+
+		i = flash->oob_size >> 4;
+
+		while (i--)
+		{
+			printf( "\t%02x %02x %02x %02x %02x %02x %02x %02x"
+				"  %02x %02x %02x %02x %02x %02x %02x %02x\n",
+				p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7],
+				p[8], p[9], p[10], p[11], p[12], p[13], p[14], p[15]);
+
+			p += 16;
+		}
+
+		start += flash->write_size + flash->oob_size;
+		size  -= flash->write_size + flash->oob_size;
+		puts("\n");
+	}
+
+L1:
+	free(buff);
+
+	// flash_close(flash);
+
+	return ret;
+}
+
+
+// fixme: bad logic!
+static int erase(int argc, char *argv[])
+{
+	int ch;
+	char *optarg;
+	int arg_flag = 0;
+	int ret      = 0;
+	u32 start    = 0;
+	u32 size     = 0;
+	u32 dev_num = 0;
+	char dev_name[MAX_DEV_NAME];
+	char start_unit = 0;
+	char size_unit  = 0;
+	struct flash_chip *flash   = NULL;
+	u32 erase_flags = EDF_NORMAL;
+
+	if (argc == 1)
+	{
+		flash_cmd_usage(argv[0]);
+		return -EINVAL;
+	}
+
+	while ((ch = getopt(argc, argv, "a:l:p::c:f", &optarg)) != -1)
+	{
+		switch(ch)
+		{
+		case 'a':
+			if (arg_flag == 2 || flash_str_to_val(optarg, &start, &start_unit) < 0)
+			{
+				printf("Invalid argument: \"%s\"\n", optarg);
+				flash_cmd_usage(argv[0]);
+				return -EINVAL;
+			}
+
+			arg_flag = 1;
+
+			break;
+
+		case 'l':
+			if (arg_flag == 2 || flash_str_to_val(optarg, &size, &size_unit) < 0)
+			{
+				printf("Invalid argument: \"%s\"\n", optarg);
+				flash_cmd_usage(argv[0]);
+				return -EINVAL;
+			}
+
+			break;
+
+		case 'p':
+			if (arg_flag == 1 || (optarg && string2value(optarg, &dev_num) < 0))
+			{
+				printf("Invalid argument: \"%s\"\n", optarg);
+				flash_cmd_usage(argv[0]);
+				return -EINVAL;
+			}
+
+			arg_flag = 2;
+
+			break;
+
+		case 'c':
+			erase_flags |= EDF_JFFS2;
+			break;
+
+		case 'f':
+			erase_flags |= EDF_ALLOWBB;
+			break;
+
+		default:
+			ret = -EINVAL;
+		case 'h':
+			flash_cmd_usage(argv[0]);
+			return ret;
+		}
+	}
+
+	flash = flash_open("mtdblock0p2");
+
+	// if option is "-p" erase the whole partiton or default current partition with no option
+	if (arg_flag == 2)
+	{
+		start = flash->bdev.bdev_base;
+		size  = flash->bdev.bdev_size;
+	}
+	else
+	{
+		// -a xxxblock or -a xxxpage
+		if (start_unit == 'b')
+		{
+			start *= flash->erase_size;
+		}
+		else if (start_unit == 'p')
+		{
+			start *= flash->write_size;
+		}
+
+		// -l xxxblock or -l xxxpage
+		if (size_unit == 'b')
+		{
+			size *= flash->erase_size;
+		}
+		else if (size_unit == 'p')
+		{
+			size *= flash->write_size;
+		}
+	}
+
+	flash_close(flash);
+
+	if (flash->chip_size < start + size)
+	{
+		printf("Out of chip size!\n");
+		return -EINVAL;
+	}
+
+	//aligned:
+	ALIGN_UP(start, flash->write_size);
+	ALIGN_UP(size, flash->erase_size);
+
+	printf("[0x%08x : 0x%08x]\n", start, size);
+	ret = flash_erase(flash, start, size, erase_flags);
+
+	return ret;
+}
+
+
+static int read_write(int argc, char *argv[])
+{
+	return 0;
+}
+
+static int scanbb(int argc, char *argv[])
+{
+	return 0;
+}
+
 int main(int argc, char *argv[])
 {
-#if 0
+#if 1
 	int i;
 
 	struct cmd_info command[] =

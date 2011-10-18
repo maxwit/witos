@@ -1,7 +1,6 @@
 #include <sysconf.h>
 #include <flash/flash.h>
 
-static struct flash_chip *g_flash_list[MAX_FLASH_DEVICES];
 static struct list_node g_master_list;
 
 static const struct part_attr *g_part_attr;
@@ -271,57 +270,13 @@ int flash_register(struct flash_chip *flash)
 
 int flash_unregister (struct flash_chip *flash)
 {
-	int i;
+	// TODO: check master or not
 
-	for (i = 0; i < MAX_FLASH_DEVICES; i++)
-	{
-		if (flash == g_flash_list[i])
-		{
-			g_flash_list[i] = NULL;
-
-			return i;
-		}
-	}
-
-	return -ENODEV;
-}
-
-struct flash_chip *flash_get(unsigned int num)
-{
-	struct flash_chip *flash;
-
-	if (num >= MAX_FLASH_DEVICES)
-		return NULL;
-
-	flash = g_flash_list[num];
-
-	return flash;
-}
-
-struct flash_chip *flash_get_by_name(const char *name)
-{
-	int i;
-	struct flash_chip *flash = NULL;
-
-	for (i = 0; i < MAX_FLASH_DEVICES; i++)
-	{
-		if (g_flash_list[i] && !strcmp(name, g_flash_list[i]->name))
-		{
-			flash = g_flash_list[i];
-			break;
-		}
-	}
-
-	return flash;
+	return 0;
 }
 
 static int __INIT__ flash_core_init(void)
 {
-	int i;
-
-	for (i = 0; i < MAX_FLASH_DEVICES; i++)
-		g_flash_list[i] = NULL;
-
 	list_head_init(&g_master_list);
 
 	return 0;

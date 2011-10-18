@@ -208,10 +208,6 @@ int flash_register(struct flash_chip *flash);
 
 int flash_unregister(struct flash_chip *flash);
 
-struct flash_chip *flash_get(unsigned int num);
-
-struct flash_chip *flash_get_by_name(const char *name);
-
 const char *flash_get_mtd_name(const struct flash_chip *flash);
 
 void __INIT__ flash_add_part_tab(const struct part_attr *attr, int num);
@@ -230,7 +226,7 @@ typedef enum
 int flash_set_ecc_mode(struct flash_chip *flash, ECC_MODE newMode, ECC_MODE *pOldMode);
 
 // APIs
-struct flash_chip *flash_open(unsigned int num);
+struct flash_chip *flash_open(const char *name);
 
 int flash_close(struct flash_chip *flash);
 
