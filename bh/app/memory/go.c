@@ -2,7 +2,8 @@
 
 static void show_usage(void)
 {
-	printf("Usage:go <mem_addr>\n");
+	printf("Usage:go [mem_addr]\n"
+		"go to mem_addr(not set will be default value) for running\n");
 }
 
 int main(int argc, char *argv[])
