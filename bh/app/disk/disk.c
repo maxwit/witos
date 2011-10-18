@@ -7,13 +7,25 @@
 #define BUFF_LEN		512
 #define BLK_LEN			512
 
-static void mmc_usage(void)
+static void mmc_usage(int argc, char *argv[])
 {
-	printf("\nUsage: flash command [options <value>]\n"
-			"command:\n"
-			"    scan   \tscan all MMC/SD devices, echo informations\n"
-			"    dump   \tread and echo MMC/SD datas in each block\n"
-			);
+#if 0
+
+Usage: disk <command> [args]
+command list:
+    scan     scan all MMC/SD devices, echo informations
+    dump     read and echo MMC/SD datas in each block
+    write    write data from memory to disk drive
+
+See 'disk <command> -h' for more information on a specific command.
+
+generic options:
+    -a <address>   start disk address
+    -m <memory>    start memory address
+	-s <size>      data size (1/2/4 bytes)
+	-h             this help
+
+#endif
 }
 
 static void mmc_scan_usage(void)
@@ -27,7 +39,7 @@ static int scan(int argc, char *argv[])
 	struct mmc_cid *cid;
 	struct mmc_host *host;
 
-	if (argc >1)
+	if (argc > 1)
 	{
 		mmc_scan_usage();
 
@@ -174,7 +186,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	mmc_usage();
+	mmc_usage(argc, argv);
 
 	return -1;
  }
