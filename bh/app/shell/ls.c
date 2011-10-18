@@ -12,5 +12,7 @@ static void ls_usage(void)
 
 int main(int argc, char *argv[])
 {
+	ls_usage();
+
 	return 0;
 }
