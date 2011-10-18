@@ -13,9 +13,9 @@ static void mmc_usage(int argc, char *argv[])
 
 Usage: disk <command> [args]
 command list:
-    scan     scan all MMC/SD devices, echo informations\n"
-    dump     read and echo MMC/SD datas in each block\n"
-    write    write data from memory to disk drive\n"
+    scan     scan all MMC/SD devices, echo informations
+    dump     read and echo MMC/SD datas in each block
+    write    write data from memory to disk drive
 
 See 'disk <command> -h' for more information on a specific command.
 
@@ -186,7 +186,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	mmc_usage();
+	mmc_usage(argc, argv);
 
 	return -1;
  }

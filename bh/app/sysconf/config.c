@@ -4,12 +4,21 @@
 
 static void usage(void)
 {
-	printf("Usage: sysconfig [OPTION [VAL]]\n"
+#if 0
+Usage: config [OPTION [VAL]]
+Operate system configuration information!\n
+
+OPTION:
+	-r <all|net|boot>: reset system configuration.
+	-l : List system configuration information.
+	-h : this help message.
+
+#endif
+	printf("Usage: config [OPTION [VAL]]\n"
 		"Operate system configuration information!\n"
 		"\nOPTION:\n"
 		"\t-l : List system configuration information!"
-		"\t-r [net|boot]: reset system configuration(default all).\n"
-		"\t-s : save the current sysconfig to the storage.\n"
+		"\t-r [all|net|boot]: reset system configuration(default all).\n"
 		"\t-h : this help message.\n");
 }
 
