@@ -2,7 +2,10 @@
 
 static void show_usage(void)
 {
-	printf("Usage:go <mem_addr>\n");
+	printf("Usage:go [address]\n");
+#if 0
+	if address is not specified, jump to the default jump address!
+#endif
 }
 
 int main(int argc, char *argv[])
