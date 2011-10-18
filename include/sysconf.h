@@ -5,6 +5,8 @@
 
 #define GB_SYSCFG_VER       7
 
+#define GB_SYSCFG_MAGICNUM  0x5a5a5a5a
+
 #define CONSOLE_DEV_NAME_LEN   63
 #define DEFAULT_KCMDLINE_LEN   512
 
