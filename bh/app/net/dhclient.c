@@ -112,6 +112,10 @@ long random(void)
 
 static void usage(const char *app)
 {
+#if 0
+Usage: dhclient [-s server] [interface]
+Get a valid ip address from the dhcp server for interface.
+#endif
 	printf("Usage:\n\t%s [-s]\n"
 		"options:\n"
 		"\t-s: update Server IP to DHCP server.",
