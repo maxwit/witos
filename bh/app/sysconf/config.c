@@ -4,6 +4,16 @@
 
 static void usage(void)
 {
+#if 0
+Usage: config [OPTION [VAL]]
+Operate system configuration information!\n
+
+OPTION:
+	-r <all|net|boot>: reset system configuration.
+	-l : List system configuration information.
+	-h : this help message.
+
+#endif
 	printf("Usage: config [OPTION [VAL]]\n"
 		"Operate system configuration information!\n"
 		"\nOPTION:\n"
