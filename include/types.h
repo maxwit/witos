@@ -33,6 +33,15 @@
 #define min(x, y) ((x) < (y) ? (x) : (y))
 #define max(x, y) ((x) > (y) ? (x) : (y))
 
+// fixme
+#define SWAP(a,b) \
+		do { \
+			typeof(a) __temp; \
+			__temp = (a); \
+			(a) = (b); \
+			(b) = __temp; \
+		} while(0)
+
 #define KB(n) ((n) << 10)
 #define MB(n) ((n) << 20)
 #define GB(n) ((n) << 30)

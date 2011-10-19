@@ -9,31 +9,12 @@ static int opt_pos = 1;
 static int non_arg_start = 0;
 static int non_arg_end = 0;
 
-// fixme
-#define SWAP(a,b) \
-		do { \
-			typeof(a) __temp; \
-			__temp = (a); \
-			(a) = (b); \
-			(b) = __temp; \
-		} while(0)
-
 void getopt_init(void)
 {
 	optind = 1;
 	opt_pos = 1;
 	non_arg_start = 0;
 	non_arg_end = 0;
-}
-
-int getopt_idx()
-{
-	return optind;
-}
-
-char *getopt_arg()
-{
-	return optarg;
 }
 
 static void adjust_argv(char *argv[])
@@ -88,7 +69,7 @@ int getopt(int argc, char *argv[], const char *opt_str)
 			printf("%s:  invalid option: -- \'%c\'\n", argv[0], c);
 
 		if (argv[optind][++opt_pos] == '\0') {
-			++(optind);
+			++optind;
 			opt_pos = 1;
 		}
 		return '?';
@@ -96,8 +77,8 @@ int getopt(int argc, char *argv[], const char *opt_str)
 
 	if (':' == *(++cp)) {
 		if (argv[optind][opt_pos + 1] != '\0')
-			optarg = &argv[(optind)++][opt_pos + 1];
-		else if (++(optind) >= argc || argv[optind][0] == '-') {
+			optarg = &argv[optind++][opt_pos + 1];
+		else if (++optind >= argc || argv[optind][0] == '-') {
 			if (':' == *(++cp)) {
 				optarg = NULL;
 				opt_pos = 1;
@@ -112,17 +93,17 @@ int getopt(int argc, char *argv[], const char *opt_str)
 
 			if (':' == opt_str[0])
 				return ':';
+
 			return '?';
-		}
-		else
-			optarg = argv[(optind)++];
+		} else
+			optarg = argv[optind++];
 
 		opt_pos = 1;
 	}
 	else {
 		if ('\0' == argv[optind][++opt_pos]) {
 			opt_pos = 1;
-			(optind)++;
+			optind++;
 		}
 
 		optarg = NULL;

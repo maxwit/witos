@@ -18,6 +18,7 @@ generic options:
 	-r <URL>     remote URL, i.e. "10.0.0.2:69/g-bios-bh.bin".
 	-l <path>    local path.
 	-m <mode>    transfer mode: text or binary (default is binary).
+	-t <type>    image type for image file burning (default auto detect)
     -v           verbose.
     -h           this help
 
@@ -41,7 +42,6 @@ int main(int argc, char *argv[])
 	int ret, ch;
 	struct tftp_opt dlopt;
 	BOOL mem_only = FALSE;
-	int opt_idx;
 
 	memset(&dlopt, 0x0, sizeof(dlopt));
 	net_get_server_ip(&dlopt.server_ip);
@@ -90,13 +90,11 @@ int main(int argc, char *argv[])
 	{
 	}
 
-	opt_idx = getopt_idx();
-
-	if (opt_idx < argc)
+	if (optind < argc)
 	{
-		if (opt_idx + 1 == argc && !dlopt.file_name[0])
+		if (optind + 1 == argc && !dlopt.file_name[0])
 		{
-			strncpy(dlopt.file_name, argv[opt_idx], MAX_FILE_NAME_LEN);
+			strncpy(dlopt.file_name, argv[optind], MAX_FILE_NAME_LEN);
 			dlopt.file_name[MAX_FILE_NAME_LEN - 1] = '\0';
 		}
 		else
