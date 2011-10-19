@@ -12,7 +12,6 @@
 #define __PACKED__        __attribute__((packed))
 #define __WEAK__          __attribute__((weak))
 
-// #define __FUNCTION__  __func__
 // #define PRINT_ARG_FORMAT __attribute__((format (printf, 1, 2)))
 
 #define DECLARE_REBOOT(func) \

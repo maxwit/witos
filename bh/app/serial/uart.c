@@ -30,5 +30,7 @@ generic options:
 
 int main(int argc, char *argv[])
 {
+	usage(argc, argv);
+
 	return 0;
 }

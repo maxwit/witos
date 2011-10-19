@@ -147,7 +147,7 @@ static int __INIT__ flash_adjust_part_tab(struct flash_chip *host,
 
 static int g_flash_count = 0;
 
-static int flash_part_read(struct flash_chip *slave,
+static int part_read(struct flash_chip *slave,
 				u32 from, u32 len, u32 *retlen, u8 *buff)
 {
 	struct flash_chip *master = slave->master;
@@ -155,7 +155,7 @@ static int flash_part_read(struct flash_chip *slave,
 	return master->read(master, slave->bdev.bdev_base + from, len, retlen, buff);
 }
 
-static int flash_part_write(struct flash_chip *slave,
+static int part_write(struct flash_chip *slave,
 				u32 to, u32 len, u32 *retlen, const u8 *buff)
 {
 	struct flash_chip *master = slave->master;
@@ -163,7 +163,7 @@ static int flash_part_write(struct flash_chip *slave,
 	return master->write(master, slave->bdev.bdev_base + to, len, retlen, buff);
 }
 
-static int flash_part_erase(struct flash_chip *slave, struct erase_opt *opt)
+static int part_erase(struct flash_chip *slave, struct erase_opt *opt)
 {
 	struct flash_chip *master = slave->master;
 
@@ -243,9 +243,9 @@ int flash_register(struct flash_chip *flash)
 		slave->master      = flash;
 		list_add_tail(&slave->slave_node, &flash->slave_list);
 
-		slave->read  = flash_part_read;
-		slave->write = flash_part_write;
-		slave->erase = flash_part_erase;
+		slave->read  = part_read;
+		slave->write = part_write;
+		slave->erase = part_erase;
 		slave->read_oob  = part_read_oob;
 		slave->write_oob = part_write_oob;
 		slave->block_is_bad   = part_block_is_bad;

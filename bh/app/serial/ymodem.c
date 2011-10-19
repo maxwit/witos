@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
 	size = 0;
 	part = NULL;
 
-	usage(argv[0]);
+	usage(argc, argv);
 	return 0;
 
 	printf("%s loading ...", argv[0]);
