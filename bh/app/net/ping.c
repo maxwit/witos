@@ -21,10 +21,7 @@ int main(int argc, char *argv[])
 
 	if (1 == argc) // use default server as ping server if no argument supplied.
 	{
-		struct net_config *net_cfg;
-
-		net_cfg = sysconf_get_net_info();
-		nip = net_cfg->server_ip;
+		net_get_server_ip(&nip);
 		ip_to_str(dest_ip, nip);
 	}
 	else

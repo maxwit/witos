@@ -28,9 +28,7 @@ int main(int argc, char *argv[])
 	BOOL reset_all = FALSE;
 	char *arg;
 
-	usage();
-
-	while ((opt = getopt(argc, argv, "r:h", &arg)) != -1)
+	while ((opt = getopt(argc, argv, "r:hl", &arg)) != -1)
 	{
 		switch (opt)
 		{
@@ -55,13 +53,17 @@ int main(int argc, char *argv[])
 			}
 			break;
 
+		case 'l':
+			conf_list_attr();
+			break;
+
 		default:
 			usage();
 			return -EINVAL;
 		}
 	}
 
-	ret = sysconf_save();
+	ret = conf_store();
 
 	return ret;
 }

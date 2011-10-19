@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
 	{
 		if (ret > 0)
 		{
-			sysconf_save();
+			conf_store();
 		}
 	}
 
