@@ -5,13 +5,15 @@
 static void usage(void)
 {
 #if 0
-Usage: config [OPTION [VAL]]
-Operate system configuration information!\n
+Usage: config [options] [<attribute> [<value>]]
+g-bios system configuration utility.
 
-OPTION:
-	-r <all|net|boot>: reset system configuration.
-	-l : List system configuration information.
-	-h : this help message.
+options:
+    -a <attr> <value>     adds a new attribue with value
+    -r <attr>             removes the attribute
+    -g <attr>             get value
+    -l                    list all
+    -h                    this help
 
 #endif
 	printf("Usage: config [OPTION [VAL]]\n"
