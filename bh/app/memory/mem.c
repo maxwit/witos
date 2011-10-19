@@ -11,6 +11,7 @@ command list:
     dump     display memory in hex and/or ascii modes
     write    write data to specified memory address
 	set      set a memory region
+	used     show used/free infomation
 
 See 'mem <command> -h' for more information on a specific command.
 
