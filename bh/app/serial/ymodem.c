@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
 	if (flag == 0)
 	{
 #if 0
-		if ((part = part_open(PART_CURR, OP_RDWR)) == NULL)
+		if ((part = flash_bdev_open(PART_CURR, OP_RDWR)) == NULL)
 		{
 			return -EINVAL;
 		}

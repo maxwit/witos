@@ -262,7 +262,7 @@ static int erase(int argc, char *argv[])
 		}
 	}
 
-	pCurPart = part_open(part_num, OP_RDWR);
+	pCurPart = flash_bdev_open(part_num, OP_RDWR);
 	BUG_ON(NULL == pCurPart);
 
 	flash = pCurPart->host;
@@ -366,7 +366,7 @@ static int parterase(int argc, char *argv[])
 				goto L1;
 			}
 
-			part = part_open(nDevNum, OP_RDWR);
+			part = flash_bdev_open(nDevNum, OP_RDWR);
 			if (NULL == part)
 			{
 				flash_parterase_usage();
@@ -395,7 +395,7 @@ static int parterase(int argc, char *argv[])
 
 	if (NULL == part)
 	{
-		part = part_open(PART_CURR, OP_RDWR);
+		part = flash_bdev_open(PART_CURR, OP_RDWR);
 
 		if (NULL == part)
 		{

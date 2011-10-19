@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
 	{
 	}
 
-	ret = net_tftp_load(&dlopt);
+	ret = tftp_download(&dlopt);
 
 	if (FALSE == mem_only)
 	{

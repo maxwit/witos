@@ -247,6 +247,7 @@ int flash_register(struct flash_chip *flash)
 
 	printf("registering flash device \"%s\":\n", flash->bdev.dev.name);
 
+	flash_fops_init(&flash->bdev); // fixme: not here!
 	ret = block_device_register(&flash->bdev);
 	// if ret < 0 ...
 	list_head_init(&flash->slave_list);
@@ -289,6 +290,7 @@ int flash_register(struct flash_chip *flash)
 		slave->block_mark_bad = part_block_mark_bad;
 		slave->scan_bad_block = flash->scan_bad_block; // fixme
 
+		flash_fops_init(&slave->bdev);
 		ret = block_device_register(&slave->bdev);
 	}
 

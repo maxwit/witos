@@ -37,13 +37,28 @@ struct part_attr
 	char  part_name[PART_NAME_LEN];
 };
 
-struct bdev_ops {
-	int (*get_blk)(struct block_device *, int, __u8 *);
-	int (*put_blk)(struct block_device *, int, __u8 *);
+struct block_buff {
+	// __u32  blk_id;
+	__u32  blk_size;
+	__u8  *blk_base;
+	__u8  *blk_off;
 };
 
-struct block_device
-{
+struct bdev_file {
+	struct block_device *bdev;
+	struct block_buff blk_buf;
+
+	size_t cur_pos;
+	const char *img_type;
+
+	int (*open)(struct bdev_file *, const char *);
+	int (*close)(struct bdev_file *);
+
+	ssize_t (*read)(struct bdev_file *, void *, size_t);
+	ssize_t (*write)(struct bdev_file *, const void *, size_t);
+};
+
+struct block_device {
 	struct device dev;
 
 	size_t bdev_base;
@@ -52,7 +67,7 @@ struct block_device
 	// fixme!
 	void *fs;
 	char volume;
-	const struct bdev_ops *ops;
+	const struct bdev_file *file;
 
 	struct list_node bdev_node;
 };

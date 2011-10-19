@@ -237,7 +237,7 @@ static int part_load_image(PART_TYPE type, u8 **buff_ptr, u32 *buff_len)
 		goto L1;
 	}
 
-	part = part_open(index, OP_RDONLY);
+	part = flash_bdev_open(index, OP_RDONLY);
 	if (NULL == part)
 	{
 		ret = -1;
@@ -307,7 +307,7 @@ static int tftp_load_image(PART_TYPE type, char image_name[], u8 **buff_ptr, u32
 		return -ENOMEM;
 	}
 
-	ret = net_tftp_load(&dlopt);
+	ret = tftp_download(&dlopt);
 	if (ret < 0)
 	{
 		printf("fail to download %s!\n", image_name);

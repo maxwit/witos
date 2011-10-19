@@ -1,8 +1,8 @@
 #pragma once
 
 // fixme: move to the header
-void set_cur_vol(char vol);
-char get_cur_vol(void);
+void set_curr_volume(char vol);
+char get_current_volume(void);
 
-char home_get(void);
-int home_set(char vol);
+char get_home_volume(void);
+int set_home_volume(char vol);

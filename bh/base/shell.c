@@ -50,25 +50,25 @@ static void inline cmd_backspace(void)
 
 static char g_cur_vol, g_home_vol = 'A';
 
-void set_cur_vol(char vol)
+void set_curr_volume(char vol)
 {
 	g_cur_vol = vol;
 }
 
-char get_cur_vol(void)
+char get_curr_volume(void)
 {
 	return g_cur_vol;
 }
 
-char home_get(void)
-{
-	return g_home_vol;
-}
-
-int home_set(char vol)
+int set_home_volume(char vol)
 {
 	g_home_vol = vol;
 	return 0;
+}
+
+char get_home_volume(void)
+{
+	return g_home_vol;
 }
 
 void show_prompt(void)
@@ -78,7 +78,7 @@ void show_prompt(void)
 
 	struct partition *part;
 
-	part = part_open(PART_CURR, OP_RDONLY);
+	part = flash_bdev_open(PART_CURR, OP_RDONLY);
 	if (NULL != part)
 	{
 		d = part_get_index(part);
@@ -90,7 +90,7 @@ void show_prompt(void)
 		printf("set to %d\n", d);
 	}
 #endif
-	char vol = get_cur_vol();
+	char vol = get_curr_volume();
 
 	printf("g-bios %c:\\> ", vol);
 }
@@ -813,7 +813,7 @@ int exec_shell(void)
 
 #warning
 	// TODO: parse sysconfig and set evironment variable
-	set_cur_vol(home_get());
+	set_curr_volume(get_home_volume());
 
 	while (1)
 	{

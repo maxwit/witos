@@ -123,24 +123,6 @@ struct image_info
 	u32   image_size;
 };
 
-struct block_buff
-{
-	u32   blk_id;
-	u32   blk_size;
-	u8   *blk_base;
-	u8   *blk_off;
-};
-
-struct partition
-{
-	u32  cur_pos;
-
-	struct flash_chip  *host;
-	struct part_attr   *attr;
-	struct image_info  *image;
-	struct block_buff   blk_buf;
-};
-
 struct flash_chip
 {
 	struct block_device bdev;
@@ -225,7 +207,9 @@ typedef enum
 
 int flash_set_ecc_mode(struct flash_chip *flash, ECC_MODE newMode, ECC_MODE *pOldMode);
 
-// APIs
+int flash_fops_init(struct block_device *bdev);
+
+// user APIs
 struct flash_chip *flash_open(const char *name);
 
 int flash_close(struct flash_chip *flash);

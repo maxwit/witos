@@ -47,7 +47,7 @@ static void tftp_send_ack(const int fd, const u16 blk, struct sockaddr_in *remot
 }
 
 // fixme
-int net_tftp_load(struct tftp_opt *opt)
+int tftp_download(struct tftp_opt *opt)
 {
 	int  ret;
 	int  sockfd;
@@ -59,6 +59,7 @@ int net_tftp_load(struct tftp_opt *opt)
 	u32  client_ip;
 	struct tftp_packet *tftp_pkt;
 	struct sockaddr_in *local_addr, *remote_addr;
+	struct bdev_file *file;
 	socklen_t addrlen;
 
 	ndev_ioctl(NULL, NIOC_GET_IP, &client_ip);
@@ -93,9 +94,8 @@ int net_tftp_load(struct tftp_opt *opt)
 	}
 
 	memset(local_addr, 0, sizeof(*local_addr));
-	local_addr->sin_port = CPU_TO_BE16(1234); // fixme: NetPortAlloc
+	// local_addr->sin_port = port_alloc(SOCK_DGRAM);
 	local_addr->sin_addr.s_addr = client_ip;
-
 	ret = bind(sockfd, (struct sockaddr *)local_addr, sizeof(struct sockaddr));
 
 	printf(" \"%s\": %s => %s\n", opt->file_name, server_ip, local_ip);
@@ -111,15 +111,26 @@ int net_tftp_load(struct tftp_opt *opt)
 
 	memset(remote_addr, 0, sizeof(*remote_addr));
 	remote_addr->sin_addr.s_addr = opt->server_ip; // bigendian
-	remote_addr->sin_port = CPU_TO_BE16(STD_PORT_TFTP);
-	addrlen = sizeof(*remote_addr);
+	remote_addr->sin_port = htons(STD_PORT_TFTP);
 
 	sendto(sockfd, tftp_pkt, pkt_len, 0,
-		(struct sockaddr *)remote_addr, addrlen);
+		(struct sockaddr *)remote_addr, sizeof(*remote_addr));
 
+	file     = opt->file;
 	buff_ptr = opt->load_addr;
 	load_len = 0;
 	blk_num  = 1;
+
+	// fixme!!!
+	opt->type = "jffs2";
+
+	if (file) {
+		ret = file->open(file, opt->type);
+		if (ret < 0) {
+			printf("fail to open \"%s\"!\n", file->bdev->dev.name);
+			goto L1;
+		}
+	}
 
 	do
 	{
@@ -159,17 +170,11 @@ int net_tftp_load(struct tftp_opt *opt)
 					buff_ptr += pkt_len;
 				}
 
-#if 0
-				if (NULL != opt->part)
-				{
-					ret = part_write(opt->part, tftp_pkt->data, pkt_len);
-
+				if (file) {
+					ret = file->write(file, tftp_pkt->data, pkt_len);
 					if (ret < 0)
-					{
 						goto L1;
-					}
 				}
-#endif
 			}
 			else
 			{
@@ -203,6 +208,8 @@ L1:
 	printf("\n");
 #endif
 
+	if (file)
+		file->close(file);
 	sk_close(sockfd);
 	free(remote_addr);
 	free(local_addr);

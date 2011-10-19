@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
 
 	switch (argc) {
 	case 1:
-		v = home_get();
+		v = get_home_volume();
 		break;
 
 	case 2:
@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
 		bdev->bdev_base, bdev->bdev_base + bdev->bdev_size,
 		bdev->dev.name, bdev->volume);
 
-	set_cur_vol(v);
+	set_curr_volume(v);
 
 	return 0;
 }
