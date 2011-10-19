@@ -1,7 +1,7 @@
 #include <getopt.h>
-#include <flash/flash.h>
 #include <uart/uart.h>
 #include <net/net.h>
+#include <shell.h>
 
 #define APP_HIST_DEPTH			    16  // should be 2**n bytes aligned.
 #define APP_ADJUST_INDEX(index)    ((index) & (APP_HIST_DEPTH - 1))
@@ -35,6 +35,7 @@ static char shell_getchar(void)
 		if (ret > 0)
 			break;
 
+		// TODO: replace with tasklet
 		ndev_recv_poll();
 	}
 
@@ -47,17 +48,27 @@ static void inline cmd_backspace(void)
 	printf("\033[D\033[1P");
 }
 
-static const char *pwd;
+static char g_cur_vol, g_home_vol = 'A';
 
-void set_pwd(const char *cwd)
+void set_cur_vol(char vol)
 {
-	printf("%s() line %d\n", __func__, __LINE__);
-	pwd = cwd;
+	g_cur_vol = vol;
 }
 
-const char *get_pwd()
+char get_cur_vol(void)
 {
-	return pwd;
+	return g_cur_vol;
+}
+
+char home_get(void)
+{
+	return g_home_vol;
+}
+
+int home_set(char vol)
+{
+	g_home_vol = vol;
+	return 0;
 }
 
 void show_prompt(void)
@@ -79,10 +90,9 @@ void show_prompt(void)
 		printf("set to %d\n", d);
 	}
 #endif
-	if (!pwd)
-		pwd = "nowhere";
+	char vol = get_cur_vol();
 
-	printf("g-bios: %s# ", pwd);
+	printf("g-bios %c:\\> ", vol);
 }
 
 static int inline get_pre_space_count(char *buf)
@@ -419,7 +429,7 @@ static int cmd_line_status(char *buf, int *cur_pos)
 	return IS_CMD_MATCH;
 }
 
-int cmd_read(char buf[])
+static int cmd_read(char buf[])
 {
 	char input_c;
 	int cur_pos = 0;
@@ -610,7 +620,7 @@ int cmd_read(char buf[])
 	return 0;
 }
 
-int command_translate(const char *command_line, char *argv[])
+static int command_translate(const char *command_line, char *argv[])
 {
 	int argc = 0;
 	int i = 0;
@@ -746,7 +756,7 @@ int command_translate(const char *command_line, char *argv[])
 	return argc;
 }
 
-int cmd_exec(const char *command_line)
+static int cmd_exec(const char *command_line)
 {
 	const struct gapp *app;
 	int ret;
@@ -782,7 +792,7 @@ int cmd_exec(const char *command_line)
 }
 
 // fixme: to be removed
-int __INIT__ init_cmd_queue(void)
+static int __INIT__ init_cmd_queue(void)
 {
 	g_cmd_stack = (struct command_stack *)zalloc(sizeof(*g_cmd_stack));
 
@@ -801,13 +811,17 @@ int exec_shell(void)
 {
 	init_cmd_queue();
 
+#warning
+	// TODO: parse sysconfig and set evironment variable
+	set_cur_vol(home_get());
+
 	while (1)
 	{
-		char buf[MAX_ARG_LEN];
+		char line[MAX_ARG_LEN];
 
-		cmd_read(buf);
+		cmd_read(line);
 		// if argc < 0
-		cmd_exec(buf);
+		cmd_exec(line);
 	}
 
 	return 0;

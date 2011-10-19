@@ -4,6 +4,8 @@
 #include <list.h>
 #include <device.h>
 
+#define PART_NAME_LEN 32
+
 typedef enum
 {
 	PT_NONE,
@@ -25,7 +27,7 @@ typedef enum
 	PT_FS_END = PT_FS_UBIFS
 } PART_TYPE;
 
-#define PART_NAME_LEN 32
+struct block_device;
 
 struct part_attr
 {
@@ -35,6 +37,11 @@ struct part_attr
 	char  part_name[PART_NAME_LEN];
 };
 
+struct bdev_ops {
+	int (*get_blk)(struct block_device *, int, __u8 *);
+	int (*put_blk)(struct block_device *, int, __u8 *);
+};
+
 struct block_device
 {
 	struct device dev;
@@ -42,7 +49,10 @@ struct block_device
 	size_t bdev_base;
 	size_t bdev_size;
 
-	void *fs; // fixme
+	// fixme!
+	void *fs;
+	char volume;
+	const struct bdev_ops *ops;
 
 	struct list_node bdev_node;
 };
@@ -50,3 +60,4 @@ struct block_device
 int block_device_register(struct block_device *bdev);
 
 struct block_device *get_bdev_by_name(const char *name);
+struct block_device *get_bdev_by_volume(char vol);

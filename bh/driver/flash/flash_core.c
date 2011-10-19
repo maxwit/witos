@@ -210,6 +210,8 @@ int flash_register(struct flash_chip *flash)
 	snprintf(flash->bdev.dev.name, MAX_DEV_NAME, "mtdblock%d", g_flash_count);
 	g_flash_count++;
 
+	printf("registering flash device \"%s\":\n", flash->bdev.dev.name);
+
 	ret = block_device_register(&flash->bdev);
 	// if ret < 0 ...
 	list_head_init(&flash->slave_list);

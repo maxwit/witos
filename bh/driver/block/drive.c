@@ -75,6 +75,8 @@ int disk_drive_register(struct disk_drive *drive)
 	struct disk_drive *slave;
 	struct part_attr part_tab[MSDOS_MAX_PARTS];
 
+	printf("registering disk drive \"%s\":\n", drive->bdev.dev.name);
+
 	ret = block_device_register(&drive->bdev);
 	// if ret < 0 ...
 	list_head_init(&drive->slave_list);
