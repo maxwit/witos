@@ -7,7 +7,7 @@
 #define BUFF_LEN		512
 #define BLK_LEN			512
 
-static void mmc_usage(int argc, char *argv[])
+static void usage(int argc, char *argv[])
 {
 #if 0
 
@@ -26,11 +26,17 @@ generic options:
 	-h             this help
 
 #endif
-}
 
-static void mmc_scan_usage(void)
-{
-	printf("\nUsage: mmc scan\n");
+	if (!strcmp(argv[1], "scan"))
+		printf("\nUsage: mmc scan\n");
+	else if (!strcmp(argv[1], "dump"))
+		printf("\nUsage: mmc dump [option <value>]\n"
+				"\nOptions:\n"
+				"  -a \tset start address\n"
+				"  -h \tthis help\n"
+				);
+	else
+		;
 }
 
 static int scan(int argc, char *argv[])
@@ -41,7 +47,7 @@ static int scan(int argc, char *argv[])
 
 	if (argc > 1)
 	{
-		mmc_scan_usage();
+		usage(argc, argv);
 
 		return -EINVAL;
 	}
@@ -73,15 +79,6 @@ static int scan(int argc, char *argv[])
 	return 0;
 }
 
-static void mmc_dump_usage(void)
-{
-	printf("\nUsage: mmc dump [option <value>]\n"
-			"\nOptions:\n"
-			"  -a \tset start address\n"
-			"  -h \tthis help\n"
-			);
-}
-
 static int dump(int argc, char *argv[])
 {
 	int opt;
@@ -111,7 +108,7 @@ static int dump(int argc, char *argv[])
 
 		case 'h':
 		default:
-			mmc_dump_usage();
+			usage(argc, argv);
 			return 0;
 		}
 	}
@@ -185,7 +182,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	mmc_usage(argc, argv);
+	usage(argc, argv);
 
 	return -1;
  }

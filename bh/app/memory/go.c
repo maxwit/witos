@@ -1,6 +1,6 @@
 #include <string.h>
 
-static void show_usage(void)
+static void usage(int argc, char *argv[])
 {
 	printf("Usage:go [address]\n");
 #if 0
@@ -15,7 +15,7 @@ int main(int argc, char *argv[])
 
 	if (argc != 2)
 	{
-		show_usage();
+		usage(argc, argv);
 
 		return -EINVAL;
 	}
@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
 	if (ret < 0)
 	{
 		printf("mem_addr is invalid!\n");
-		show_usage();
+		usage(argc, argv);
 
 		return -EINVAL;
 	}

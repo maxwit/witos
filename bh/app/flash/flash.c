@@ -7,7 +7,22 @@
 
 // hi SE, pls refer to the git usage!
 
-static void flash_cmd_usage(char *cmd)
+#if 0
+static void usage(int argc, char *argv[])
+{
+	printf("Usage: flash <command> [args]\n"
+			"command list:\n"
+			"  dump      display flash data\n"
+			"  read      load data from flash to memory\n"
+			"  write     store the data from memory to flash\n"
+			"  erase     erase flash\n"
+			"  scanbb    scan flash bad block\n"
+			"  info      show the information of partition and host\n"
+			);
+}
+#endif
+
+static void usage(int argc, char *argv[])
 {
 	// common options for eash flash command:
 	printf("  -a    flash address (in byte/page/block/K/M/G)\n"
@@ -15,20 +30,20 @@ static void flash_cmd_usage(char *cmd)
 		"  -h    this message\n"
 		);
 
-	if (0 == strcmp(cmd, "scanbb"))
+	if (0 == strcmp(argv[1], "scanbb"))
 	{
 		// TODO: add usage here!
 	}
-	else if (0 == strcmp(cmd, "erase"))
+	else if (0 == strcmp(argv[1], "erase"))
 	{
 		printf("  -f    force allow bad block\n"
 			"  -c   cleanmarker size (support JFFS2)\n");
 	}
-	else if (0 == strcmp(cmd, "read") || 0 == strcmp(cmd, "write"))
+	else if (0 == strcmp(argv[1], "read") || 0 == strcmp(argv[1], "write"))
 	{
 		printf("  -m   memory address\n");
 	}
-	else if (0 == strcmp(cmd, "info"))
+	else if (0 == strcmp(argv[1], "info"))
 	{
 		// TODO: add usage here!
 	}
@@ -78,7 +93,7 @@ static int read_write(int argc, char *argv[])
 			if (flag || flash_str_to_val(optarg, &start, &start_unit) < 0)
 			{
 				printf("Invalid argument: \"%s\"\n", optarg);
-				flash_cmd_usage(argv[0]);
+				usage(argc, argv);
 
 				return -EINVAL;
 			}
@@ -102,7 +117,7 @@ static int read_write(int argc, char *argv[])
 			if (str_to_val(optarg, (u32 *)&buff) < 0)
 			{
 				printf("Invalid argument: \"%s\"\n", optarg);
-				flash_cmd_usage(argv[0]);
+				usage(argc, argv);
 				return -EINVAL;
 			}
 
@@ -113,7 +128,7 @@ static int read_write(int argc, char *argv[])
 		default:
 			ret = -EINVAL;
 		case 'h':
-			flash_cmd_usage(argv[0]);
+			usage(argc, argv);
 			return ret;
 		}
 	}
@@ -122,7 +137,7 @@ static int read_write(int argc, char *argv[])
 	if (flag != 3)
 	{
 		printf("Please set the option -a addr -l size -m address>\n");
-		flash_cmd_usage(argv[0]);
+		usage(argc, argv);
 		return -EINVAL;
 	}
 
@@ -161,7 +176,7 @@ static int read_write(int argc, char *argv[])
 		if (ret < 0)
 		{
 			printf("please check argument!\n");
-			flash_cmd_usage(argv[0]);
+			usage(argc, argv);
 
 			ret = -EINVAL;
 			goto ERROR;
@@ -174,7 +189,7 @@ static int read_write(int argc, char *argv[])
 		if (ret < 0)
 		{
 			printf("please check argument!\n");
-			flash_cmd_usage(argv[0]);
+			usage(argc, argv);
 
 			ret = -EINVAL;
 			goto ERROR;
@@ -204,7 +219,7 @@ static int erase(int argc, char *argv[])
 
 	if (argc == 1)
 	{
-		flash_cmd_usage(argv[0]);
+		usage(argc, argv);
 		return -EINVAL;
 	}
 
@@ -216,7 +231,7 @@ static int erase(int argc, char *argv[])
 			if (arg_flag == 2 || flash_str_to_val(optarg, &start, &start_unit) < 0)
 			{
 				printf("Invalid argument: \"%s\"\n", optarg);
-				flash_cmd_usage(argv[0]);
+				usage(argc, argv);
 				return -EINVAL;
 			}
 
@@ -228,7 +243,7 @@ static int erase(int argc, char *argv[])
 			if (arg_flag == 2 || flash_str_to_val(optarg, &size, &size_unit) < 0)
 			{
 				printf("Invalid argument: \"%s\"\n", optarg);
-				flash_cmd_usage(argv[0]);
+				usage(argc, argv);
 				return -EINVAL;
 			}
 
@@ -238,7 +253,7 @@ static int erase(int argc, char *argv[])
 			if (arg_flag == 1 || (optarg && str_to_val(optarg, &part_num) < 0))
 			{
 				printf("Invalid argument: \"%s\"\n", optarg);
-				flash_cmd_usage(argv[0]);
+				usage(argc, argv);
 				return -EINVAL;
 			}
 
@@ -257,7 +272,7 @@ static int erase(int argc, char *argv[])
 		default:
 			ret = -EINVAL;
 		case 'h':
-			flash_cmd_usage(argv[0]);
+			usage(argc, argv);
 			return ret;
 		}
 	}
@@ -322,7 +337,7 @@ struct flash_parterase_param
 };
 
 #if 0
-static void flash_parterase_usage(void)
+static void usage(int argc, char *argv[])
 {
 	printf("Usage: flash parterase <subcommands> [options <value>] [flags]\n"
 			"options:\n"
@@ -362,14 +377,14 @@ static int parterase(int argc, char *argv[])
 		case 'p':
 			if(str_to_val(optarg, (u32 *)&nDevNum) < 0)
 			{
-				flash_parterase_usage();
+				usage(argc, argv);
 				goto L1;
 			}
 
 			part = flash_bdev_open(nDevNum, OP_RDWR);
 			if (NULL == part)
 			{
-				flash_parterase_usage();
+				usage(argc, argv);
 				goto L1;
 			}
 
@@ -388,7 +403,7 @@ static int parterase(int argc, char *argv[])
 			break;
 
 		default:
-			flash_parterase_usage();
+			usage(argc, argv);
 			goto L1;
 		}
 	}
@@ -471,7 +486,7 @@ static int scanbb(int argc, char *argv[])
 			break;
 
 		default:
-			flash_cmd_usage(argv[0]);
+			usage(argc, argv);
 			return -EINVAL;
 		}
 	}
@@ -496,19 +511,6 @@ L1:
 }
 #endif
 
-static void flash_usage(void)
-{
-	printf("Usage: flash <command> [args]\n"
-			"command list:\n"
-			"  dump      display flash data\n"
-			"  read      load data from flash to memory\n"
-			"  write     store the data from memory to flash\n"
-			"  erase     erase flash\n"
-			"  scanbb    scan flash bad block\n"
-			"  info 	 show the information of partition and host\n"
-			);
-}
-
 static int dump(int argc, char *argv[])
 {
 	u8	*p, *buff;
@@ -529,7 +531,7 @@ static int dump(int argc, char *argv[])
 			if (flag || (flash_str_to_val(optarg, &start, &start_unit) < 0))
 			{
 				printf("Invalid argument: \"%s\"\n", optarg);
-				flash_cmd_usage(argv[0]);
+				usage(argc, argv);
 				return -EINVAL;
 			}
 
@@ -541,7 +543,7 @@ static int dump(int argc, char *argv[])
 			if (flag == 2 || flash_str_to_val(optarg, (u32 *)&size, &size_unit) < 0)
 			{
 				printf("Invalid argument: \"%s\"\n", optarg);
-				flash_cmd_usage(argv[0]);
+				usage(argc, argv);
 				return -EINVAL;
 			}
 
@@ -551,7 +553,7 @@ static int dump(int argc, char *argv[])
 		default:
 			ret = -EINVAL;
 		case 'h':
-			flash_cmd_usage(argv[0]);
+			usage(argc, argv);
 			return ret;
 		}
 	}
@@ -687,7 +689,7 @@ static int erase(int argc, char *argv[])
 
 	if (argc == 1)
 	{
-		flash_cmd_usage(argv[0]);
+		usage(argc, argv);
 		return -EINVAL;
 	}
 
@@ -699,7 +701,7 @@ static int erase(int argc, char *argv[])
 			if (arg_flag == 2 || flash_str_to_val(optarg, &start, &start_unit) < 0)
 			{
 				printf("Invalid argument: \"%s\"\n", optarg);
-				flash_cmd_usage(argv[0]);
+				usage(argc, argv);
 				return -EINVAL;
 			}
 
@@ -711,7 +713,7 @@ static int erase(int argc, char *argv[])
 			if (arg_flag == 2 || flash_str_to_val(optarg, &size, &size_unit) < 0)
 			{
 				printf("Invalid argument: \"%s\"\n", optarg);
-				flash_cmd_usage(argv[0]);
+				usage(argc, argv);
 				return -EINVAL;
 			}
 
@@ -721,7 +723,7 @@ static int erase(int argc, char *argv[])
 			if (arg_flag == 1 || (optarg && str_to_val(optarg, &dev_num) < 0))
 			{
 				printf("Invalid argument: \"%s\"\n", optarg);
-				flash_cmd_usage(argv[0]);
+				usage(argc, argv);
 				return -EINVAL;
 			}
 
@@ -740,7 +742,7 @@ static int erase(int argc, char *argv[])
 		default:
 			ret = -EINVAL;
 		case 'h':
-			flash_cmd_usage(argv[0]);
+			usage(argc, argv);
 			return ret;
 		}
 	}
@@ -845,7 +847,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	flash_usage();
+	usage(argc, argv);
 
 	return 0;
 }

@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
 /******************** original mw.c **************************
 #include <stdio.h>
 
-static void mw_usage(void)
+static void usage(int argc, char *argv[])
 {
 	printf("Usage: mw <ADDR> <VAL>\n"
 		"Write the VAL to ADDR of memory.\n");
@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
 {
 	u32 addr, val;
 
-	mw_usage();
+	usage(argc, argv);
 #if 0
 	if (argc != 3)
 	{

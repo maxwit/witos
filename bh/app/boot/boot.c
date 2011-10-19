@@ -100,7 +100,7 @@ static void end_setup_atag (struct tag *cur_tag)
 }
 
 // fixme
-static int boot_usage(void)
+static void usage(int argc, char *argv[])
 {
 	printf("Usage: boot [options] \n"
 		"\noptions:\n"
@@ -672,7 +672,7 @@ int main(int argc, char *argv[])
 			ret = -EINVAL;
 			printf("Invalid option: \"%c: %s\"!\n", opt, optarg);
 		case 'h':
-			boot_usage();
+			usage(argc, argv);
 			return ret;
 		}
 	}

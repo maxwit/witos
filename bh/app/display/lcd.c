@@ -7,7 +7,7 @@
 			(pix_fmt) == PIX_RGB24 ? "RGB24" : \
 				(pix_fmt) == PIX_RGB32 ? "RGB32" : "Unknown pixel format"
 
-static void lcd_usage(void)
+static void usage(int argc, char *argv[])
 {
 	printf("Usage: lcd <OPTION [VAL]>\n"
 		"\nOPTION:\n"
@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
 		case 's':
 			if (NULL == optarg)
 			{
-				lcd_usage();
+				usage(argc, argv);
 				return -EINVAL;
 			}
 
@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
 		default:
 			ret = -EINVAL;
 		case 'h':
-			lcd_usage();
+			usage(argc, argv);
 			return ret;
 		}
 	}

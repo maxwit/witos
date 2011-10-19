@@ -3,7 +3,7 @@
 #include <font/draw_screen.h>
 #include <errno.h>
 
-static void font_usage(void)
+static void usage(int argc, char *argv[])
 {
 	printf("Usage: font [OPTION] [STR]\n"
 		"Font's operater by OPTION.\n"
@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
 	struct display *disp;
 	struct font_descript *font;
 
-	font_usage();
+	usage(argc, argv);
 
 	show_all_fonts();
 

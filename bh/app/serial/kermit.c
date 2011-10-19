@@ -4,7 +4,7 @@
 #include <sysconf.h>
 #include <getopt.h>
 
-static void uart_load_usage(char *str)
+static void usage(int argc, char *argv[])
 {
 #if 0
 
@@ -17,10 +17,11 @@ options:
 	-h          display this help.
 
 #endif
-	printf("Usage: %s [options] [ADDR] \n"
+	printf("Usage: kermit [options] [ADDR] \n"
 		"Load file to flash or memory only.(defualt load to flash)\n"
 		"\noptions:\n"
-		"\t-m : Only load the file to memory(else to flash), and the address is VAL(default file location)\n", str);
+		"\t-m : Only load the file to memory(else to flash), and the address is VAL(default file location)\n"
+		);
 }
 
 int main(int argc, char *argv[])
@@ -34,7 +35,7 @@ int main(int argc, char *argv[])
 	size = 0;
 	part = NULL;
 
-	uart_load_usage(argv[0]);
+	usage(argc, argv);
 	return 0;
 
 	memset(&ld_opt, 0x0, sizeof(ld_opt));

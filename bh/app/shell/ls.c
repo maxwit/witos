@@ -1,7 +1,7 @@
 #include <flash/flash.h>
 //fixme:
 
-static void ls_usage(void)
+static void usage(int argc, char *argv[])
 {
 	printf("Usage: ls [OPTION]... [FILE]...\n"
 		"List information about the FILEs (the current directory by default).\n"
@@ -12,7 +12,7 @@ static void ls_usage(void)
 
 int main(int argc, char *argv[])
 {
-	ls_usage();
+	usage(argc, argv);
 
 	return 0;
 }
