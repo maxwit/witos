@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
 		switch(ch)
 		{
 		case 'a':
-			ret = string2value(optarg, (u32 *)&dlopt.load_addr);
+			ret = str_to_val(optarg, (u32 *)&dlopt.load_addr);
 
 			if (ret < 0)
 			{

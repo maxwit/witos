@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
 		case 'm':
 			if (optarg != NULL)
 			{
-				ret = string2value(optarg, (u32 *)&ld_opt.load_addr);
+				ret = str_to_val(optarg, (u32 *)&ld_opt.load_addr);
 				if (ret < 0)
 				{
 					printf("Input a invalied address!\n");

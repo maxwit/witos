@@ -226,24 +226,18 @@ error:
 	return -EINVAL;
 }
 
-int string2value(const char *str, u32 *val)
+int str_to_val(const char *str, u32 *val)
 {
 	int ret;
 	u32 tmp;
 
 	if ('0' == *str && ('x' == *(str + 1) || 'X' == *(str + 1)))
-	{
 		ret = hex_str_to_val(str + 2, &tmp);
-	}
 	else
-	{
 		ret = dec_str_to_val(str, &tmp);
-	}
 
 	if (ret >= 0)
-	{
 		*val = tmp;
-	}
 
 	return ret;
 }

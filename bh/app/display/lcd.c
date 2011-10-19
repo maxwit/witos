@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
 				return -EINVAL;
 			}
 
-			string2value(optarg, &id);
+			str_to_val(optarg, &id);
 
 			disp = get_system_display();
 			if (!disp)

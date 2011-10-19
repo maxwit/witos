@@ -28,7 +28,7 @@ static int get_root_dev(int *root_dev)
 
 	attr = "linux.root_dev";
 	if (0 == conf_get_attr(attr, buff)) {
-		if (string2value(buff, (u32 *)root_dev) < 0)
+		if (str_to_val(buff, (u32 *)root_dev) < 0)
 		{
 			DPRINT_ATTR(attr, ATTR_FMT_ERR);
 			*root_dev = DEFAULT_ROOT_DEV;

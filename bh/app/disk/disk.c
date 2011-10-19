@@ -97,7 +97,7 @@ static int dump(int argc, char *argv[])
 		case 'a':
 			if (optarg != NULL)
 			{
-				ret = string2value(optarg, &addr);
+				ret = str_to_val(optarg, &addr);
 				if (ret < 0)
 				{
 					printf("Error: Address error!\n");

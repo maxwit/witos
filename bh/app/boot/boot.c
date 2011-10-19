@@ -610,7 +610,7 @@ int main(int argc, char *argv[])
 			if (optarg == NULL)
 				break;
 
-			if (string2value(optarg, &dev_num) < 0)
+			if (str_to_val(optarg, &dev_num) < 0)
 			{
 				printf("Invalid partition number (%s)!\n", optarg);
 			}
@@ -652,7 +652,7 @@ int main(int argc, char *argv[])
 			break;
 
 		case 'm':
-			string2value(optarg, (u32 *)&linux_conf->mach_id);
+			str_to_val(optarg, (u32 *)&linux_conf->mach_id);
 			break;
 
 		case 'c':

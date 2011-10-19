@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
 		switch(ch)
 		{
 		case 'a':
-			if ((string2value(optarg, (u32 *)&p)) < 0)
+			if ((str_to_val(optarg, (u32 *)&p)) < 0)
 			{
 				printf("Invaild argument\n");
 
@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
 			break;
 
 		case 'n':
-			if ((string2value(optarg, (u32 *)&i)) < 0)
+			if ((str_to_val(optarg, (u32 *)&i)) < 0)
 			{
 				printf("Invaild argument\n");
 				printf("%s\n", MD_USAGE);
@@ -121,8 +121,8 @@ int main(int argc, char *argv[])
 		return -EINVAL;
 	}
 
-	string2value(argv[1], (u32 *)&addr);
-	string2value(argv[2], (u32 *)&val);
+	str_to_val(argv[1], (u32 *)&addr);
+	str_to_val(argv[2], (u32 *)&val);
 #endif
 
 	addr = 0;

@@ -49,7 +49,7 @@ int val_to_dec_str(char *str, long val);
 int hr_str_to_val(const char *str, u32 *val);
 int val_to_hr_str(u32 val, char str[]);
 
-int string2value(const char *str, u32 *val);
+int str_to_val(const char *str, u32 *val);
 
 int str_to_ip(u8 ip_val[], const char *ip_str);
 int ip_to_str(char ip_str[], const u32 ip);

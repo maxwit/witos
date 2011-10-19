@@ -58,7 +58,7 @@ static int flash_str_to_val(char * str, u32 * val, char *unit)
 		return hr_str_to_val(str, val);
 	}
 
-	return string2value(str, val);
+	return str_to_val(str, val);
 }
 #if 0
 
@@ -99,7 +99,7 @@ static int read_write(int argc, char *argv[])
 			break;
 
 		case 'm':
-			if (string2value(optarg, (u32 *)&buff) < 0)
+			if (str_to_val(optarg, (u32 *)&buff) < 0)
 			{
 				printf("Invalid argument: \"%s\"\n", optarg);
 				flash_cmd_usage(argv[0]);
@@ -235,7 +235,7 @@ static int erase(int argc, char *argv[])
 			break;
 
 		case 'p':
-			if (arg_flag == 1 || (optarg && string2value(optarg, &part_num) < 0))
+			if (arg_flag == 1 || (optarg && str_to_val(optarg, &part_num) < 0))
 			{
 				printf("Invalid argument: \"%s\"\n", optarg);
 				flash_cmd_usage(argv[0]);
@@ -360,7 +360,7 @@ static int parterase(int argc, char *argv[])
 		switch (ch)
 		{
 		case 'p':
-			if(string2value(optarg, (u32 *)&nDevNum) < 0)
+			if(str_to_val(optarg, (u32 *)&nDevNum) < 0)
 			{
 				flash_parterase_usage();
 				goto L1;
@@ -462,7 +462,7 @@ static int scanbb(int argc, char *argv[])
 		switch (ch)
 		{
 		case 'p':
-			if (string2value(optarg, &part_num) < 0)
+			if (str_to_val(optarg, &part_num) < 0)
 			{
 				printf("Invalid argument: \"%s\"\n", optarg);
 				return -EINVAL;
@@ -718,7 +718,7 @@ static int erase(int argc, char *argv[])
 			break;
 
 		case 'p':
-			if (arg_flag == 1 || (optarg && string2value(optarg, &dev_num) < 0))
+			if (arg_flag == 1 || (optarg && str_to_val(optarg, &dev_num) < 0))
 			{
 				printf("Invalid argument: \"%s\"\n", optarg);
 				flash_cmd_usage(argv[0]);

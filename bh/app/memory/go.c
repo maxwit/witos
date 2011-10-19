@@ -20,7 +20,7 @@ int main(int argc, char *argv[])
 		return -EINVAL;
 	}
 
-	ret = string2value(argv[1], (u32 *)&fn);
+	ret = str_to_val(argv[1], (u32 *)&fn);
 	if (ret < 0)
 	{
 		printf("mem_addr is invalid!\n");
