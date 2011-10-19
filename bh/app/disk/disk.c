@@ -11,7 +11,7 @@ static void mmc_usage(int argc, char *argv[])
 {
 #if 0
 
-Usage: disk <command> [args]
+Usage: disk <command> [<args>]
 command list:
     scan     scan all MMC/SD devices, echo informations
     dump     read and echo MMC/SD datas in each block

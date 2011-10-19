@@ -2,8 +2,31 @@
 #include <sysconf.h>
 #include <net/tftp.h>
 
-static void tftp_usage(void)
+static void usage(int argc, char *argv)
 {
+#if 0
+
+Usage: tftp <command> [<args>]
+
+command list:
+	get         download file
+    put         upload file
+
+See 'disk <command> -h' for more information on a specific command.
+
+generic options:
+	-r <URL>     remote URL, i.e. "10.0.0.2:69/g-bios-bh.bin".
+	-l <path>    local path.
+	-m <mode>    transfer mode: text or binary (default is binary).
+    -v           verbose.
+    -h           this help
+
+<get> options:
+    -a <addr>    only load to the memory address <addr>,
+                 without writing to stoarge.
+
+#endif
+
 	printf("Usage: tftp [option <value>] [-f] <filename>\n"
 		"\noptions:\n"
 		"  -a   \tmemory address [needed in few cases]\n"
@@ -33,7 +56,7 @@ int main(int argc, char *argv[])
 
 			if (ret < 0)
 			{
-				tftp_usage();
+				usage(argc, argv);
 				return ret;
 			}
 
@@ -59,7 +82,7 @@ int main(int argc, char *argv[])
 
 		case 'h':
 		default:
-			tftp_usage();
+			usage(argc, argv);
 			return -EINVAL;
 		}
 	}
@@ -79,7 +102,7 @@ int main(int argc, char *argv[])
 		}
 		else
 		{
-			tftp_usage();
+			usage(argc, argv);
 			return -EINVAL;
 		}
 	}
