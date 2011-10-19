@@ -6,6 +6,42 @@ static struct list_node g_master_list;
 static const struct part_attr *g_part_attr;
 static int g_part_num = 0;
 
+static int set_root_dev(int root_dev)
+{
+	char buff[CONF_VAL_LEN];
+	char *attr;
+
+	attr = "linux.root_dev";
+	val_to_dec_str(buff, root_dev);
+	if (conf_set_attr(attr, buff) < 0) {
+		conf_add_attr(attr, buff);
+	}
+
+	return 0;
+}
+
+#if 0
+static int get_root_dev(int *root_dev)
+{
+	char buff[CONF_VAL_LEN];
+	char *attr;
+
+	attr = "linux.root_dev";
+	if (0 == conf_get_attr(attr, buff)) {
+		if (string2value(buff, (u32 *)root_dev) < 0)
+		{
+			DPRINT_ATTR(attr, ATTR_FMT_ERR);
+			*root_dev = DEFAULT_ROOT_DEV;
+		}
+	} else {
+		DPRINT_ATTR(attr, ATTR_NOT_FOUND);
+		*root_dev = DEFAULT_ROOT_DEV;
+	}
+
+	return 0;
+}
+#endif
+
 void __INIT__ flash_add_part_tab(const struct part_attr *attr, int num)
 {
 	g_part_attr = attr;
@@ -20,7 +56,6 @@ static int __INIT__ flash_adjust_part_tab(struct flash_chip *host,
 {
 	int index = 0;
 	u32 curr_base;
-	struct linux_config *linux_conf = sysconf_get_linux_param();
 
 	if (parts > MAX_FLASH_PARTS)
 	{
@@ -64,7 +99,7 @@ static int __INIT__ flash_adjust_part_tab(struct flash_chip *host,
 			}
 			else if (new_attr->part_type >= PT_FS_BEGIN && new_attr->part_type <= PT_FS_END)
 			{
-				linux_conf->root_dev = index;
+				set_root_dev(index);
 				break;
 			}
 

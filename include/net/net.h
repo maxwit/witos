@@ -413,3 +413,7 @@ struct list_node *net_get_device_list(void);
 #define NIOC_GET_STATUS 7
 
 int ndev_ioctl(struct net_device *ndev, int cmd, void *arg);
+
+int net_get_server_ip(u32 *ip);
+
+int net_set_server_ip(u32 ip);

@@ -260,7 +260,7 @@ int main(int argc, char *argv[])
 	if (sync_svr)
 	{
 		net_set_server_ip(remote_addr.sin_addr.s_addr);
-		sysconf_save();
+		conf_store();
 	}
 
 	ip_to_str(ip_str, remote_addr.sin_addr.s_addr);

@@ -56,13 +56,17 @@ int main(int argc, char *argv[])
 			}
 			break;
 
+		case 'l':
+			conf_list_attr();
+			break;
+
 		default:
 			usage();
 			return -EINVAL;
 		}
 	}
 
-	ret = sysconf_save();
+	ret = conf_store();
 
 	return ret;
 }

@@ -6,7 +6,8 @@
 #include <linux/types.h>
 
 #define DBG_STR_LEN 128
-#define LEN 512
+#define LEN (1024 * 8)
+#define GB_SYSCFG_VER 7
 
 #define GB_SYSCFG_MAGICNUM  0x5a5a5a5a
 
@@ -21,7 +22,7 @@ struct sys_config
 	__u32 checksum;
 };
 
-u16 net_calc_checksum(const void *buff, u32 size)
+static u16 calc_checksum(const void *buff, u32 size)
 {
 	int n;
 	u32	chksum;
@@ -38,19 +39,29 @@ u16 net_calc_checksum(const void *buff, u32 size)
 	return chksum & 0xffff;
 }
 
+static u32 checksum(struct sys_config *g_sys)
+{
+	g_sys->checksum = 0;
+	g_sys->checksum = ~calc_checksum(g_sys, g_sys->offset + g_sys->size);
+	g_sys->checksum |= GB_SYSCFG_VER << 16;
+
+	return g_sys->checksum;
+}
+
 int main(int argc, char *argv[])
 {
-	struct sys_config sys;
+	struct sys_config *sys;
 	const char *txt_file, *img_file;
 	char str[DBG_STR_LEN];
 	int txt_fd, img_fd;
 	int ret;
 	struct stat file_stat;
 	char buff[LEN];
+	char *data;
 
 	if (argc != 3)
 	{
-		printf("Usage: sysconf_img sysconf.txt sysconf.img\n");
+		printf("Usage: %s sysconf.txt sysconf.img\n", argv[0]);
 		return -EINVAL;
 	}
 
@@ -81,36 +92,31 @@ int main(int argc, char *argv[])
 		goto L2;
 	}
 
-	// init sysconfig head
-	sys.magic  = GB_SYSCFG_MAGICNUM;
-	sys.size   = file_stat.st_size;
-	sys.offset = sizeof(sys);
-	sys.checksum = net_calc_checksum(&sys, sizeof(sys) - 4);
+	sys = (struct sys_config *)buff;
+	data = buff + sizeof(*sys);
 
-	ret = write(img_fd, &sys, sizeof(sys));
-	if (ret != sizeof(sys))
-	{
-		sprintf(str, "write %s", img_file);
+	// init sysconfig head
+	sys->magic  = GB_SYSCFG_MAGICNUM;
+	sys->size   = file_stat.st_size;
+	sys->offset = sizeof(*sys);
+
+	// copy txt_file to img_file
+	ret = read(txt_fd, data, LEN - sys->offset);
+	if (ret < 0) {
+		sprintf(str, "read %s", txt_file);
 		perror(str);
 		goto L2;
 	}
 
-	// copy txt_file to img_file
-	while ((ret = read(txt_fd, buff, LEN)) > 0)
-	{
-		ret = write(img_fd, buff, ret);
-		if (ret < 0)
-		{
-			sprintf(str, "write %s", img_file);
-			perror(str);
-			goto L2;
-		}
-	}
+	checksum(sys);
 
-	if (ret < 0)
-	{
-		sprintf(str, "read %s", txt_file);
+	printf("Create sysconfig.img success! The chk sum is 0x%08X\n", sys->checksum);
+
+	ret = write(img_fd, buff, sys->offset + sys->size);
+	if (ret < 0) {
+		sprintf(str, "write %s", img_file);
 		perror(str);
+		goto L2;
 	}
 
 L2:
