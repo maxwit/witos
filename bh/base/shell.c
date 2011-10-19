@@ -1,6 +1,5 @@
 #include <getopt.h>
 #include <flash/flash.h>
-#include <flash/part.h>
 #include <uart/uart.h>
 #include <net/net.h>
 
@@ -43,14 +42,29 @@ static char shell_getchar(void)
 }
 
 // fixme
-static void __INLINE__ cmd_backspace(void)
+static void inline cmd_backspace(void)
 {
 	printf("\033[D\033[1P");
 }
 
+static const char *pwd;
+
+void set_pwd(const char *cwd)
+{
+	printf("%s() line %d\n", __func__, __LINE__);
+	pwd = cwd;
+}
+
+const char *get_pwd()
+{
+	return pwd;
+}
+
 void show_prompt(void)
 {
+#if 0
 	int d;
+
 	struct partition *part;
 
 	part = part_open(PART_CURR, OP_RDONLY);
@@ -64,11 +78,14 @@ void show_prompt(void)
 		d = part_get_home();
 		printf("set to %d\n", d);
 	}
+#endif
+	if (!pwd)
+		pwd = "nowhere";
 
-	printf("g-bios: %d# ", d);
+	printf("g-bios: %s# ", pwd);
 }
 
-static int __INLINE__ get_pre_space_count(char *buf)
+static int inline get_pre_space_count(char *buf)
 {
 	int pre_space_count = 0;
 
@@ -81,7 +98,7 @@ static int __INLINE__ get_pre_space_count(char *buf)
 	return pre_space_count;
 }
 
-static int __INLINE__ get_mid_space_count(char *buf)
+static int inline get_mid_space_count(char *buf)
 {
 	int mid_space_count = 0;
 

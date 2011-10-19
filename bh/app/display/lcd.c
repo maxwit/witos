@@ -9,7 +9,8 @@
 
 static void lcd_usage(void)
 {
-	printf("Usage:\n"
+	printf("Usage: lcd <OPTION [VAL]>\n"
+		"\nOPTION:\n"
 		"\t-l [all]: list current video mode.\n"
 		"\t-s <N>:   set current video to the N'rd mode.\n");
 }

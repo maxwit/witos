@@ -2,7 +2,6 @@
 #include <loader.h>
 #include <uart/uart.h>
 #include <uart/kermit.h>
-#include <flash/part.h>
 #ifdef CONFIG_DEBUG
 #include <stdio.h>
 #endif
@@ -197,7 +196,7 @@ int kermit_load(struct loader_opt *opt)
 			goto Error;
 
 #ifndef CONFIG_GTH
-		part_write(opt->part, curr_addr, count);
+		// part_write(opt->part, curr_addr, count);
 
 		if (opt->load_addr)
 #endif

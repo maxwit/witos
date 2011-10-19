@@ -1,9 +1,27 @@
 #include <loader.h>
 #include <uart/ymodem.h>
 #include <uart/kermit.h>
-#include <flash/part.h>
 #include <sysconf.h>
 #include <getopt.h>
+
+static void uart_load_usage(char *str)
+{
+#if 0
+
+Usage: kermit [options]
+Load file from uart with kermit, and write to storage or memory only(default to storage).
+
+options:
+	-m [ADDR]   load data to memory, but not write to storage.
+                if ADDR is not specified, the malloc one
+	-h          display this help.
+
+#endif
+	printf("Usage: %s [options] [ADDR] \n"
+		"Load file to flash or memory only.(defualt load to flash)\n"
+		"\noptions:\n"
+		"\t-m : Only load the file to memory(else to flash), and the address is VAL(default file location)\n", str);
+}
 
 int main(int argc, char *argv[])
 {
@@ -17,7 +35,8 @@ int main(int argc, char *argv[])
 	size = 0;
 	part = NULL;
 
-	printf("%s loading ...", argv[0]);
+	uart_load_usage(argv[0]);
+	return 0;
 
 	memset(&ld_opt, 0x0, sizeof(ld_opt));
 
@@ -45,12 +64,8 @@ int main(int argc, char *argv[])
 
 	if (flag == 0)
 	{
-		if ((part = part_open(PART_CURR, OP_RDWR)) == NULL)
-		{
-			return -EINVAL;
-		}
-
-		ld_opt.part = part;
+		printf("writing back to partition is not supported yet!\n");
+		return -EINVAL;
 	}
 
 	if (strcmp(argv[0], "kermit") == 0)
@@ -61,15 +76,6 @@ int main(int argc, char *argv[])
 	if (strcmp(argv[0], "ymodem") == 0)
 	{
 		size = ymodem_load(&ld_opt);
-	}
-
-	if (flag == 0)
-	{
-		part_set_image(part, ld_opt.file_name, ld_opt.load_size);
-
-		part_close(part);
-
-		sysconf_save();
 	}
 
 	return size;

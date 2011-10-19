@@ -9,32 +9,32 @@
 
 #define VA(x)  ((u32)(x))
 
-static u8 __INLINE__ readb(u32 addr)
+static u8 inline readb(u32 addr)
 {
 	return *(volatile u8 *)addr;
 }
 
-static void __INLINE__ writeb(u32 addr, u8 val)
+static void inline writeb(u32 addr, u8 val)
 {
 	*(volatile u8 *)addr = val;
 }
 
-static u16 __INLINE__ readw(u32 addr)
+static u16 inline readw(u32 addr)
 {
 	return *(volatile u16 *)addr;
 }
 
-static void __INLINE__ writew(u32 addr, u16 val)
+static void inline writew(u32 addr, u16 val)
 {
 	*(volatile u16 *)addr = val;
 }
 
-static u32 __INLINE__ readl(u32 addr)
+static u32 inline readl(u32 addr)
 {
 	return *(volatile u32 *)addr;
 }
 
-static void __INLINE__ writel(u32 addr, u32 val)
+static void inline writel(u32 addr, u32 val)
 {
 	*(volatile u32 *)addr = val;
 }
@@ -43,32 +43,32 @@ static void __INLINE__ writel(u32 addr, u32 val)
 
 #define VA(x)  ((void *)(x))
 
-static u8 __INLINE__ readb(void *addr)
+static u8 inline readb(void *addr)
 {
 	return *(volatile u8 *)addr;
 }
 
-static void __INLINE__ writeb(void *addr, u8 val)
+static void inline writeb(void *addr, u8 val)
 {
 	*(volatile u8 *)addr = val;
 }
 
-static u16 __INLINE__ readw(void *addr)
+static u16 inline readw(void *addr)
 {
 	return *(volatile u16 *)addr;
 }
 
-static void __INLINE__ writew(void *addr, u16 val)
+static void inline writew(void *addr, u16 val)
 {
 	*(volatile u16 *)addr = val;
 }
 
-static u32 __INLINE__ readl(void *addr)
+static u32 inline readl(void *addr)
 {
 	return *(volatile u32 *)addr;
 }
 
-static void __INLINE__ writel(void *addr, u32 val)
+static void inline writel(void *addr, u32 val)
 {
 	*(volatile u32 *)addr = val;
 }

@@ -4,8 +4,22 @@
 
 static void usage(void)
 {
-	printf("Usage:\n"
-		"\t-r <all|net|boot>: reset system configuration.\n");
+#if 0
+Usage: config [OPTION [VAL]]
+Operate system configuration information!\n
+
+OPTION:
+	-r <all|net|boot>: reset system configuration.
+	-l : List system configuration information.
+	-h : this help message.
+
+#endif
+	printf("Usage: config [OPTION [VAL]]\n"
+		"Operate system configuration information!\n"
+		"\nOPTION:\n"
+		"\t-l : List system configuration information!"
+		"\t-r [all|net|boot]: reset system configuration(default all).\n"
+		"\t-h : this help message.\n");
 }
 
 int main(int argc, char *argv[])
@@ -13,6 +27,8 @@ int main(int argc, char *argv[])
 	int ret, opt;
 	BOOL reset_all = FALSE;
 	char *arg;
+
+	usage();
 
 	while ((opt = getopt(argc, argv, "r:h", &arg)) != -1)
 	{
@@ -43,15 +59,6 @@ int main(int argc, char *argv[])
 			usage();
 			return -EINVAL;
 		}
-	}
-
-	// if (!reset_all) return 0;
-
-	ret = sysconf_reset();
-	if (ret < 0)
-	{
-		printf("Fail to reset system config (ret = %d)!\n", ret);
-		return ret;
 	}
 
 	ret = sysconf_save();

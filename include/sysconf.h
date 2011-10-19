@@ -1,6 +1,6 @@
 #pragma once
 
-#include <flash/part.h>
+#include <fs/fs.h>
 #include <net/net.h>
 
 #define GB_SYSCFG_VER       7
@@ -67,17 +67,9 @@ struct linux_config *sysconf_get_linux_param(void);
 
 int __INIT__ sysconf_init(void);
 
-int sysconf_reset(void);
-
 int sysconf_save(void);
 
 /////////////////////////////
-#if 0
-1. class design
-2. API
-3. issue
-#endif
-
 struct sys_config
 {
 	__u32 magic;

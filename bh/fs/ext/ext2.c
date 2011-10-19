@@ -33,15 +33,15 @@ static ssize_t ext2_read_block(struct ext2_file_system *fs, void *buff, int blk_
 {
 	struct block_device *bdev = fs->bdev;
 	struct ext2_super_block *sb = &fs->sb;
-	size_t buf_len = (off + size + bdev->sect_size - 1) & ~(bdev->sect_size - 1);
+	struct disk_drive *drive = container_of(bdev, struct disk_drive, bdev);
+	size_t buf_len = (off + size + drive->sect_size - 1) & ~(drive->sect_size - 1);
 	char blk_buf[buf_len];
 	int start_blk = blk_no << (sb->s_log_block_size + 1), cur_blk;
-	struct disk_drive *drive = container_of(bdev, struct disk_drive, bdev);
 
-	for (cur_blk = 0; cur_blk < buf_len / bdev->sect_size; cur_blk++)
+	for (cur_blk = 0; cur_blk < buf_len / drive->sect_size; cur_blk++)
 	{
-		// bdev->get_block(bdev, start_blk + cur_blk, blk_buf + cur_blk * bdev->sect_size);
-		drive->get_block(drive, (start_blk + cur_blk) * bdev->sect_size, blk_buf + cur_blk * bdev->sect_size);
+		// bdev->get_block(bdev, start_blk + cur_blk, blk_buf + cur_blk * drive->sect_size);
+		drive->get_block(drive, (start_blk + cur_blk) * drive->sect_size, blk_buf + cur_blk * drive->sect_size);
 	}
 
 	memcpy(buff, blk_buf + off, size);
@@ -256,14 +256,13 @@ static int ext2_mount(struct file_system_type *fs_type, unsigned long flags, str
 	struct ext2_super_block *sb = &fs->sb;
 	struct ext2_dir_entry_2 *root;
 	struct ext2_group_desc *gdt;
+	struct disk_drive *drive = container_of(bdev, struct disk_drive, bdev);
 	int gdt_num;
 	int blk_is;
 	int ret;
-	char buff[bdev->sect_size];
+	char buff[drive->sect_size];
 
-	struct disk_drive *drive = container_of(bdev, struct disk_drive, bdev);
-
-	ret = drive->get_block(drive, 2 * bdev->sect_size, buff);
+	ret = drive->get_block(drive, 2 * drive->sect_size, buff);
 	if (ret < 0)
 	{
 		DPRINT("%s(): read dbr err\n", __func__);
@@ -505,14 +504,14 @@ static struct file_system_type ext2_fs_type =
 };
 
 #ifdef __G_BIOS__
-static int __INIT__ ext2_fs_init(void)
+static int __INIT__ ext3_init(void)
 #else
-int ext2_fs_init(void)
+int ext3_init(void)
 #endif
 {
 	return file_system_type_register(&ext2_fs_type);
 }
 
 #ifdef __G_BIOS__
-SUBSYS_INIT(ext2_fs_init);
+SUBSYS_INIT(ext3_init);
 #endif

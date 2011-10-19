@@ -1,6 +1,5 @@
 #include <sysconf.h>
 #include <flash/flash.h>
-#include <flash/part.h>
 #include <net/net.h>
 
 static const char banner[] = "\n\n" // CLRSCREEN

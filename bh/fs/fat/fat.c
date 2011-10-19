@@ -9,15 +9,15 @@ static ssize_t fat_read_block(struct fat_fs *fs, void *buff, int blk_no, size_t 
 	struct block_device *bdev = fs->bdev;
 	struct disk_drive *drive = container_of(bdev, struct disk_drive, bdev);
 
-	size_t buf_len = (off + size + bdev->sect_size - 1) & ~(bdev->sect_size - 1);
+	size_t buf_len = (off + size + drive->sect_size - 1) & ~(drive->sect_size - 1);
 	char blk_buf[buf_len];
 	int start_blk, cur_blk;
 
-	start_blk = blk_no * fs->clus_size / bdev->sect_size;
+	start_blk = blk_no * fs->clus_size / drive->sect_size;
 
-	for (cur_blk = 0; cur_blk < buf_len / bdev->sect_size; cur_blk++)
+	for (cur_blk = 0; cur_blk < buf_len / drive->sect_size; cur_blk++)
 	{
-		drive->get_block(drive, (start_blk + cur_blk) * bdev->sect_size, blk_buf + cur_blk * bdev->sect_size);
+		drive->get_block(drive, (start_blk + cur_blk) * drive->sect_size, blk_buf + cur_blk * drive->sect_size);
 	}
 
 	memcpy(buff, blk_buf + off, size);
@@ -96,7 +96,7 @@ static int fat_mount(struct file_system_type *fs_type, unsigned long flags, stru
 	fs->clus_size = clus_size;
 
 	bdev->fs = fs;
-	bdev->sect_size = blk_size; // fixme
+	drive->sect_size = blk_size; // fixme
 
 	return 0;
 }
@@ -382,14 +382,14 @@ static struct file_system_type fat_fs_type =
 };
 
 #ifdef __G_BIOS__
-static int __INIT__ fat_fs_init(void)
+static int __INIT__ fat32_init(void)
 #else
-int fat_fs_init(void)
+int fat32_init(void)
 #endif
 {
 	return file_system_type_register(&fat_fs_type);
 }
 
 #ifdef __G_BIOS__
-SUBSYS_INIT(fat_fs_init);
+SUBSYS_INIT(fat32_init);
 #endif

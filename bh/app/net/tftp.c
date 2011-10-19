@@ -1,7 +1,6 @@
-#include <net/tftp.h>
 #include <getopt.h>
-#include <flash/part.h>
 #include <sysconf.h>
+#include <net/tftp.h>
 
 static void tftp_usage(void)
 {
@@ -21,7 +20,6 @@ int main(int argc, char *argv[])
 	BOOL mem_only = FALSE;
 	char *opt_arg;
 	int opt_idx;
-	struct partition *part = NULL;
 
 	memset(&dlopt, 0x0, sizeof(dlopt));
 	net_get_server_ip(&dlopt.server_ip);
@@ -68,15 +66,6 @@ int main(int argc, char *argv[])
 
 	if (FALSE == mem_only)
 	{
-		part = part_open(PART_CURR, OP_RDWR);
-
-		if (NULL == part)
-		{
-			printf("Invalid partition!\n");
-			return -EINVAL;
-		}
-
-		dlopt.part = part;
 	}
 
 	opt_idx = getopt_idx();
@@ -97,64 +86,14 @@ int main(int argc, char *argv[])
 
 	if (!dlopt.file_name[0])
 	{
-		u32 size;
-
-		if (NULL == part)
-		{
-			part = part_open(PART_CURR, OP_RDONLY);
-			if (NULL == part)
-			{
-				tftp_usage();
-				return -EINVAL;
-			}
-		}
-
-		part_get_image(part, dlopt.file_name, &size);
-
-		// fixme
-		if (!dlopt.file_name[0] || size >= part_get_size(part))
-		{
-			switch (part_get_type(part))
-			{
-			case PT_BL_GTH:
-				strcpy(dlopt.file_name, "g-bios-th.bin");
-				break;
-
-			case PT_BL_GBH:
-				strcpy(dlopt.file_name, "g-bios-bh.bin");
-				break;
-
-			case PT_BL_UBOOT:
-				strcpy(dlopt.file_name, "u-boo.bin");
-				break;
-
-			case PT_OS_LINUX:
-				strcpy(dlopt.file_name, "zImage");
-				break;
-
-			case PT_FS_JFFS2:
-				// fixme for small page
-				strcpy(dlopt.file_name, "rootfs_l.jffs2");
-				break;
-			// TODO: support other images
-
-			default:
-				printf("no file name specified!\n");
-				return -EINVAL;
-			}
-		}
 	}
 
 	ret = net_tftp_load(&dlopt);
-
-	// if (part)
-		part_close(part);
 
 	if (FALSE == mem_only)
 	{
 		if (ret > 0)
 		{
-			part_set_image(dlopt.part, dlopt.file_name, ret);
 			sysconf_save();
 		}
 	}

@@ -1,11 +1,10 @@
 #include <sysconf.h>
 #include <flash/flash.h>
-#include <flash/part.h>
 
 static int g_home_index = -1; // to be removed
 static int g_curr_index = -1;
 
-static __INLINE__ struct partition *get_flash_part(struct flash_chip *flash, int num)
+static inline struct partition *get_flash_part(struct flash_chip *flash, int num)
 {
 	return flash->part_tab + num;
 }
@@ -359,7 +358,7 @@ static struct part_attr *PartGetAttr(struct part_info *pt_info, int nFreeIndex)
 	return pt_info->attr_tab + nFreeIndex;
 }
 
-static BOOL __INLINE__ PartProtected(PART_TYPE epart_type)
+static BOOL inline PartProtected(PART_TYPE epart_type)
 {
 	return PT_BL_GTH == epart_type;
 }
@@ -536,7 +535,7 @@ const char *part_type2str(u32 type)
 const char *part_get_name(const struct part_attr *attr)
 {
 	if (attr->part_name[0] == '\0')
-	 	return part_type2str(attr->part_type);
+		return part_type2str(attr->part_type);
 
 	return attr->part_name;
 }
@@ -544,7 +543,8 @@ const char *part_get_name(const struct part_attr *attr)
 // fixme
 int part_show(const struct flash_chip *flash)
 {
-	int index;
+	int index = 0;
+#if 0
 	struct part_attr attr_tab[MAX_FLASH_PARTS];
 	u32 nIndex, nRootIndex;
 	const char *pBar = "--------------------------------------------------------------------";
@@ -593,6 +593,6 @@ int part_show(const struct flash_chip *flash)
 
 	printf("%s\n", pBar);
 
+#endif
 	return index;
 }
-

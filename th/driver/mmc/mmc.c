@@ -6,6 +6,7 @@
 
 #define BLKNR 1
 #define MMC_BLK_SIZE 512
+#define GBH_LOAD_SIZE     MB(2)
 
 static struct mmc_host* g_mmc_host;
 
@@ -194,11 +195,20 @@ out:
 static int mmc_loader(struct loader_opt *opt)
 {
 	mmc_init();
+	int i;
+	int byte_offset = 0;
+	opt->load_size = GBH_LOAD_SIZE;
+	int load_size = opt->load_size;
 
-	mmc_read_blk(g_mmc_host, opt->load_addr, 0);
-	printf("Loader Sucess!\n");
+	ALIGN_UP(load_size, MMC_BLK_SIZE);
 
-	while (1);
+	for (i = 0; i < load_size / MMC_BLK_SIZE; i++, byte_offset += MMC_BLK_SIZE)
+	{
+		mmc_read_blk(g_mmc_host, opt->load_addr + byte_offset, byte_offset);
+	}
+
+	printf("Loader Success!\n");
+
 	return 0;
 }
 

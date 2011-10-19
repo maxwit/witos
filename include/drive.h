@@ -7,6 +7,8 @@ struct disk_drive
 {
 	struct block_device bdev;
 
+	size_t sect_size;
+
 	int (*get_block)(struct disk_drive *drive, int start, void *buff);
 	int (*put_block)(struct disk_drive *drive, int start, const void *buff);
 

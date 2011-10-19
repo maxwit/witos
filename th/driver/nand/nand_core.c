@@ -15,23 +15,23 @@ static const u8 nand_ids[] =
 };
 
 // Basic operations
-static void __INLINE__ nand_write_cmd(struct nand_chip *flash, u8 cmd)
+static void inline nand_write_cmd(struct nand_chip *flash, u8 cmd)
 {
 	writeb(flash->cmmd_port, cmd);
 }
 
-static void __INLINE__ nand_write_addr(struct nand_chip *flash, u8 addr)
+static void inline nand_write_addr(struct nand_chip *flash, u8 addr)
 {
 	writeb(flash->addr_port, addr);
 }
 
 #ifdef CONFIG_NAND_16BIT
-static u16 __INLINE__ nand_read_data(struct nand_chip *flash)
+static u16 inline nand_read_data(struct nand_chip *flash)
 {
 	return readw(flash->data_port);
 }
 #else
-static u8 __INLINE__ nand_read_data(struct nand_chip *flash)
+static u8 inline nand_read_data(struct nand_chip *flash)
 {
 	return readb(flash->data_port);
 }

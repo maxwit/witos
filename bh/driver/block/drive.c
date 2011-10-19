@@ -27,7 +27,7 @@ static int msdos_part_scan(struct disk_drive *drive, struct part_attr part_tab[]
 
 	assert(drive != NULL);
 
-	u8 buff[drive->bdev.sect_size];
+	u8 buff[drive->sect_size];
 
 	drive->get_block(drive, 0, buff);
 
@@ -44,12 +44,12 @@ static int msdos_part_scan(struct disk_drive *drive, struct part_attr part_tab[]
 		part_tab[i].part_type = PT_NONE;
 		part_tab[i].part_name[0] = '\0';
 
-		part_tab[i].part_base = dos_pt[i].lba_start * drive->bdev.sect_size;
-		part_tab[i].part_size = dos_pt[i].lba_size * drive->bdev.sect_size;
+		part_tab[i].part_base = dos_pt[i].lba_start * drive->sect_size;
+		part_tab[i].part_size = dos_pt[i].lba_size * drive->sect_size;
 
-		printf("0x%08x - 0x%08x (%dM)\n",
+		DPRINT("0x%08x - 0x%08x (%dM)\n",
 			dos_pt[i].lba_start, dos_pt[i].lba_start + dos_pt[i].lba_size,
-			dos_pt[i].lba_size * drive->bdev.sect_size >> 20);
+			dos_pt[i].lba_size * drive->sect_size >> 20);
 	}
 
 	return i;
@@ -71,31 +71,32 @@ static int drive_put_block(struct disk_drive *drive, int start, const void *buff
 
 int disk_drive_register(struct disk_drive *drive)
 {
-	int ret, i;
-	struct part_attr part_tab[MSDOS_MAX_PARTS];
+	int ret, i, n;
 	struct disk_drive *slave;
+	struct part_attr part_tab[MSDOS_MAX_PARTS];
 
 	ret = block_device_register(&drive->bdev);
 	// if ret < 0 ...
+	list_head_init(&drive->slave_list);
+	list_add_tail(&drive->master_node, &g_master_list);
 
-	ret = msdos_part_scan(drive, part_tab);
-	// if ret < 0 ...
+	n = msdos_part_scan(drive, part_tab);
+	// if n < 0 ...
 
-	printf("%s:", drive->bdev.dev.name);
-
-	for (i = 0; i < ret; i++)
+	for (i = 0; i < n; i++)
 	{
 		slave = zalloc(sizeof(*slave));
-		// if ...
+		if (NULL == slave)
+			return -ENOMEM;
 
-		snprintf(slave->bdev.dev.name, PART_NAME_LEN, "%sp%d", drive->bdev.dev.name, i + 1);
-		printf(" %s", slave->bdev.dev.name);
+		snprintf(slave->bdev.dev.name, PART_NAME_LEN, "%sp%d",
+			drive->bdev.dev.name, i + 1);
 
 		slave->bdev.bdev_base = part_tab[i].part_base;
 		slave->bdev.bdev_size = part_tab[i].part_size;
-		slave->bdev.sect_size = drive->bdev.sect_size;
 
-		slave->master = drive;
+		slave->sect_size = drive->sect_size;
+		slave->master    = drive;
 		list_add_tail(&slave->slave_node, &drive->slave_list);
 
 		slave->get_block = drive_get_block;
@@ -104,9 +105,18 @@ int disk_drive_register(struct disk_drive *drive)
 		ret = block_device_register(&slave->bdev);
 		// if ret < 0 ...
 	}
-	printf("\n");
 
-	list_add_tail(&drive->master_node, &g_master_list);
+#if 0
+	struct list_node *iter;
+
+	printf("%s:", drive->bdev.dev.name);
+	list_for_each(iter, &drive->slave_list)
+	{
+		slave = container_of(iter, struct disk_drive, slave_list);
+		printf(" %s", slave->bdev.dev.name);
+	}
+	printf("\n");
+#endif
 
 	return ret;
 }

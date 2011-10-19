@@ -1,7 +1,6 @@
 #include <loader.h>
 #include <uart/uart.h>
 #include <uart/ymodem.h>
-#include <flash/part.h>
 
 #define SOH    0x01
 #define STX    0x02
@@ -180,7 +179,7 @@ int ymodem_load(struct loader_opt *opt)
 		ret = uart_recv_byte_timeout(&crc[1], MODEM_TIMEOUT);
 
 #ifndef CONFIG_GTH
-		part_write(opt->part, curr_addr, count);
+		// part_write(opt->part, curr_addr, count);
 
 		if (opt->load_addr)
 #endif
