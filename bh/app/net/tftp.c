@@ -2,7 +2,7 @@
 #include <sysconf.h>
 #include <net/tftp.h>
 
-static void usage(int argc, char *argv)
+static void usage(int argc, char *argv[])
 {
 #if 0
 
