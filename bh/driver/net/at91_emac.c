@@ -95,34 +95,34 @@ static int at91_emac_send(struct net_device *ndev, struct sock_buff *skb)
 
 static int at91_emac_recv(struct net_device * ndev)
 {
-	u8 *pBufPtr = NULL;
+	u8 *buf_ptr = NULL;
 	struct sock_buff *skb;
-	struct emac_buff_desc *rx_head, *pRxRear;
+	struct emac_buff_desc *rx_head, *rx_rear;
 	struct at91_emac *emac = ndev->chip;
 #ifdef CONFIG_DEBUG
 	u32 count = 0;
 #endif
 
 	rx_head = emac->rx_head;
-	pRxRear = (struct emac_buff_desc *)at91_emac_readl(EMAC_RBQP);
+	rx_rear = (struct emac_buff_desc *)at91_emac_readl(EMAC_RBQP);
 
-	BUG_ON(!(rx_head->stat & EMAC_SOF)); // fixme
+	assert(rx_head->stat & EMAC_SOF); // fixme
 
-	while (rx_head != pRxRear)
+	while (rx_head != rx_rear)
 	{
 		if (rx_head->stat & EMAC_SOF)
 		{
 			skb = skb_alloc(0, MAX_ETH_LEN);
 			// if NULL
-			pBufPtr = skb->data;
+			buf_ptr = skb->data;
 #ifdef CONFIG_DEBUG
 			count++;
 #endif
 		}
 
-		BUG_ON(pBufPtr == NULL); // fixme
-		memcpy(pBufPtr, (u8*)(rx_head->addr & ~0x3), RX_BUFF_LEN);
-		pBufPtr += RX_BUFF_LEN;
+		assert(buf_ptr); // fixme
+		memcpy(buf_ptr, (u8*)(rx_head->addr & ~0x3), RX_BUFF_LEN);
+		buf_ptr += RX_BUFF_LEN;
 
 		rx_head->addr &= ~1;
 
@@ -131,7 +131,7 @@ static int at91_emac_recv(struct net_device * ndev)
 			skb->size = rx_head->stat & 0xfff;
 			netif_rx(skb);
 			ndev->stat.rx_packets++;
-			pBufPtr = NULL;
+			buf_ptr = NULL;
 		}
 
 		rx_head++;

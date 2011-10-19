@@ -190,8 +190,6 @@ int flash_register(struct flash_chip *flash);
 
 int flash_unregister(struct flash_chip *flash);
 
-const char *flash_get_mtd_name(const struct flash_chip *flash);
-
 void __INIT__ flash_add_part_tab(const struct part_attr *attr, int num);
 
 BOOL check_image_type(PART_TYPE type, const u8 *data);

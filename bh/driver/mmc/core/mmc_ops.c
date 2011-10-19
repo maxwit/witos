@@ -90,7 +90,7 @@ static int mmc_app_cmd(struct mmc_host *host)
 	int ret;
 	struct mmc_command cmd;
 
-	BUG_ON(!host);
+	assert(host);
 
 	memset(&cmd, 0, sizeof(struct mmc_command));
 

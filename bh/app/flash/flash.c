@@ -263,7 +263,7 @@ static int erase(int argc, char *argv[])
 	}
 
 	pCurPart = flash_bdev_open(part_num, OP_RDWR);
-	BUG_ON(NULL == pCurPart);
+	assert(pCurPart);
 
 	flash = pCurPart->host;
 
@@ -557,7 +557,7 @@ static int dump(int argc, char *argv[])
 	}
 
 	flash = flash_open("mtdblock0");
-	BUG_ON(NULL == flash);
+	assert(flash);
 
 	// -a xxxblock or -a xxxpage
 	if (start_unit == 'b')

@@ -439,7 +439,7 @@ static int build_command_line(char *cmd_line, size_t max_len)
 	*--part_str = '\0';
 	// } MARK_MAXWIT_TRAINING
 
-	BUG_ON(root_idx >= part_num);
+	assert(root_idx < part_num);
 
 	if (linux_conf->boot_mode & BM_NFS)
 	{

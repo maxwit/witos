@@ -2029,14 +2029,15 @@ int nand_ctrl_register(struct nand_ctrl *nfc)
 	return nfc->slaves == 0 ? -ENODEV : nfc->slaves;
 }
 
-// fixme: virtual function and move to flash layer.
+#if 0
 const char *flash_get_mtd_name(const struct flash_chip *flash)
 {
 	struct nand_chip *nand;
 
-	BUG_ON(NULL == flash);
+	assert(NULL != flash);
 
 	nand = FLASH_TO_NAND(flash);
 
 	return nand->master->name;
 }
+#endif

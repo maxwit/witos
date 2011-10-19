@@ -21,8 +21,6 @@ int read_irq_num(void)
 		irq_num = INTC_PINS + shift;
 	}
 
-//	printf("irq_num %d\n", irq_num);
-
 	return irq_num;
 }
 
@@ -101,7 +99,7 @@ static void omap3530_handle(struct int_pin *pin, u32 irq)
 	u32 irq_status;
 	struct irq_dev *dev_list = pin->dev_list;
 
-	BUG_ON(NULL == dev_list);
+	assert(dev_list);
 
 	handle_dev_irq_list(irq, dev_list);
 

@@ -566,7 +566,7 @@ static int DataFlashAdd(const char *pszName, u32 nPages, u32 page_size, u32 nPag
 		nMbrLen  = flash->nMbrSize;
 
 		pt_info = (struct part_info *)malloc(nMbrLen);
-		BUG_ON(NULL == pt_info);
+		assert(pt_info);
 
 		memset(pt_info, 0, nMbrLen);
 

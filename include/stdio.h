@@ -30,13 +30,6 @@ void clear_screen(void);
 
 #define GEN_DGB() printf("%s(): line %d\n", __func__, __LINE__)
 
-#define BUG_ON(x) \
-	if (x) \
-	{  \
-		printf(" BUG @ %s() line %d!\n", __func__, __LINE__); \
-		while(1); \
-	}
-
 #define assert(x) \
 	if (!(x)) \
 	{  \
@@ -45,6 +38,5 @@ void clear_screen(void);
 #else
 #define DPRINT(fmt, args ...)
 #define GEN_DGB()
-#define BUG_ON(x)
 #define assert(x)
 #endif

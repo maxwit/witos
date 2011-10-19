@@ -41,7 +41,7 @@ void irq_handle(u32 irq)
 {
 	struct int_pin *pin;
 
-	BUG_ON(irq >= MAX_IRQ_NUM);
+	assert(irq < MAX_IRQ_NUM);
 
 	// printf("%s(): irq = %d\n", __func__, irq);
 
@@ -94,7 +94,7 @@ void irq_handle_level(struct int_pin *pin, u32 irq)
 
 	pin->intctrl->mack(irq);
 
-	BUG_ON(NULL == dev_list);
+	assert(dev_list);
 
 	handle_dev_irq_list(irq, dev_list);
 
@@ -108,7 +108,7 @@ void vectorirq_handle_level(struct int_pin *pin, u32 irq)
 
 	pin->intctrl->mask(irq);
 
-	BUG_ON(NULL == dev_list);
+	assert(dev_list);
 
 	handle_dev_irq_list(irq, dev_list);
 
@@ -123,7 +123,7 @@ void irq_handle_edge(struct int_pin *pin, u32 irq)
 
 	pin->intctrl->ack(irq);
 
-	BUG_ON(NULL == dev_list);
+	assert(dev_list);
 
 	handle_dev_irq_list(irq, dev_list);
 }
@@ -132,7 +132,7 @@ void irq_handle_simple(struct int_pin *pin, u32 irq)
 {
 	struct irq_dev *dev_list = pin->dev_list;
 
-	BUG_ON(NULL == dev_list);
+	assert(dev_list);
 
 	handle_dev_irq_list(irq, dev_list);
 }

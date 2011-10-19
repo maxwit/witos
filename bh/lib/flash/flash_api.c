@@ -196,7 +196,7 @@ long flash_write(struct flash_chip *flash, const void *buff, u32 count, u32 ppos
 		ret = flash->write(flash, ppos, count, &ret_len, buff);
 		// *ppos += ret_len;
 
-		BUG_ON(ret != 0);
+		assert(ret == 0);
 
 		return ret_len;
 	}

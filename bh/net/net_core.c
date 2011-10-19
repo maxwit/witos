@@ -783,7 +783,7 @@ struct sock_buff *skb_alloc(u32 prot_len, u32 data_len)
 
 void skb_free(struct sock_buff *skb)
 {
-	BUG_ON(!skb);
+	assert(skb && skb->head);
 
 	free(skb->head);
 	free(skb);
