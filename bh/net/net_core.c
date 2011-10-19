@@ -901,11 +901,11 @@ int ndev_register(struct net_device *ndev)
 	if (0 == conf_get_attr(attr, buff)) {
 		if (str_to_ip((u8 *)&ip, buff) < 0) {
 			DPRINT_ATTR(attr, ATTR_FMT_ERR);
-			str_to_ip((u8 *)ip, DEFAULT_LOCAL_IP);
+			str_to_ip((u8 *)&ip, DEFAULT_LOCAL_IP);
 		}
 	} else {
 		DPRINT_ATTR(attr, ATTR_NOT_FOUND);
-		str_to_ip((u8 *)ip, DEFAULT_LOCAL_IP);
+		str_to_ip((u8 *)&ip, DEFAULT_LOCAL_IP);
 	}
 	ret = ndev_ioctl(ndev, NIOC_SET_IP, (void *)ip);
 	//
