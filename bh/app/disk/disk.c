@@ -85,20 +85,19 @@ static void mmc_dump_usage(void)
 static int dump(int argc, char *argv[])
 {
 	int opt;
-	char *parg;
 	u8 buf[BLK_LEN];
 	int ret = 0;
 	u32 addr = 0;
 	struct mmc_host * host;
 
-	while ((opt = getopt(argc, argv, "a::h", &parg)) != -1)
+	while ((opt = getopt(argc, argv, "a::h")) != -1)
 	{
 		switch (opt)
 		{
 		case 'a':
-			if (parg != NULL)
+			if (optarg != NULL)
 			{
-				ret = string2value(parg, &addr);
+				ret = string2value(optarg, &addr);
 				if (ret < 0)
 				{
 					printf("Error: Address error!\n");

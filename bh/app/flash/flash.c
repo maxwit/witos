@@ -68,10 +68,9 @@ static int read_write(int argc, char *argv[])
 	u32 start = 0, size = 1024;
 	char start_unit = 0, size_unit = 0;
 	void *buff = NULL;
-	char *optarg;
 	struct flash_chip *flash;
 
-	while ((ch = getopt(argc, argv, "a:l:m:h", &optarg)) != -1)
+	while ((ch = getopt(argc, argv, "a:l:m:h")) != -1)
 	{
 		switch (ch)
 		{
@@ -192,7 +191,6 @@ ERROR:
 static int erase(int argc, char *argv[])
 {
 	int ch;
-	char *optarg;
 	int arg_flag = 0;
 	int ret      = 0;
 	u32 start    = 0;
@@ -210,7 +208,7 @@ static int erase(int argc, char *argv[])
 		return -EINVAL;
 	}
 
-	while ((ch = getopt(argc, argv, "a:l:p::c:f", &optarg)) != -1)
+	while ((ch = getopt(argc, argv, "a:l:p::c:f")) != -1)
 	{
 		switch(ch)
 		{
@@ -354,11 +352,10 @@ static int parterase(int argc, char *argv[])
 	struct partition *part = NULL;
 	u32 ch;
 	struct flash_parterase_param erInfo;
-	char *optarg;
 	BOOL need_save = TRUE, for_jffs2 = FALSE;
 	FLASH_CALLBACK callback;
 
-	while ((ch = getopt(argc, argv, "p:d", &optarg)) != -1)
+	while ((ch = getopt(argc, argv, "p:d")) != -1)
 	{
 		switch (ch)
 		{
@@ -459,9 +456,8 @@ static int scanbb(int argc, char *argv[])
 	struct flash_chip *flash;
 	u32 part_num = -1;
 	int ch;
-	char *optarg;
 
-	while ((ch = getopt(argc, argv, "p:", &optarg)) != -1)
+	while ((ch = getopt(argc, argv, "p:")) != -1)
 	{
 		switch (ch)
 		{
@@ -517,7 +513,6 @@ static int dump(int argc, char *argv[])
 {
 	u8	*p, *buff;
 	int ch;
-	char *optarg;
 	int ret   = 0;
 	int flag  = 0;
 	u32 start = 0;
@@ -526,7 +521,7 @@ static int dump(int argc, char *argv[])
 	char size_unit	= 0;
 	struct flash_chip *flash;
 
-	while ((ch = getopt(argc, argv, "p:a:l:h", &optarg)) != -1)
+	while ((ch = getopt(argc, argv, "p:a:l:h")) != -1)
 	{
 		switch (ch)
 		{
@@ -680,7 +675,6 @@ L1:
 static int erase(int argc, char *argv[])
 {
 	int ch;
-	char *optarg;
 	int arg_flag = 0;
 	int ret      = 0;
 	u32 start    = 0;
@@ -697,7 +691,7 @@ static int erase(int argc, char *argv[])
 		return -EINVAL;
 	}
 
-	while ((ch = getopt(argc, argv, "a:l:p::c:f", &optarg)) != -1)
+	while ((ch = getopt(argc, argv, "a:l:p::c:f")) != -1)
 	{
 		switch(ch)
 		{

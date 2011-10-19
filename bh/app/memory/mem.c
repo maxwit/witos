@@ -34,14 +34,13 @@ int main(int argc, char *argv[])
 	int i = 1, j;
 	int ch;
 	char *p = (char *)0, bp[16];
-	char *parg;
 
-	while ((ch = getopt(argc, argv, "a:n:h", &parg)) != -1)
+	while ((ch = getopt(argc, argv, "a:n:h")) != -1)
 	{
 		switch(ch)
 		{
 		case 'a':
-			if ((string2value(parg, (u32 *)&p)) < 0)
+			if ((string2value(optarg, (u32 *)&p)) < 0)
 			{
 				printf("Invaild argument\n");
 
@@ -51,7 +50,7 @@ int main(int argc, char *argv[])
 			break;
 
 		case 'n':
-			if ((string2value(parg, (u32 *)&i)) < 0)
+			if ((string2value(optarg, (u32 *)&i)) < 0)
 			{
 				printf("Invaild argument\n");
 				printf("%s\n", MD_USAGE);

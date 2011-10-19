@@ -556,18 +556,18 @@ int main(int argc, char *argv[])
 	struct net_config   *net_conf;
 	struct tag *arm_tag;
 	LINUX_KERNEL_ENTRY exec_linux = NULL;
-	char *arg, *p;
+	char *p;
 	int opt;
 
 	linux_conf = sysconf_get_linux_param();
 	net_conf = sysconf_get_net_info();
 
-	while ((opt = getopt(argc, argv, "t::s:r::f::n::m:c:vl:h", &arg)) != -1)
+	while ((opt = getopt(argc, argv, "t::s:r::f::n::m:c:vl:h")) != -1)
 	{
 		switch (opt)
 		{
 		case 't':
-			if (arg == NULL)
+			if (optarg == NULL)
 			{
 				linux_conf->boot_mode = BM_FLASHDISK;
 				linux_conf->kernel_image[0] = '\0';
@@ -575,7 +575,7 @@ int main(int argc, char *argv[])
 			else
 			{
 				linux_conf->boot_mode = BM_TFTP;
-				strcpy(linux_conf->kernel_image, arg);
+				strcpy(linux_conf->kernel_image, optarg);
 			}
 
 			break;
@@ -583,23 +583,23 @@ int main(int argc, char *argv[])
 		case 's':
 			linux_conf->boot_mode = BM_MMC;
 
-			if (arg == NULL)
+			if (optarg == NULL)
 				break;
 
-			strcpy(linux_conf->kernel_image, arg);
+			strcpy(linux_conf->kernel_image, optarg);
 
 			break;
 
 		case 'r':
 			linux_conf->boot_mode = BM_RAMDISK;
 
-			if (arg == NULL)
+			if (optarg == NULL)
 			{
 				linux_conf->ramdisk_image[0] = '\0';
 			}
 			else
 			{
-				strcpy(linux_conf->ramdisk_image, arg);
+				strcpy(linux_conf->ramdisk_image, optarg);
 			}
 
 			break;
@@ -607,12 +607,12 @@ int main(int argc, char *argv[])
 		case 'f':
 			linux_conf->boot_mode = BM_FLASHDISK;
 
-			if (arg == NULL)
+			if (optarg == NULL)
 				break;
 
-			if (string2value(arg, &dev_num) < 0)
+			if (string2value(optarg, &dev_num) < 0)
 			{
-				printf("Invalid partition number (%s)!\n", arg);
+				printf("Invalid partition number (%s)!\n", optarg);
 			}
 			else
 			{
@@ -625,10 +625,10 @@ int main(int argc, char *argv[])
 		case 'n':
 			linux_conf->boot_mode |= BM_NFS;
 
-			if (arg == NULL)
+			if (optarg == NULL)
 				break;
 
-			p = arg;
+			p = optarg;
 
 			while (*p && *p != ':' && *p != '/') p++;
 
@@ -639,24 +639,24 @@ int main(int argc, char *argv[])
 				strcpy(linux_conf->nfs_path, p + 1);
 
 			case '\0':
-				if (str_to_ip((u8 *)&net_conf->server_ip, arg) < 0)
-					printf("wrong ip format! (%s)\n", arg);
+				if (str_to_ip((u8 *)&net_conf->server_ip, optarg) < 0)
+					printf("wrong ip format! (%s)\n", optarg);
 
 				break;
 
 			default:
-				strcpy(linux_conf->nfs_path, arg);
+				strcpy(linux_conf->nfs_path, optarg);
 				break;
 			}
 
 			break;
 
 		case 'm':
-			string2value(arg, (u32 *)&linux_conf->mach_id);
+			string2value(optarg, (u32 *)&linux_conf->mach_id);
 			break;
 
 		case 'c':
-			strcpy(linux_conf->console_device, arg);
+			strcpy(linux_conf->console_device, optarg);
 			break;
 
 		case 'v':
@@ -665,12 +665,12 @@ int main(int argc, char *argv[])
 
 		case 'l':
 			auto_gen = 0;
-			strncpy(linux_conf->cmd_line, arg, DEFAULT_KCMDLINE_LEN);
+			strncpy(linux_conf->cmd_line, optarg, DEFAULT_KCMDLINE_LEN);
 			break;
 
 		default:
 			ret = -EINVAL;
-			printf("Invalid option: \"%c: %s\"!\n", opt, arg);
+			printf("Invalid option: \"%c: %s\"!\n", opt, optarg);
 		case 'h':
 			boot_usage();
 			return ret;

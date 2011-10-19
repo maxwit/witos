@@ -147,7 +147,7 @@ int main(int argc, char *argv[])
 	show_net_info(ndev);
 
 	//fixme
-	sysconf_save();
+	conf_store();
 
 	return 0;
 }
