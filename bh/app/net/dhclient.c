@@ -135,7 +135,7 @@ int main(int argc, char *argv[])
 	int opt;
 	BOOL sync_svr = FALSE;
 
-	while ((opt = getopt(argc, argv, "sh", NULL)) != -1)
+	while ((opt = getopt(argc, argv, "sh")) != -1)
 	{
 		switch (opt)
 		{

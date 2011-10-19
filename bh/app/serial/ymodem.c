@@ -24,7 +24,6 @@ int main(int argc, char *argv[])
 	int size, ret;
 	struct loader_opt ld_opt;
 	struct partition *part;
-	char *arg;
 	int opt;
 	int flag = 0;
 
@@ -38,14 +37,14 @@ int main(int argc, char *argv[])
 
 	memset(&ld_opt, 0x0, sizeof(ld_opt));
 
-	while ((opt = getopt(argc, argv, "m::", &arg)) != -1)
+	while ((opt = getopt(argc, argv, "m::")) != -1)
 	{
 		switch (opt)
 		{
 		case 'm':
-			if (arg != NULL)
+			if (optarg != NULL)
 			{
-				ret = string2value(arg, (u32 *)&ld_opt.load_addr);
+				ret = string2value(optarg, (u32 *)&ld_opt.load_addr);
 				if (ret < 0)
 				{
 					printf("Input a invalied address!\n");

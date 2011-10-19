@@ -28,25 +28,24 @@ int main(int argc, char *argv[])
 {
 	int ret, opt;
 	BOOL reset_all = FALSE;
-	char *arg;
 
 	usage();
 
-	while ((opt = getopt(argc, argv, "r:h", &arg)) != -1)
+	while ((opt = getopt(argc, argv, "r:h")) != -1)
 	{
 		switch (opt)
 		{
 		case 'r':
-			if (!strcmp(arg, "all"))
+			if (!strcmp(optarg, "all"))
 			{
 				reset_all = TRUE;
 				printf("reseting all configuration to default!");
 			}
-			else if (!strcmp(arg, "net"))
+			else if (!strcmp(optarg, "net"))
 			{
 				printf("reseting network configuration to default!");
 			}
-			else if (!strcmp(arg, "boot"))
+			else if (!strcmp(optarg, "boot"))
 			{
 				printf("reseting Linux configuration to default!");
 			}

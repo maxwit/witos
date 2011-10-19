@@ -263,34 +263,33 @@ int main(int argc, char *argv[])
 	int ret = 0;
 	int ch;
 	int count = 0;
-	char *opt_arg;
 	char user[BUF_LEN];
 	char pswd[BUF_LEN];
 	char svr_ip[BUF_LEN];
 	char filename[BUF_LEN];
 	char buff[BUF_LEN];
 
-	while((ch = getopt(argc, argv, "u:p:s:f:h", &opt_arg)) != -1)
+	while((ch = getopt(argc, argv, "u:p:s:f:h")) != -1)
 	{
 		switch(ch)
 		{
 		case 'u':
-			strncpy(user, opt_arg, BUF_LEN);
+			strncpy(user, optarg, BUF_LEN);
 			count++;
 			break;
 
 		case 'p':
-			strncpy(pswd, opt_arg, BUF_LEN);
+			strncpy(pswd, optarg, BUF_LEN);
 			count++;
 			break;
 
 		case 's':
-			strncpy(svr_ip, opt_arg, BUF_LEN);
+			strncpy(svr_ip, optarg, BUF_LEN);
 			count++;
 			break;
 
 		case 'f':
-			strncpy(filename, opt_arg, BUF_LEN);
+			strncpy(filename, optarg, BUF_LEN);
 			count++;
 			break;
 

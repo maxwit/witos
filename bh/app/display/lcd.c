@@ -24,12 +24,12 @@ static inline int get_reflesh_rate(const struct lcd_vmode *vm)
 int main(int argc, char *argv[])
 {
 	int opt, ret = 0;
-	char *arg;
+	extern char *optarg;
 	u32 id;
 	struct display *disp;
 	const struct lcd_vmode *vm;
 
-	while ((opt = getopt(argc, argv, "l::s:h", &arg)) != -1)
+	while ((opt = getopt(argc, argv, "l::s:h")) != -1)
 	{
 		switch (opt)
 		{
@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
 				return -ENODEV;
 			}
 
-			if (NULL == arg)
+			if (NULL == optarg)
 			{
 				vm = disp->video_mode;
 
@@ -76,13 +76,13 @@ int main(int argc, char *argv[])
 			break;
 
 		case 's':
-			if (NULL == arg)
+			if (NULL == optarg)
 			{
 				lcd_usage();
 				return -EINVAL;
 			}
 
-			string2value(arg, &id);
+			string2value(optarg, &id);
 
 			disp = get_system_display();
 			if (!disp)

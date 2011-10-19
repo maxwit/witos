@@ -41,18 +41,17 @@ int main(int argc, char *argv[])
 	int ret, ch;
 	struct tftp_opt dlopt;
 	BOOL mem_only = FALSE;
-	char *opt_arg;
 	int opt_idx;
 
 	memset(&dlopt, 0x0, sizeof(dlopt));
 	net_get_server_ip(&dlopt.server_ip);
 
-	while ((ch = getopt(argc, argv, "a:ms:f:", &opt_arg)) != -1)
+	while ((ch = getopt(argc, argv, "a:ms:f:")) != -1)
 	{
 		switch(ch)
 		{
 		case 'a':
-			ret = string2value(opt_arg, (u32 *)&dlopt.load_addr);
+			ret = string2value(optarg, (u32 *)&dlopt.load_addr);
 
 			if (ret < 0)
 			{
@@ -67,16 +66,16 @@ int main(int argc, char *argv[])
 			break;
 
 		case 's':
-			ret = str_to_ip((u8 *)&dlopt.server_ip, opt_arg);
+			ret = str_to_ip((u8 *)&dlopt.server_ip, optarg);
 			if (ret < 0)
 			{
-				printf("Invalid IP: %s!\n", opt_arg);
+				printf("Invalid IP: %s!\n", optarg);
 				return ret;
 			}
 			break;
 
 		case 'f':
-			strncpy(dlopt.file_name, opt_arg, MAX_FILE_NAME_LEN);
+			strncpy(dlopt.file_name, optarg, MAX_FILE_NAME_LEN);
 			dlopt.file_name[MAX_FILE_NAME_LEN - 1] = '\0';
 			break;
 
