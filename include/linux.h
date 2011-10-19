@@ -158,3 +158,14 @@ struct tag
 #define for_each_tag(t,base)		\
 	for (t = base; t->hdr.size; t = tag_next(t))
 
+typedef void (*LINUX_KERNEL_ENTRY)(int, int, u32);
+
+// fixme: remove it!
+struct image_cache;
+
+struct tag *begin_setup_atag (void *tag_base);
+struct tag *setup_cmdline_atag(struct tag *cur_tag, char *cmd_line);
+struct tag *setup_mem_atag (struct tag *cur_tag);
+struct tag *setup_ramdisk_atag(struct tag *cur_tag, struct image_cache *rd_cache);
+struct tag *setup_initrd_atag(struct tag *cur_tag, void *image_buff, u32 image_size);
+void end_setup_atag (struct tag *cur_tag);

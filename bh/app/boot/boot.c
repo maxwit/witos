@@ -3,103 +3,12 @@
 #include <image.h>
 #include <net/tftp.h>
 #include <uart/uart.h>
-#include "atag.h"
 #include <fs/fs.h>
 #include <mmc/mmc.h>
+#include "linux.h"
 
-#define LINUX_IMAGE_NAME     "zImage"
-#define CONFIG_RAM_BANK_NUM  1 // fixme!
 #define UIMAGE_HEAD_SIZE     64
 
-typedef void (*LINUX_KERNEL_ENTRY)(int, int, u32);
-
-#if 0
-static struct tag *begin_setup_atag (void *tag_base)
-{
-	struct tag *cur_tag;
-
-	cur_tag = (struct tag *)tag_base;
-
-	cur_tag->hdr.tag = ATAG_CORE;
-	cur_tag->hdr.size = tag_size(tag_core);
-
-	cur_tag->u.core.flags    = 0;
-	cur_tag->u.core.pagesize = 0;
-	cur_tag->u.core.rootdev  = 0;
-
-	return cur_tag;
-}
-
-static struct tag *setup_cmdline_atag(struct tag *cur_tag, char *cmd_line)
-{
-	cur_tag = tag_next(cur_tag);
-
-	while (*cmd_line && ' ' == *cmd_line)
-		cmd_line++;
-
-	cur_tag->hdr.tag = ATAG_CMDLINE;
-	cur_tag->hdr.size = (sizeof(struct tag_header) + strlen(cmd_line) + 3) >> 2;
-
-	strcpy(cur_tag->u.cmdline.cmdline, cmd_line);
-
-	return cur_tag;
-}
-
-// fixme
-static struct tag *setup_mem_atag (struct tag *cur_tag)
-{
-	int i;
-
-	for (i = 0; i < CONFIG_RAM_BANK_NUM; i++)
-	{
-		cur_tag = tag_next(cur_tag);
-
-		cur_tag->hdr.tag  = ATAG_MEM;
-		cur_tag->hdr.size = tag_size(tag_mem32);
-
-		cur_tag->u.mem.start = SDRAM_BASE;
-		cur_tag->u.mem.size  = SDRAM_SIZE;
-	}
-
-	return cur_tag;
-}
-
-#if 0
-static struct tag *setup_ramdisk_atag(struct tag *cur_tag, struct image_cache *rd_cache)
-{
-	cur_tag = tag_next(cur_tag);
-
-	cur_tag->hdr.tag = ATAG_RAMDISK;
-	cur_tag->hdr.size = tag_size(TagRamDisk);
-	cur_tag->stRamDisk.flags = 3; // fixme!!
-	cur_tag->stRamDisk.nStart = (u32)rd_cache->cache_base;
-	cur_tag->stRamDisk.size  = rd_cache->cache_size;
-
-	return cur_tag;
-}
-#endif
-
-static struct tag *setup_initrd_atag(struct tag *cur_tag, void *image_buff, u32 image_size)
-{
-	cur_tag = tag_next(cur_tag);
-
-	cur_tag->hdr.tag  = ATAG_INITRD2;
-	cur_tag->hdr.size = tag_size(tag_initrd);
-	cur_tag->u.initrd.start = (u32)image_buff;
-	cur_tag->u.initrd.size  = image_size;
-
-	return cur_tag;
-}
-
-static void end_setup_atag (struct tag *cur_tag)
-{
-	cur_tag = tag_next(cur_tag);
-
-	cur_tag->hdr.tag = ATAG_NONE;
-	cur_tag->hdr.size = 0;
-}
-
-// fixme
 static void usage(int argc, char *argv[])
 {
 	printf("Usage: boot [options] \n"
@@ -116,10 +25,9 @@ static void usage(int argc, char *argv[])
 		"\nExamples:\n"
 		"\t..."
 		);
-
-	return 0;
 }
 
+#if 0
 static int mmc_load_image(PART_TYPE type, const char image_name[], u8 **buff_ptr, u32 *buff_len)
 {
 	return 0;
@@ -491,18 +399,10 @@ L1:
 
 static int show_boot_args(void *tag_base)
 {
-	int i;
+	int i = 0;
 	struct tag *arm_tag = tag_base;
 
-	if (arm_tag->hdr.tag != ATAG_CORE)
-	{
-		printf("Invalid ATAG pointer (0x%08x)!\n", arm_tag);
-		return -EINVAL;
-	}
-
-	i = 0;
-
-	while (1)
+	while (ATAG_NONE != arm_tag->hdr.tag)
 	{
 		printf("[ATAG %d] ", i);
 
@@ -527,13 +427,9 @@ static int show_boot_args(void *tag_base)
 				arm_tag->u.initrd.start, arm_tag->u.initrd.start + arm_tag->u.initrd.size);
 			break;
 
-		case ATAG_NONE:
-			printf("ATAG End\n");
-			return 0;
-
-		default: // fixme
-			printf("arm_tag = 0x%08x\n", arm_tag->hdr.tag);
-			break;
+		default:
+			printf("Invalid ATAG 0x%08x @ 0x%08x!\n", arm_tag->hdr.tag, arm_tag);
+			return -EINVAL;
 		}
 
 		arm_tag = tag_next(arm_tag);
@@ -773,6 +669,13 @@ L1:
 
 	return ret;
 }
+#else
+int main(int argc, char *argv[])
+{
+	usage(argc, argv);
+	return 0;
+}
+#endif
 
 void __INIT__ auto_boot_linux(void)
 {
@@ -808,9 +711,3 @@ void __INIT__ auto_boot_linux(void)
 
 	main(1, argv); // fixme
 }
-#else
-int main(int argc, char *argv[])
-{
-	return 0;
-}
-#endif
