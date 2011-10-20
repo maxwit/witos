@@ -1,3 +1,3 @@
-obj-y = main.o shell.o timer.o irq.o sysconf.o
+obj-y = main.o shell.o sysconf.o
 
 PHONY += main.c

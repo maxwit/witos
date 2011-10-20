@@ -1,5 +1,3 @@
-dir-y = stdlib string flash net misc
+dir-y = std flash net extra linux
 
-dir-$(CONFIG_GRAPHICS) += font
-
-dir-$(CONFIG_BOOTUP_LOGO) += djpeg
+dir-$(CONFIG_GRAPHICS) += graphics
