@@ -5,18 +5,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static struct sys_config *g_sys;
+// sys config image size
+#define SYSCONF_SIZE(config) ((config)->offset + (config)->size)
+
+static struct sys_config *g_sysconf;
 
 static u32 conf_checksum(u32 *new_sum)
 {
-	u32 old_sum = g_sys->checksum;
+	u32 old_sum = g_sysconf->checksum;
 
-	g_sys->checksum = 0;
-	g_sys->checksum = ~net_calc_checksum(g_sys, g_sys->offset + g_sys->size);
-	g_sys->checksum |= GB_SYSCFG_VER << 16;
+	g_sysconf->checksum = 0;
+	g_sysconf->checksum = ~net_calc_checksum(g_sysconf, g_sysconf->offset + g_sysconf->size);
+	g_sysconf->checksum |= GB_SYSCFG_VER << 16;
 
 	if (NULL != new_sum)
-		*new_sum = g_sys->checksum;
+		*new_sum = g_sysconf->checksum;
 
 	return old_sum;
 }
@@ -52,9 +55,9 @@ int conf_del_attr(const char *attr)
 {
 	char *p, *q;
 	int mov_len;
-	char *sys_data = (char *)g_sys + g_sys->offset;
+	char *sys_data = (char *)g_sysconf + g_sysconf->offset;
 
-	p = search_attr(sys_data, g_sys->size, attr);
+	p = search_attr(sys_data, g_sysconf->size, attr);
 	if (p == NULL) {
 		DPRINT("Attribute \"%s\" is not exist, del attr error!\n", attr);
 		return -1;
@@ -63,10 +66,10 @@ int conf_del_attr(const char *attr)
 	q = strchr(p, '\n');
 	q++;
 
-	mov_len = g_sys->size - (q - sys_data);
+	mov_len = g_sysconf->size - (q - sys_data);
 	memmove(p, q, mov_len);
 
-	g_sys->size -= q - p;
+	g_sysconf->size -= q - p;
 
 	return 0;
 }
@@ -75,19 +78,19 @@ int conf_add_attr(const char *attr, const char *val)
 {
 	char *p;
 	int len;
-	char *sys_data = (char *)g_sys + g_sys->offset;
+	char *sys_data = (char *)g_sysconf + g_sysconf->offset;
 
-	p = search_attr(sys_data, g_sys->size, attr);
+	p = search_attr(sys_data, g_sysconf->size, attr);
 	if (p != NULL) {
 		DPRINT("Attribute \"%s\" is exist, add attr error!\n", attr);
 		return -1;
 	}
 
-	p = sys_data + g_sys->size;
+	p = sys_data + g_sysconf->size;
 
 	len = sprintf(p, "%s = %s\n", attr, val);
 
-	g_sys->size = g_sys->size + len;
+	g_sysconf->size = g_sysconf->size + len;
 
 	return 0;
 }
@@ -97,9 +100,9 @@ int conf_set_attr(const char *attr, const char *val)
 	char *p, *q;
 	int cur_len, new_len;
 	int t;
-	char *sys_data = (char *)g_sys + g_sys->offset;
+	char *sys_data = (char *)g_sysconf + g_sysconf->offset;
 
-	p = search_attr(sys_data, g_sys->size, attr);
+	p = search_attr(sys_data, g_sysconf->size, attr);
 	if (p == NULL) {
 		DPRINT("Attribute \"%s\" is not exist, set attr error\n", attr);
 		return -1;
@@ -115,8 +118,8 @@ int conf_set_attr(const char *attr, const char *val)
 	t = new_len - cur_len;
 
 	if (t != 0) {
-		memmove(q + t, q, g_sys->size - (q - sys_data));
-		g_sys->size += t;
+		memmove(q + t, q, g_sysconf->size - (q - sys_data));
+		g_sysconf->size += t;
 	}
 
 	memcpy(p, val, new_len);
@@ -127,9 +130,9 @@ int conf_set_attr(const char *attr, const char *val)
 int conf_get_attr(const char *attr, char val[])
 {
 	const char *p;
-	char *sys_data = (char *)g_sys + g_sys->offset;
+	char *sys_data = (char *)g_sysconf + g_sysconf->offset;
 
-	p = search_attr(sys_data, g_sys->size, attr);
+	p = search_attr(sys_data, g_sysconf->size, attr);
 	if (p == NULL) {
 		DPRINT("Attribute \"%s\" is not exist, get attr error!\n", attr);
 		return -1;
@@ -155,7 +158,7 @@ int conf_load()
 {
 	u32 new_sum, old_sum;
 
-	g_sys = (struct sys_config*)CONFIG_SYS_START_MEM;
+	g_sysconf = (struct sys_config*)CONFIG_SYS_START_MEM;
 
 	old_sum = conf_checksum(&new_sum);
 
@@ -179,7 +182,7 @@ int conf_store()
 	}
 
 	conf_base = flash->erase_size * CONFIG_SYS_START_BLK;
-	conf_size = g_sys->size + g_sys->offset;
+	conf_size = g_sysconf->size + g_sysconf->offset;
 
 	ret = flash_erase(flash, conf_base, conf_size, EDF_ALLOWBB);
 
@@ -189,7 +192,7 @@ int conf_store()
 
 	conf_checksum(NULL);
 
-	ret = flash_write(flash, g_sys, conf_size, conf_base);
+	ret = flash_write(flash, g_sysconf, conf_size, conf_base);
 
 L1:
 	flash_close(flash);
@@ -204,11 +207,11 @@ int conf_list_attr()
 	int i, j;
 	char *p;
 	int is_attr = 1;
-	char *sys_data = (char *)g_sys + g_sys->offset;
+	char *sys_data = (char *)g_sysconf + g_sysconf->offset;
 
 	p = sys_data;
 	i = j = 0;
-	while (i < g_sys->size) {
+	while (i < g_sysconf->size) {
 		if (is_attr) {
 			if (p[i] != ' ' && p[i] != '=') {
 				attr[j++] = p[i];
