@@ -3,6 +3,8 @@
 #include <net/mii.h>
 #include <uart/uart.h>
 
+// TODO: split into several files
+
 struct host_addr
 {
 	struct eth_addr in_addr;

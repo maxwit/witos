@@ -35,7 +35,7 @@ static void inline region_set_size(struct mem_region *region, u32 size)
 	succ_region->pre_size = size;
 }
 
-int gk_init_heap(u32 start, u32 end)
+static int __INIT__ __heap_init(u32 start, u32 end)
 {
 	struct mem_region *first, *tail;
 
@@ -62,7 +62,7 @@ int gk_init_heap(u32 start, u32 end)
 }
 
 // fixme: __WEAK__
-int heap_init(void)
+int __INIT__ heap_init(void)
 {
 	unsigned long heap_start, heap_end;
 #ifdef CONFIG_NORMAL_SPACE
@@ -79,10 +79,10 @@ int heap_init(void)
 	DPRINT("%s(): region = [0x%08x, 0x%08x]\n",
 			__func__, heap_start, heap_end);
 
-	return gk_init_heap(heap_start, heap_end);
+	return __heap_init(heap_start, heap_end);
 }
 
-void *malloc(u32 size)
+void *malloc(size_t size)
 {
 	void *p = NULL;
 	struct list_node *iter;
