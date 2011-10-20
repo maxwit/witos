@@ -13,6 +13,7 @@
 
 typedef __u32 u32;
 typedef __u16 u16;
+typedef __u8 u8;
 
 struct sys_config
 {
@@ -30,8 +31,16 @@ static u16 calc_checksum(const void *buff, u32 size)
 
 	chksum = 0;
 
-	for (n = size, p = buff; n > 0; n -= 2, p++)
+	for (n = size, p = buff; n >= 2; n -= 2, p++)
 		chksum += *p;
+
+	if (n == 1) {
+		u16 tmp = 0;
+
+		*(u8 *)&tmp = *(u8 *)p;
+
+		chksum += tmp;
+	}
 
 	chksum = (chksum & 0xffff) + (chksum >> 16);
 	chksum = (chksum & 0xffff) + (chksum >> 16);
