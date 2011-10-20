@@ -110,16 +110,16 @@ long random(void)
 	return mac_addr[4] << 24 | mac_addr[3] << 16 | mac_addr[2] << 8 | mac_addr[1];
 }
 
-static void usage(const char *app)
+static void usage(int argc, char *argv[])
 {
 #if 0
 Usage: dhclient [-s server] [interface]
 Get a valid ip address from the dhcp server for interface.
 #endif
-	printf("Usage:\n\t%s [-s]\n"
+	printf("Usage:\n\tdhclient [-s]\n"
 		"options:\n"
-		"\t-s: update Server IP to DHCP server.",
-		app);
+		"\t-s: update Server IP to DHCP server."
+		);
 }
 
 int main(int argc, char *argv[])
@@ -144,7 +144,7 @@ int main(int argc, char *argv[])
 			break;
 
 		default:
-			usage(argv[0]);
+			usage(argc, argv);
 			return -EINVAL;
 		}
 	}

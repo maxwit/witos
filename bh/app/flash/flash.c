@@ -5,25 +5,41 @@
 #include <bar.h>
 #include <app.h>
 
-// hi SE, pls refer to the git usage!
-
+static void usage(int argc, char *argv[])
+{
 #if 0
-static void usage(int argc, char *argv[])
-{
-	printf("Usage: flash <command> [args]\n"
-			"command list:\n"
-			"  dump      display flash data\n"
-			"  read      load data from flash to memory\n"
-			"  write     store the data from memory to flash\n"
-			"  erase     erase flash\n"
-			"  scanbb    scan flash bad block\n"
-			"  info      show the information of partition and host\n"
-			);
-}
-#endif
+Usage: flash <command> [<args>]
+command list:
+  info      show the information of partition and host
+  dump      print flash data
+  read      load data from flash to memory
+  write     store the data from memory to flash
+  erase     erase flash
+  scanbb    scan flash bad block
 
-static void usage(int argc, char *argv[])
-{
+See 'flash <command> -h' for more information on a specific command.
+
+generic options:
+  -a <address>
+   flash address, in byte|page|block|K|M|G.
+  -m <memory>
+   memory address, in byte.
+  -h
+   this help.
+
+specific dump options:
+  -d <d|D|o|O|x|X>
+   display format.
+
+specific read/write options:
+  -f <file>
+   image file name to read or write.
+
+specific erase options:
+  -c <size>
+   cleanmark size for JFFS2.
+
+#else
 	// common options for eash flash command:
 	printf("  -a    flash address (in byte/page/block/K/M/G)\n"
 		"  -s    size of data\n"
@@ -49,6 +65,7 @@ static void usage(int argc, char *argv[])
 	}
 
 	printf("  -h	 this message\n");
+#endif
 }
 
 static int flash_str_to_val(char * str, u32 * val, char *unit)

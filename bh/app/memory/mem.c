@@ -2,11 +2,11 @@
 
 #define MD_USAGE          "Usage md [-a <ram address>] [-n <number>] [-h]"
 
-static void usage(const char *cmd)
+static void usage(int argc, char *argv[])
 {
 #if 0
 
-Usage: mem <command> [args]
+Usage: mem <command> [<args>]
 command list:
     dump     display memory in hex and/or ascii modes
     write    write data to specified memory address
@@ -22,6 +22,7 @@ generic options:
 
 specific dump options :
     -s <bytes>     default is sector size
+    -d <d|D|o|O|x|X>
 
 specific write options :
 	-a <address> <value list>

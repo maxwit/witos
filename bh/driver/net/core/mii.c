@@ -87,4 +87,3 @@ void mii_reset_phy(struct net_device *ndev, struct mii_phy *phy)
 
 	printf("PHY reset failed!\n");
 }
-

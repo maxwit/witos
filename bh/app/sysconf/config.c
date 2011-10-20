@@ -2,7 +2,7 @@
 #include <sysconf.h>
 #include <getopt.h>
 
-static void usage(void)
+static void usage(int argc, char *argv[])
 {
 #if 0
 Usage: config [options] [<attribute> [<value>]]
@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
 	int ret, opt;
 	BOOL reset_all = FALSE;
 
-	usage();
+	usage(argc, argv);
 
 	while ((opt = getopt(argc, argv, "r:h")) != -1)
 	{
@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
 			}
 			else
 			{
-				usage();
+				usage(argc, argv);
 				return -EINVAL;
 			}
 			break;
@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
 			break;
 
 		default:
-			usage();
+			usage(argc, argv);
 			return -EINVAL;
 		}
 	}

@@ -9,10 +9,22 @@
 
 static void usage(int argc, char *argv[])
 {
+#if 0
+lcd mode
+
+generic:
+	-h                this help
+
+mode:
+	-l [all]          list video mode
+	-s <model>        name of built-in model
+
+#else
 	printf("Usage: lcd <OPTION [VAL]>\n"
 		"\nOPTION:\n"
 		"\t-l [all]: list current video mode.\n"
 		"\t-s <N>:   set current video to the N'rd mode.\n");
+#endif
 }
 
 static inline int get_reflesh_rate(const struct lcd_vmode *vm)

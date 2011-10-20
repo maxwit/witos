@@ -8,4 +8,4 @@ dir-y += shell
 dir-y += misc
 dir-$(CONFIG_FS) += fs
 dir-$(CONFIG_MMC) += disk
-dir-$(CONFIG_GRAPHICS) += display
+dir-$(CONFIG_DISPLAY) += display
