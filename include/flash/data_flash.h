@@ -96,26 +96,26 @@ struct DataFlashOptMsg
 	void	*pTxDataBuf;
 	void	*pRxDataBuf;
 
-	u32	nTxCmdLen;
-	u32	nRxCmdLen;
-	u32  nTxDataLen;
-	u32  nRxDataLen;
+	__u32	nTxCmdLen;
+	__u32	nRxCmdLen;
+	__u32  nTxDataLen;
+	__u32  nRxDataLen;
 
-	BOOL	hasData;
+	bool	hasData;
 };
 
 struct DataFlash
 {
 	struct flash_chip parent;
 
-	u8	bCommand[8];
+	__u8	bCommand[8];
 	char	name[BLOCK_DEV_NAME_LEN];
 
-	u32	page_size;
-	u32  nPageShift;
-	u32	block_size;
-	u32  nBlockShift;
-	u32	ulChipSelect;
+	__u32	page_size;
+	__u32  nPageShift;
+	__u32	block_size;
+	__u32  nBlockShift;
+	__u32	ulChipSelect;
 
 	struct  DataFlashOptMsg stOprMsg;
 };

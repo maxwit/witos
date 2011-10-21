@@ -11,7 +11,7 @@ int at91_clock_disable(int nClockID)
 }
 
 /*
-void at91_gpio_conf_periA(u32 nPioIdx, u32 mask, int isPullUp)
+void at91_gpio_conf_periA(__u32 nPioIdx, __u32 mask, int isPullUp)
 {
 	writel(VA(PIO_BASE(nPioIdx) + PIO_PDR), mask);
 	writel(VA(PIO_BASE(nPioIdx) + PIO_ASR), mask);
@@ -19,7 +19,7 @@ void at91_gpio_conf_periA(u32 nPioIdx, u32 mask, int isPullUp)
 	writel(VA(PIO_BASE(nPioIdx) + (isPullUp ? PIO_PUER : PIO_PUDR)), mask);
 }
 
-void at91_gpio_conf_periB(u32 nPioIdx, u32 mask, int isPullUp)
+void at91_gpio_conf_periB(__u32 nPioIdx, __u32 mask, int isPullUp)
 {
 	writel(VA(PIO_BASE(nPioIdx) + PIO_PDR), mask);
 	writel(VA(PIO_BASE(nPioIdx) + PIO_BSR), mask);
@@ -27,7 +27,7 @@ void at91_gpio_conf_periB(u32 nPioIdx, u32 mask, int isPullUp)
 	writel(VA(PIO_BASE(nPioIdx) + (isPullUp ? PIO_PUER : PIO_PUDR)), mask);
 }
 
-void  at91_gpio_conf_input(u32 nPioIdx, u32 mask, int isPullUp)
+void  at91_gpio_conf_input(__u32 nPioIdx, __u32 mask, int isPullUp)
 {
 	writel(VA(PIO_BASE(nPioIdx) + PIO_PER), mask);
 	writel(VA(PIO_BASE(nPioIdx) + PIO_ODR), mask);
@@ -35,7 +35,7 @@ void  at91_gpio_conf_input(u32 nPioIdx, u32 mask, int isPullUp)
 	writel(VA(PIO_BASE(nPioIdx) + (isPullUp ? PIO_PUER : PIO_PUDR)), mask);
 }
 
-void  at91_gpio_conf_output(u32 nPioIdx, u32 mask, int isPullUp)
+void  at91_gpio_conf_output(__u32 nPioIdx, __u32 mask, int isPullUp)
 {
 	writel(VA(PIO_BASE(nPioIdx) + PIO_PER), mask);
 	writel(VA(PIO_BASE(nPioIdx) + PIO_OER), mask);

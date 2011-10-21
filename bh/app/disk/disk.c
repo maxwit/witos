@@ -82,9 +82,9 @@ static int scan(int argc, char *argv[])
 static int dump(int argc, char *argv[])
 {
 	int opt;
-	u8 buf[BLK_LEN];
+	__u8 buf[BLK_LEN];
 	int ret = 0;
-	u32 addr = 0;
+	__u32 addr = 0;
 	struct mmc_host * host;
 
 	while ((opt = getopt(argc, argv, "a::h")) != -1)
@@ -139,7 +139,7 @@ static int dump(int argc, char *argv[])
 
 	for (i = 0; i < BLK_LEN / 4; i++)
 	{
-		printf("%08x", ((u32*)buf)[i]);
+		printf("%08x", ((__u32*)buf)[i]);
 
 		if ((i + 1)% 8)
 		{

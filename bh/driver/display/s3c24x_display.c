@@ -13,8 +13,8 @@
 
 static int __INIT__ s3c24x0_lcdc_init(void)
 {
-	u32 video_buff_dma;
-	u16 *video_buff_cpu;
+	__u32 video_buff_dma;
+	__u16 *video_buff_cpu;
 	const struct lcd_vmode *vm;
 	int clk_val;
 

@@ -5,12 +5,12 @@
 #include <net/net.h>
 
 // negative hex skipped
-#define MAX_HEX_STR_LEN (sizeof(u32) * 2)
+#define MAX_HEX_STR_LEN (sizeof(__u32) * 2)
 
-int hex_str_to_val(const char *str, u32 *val)
+int hex_str_to_val(const char *str, __u32 *val)
 {
 	int iLen = 0;
-	u32 tmp = 0;
+	__u32 tmp = 0;
 
 	while (*str != '\0')
 	{
@@ -76,16 +76,16 @@ int val_to_dec_str(char *str, long val)
 	return j;
 }
 
-#define MAX_HEX_LEN (sizeof(u32) * 2 + 1)
+#define MAX_HEX_LEN (sizeof(__u32) * 2 + 1)
 
-int val_to_hex_str(char *str, u32 val)
+int val_to_hex_str(char *str, __u32 val)
 {
 	char buff[MAX_HEX_LEN];
 	int i = MAX_HEX_LEN - 1, j = 0;
 
 	while (val)
 	{
-		u32 num = val & 0xf;
+		__u32 num = val & 0xf;
 
 		if (num < 0xa)
 		{
@@ -111,7 +111,7 @@ int val_to_hex_str(char *str, u32 val)
 	return j;
 }
 
-int dec_str_to_val(const char *str, u32 *val)
+int dec_str_to_val(const char *str, __u32 *val)
 {
 	long tmp = 0;
 	const char *num = str;
@@ -155,10 +155,10 @@ int dec_str_to_val(const char *str, u32 *val)
 #define M_MARK (1 << 6)
 #define K_MARK (1 << 5)
 
-int hr_str_to_val(const char *str, u32 *val)
+int hr_str_to_val(const char *str, __u32 *val)
 {
-	u8  mark = 0;
-	u32 num = 0, tmp = 0;
+	__u8  mark = 0;
+	__u32 num = 0, tmp = 0;
 
 	while (1)
 	{
@@ -226,10 +226,10 @@ error:
 	return -EINVAL;
 }
 
-int str_to_val(const char *str, u32 *val)
+int str_to_val(const char *str, __u32 *val)
 {
 	int ret;
-	u32 tmp;
+	__u32 tmp;
 
 	if ('0' == *str && ('x' == *(str + 1) || 'X' == *(str + 1)))
 		ret = hex_str_to_val(str + 2, &tmp);
@@ -244,10 +244,10 @@ int str_to_val(const char *str, u32 *val)
 
 #define KB_MASK ((1 << 10) - 1)
 
-int val_to_hr_str(u32 val, char str[])
+int val_to_hr_str(__u32 val, char str[])
 {
 	char *ch = str;
-	u32 sect;
+	__u32 sect;
 	int i;
 	struct
 	{
@@ -271,7 +271,7 @@ int val_to_hr_str(u32 val, char str[])
 	return ch - str;
 }
 
-int str_to_ip(u8 ip_val[], const char *ip_str)
+int str_to_ip(__u8 ip_val[], const char *ip_str)
 {
 	int dot = 0;
 	unsigned int num = 0;
@@ -285,7 +285,7 @@ int str_to_ip(u8 ip_val[], const char *ip_str)
 		}
 		else if ('.' == *ip_str && num <= 255 && dot < 3)
 		{
-			ip_val[dot] = (u8)num;
+			ip_val[dot] = (__u8)num;
 			dot++;
 			num = 0;
 		}
@@ -319,7 +319,7 @@ int str_to_ip(u8 ip_val[], const char *ip_str)
 				return -EINVAL;
 			}
 
-			ip_val[dot] = (u8)num;
+			ip_val[dot] = (__u8)num;
 			dot++;
 			num = 0;
 			break;
@@ -344,7 +344,7 @@ int str_to_ip(u8 ip_val[], const char *ip_str)
 	return 0;
 }
 
-int ip_to_str(char buf[], const u32 ip)
+int ip_to_str(char buf[], const __u32 ip)
 {
 	sprintf(buf, "%d.%d.%d.%d",
 			ip & 0xff,
@@ -355,10 +355,10 @@ int ip_to_str(char buf[], const u32 ip)
 	return 0;
 }
 
-int str_to_mac(u8 mac[], const char *str)
+int str_to_mac(__u8 mac[], const char *str)
 {
 	int i, j;
-	u32 num;
+	__u32 num;
 	char buf[MAC_STR_LEN];
 	char *p = buf;
 

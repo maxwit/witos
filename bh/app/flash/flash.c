@@ -68,7 +68,7 @@ specific erase options:
 #endif
 }
 
-static int flash_str_to_val(char * str, u32 * val, char *unit)
+static int flash_str_to_val(char * str, __u32 * val, char *unit)
 {
 	int len;
 	char *p = str;
@@ -97,7 +97,7 @@ static int flash_str_to_val(char * str, u32 * val, char *unit)
 static int read_write(int argc, char *argv[])
 {
 	int ch, ret, flag = 0;
-	u32 start = 0, size = 1024;
+	__u32 start = 0, size = 1024;
 	char start_unit = 0, size_unit = 0;
 	void *buff = NULL;
 	struct flash_chip *flash;
@@ -131,7 +131,7 @@ static int read_write(int argc, char *argv[])
 			break;
 
 		case 'm':
-			if (str_to_val(optarg, (u32 *)&buff) < 0)
+			if (str_to_val(optarg, (__u32 *)&buff) < 0)
 			{
 				printf("Invalid argument: \"%s\"\n", optarg);
 				usage(argc, argv);
@@ -198,7 +198,7 @@ static int read_write(int argc, char *argv[])
 			ret = -EINVAL;
 			goto ERROR;
 		}
-		printf("Read 0x%08x bytes data to mem 0x%08x from flash 0x%08x\n", size, (u32)buff, start);
+		printf("Read 0x%08x bytes data to mem 0x%08x from flash 0x%08x\n", size, (__u32)buff, start);
 	}
 	else
 	{
@@ -211,7 +211,7 @@ static int read_write(int argc, char *argv[])
 			ret = -EINVAL;
 			goto ERROR;
 		}
-		printf("write 0x%08x bytes data to flash 0x%08x from mem 0x%08x\n", size, start, (u32)buff);
+		printf("write 0x%08x bytes data to flash 0x%08x from mem 0x%08x\n", size, start, (__u32)buff);
 	}
 ERROR:
 	flash_close(flash);
@@ -225,14 +225,14 @@ static int erase(int argc, char *argv[])
 	int ch;
 	int arg_flag = 0;
 	int ret      = 0;
-	u32 start    = 0;
-	u32 size     = 0;
-	u32 part_num = PART_CURR;
+	__u32 start    = 0;
+	__u32 size     = 0;
+	__u32 part_num = PART_CURR;
 	char start_unit = 0;
 	char size_unit  = 0;
 	struct flash_chip *flash   = NULL;
 	struct partition *pCurPart = NULL;
-	u32 erase_flags = EDF_NORMAL;
+	__u32 erase_flags = EDF_NORMAL;
 
 	if (argc == 1)
 	{
@@ -378,13 +378,13 @@ static int flash_parterase_process(struct flash_chip *flash, FLASH_HOOK_PARAM *p
 static int parterase(int argc, char *argv[])
 {
 	int ret = 0, nDevNum;
-	u32 size, start;
-	u32 flags = EDF_NORMAL;
+	__u32 size, start;
+	__u32 flags = EDF_NORMAL;
 	struct flash_chip *flash;
 	struct partition *part = NULL;
-	u32 ch;
+	__u32 ch;
 	struct flash_parterase_param erInfo;
-	BOOL need_save = TRUE, for_jffs2 = FALSE;
+	bool need_save = true, for_jffs2 = false;
 	FLASH_CALLBACK callback;
 
 	while ((ch = getopt(argc, argv, "p:d")) != -1)
@@ -392,7 +392,7 @@ static int parterase(int argc, char *argv[])
 		switch (ch)
 		{
 		case 'p':
-			if(str_to_val(optarg, (u32 *)&nDevNum) < 0)
+			if(str_to_val(optarg, (__u32 *)&nDevNum) < 0)
 			{
 				usage(argc, argv);
 				goto L1;
@@ -412,11 +412,11 @@ static int parterase(int argc, char *argv[])
 			break;
 
 		case 'j':
-			for_jffs2 = TRUE;
+			for_jffs2 = true;
 			break;
 
 		case 's':
-			need_save = FALSE;
+			need_save = false;
 			break;
 
 		default:
@@ -486,7 +486,7 @@ static int scanbb(int argc, char *argv[])
 {
 	int ret;
 	struct flash_chip *flash;
-	u32 part_num = -1;
+	__u32 part_num = -1;
 	int ch;
 
 	while ((ch = getopt(argc, argv, "p:")) != -1)
@@ -530,11 +530,11 @@ L1:
 
 static int dump(int argc, char *argv[])
 {
-	u8	*p, *buff;
+	__u8	*p, *buff;
 	int ch;
 	int ret   = 0;
 	int flag  = 0;
-	u32 start = 0;
+	__u32 start = 0;
 	int size  = 0;
 	char start_unit = 0;
 	char size_unit	= 0;
@@ -557,7 +557,7 @@ static int dump(int argc, char *argv[])
 			break;
 
 		case 'l':
-			if (flag == 2 || flash_str_to_val(optarg, (u32 *)&size, &size_unit) < 0)
+			if (flag == 2 || flash_str_to_val(optarg, (__u32 *)&size, &size_unit) < 0)
 			{
 				printf("Invalid argument: \"%s\"\n", optarg);
 				usage(argc, argv);
@@ -619,7 +619,7 @@ static int dump(int argc, char *argv[])
 
 	flash_close(flash);
 
-	buff = (u8 *)malloc(size);
+	buff = (__u8 *)malloc(size);
 	if (NULL == buff)
 	{
 		return -ENOMEM;
@@ -696,13 +696,13 @@ static int erase(int argc, char *argv[])
 	int ch;
 	int arg_flag = 0;
 	int ret      = 0;
-	u32 start    = 0;
-	u32 size     = 0;
-	u32 dev_num = 0;
+	__u32 start    = 0;
+	__u32 size     = 0;
+	__u32 dev_num = 0;
 	char start_unit = 0;
 	char size_unit  = 0;
 	struct flash_chip *flash   = NULL;
-	u32 erase_flags = EDF_NORMAL;
+	__u32 erase_flags = EDF_NORMAL;
 
 	if (argc == 1)
 	{

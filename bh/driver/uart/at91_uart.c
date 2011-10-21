@@ -29,19 +29,19 @@ static int at91_uart_init(void)
 	return 0;
 }
 
-static u8 at91_uart_recv_byte()
+static __u8 at91_uart_recv_byte()
 {
 	while ((at91_uart_readl(US_CSR) & 0x1) == 0);
 	return at91_uart_readb(US_RHR);
 }
 
-static void at91_uart_send_byte(u8 b)
+static void at91_uart_send_byte(__u8 b)
 {
 	while ((at91_uart_readl(US_CSR) & 0x2) == 0);
 	at91_uart_writeb(US_THR, b);
 }
 
-u32 uart_rxbuf_count(void)
+__u32 uart_rxbuf_count(void)
 {
 	return at91_uart_readl(US_CSR) & 0x1;
 }

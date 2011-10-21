@@ -27,7 +27,7 @@ static int s3c24x0_uart_init(void)
 	return 0;
 }
 
-static u8 s3c24x0_uart_recv_byte()
+static __u8 s3c24x0_uart_recv_byte()
 {
 #ifdef CONFIG_UART_ENABLE_FIFO
 	while (!(readl(VA(CURR_UART_BASE + UFSTAT)) & RX_COUNT));
@@ -38,7 +38,7 @@ static u8 s3c24x0_uart_recv_byte()
 	return readb(VA(CURR_UART_BASE + URX));
 }
 
-static void s3c24x0_uart_send_byte(u8 ch)
+static void s3c24x0_uart_send_byte(__u8 ch)
 {
 #ifdef CONFIG_UART_ENABLE_FIFO
 	while (readl(VA(CURR_UART_BASE + UFSTAT)) & FIFO_FULL);
@@ -49,7 +49,7 @@ static void s3c24x0_uart_send_byte(u8 ch)
 	writeb(VA(CURR_UART_BASE + UTX), ch);
 }
 
-u32 uart_rxbuf_count(void)
+__u32 uart_rxbuf_count(void)
 {
 #ifdef CONFIG_UART_ENABLE_FIFO
 	return readl(VA(CURR_UART_BASE + UFSTAT)) & RX_COUNT;

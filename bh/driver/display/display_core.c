@@ -5,24 +5,24 @@
 static struct display* g_system_display;
 
 #ifdef CONFIG_BOOTUP_LOGO
-static u16 RGB24toRGB16(u8 r, u8 g, u8 b)
+static __u16 RGB24toRGB16(__u8 r, __u8 g, __u8 b)
 {
 	return (r >> 3) << 11 | (g >> 2) << 5 | b >> 3;
 }
 #endif
 
-static void draw_logo(void * const video_buff, u32 width, u32 height, pixel_format_t pix_format)
+static void draw_logo(void * const video_buff, __u32 width, __u32 height, pixel_format_t pix_format)
 {
 	int i;
 	void *vbuff = video_buff; // fixme
 
 #ifdef CONFIG_BOOTUP_LOGO
 	int j, x, y;
-	u8  *buff;
-	u32 step_h;
-	u32 step_w;
-	u32 rgb_size;
-	u32 line_width;
+	__u8  *buff;
+	__u32 step_h;
+	__u32 step_w;
+	__u32 rgb_size;
+	__u32 line_width;
 	extern unsigned char _gbios_jpg[];
 	// extern unsigned int _gbios_jpg_len;
 	struct djpeg_opts djpeg2bmp;
@@ -52,16 +52,16 @@ static void draw_logo(void * const video_buff, u32 width, u32 height, pixel_form
 			{
 			case PIX_RGB24:
 			case PIX_RGB32:
-				*((u8 *)vbuff + 0) = buff[x + y + 0];
-				*((u8 *)vbuff + 1) = buff[x + y + 1];
-				*((u8 *)vbuff + 2) = buff[x + y + 2];
+				*((__u8 *)vbuff + 0) = buff[x + y + 0];
+				*((__u8 *)vbuff + 1) = buff[x + y + 1];
+				*((__u8 *)vbuff + 2) = buff[x + y + 2];
 
 				vbuff += 4;
 				break;
 
 			case PIX_RGB15:
 			case PIX_RGB16:
-				*(u16 *)vbuff = (u16)RGB24toRGB16(
+				*(__u16 *)vbuff = (__u16)RGB24toRGB16(
 										buff[x + y + 2],
 										buff[x + y + 1],
 										buff[x + y + 0]
@@ -77,7 +77,7 @@ static void draw_logo(void * const video_buff, u32 width, u32 height, pixel_form
 
 	free(djpeg2bmp.bmpbuf);
 #else // fixme
-	u32 pix;
+	__u32 pix;
 
 	struct rgb_format
 	{
@@ -148,10 +148,10 @@ static void draw_logo(void * const video_buff, u32 width, u32 height, pixel_form
 #endif
 }
 
-void *video_mem_alloc(u32 *phy_addr, const struct lcd_vmode *vm, pixel_format_t pix_format)
+void *video_mem_alloc(__u32 *phy_addr, const struct lcd_vmode *vm, pixel_format_t pix_format)
 {
 	void *buff;
-	u32 size = vm->width * vm->height;
+	__u32 size = vm->width * vm->height;
 
 	switch (pix_format)
 	{

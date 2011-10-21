@@ -11,7 +11,7 @@
 #define PIX_BPP       15
 #define PIX_FMT       PIX_RGB15
 
-static inline u32 at91_lcdc_readl(int reg)
+static inline __u32 at91_lcdc_readl(int reg)
 {
 	return readl(VA(AT91SAM926X_PA_LCDC + reg));
 }
@@ -23,8 +23,8 @@ static inline void at91_lcdc_writel(int reg, int val)
 
 static int at91sam9261_lcdc_init(void)
 {
-	u32 video_buff_dma;
-	u16 *video_buff_cpu;
+	__u32 video_buff_dma;
+	__u16 *video_buff_cpu;
 	const struct lcd_vmode *vm;
 
 	vm = lcd_get_vmode_by_id(CONFIG_LCD_ID);

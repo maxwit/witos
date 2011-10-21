@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
 {
 	int opt, ret = 0;
 	extern char *optarg;
-	u32 id;
+	__u32 id;
 	struct display *disp;
 	const struct lcd_vmode *vm;
 

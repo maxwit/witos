@@ -1,6 +1,6 @@
 #include <bar.h>
 
-int create_progress_bar(struct process_bar **ppNew, u32 nMin, u32 nMax)
+int create_progress_bar(struct process_bar **ppNew, __u32 nMin, __u32 nMax)
 {
 	struct process_bar *pTmp;
 
@@ -27,7 +27,7 @@ int create_progress_bar(struct process_bar **ppNew, u32 nMin, u32 nMax)
 	return 0;
 }
 
-void progress_bar_set_val(struct process_bar *pBar, u32 nLen)
+void progress_bar_set_val(struct process_bar *pBar, __u32 nLen)
 {
 	while (pBar->nCurr <= CountBarOff)
 	{

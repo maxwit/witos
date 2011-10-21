@@ -30,13 +30,13 @@ struct dhcp_packet
 	char	htype;
 	char	hlen;
 	char	hops;
-	u32		xid;
+	__u32		xid;
 	short	sec;
 	short	flags;
-	u32		ciaddr;
-	u32		yiaddr;
-	u32		siaddr;
-	u32		giaddr;
+	__u32		ciaddr;
+	__u32		yiaddr;
+	__u32		siaddr;
+	__u32		giaddr;
 	char	chaddr[16];
 	char	sname[64];
 	char	file[128];
@@ -45,7 +45,7 @@ struct dhcp_packet
 	char	option[60];
 }__PACKED__;
 
-static void init_dhcp_packet(struct dhcp_packet *packet, u32 xid, u8 mac_addr[])
+static void init_dhcp_packet(struct dhcp_packet *packet, __u32 xid, __u8 mac_addr[])
 {
 	memset(packet, 0x0, sizeof(*packet));
 
@@ -78,7 +78,7 @@ static int send_dhcp_discover(int sockfd, struct dhcp_packet *packet, struct soc
 
 static int send_dhcp_request(int sockfd, struct dhcp_packet *packet, struct sockaddr_in *remote_addr)
 {
-	u32 request_ip;
+	__u32 request_ip;
 
 	request_ip = packet->yiaddr;
 
@@ -102,7 +102,7 @@ static int send_dhcp_request(int sockfd, struct dhcp_packet *packet, struct sock
 // fixme!!!
 long random(void)
 {
-	u8 mac_addr[MAC_ADR_LEN];
+	__u8 mac_addr[MAC_ADR_LEN];
 
 	ndev_ioctl(NULL, NIOC_GET_MAC, mac_addr);
 
@@ -130,17 +130,17 @@ int main(int argc, char *argv[])
 	struct dhcp_packet packet;
 	socklen_t addrlen;
 	char ip_str[IPV4_STR_LEN];
-	u8 mac_addr[MAC_ADR_LEN];
-	u32 xid = random();
+	__u8 mac_addr[MAC_ADR_LEN];
+	__u32 xid = random();
 	int opt;
-	BOOL sync_svr = FALSE;
+	bool sync_svr = false;
 
 	while ((opt = getopt(argc, argv, "sh")) != -1)
 	{
 		switch (opt)
 		{
 		case 's':
-			sync_svr = TRUE;
+			sync_svr = true;
 			break;
 
 		default:

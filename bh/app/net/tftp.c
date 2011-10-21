@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
 {
 	int ret, ch;
 	struct tftp_opt dlopt;
-	BOOL mem_only = FALSE;
+	bool mem_only = false;
 
 	memset(&dlopt, 0x0, sizeof(dlopt));
 	net_get_server_ip(&dlopt.server_ip);
@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
 		switch(ch)
 		{
 		case 'a':
-			ret = str_to_val(optarg, (u32 *)&dlopt.load_addr);
+			ret = str_to_val(optarg, (__u32 *)&dlopt.load_addr);
 
 			if (ret < 0)
 			{
@@ -62,11 +62,11 @@ int main(int argc, char *argv[])
 			break;
 
 		case 'm':
-			mem_only = TRUE;
+			mem_only = true;
 			break;
 
 		case 's':
-			ret = str_to_ip((u8 *)&dlopt.server_ip, optarg);
+			ret = str_to_ip((__u8 *)&dlopt.server_ip, optarg);
 			if (ret < 0)
 			{
 				printf("Invalid IP: %s!\n", optarg);
@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (FALSE == mem_only)
+	if (false == mem_only)
 	{
 	}
 
@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
 
 	ret = tftp_download(&dlopt);
 
-	if (FALSE == mem_only)
+	if (false == mem_only)
 	{
 		if (ret > 0)
 		{

@@ -28,13 +28,13 @@ static void usage(int argc, char *argv[])
 }
 
 #if 0
-static int mmc_load_image(PART_TYPE type, const char image_name[], u8 **buff_ptr, u32 *buff_len)
+static int mmc_load_image(PART_TYPE type, const char image_name[], __u8 **buff_ptr, __u32 *buff_len)
 {
 	return 0;
 #if 0
 	int ret;
 	int i;
-	u8 *image_buf;
+	__u8 *image_buf;
 	struct fat_file *fd;
 	char dev_name[MAX_FILE_NAME_LEN];
 
@@ -107,18 +107,18 @@ L0:
 #endif
 }
 
-static int part_load_image(PART_TYPE type, u8 **buff_ptr, u32 *buff_len)
+static int part_load_image(PART_TYPE type, __u8 **buff_ptr, __u32 *buff_len)
 {
 	int  index;
-	u32  offset;
+	__u32  offset;
 	int  part_num;
 	int  ret;
 	char image_name[MAX_FILE_NAME_LEN];
-	u32  image_size, part_size;
+	__u32  image_size, part_size;
 	struct part_attr   attr_tab[MAX_FLASH_PARTS];
 	struct flash_chip  *flash;
 	struct partition   *part;
-	u8 *buff;
+	__u8 *buff;
 
 	printf("Loading %s image from flash ... ",
 		type == PT_OS_LINUX ? "kernel" : "ramdisk");
@@ -196,7 +196,7 @@ L0:
 	return ret;
 }
 
-static int tftp_load_image(PART_TYPE type, char image_name[], u8 **buff_ptr, u32 *buff_len)
+static int tftp_load_image(PART_TYPE type, char image_name[], __u8 **buff_ptr, __u32 *buff_len)
 {
 	int ret;
 	struct tftp_opt dlopt;
@@ -242,11 +242,11 @@ static int build_command_line(char *cmd_line, size_t max_len)
 	int part_num;
 	int mtd_root = 0, root_idx;
 	struct part_attr attr_tab[MAX_FLASH_PARTS];
-	u32 part_idx;
+	__u32 part_idx;
 #ifdef CONFIG_MERGE_GB_PARTS
-	u32 gb_base, gb_size;
+	__u32 gb_base, gb_size;
 #endif
-	u32 client_ip, client_mask; // fixme
+	__u32 client_ip, client_mask; // fixme
 
 	memset(cmd_line, 0, max_len);
 
@@ -443,11 +443,11 @@ static int show_boot_args(void *tag_base)
 int main(int argc, char *argv[])
 {
 	int  ret = 0, auto_gen = 1;
-	u32  dev_num;
+	__u32  dev_num;
 	char cmd_line[DEFAULT_KCMDLINE_LEN];
-	BOOL show_args = FALSE;
-	u8 *kernel_image, *ramdisk_image;
-	u32 image_size;
+	bool show_args = false;
+	__u8 *kernel_image, *ramdisk_image;
+	__u32 image_size;
 	struct linux_config *linux_conf;
 	struct net_config   *net_conf;
 	struct tag *arm_tag;
@@ -535,7 +535,7 @@ int main(int argc, char *argv[])
 				strcpy(linux_conf->nfs_path, p + 1);
 
 			case '\0':
-				if (str_to_ip((u8 *)&net_conf->server_ip, optarg) < 0)
+				if (str_to_ip((__u8 *)&net_conf->server_ip, optarg) < 0)
 					printf("wrong ip format! (%s)\n", optarg);
 
 				break;
@@ -548,7 +548,7 @@ int main(int argc, char *argv[])
 			break;
 
 		case 'm':
-			str_to_val(optarg, (u32 *)&linux_conf->mach_id);
+			str_to_val(optarg, (__u32 *)&linux_conf->mach_id);
 			break;
 
 		case 'c':
@@ -556,7 +556,7 @@ int main(int argc, char *argv[])
 			break;
 
 		case 'v':
-			show_args = TRUE;
+			show_args = true;
 			break;
 
 		case 'l':
@@ -580,7 +580,7 @@ int main(int argc, char *argv[])
 
 	strncpy(cmd_line, linux_conf->cmd_line, DEFAULT_KCMDLINE_LEN);
 
-	if (argc > 2 || (2 == argc && FALSE == show_args))
+	if (argc > 2 || (2 == argc && false == show_args))
 	{
 		sysconf_save();
 	}

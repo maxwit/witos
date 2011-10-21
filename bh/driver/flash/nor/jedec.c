@@ -4,8 +4,8 @@
 
 struct jedec_id
 {
-	u8 vendor_id;
-	u8 device_id;
+	__u8 vendor_id;
+	__u8 device_id;
 };
 
 static const struct jedec_id nor_ids[] =
@@ -13,9 +13,9 @@ static const struct jedec_id nor_ids[] =
 	{0xEF, 0x13}, {0xEF, 0x12}, {0xEF, 0x11}, {0xEF, 0x10}
 };
 
-static int read_jedec_id(struct spi_slave *spi, u8 *rx_buf)
+static int read_jedec_id(struct spi_slave *spi, __u8 *rx_buf)
 {
-	u8 tx_buf[1] = {JEDEC_READ_ID};
+	__u8 tx_buf[1] = {JEDEC_READ_ID};
 
 	spi_write_then_read(spi, tx_buf, 1, rx_buf, 3 /* 5? */);
 	printf("\n-------------------\n\n");
@@ -29,7 +29,7 @@ static int read_jedec_id(struct spi_slave *spi, u8 *rx_buf)
 static int __INIT__ nor_flash_probe(void)
 {
 	int i;
-	u8 jedec_id[64];
+	__u8 jedec_id[64];
 	struct spi_slave *nor_flash;
 
 	nor_flash = get_spi_slave("w25x_nor_flash");

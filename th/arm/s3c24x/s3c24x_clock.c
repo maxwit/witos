@@ -5,9 +5,9 @@
 #include <arm/s3c24x0.h>
 
 #ifdef CONFIG_GTH
-void udelay(u32 n)
+void udelay(__u32 n)
 {
-	volatile u32 m = n * (HCLK_RATE >> 20) >> 7;
+	volatile __u32 m = n * (HCLK_RATE >> 20) >> 7;
 
 	while (m-- > 0);
 }
@@ -37,7 +37,7 @@ int soc_init(void)
 	return 0;
 }
 
-static const u32 g_mem_conf[] = {
+static const __u32 g_mem_conf[] = {
 #ifdef CONFIG_S3C2410
 	0x2200d000,
 	0x00000000,

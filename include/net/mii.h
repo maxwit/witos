@@ -156,8 +156,8 @@ struct net_device;
 
 struct mii_phy
 {
-	u8  mii_id;
-	u16 ven_id, dev_id;
+	__u8  mii_id;
+	__u16 ven_id, dev_id;
 	struct net_device *ndev;
 	struct list_node phy_node;
 };
@@ -166,7 +166,7 @@ int mii_get_link_speed(struct mii_phy * phy);
 
 int mii_get_link_connection(struct mii_phy * phy);
 
-struct mii_phy *mii_phy_probe(struct net_device *ndev, u8 mii_id);
+struct mii_phy *mii_phy_probe(struct net_device *ndev, __u8 mii_id);
 
 void mii_reset_phy(struct net_device *ndev, struct mii_phy *phy);
 

@@ -4,8 +4,8 @@
 
 static BITMAPFILEHEADER   bf;
 static BITMAPINFOHEADER   bi;
-static u32     line_ubytes;
-static u32     img_w, img_h;
+static __u32     line_ubytes;
+static __u32     img_w, img_h;
 static char*   lpPtr;
 
 static short   SampRate_Y_H, SampRate_Y_V;
@@ -13,31 +13,31 @@ static short   SampRate_U_H, SampRate_U_V;
 static short   SampRate_V_H, SampRate_V_V;
 static short   H_YtoU, V_YtoU, H_YtoV, V_YtoV;
 static short   Y_in_MCU, U_in_MCU, V_in_MCU;
-static u8      *lp;
+static __u8      *lp;
 static short   qt_table[3][64];
 static short   comp_num;
-static u8      comp_index[3];
-static u8      YDcIndex, YAcIndex, UVDcIndex, UVAcIndex;
-static u8      HufTabIndex;
+static __u8      comp_index[3];
+static __u8      YDcIndex, YAcIndex, UVDcIndex, UVAcIndex;
+static __u8      HufTabIndex;
 static short   *YQtTable, *UQtTable, *VQtTable;
-static u8      And[9] = {0, 1, 3, 7, 0xf, 0x1f, 0x3f, 0x7f, 0xff};
+static __u8      And[9] = {0, 1, 3, 7, 0xf, 0x1f, 0x3f, 0x7f, 0xff};
 static short   code_pos_table[4][16],code_len_table[4][16];
-static u16     code_value_table[4][256];
-static u16     huf_max_value[4][16],huf_min_value[4][16];
+static __u16     code_value_table[4][256];
+static __u16     huf_max_value[4][16],huf_min_value[4][16];
 static short   bit_pos, cur_byte;
 static short   rrun, vvalue;
 static short   MCUBuffer[10 * 64];
 static int     QtZzMCUBuffer[10 * 64];
 static short   BlockBuffer[64];
 static short   ycoef, ucoef, vcoef;
-static BOOL    interval_flag;
+static bool    interval_flag;
 static short   interval = 0;
 static int     Y[4 * 64], U[4 * 64], V[4 * 64];
-static u32     size_i, size_j;
+static __u32     size_i, size_j;
 static short   restart;
 static long    iclip[1024];
 static long    *iclp;
-// static u32     biBitCount = 24;
+// static __u32     biBitCount = 24;
 static int Zig_Zag[8][8] = {
 	{0,1,5,6,14,15,27,28},
 	{2,4,7,13,16,26,29,42},
@@ -56,7 +56,7 @@ void init_table()
 	rrun=vvalue = 0;
 	bit_pos = 0;
 	cur_byte = 0;
-	interval_flag = FALSE;
+	interval_flag = false;
 	restart = 0;
 	comp_num = 0;
 	HufTabIndex = 0;
@@ -65,16 +65,16 @@ void init_table()
 	memset(qt_table, 0, 3 * 64 * sizeof(short));
 	memset(code_len_table, 0, 4 * 64 * sizeof(short));
 	memset(code_pos_table, 0, 4 * 64 * sizeof(short));
-	memset(huf_max_value,  0, 4 * 64 * sizeof(u16));
-	memset(huf_min_value,  0, 4 * 64 * sizeof(u16));
-	memset(code_value_table,  0, 4 * 256 * sizeof(u16));
+	memset(huf_max_value,  0, 4 * 64 * sizeof(__u16));
+	memset(huf_min_value,  0, 4 * 64 * sizeof(__u16));
+	memset(code_value_table,  0, 4 * 256 * sizeof(__u16));
 	memset(MCUBuffer, 0, 10 * 64 * sizeof(short));
 	memset(QtZzMCUBuffer, 0, 10 * 64 * sizeof(int));
 	memset(BlockBuffer, 0, 64 * sizeof(short));
 	memset(Y, 0, 64 * sizeof(int));
 	memset(U, 0, 64 * sizeof(int));
 	memset(V, 0, 64 * sizeof(int));
-	memset(comp_index, 0, 3 * sizeof(u8));
+	memset(comp_index, 0, 3 * sizeof(__u8));
 }
 
 PBITMAPINFOHEADER get_bmpinfoheader()
@@ -89,11 +89,11 @@ PBITMAPFILEHEADER get_bmpfileheader()
 
 void creat_bmphead()
 {
-	u32 num_colors, ImgSize;
+	__u32 num_colors, ImgSize;
 	memset((char *)&bf, 0, sizeof(BITMAPFILEHEADER));
 	memset((char *)&bi, 0, sizeof(BITMAPINFOHEADER));
 
-	bi.biSize = (u32)sizeof(BITMAPINFOHEADER);
+	bi.biSize = (__u32)sizeof(BITMAPINFOHEADER);
 	bi.biWidth = (long)(img_w);
 	bi.biHeight = (long)(img_h);
 	bi.biPlanes = 1;
@@ -102,28 +102,28 @@ void creat_bmphead()
 	bi.biClrImportant = 0;
 	bi.biCompression = BI_RGB;
 	num_colors = 0;
-	line_ubytes = (u32)WIDTHBYTES(bi.biWidth * bi.biBitCount);
+	line_ubytes = (__u32)WIDTHBYTES(bi.biWidth * bi.biBitCount);
 	printf("line_ubytes = %d\n", line_ubytes);
-	ImgSize = (u32)line_ubytes * bi.biHeight;
+	ImgSize = (__u32)line_ubytes * bi.biHeight;
 
 	bf.bfType = 0x4d42;
 	bf.bfSize = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + num_colors * sizeof(RGBQUAD) + ImgSize;
-	bf.bfOffBits = (u32)(num_colors * sizeof(RGBQUAD) + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER));
+	bf.bfOffBits = (__u32)(num_colors * sizeof(RGBQUAD) + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER));
 	//BufSize = bf.bfSize - sizeof(BITMAPFILEHEADER);
 }
 
-int init_tag(u8 *jpegbuf)
+int init_tag(__u8 *jpegbuf)
 {
-	BOOL finish = FALSE;
-	u8 id;
+	bool finish = false;
+	__u8 id;
 	short  llength;
 	short  i, j, k;
 	short  huftab1, huftab2;
 	short  huftabindex;
-	u8 hf_table_index;
-	u8 qt_table_index;
-	u8 comnum;
-	u8 *lptemp;
+	__u8 hf_table_index;
+	__u8 qt_table_index;
+	__u8 comnum;
+	__u8 *lptemp;
 	short  ccount;
 
 	lp = jpegbuf + 2;
@@ -355,7 +355,7 @@ int init_tag(u8 *jpegbuf)
 				lptemp += 2;
 			}
 			lp += llength;
-			finish = TRUE;
+			finish = true;
 			break;
 
 		case M_EOI:
@@ -392,9 +392,9 @@ void fast_idct_init()
 	}
 }
 
-u8 read_u8()
+__u8 read_u8()
 {
-	u8 i;
+	__u8 i;
 	i = *(lp++);
 	if (i == 0xff)
 		lp++;
@@ -406,15 +406,15 @@ u8 read_u8()
 int decode_element()
 {
 	int thiscode, tempcode;
-	u16 temp, valueex;
+	__u16 temp, valueex;
 	short codelen;
-	u8 hufexu8, runsize, tempsize, sign;
-	u8 newu8, lastu8;
+	__u8 hufexu8, runsize, tempsize, sign;
+	__u8 newu8, lastu8;
 
 	if( bit_pos >= 1 )
 	{
 		bit_pos--;
-		thiscode = (u8)cur_byte >> bit_pos;
+		thiscode = (__u8)cur_byte >> bit_pos;
 		cur_byte = cur_byte&And[bit_pos];
 	}
 	else
@@ -435,7 +435,7 @@ int decode_element()
 		if(bit_pos >= 1)
 		{
 			bit_pos--;
-			tempcode = (u8)cur_byte>>bit_pos;
+			tempcode = (__u8)cur_byte>>bit_pos;
 			cur_byte = cur_byte&And[bit_pos];
 		}
 		else
@@ -443,7 +443,7 @@ int decode_element()
 			lastu8 = read_u8();
 			bit_pos--;
 			newu8 = cur_byte&And[bit_pos];
-			tempcode = (u8)lastu8 >> 7;
+			tempcode = (__u8)lastu8 >> 7;
 			cur_byte = newu8;
 		}
 
@@ -456,7 +456,7 @@ int decode_element()
 	}  //while
 
 	temp = thiscode-huf_min_value[HufTabIndex][codelen - 1] + code_pos_table[HufTabIndex][codelen - 1];
-	hufexu8 = (u8)code_value_table[HufTabIndex][temp];
+	hufexu8 = (__u8)code_value_table[HufTabIndex][temp];
 	rrun = (short)(hufexu8 >> 4);
 	runsize = hufexu8 & 0x0f;
 	if (runsize == 0)
@@ -468,7 +468,7 @@ int decode_element()
 	if(bit_pos >= runsize)
 	{
 		bit_pos -= runsize;
-		valueex = (u8)cur_byte >> bit_pos;
+		valueex = (__u8)cur_byte >> bit_pos;
 		cur_byte = cur_byte&And[bit_pos];
 	}
 	else
@@ -478,7 +478,7 @@ int decode_element()
 		while (tempsize > 8)
 		{
 			lastu8 = read_u8();
-			valueex =(valueex << 8) + (u8)lastu8;
+			valueex =(valueex << 8) + (__u8)lastu8;
 			tempsize -= 8;
 		}  //while
 
@@ -503,7 +503,7 @@ int decode_element()
 	return 0;
 }
 
-int HufBlock(u8 dchufindex, u8 achufindex)
+int HufBlock(__u8 dchufindex, __u8 achufindex)
 {
 	short count = 0;
 	short i;
@@ -849,17 +849,17 @@ void  getyuv(short flag)
 void store_buf()
 {
 	short i, j;
-	u8  *lpbmp;
-	u8 R, G, B;
+	__u8  *lpbmp;
+	__u8 R, G, B;
 	int y, u, v, rr, gg, bb;
 
-	line_ubytes = (u32)WIDTHBYTES(img_w * bi.biBitCount);
+	line_ubytes = (__u32)WIDTHBYTES(img_w * bi.biBitCount);
 
 	for (i = 0; i < SampRate_Y_V * 8; i++)
 	{
 		if ((size_i + i) < img_h)
 		{
-			lpbmp = ((u8*)lpPtr + (u32)(img_h - size_i - i - 1) * line_ubytes + size_j * 3);
+			lpbmp = ((__u8*)lpPtr + (__u32)(img_h - size_i - i - 1) * line_ubytes + size_j * 3);
 
 			for (j = 0; j < SampRate_Y_H * 8; j++)
 			{
@@ -871,9 +871,9 @@ void store_buf()
 				    rr = ((y << 8) + 18*u + 367 * v) >> 8;
 				    gg = ((y << 8) - 159 * u - 220 * v) >> 8;
 				    bb = ((y << 8) + 411 * u - 29 * v) >> 8;
-				    R = (u8)rr;
-				    G = (u8)gg;
-				    B = (u8)bb;
+				    R = (__u8)rr;
+				    G = (__u8)gg;
+				    B = (__u8)bb;
 				    if (rr & 0xffffff00){if (rr > 255) R = 255; else if (rr < 0) R = 0;}
 				    if (gg & 0xffffff00){if (gg > 255) G = 255; else if (gg < 0) G = 0;}
 				    if (bb & 0xffffff00){if (bb > 255) B = 255; else if (bb < 0) B = 0;}
@@ -894,7 +894,7 @@ void store_buf()
 	}
 }
 
-int decode(u8* rgbbuf)
+int decode(__u8* rgbbuf)
 {
 	int ret;
 
@@ -914,11 +914,11 @@ int decode(u8* rgbbuf)
 		interval++;
 		if ((restart) && (interval % restart == 0))
 		{
-			interval_flag = TRUE;
+			interval_flag = true;
 		}
 		else
 		{
-			interval_flag = FALSE;
+			interval_flag = false;
 		}
 
 		IQtIZzMCUComponent(0);

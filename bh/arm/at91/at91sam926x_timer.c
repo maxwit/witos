@@ -1,7 +1,7 @@
 #include <irq.h>
 #include <arm/at91sam926x.h>
 
-static int at91sam926x_pit_isr(u32 irq, void *pDev)
+static int at91sam926x_pit_isr(__u32 irq, void *pDev)
 {
 	if (!(readl(VA(AT91SAM926X_PA_PITC + PITC_SR)) & 0x1))
 		return IRQ_NONE;

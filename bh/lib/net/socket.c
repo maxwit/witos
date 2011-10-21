@@ -48,7 +48,7 @@ static int tcp_wait_for_state(const struct socket *sock, enum tcp_state state)
 
 static struct sock_buff *sock_recv_packet(struct socket *sock)
 {
-	u32 psr;
+	__u32 psr;
 	struct sock_buff *skb;
 	struct list_node *first;
 
@@ -57,7 +57,7 @@ static struct sock_buff *sock_recv_packet(struct socket *sock)
 		int ret;
 		char key;
 
-		ret = uart_read(CONFIG_DBGU_ID, (u8 *)&key, 1, WAIT_ASYNC);
+		ret = uart_read(CONFIG_DBGU_ID, (__u8 *)&key, 1, WAIT_ASYNC);
 		if (ret > 0 && key == CHAR_CTRL_C)
 			return NULL;
 
@@ -200,17 +200,17 @@ int sk_close(int fd)
 	return 0;
 }
 
-struct eth_addr *gethostaddr(const u32 nip)
+struct eth_addr *gethostaddr(const __u32 nip)
 {
-	u32 count = 0;
+	__u32 count = 0;
 	struct eth_addr *remote_addr;
 
-	arp_send_packet((u8 *)&nip, NULL, ARP_OP_REQ);
+	arp_send_packet((__u8 *)&nip, NULL, ARP_OP_REQ);
 
 	while (count < 100000)
 	{
 		int ret;
-		u8  key;
+		__u8  key;
 
 		ret = uart_read(CONFIG_DBGU_ID, &key, 1, WAIT_ASYNC);
 		if (ret > 0 && key == CHAR_CTRL_C)
@@ -270,7 +270,7 @@ int bind(int fd, const struct sockaddr *addr, socklen_t len)
 }
 
 //
-ssize_t sendto(int fd, const void *buff, u32 buff_size, int flags,
+ssize_t sendto(int fd, const void *buff, __u32 buff_size, int flags,
 			const struct sockaddr *dest_addr, socklen_t addr_size)
 {
 	struct socket *sock;
@@ -306,12 +306,12 @@ ssize_t sendto(int fd, const void *buff, u32 buff_size, int flags,
 	return buff_size;
 }
 
-long recvfrom(int fd, void *buf, u32 n, int flags,
+long recvfrom(int fd, void *buf, __u32 n, int flags,
 		struct sockaddr *src_addr, socklen_t *addrlen)
 {
 	struct socket *sock;
 	struct sock_buff *skb = NULL;
-	u32 pkt_len;
+	__u32 pkt_len;
 
 	sock = get_sock(fd);
 	if (NULL == sock)
@@ -336,7 +336,7 @@ long recvfrom(int fd, void *buf, u32 n, int flags,
 }
 
 #if 0
-static void tcp_make_option(u8 *opt, u16 size)
+static void tcp_make_option(__u8 *opt, __u16 size)
 {
 	__u32 tsv = htonl(3455994), tser = 0;
 
@@ -555,7 +555,7 @@ struct socket *udp_search_socket(const struct udp_header *udp_pkt, const struct 
 	int fd;
 	struct socket *sock;
 	struct sockaddr_in *saddr;
-	u32 src_ip;
+	__u32 src_ip;
 
 	ndev_ioctl(NULL, NIOC_GET_IP, &src_ip);
 
@@ -625,7 +625,7 @@ struct socket *icmp_search_socket(const struct ping_packet *ping_pkt, const stru
 {
 	int fd;
 	struct socket *sock;
-	u32 src_ip;
+	__u32 src_ip;
 
 	ndev_ioctl(NULL, NIOC_GET_IP, &src_ip);
 

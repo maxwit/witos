@@ -8,15 +8,15 @@
 struct lan9220_chip
 {
 	int lan9220_32bits;
-	u32 (*readl)(lan9220_chip *, int);
-	u32 (*writel)(lan9220_chip *, int, u32);
+	__u32 (*readl)(lan9220_chip *, int);
+	__u32 (*writel)(lan9220_chip *, int, __u32);
 	// ...
 };
 #else
 static int lan9220_32bits;
 #endif
 
-static inline u32 lan9220_readl(u8 reg)
+static inline __u32 lan9220_readl(__u8 reg)
 {
 	if (lan9220_32bits)
 		return readl(VA(LAN9220_BASE + reg));
@@ -24,7 +24,7 @@ static inline u32 lan9220_readl(u8 reg)
 	return readw(VA(LAN9220_BASE + reg + 2)) << 16 | readw(VA(LAN9220_BASE + reg));
 }
 
-static inline void lan9220_writel(u8 reg, u32 val)
+static inline void lan9220_writel(__u8 reg, __u32 val)
 {
 	if (lan9220_32bits)
 	{
@@ -37,7 +37,7 @@ static inline void lan9220_writel(u8 reg, u32 val)
 	}
 }
 
-static u32 lan9220_mac_csr_read(u32 csr_reg)
+static __u32 lan9220_mac_csr_read(__u32 csr_reg)
 {
 	lan9220_writel(MAC_CSR_CMD, 1 << 31 | 1 << 30 | csr_reg);
 
@@ -46,7 +46,7 @@ static u32 lan9220_mac_csr_read(u32 csr_reg)
 	return lan9220_readl(MAC_CSR_DATA);
 }
 
-static void lan9220_mac_csr_write(u32 csr_reg, u32 val)
+static void lan9220_mac_csr_write(__u32 csr_reg, __u32 val)
 {
 	lan9220_writel(MAC_CSR_DATA, val);
 
@@ -56,7 +56,7 @@ static void lan9220_mac_csr_write(u32 csr_reg, u32 val)
 }
 
 #if 0
-static u16 lan9220_mdio_read(struct net_device *ndev, u8 mii_id, u8 reg)
+static __u16 lan9220_mdio_read(struct net_device *ndev, __u8 mii_id, __u8 reg)
 {
 	//phy_addr is fixed in lan9220
 	mii_id = 0x01;
@@ -68,7 +68,7 @@ static u16 lan9220_mdio_read(struct net_device *ndev, u8 mii_id, u8 reg)
 	return lan9220_mac_csr_read(MII_DATA) & 0xffff;
 }
 
-static void lan9220_mdio_write(struct net_device *ndev, u8 mii_id, u8 reg, u16 val)
+static void lan9220_mdio_write(struct net_device *ndev, __u8 mii_id, __u8 reg, __u16 val)
 {
 	//phy_addr is fixed in lan9220
 	mii_id = 0x01;
@@ -83,7 +83,7 @@ static void lan9220_mdio_write(struct net_device *ndev, u8 mii_id, u8 reg, u16 v
 
 static int lan9220_hw_init(void)
 {
-	u32 val;
+	__u32 val;
 
 	// reset phy
 	val = lan9220_readl(HW_CFG);
@@ -113,13 +113,13 @@ static int lan9220_hw_init(void)
 
 static int lan9220_send_packet(struct net_device *ndev, struct sock_buff *skb)
 {
-	u32 cmd_A, cmd_B, status;
-	u32 *data;
+	__u32 cmd_A, cmd_B, status;
+	__u32 *data;
 	int i;
 
 	cmd_A = (1 << 13) | (1 << 12) | (skb->size & 0x3ff);
 	cmd_B = skb->size & 0x3ff;
-	data = (u32 *)skb->data;
+	data = (__u32 *)skb->data;
 
 	lan9220_writel(TX_DATA_PORT, cmd_A);
 	lan9220_writel(TX_DATA_PORT, cmd_B);
@@ -143,9 +143,9 @@ static int lan9220_send_packet(struct net_device *ndev, struct sock_buff *skb)
 
 static int lan9220_recv_packet(struct net_device *ndev)
 {
-	u32 info_status, packet_status;
-	u32 packet_count, packet_length, packet_length_pad;
-	u32 *data;
+	__u32 info_status, packet_status;
+	__u32 packet_count, packet_length, packet_length_pad;
+	__u32 *data;
 	struct sock_buff *skb;
 	int i;
 
@@ -176,7 +176,7 @@ static int lan9220_recv_packet(struct net_device *ndev)
 		}
 
 		skb->size = packet_length;
-		data = (u32 *)skb->data;
+		data = (__u32 *)skb->data;
 
 		for (i = 0; i < packet_length_pad; i += 4, data++)
 		{
@@ -193,11 +193,11 @@ static int lan9220_recv_packet(struct net_device *ndev)
 }
 
 
-static int lan9220_isr(u32 irq, void *dev)
+static int lan9220_isr(__u32 irq, void *dev)
 {
 	struct net_device *ndev = (struct net_device *)dev;
 #ifdef CONFIG_IRQ_SUPPORT
-	u32 status;
+	__u32 status;
 
 	status = lan9220_readl(INT_STS);
 	lan9220_writel(INT_STS, status);
@@ -221,14 +221,14 @@ static int lan9220_isr(u32 irq, void *dev)
 #endif
 }
 
-static int lan9220_set_mac(struct net_device *ndev, const u8 *pMac)
+static int lan9220_set_mac(struct net_device *ndev, const __u8 *pMac)
 {
 	void *p;
 
 	p = ndev->mac_addr;
-	lan9220_mac_csr_write(ADDRL, *(u32 *)p);
+	lan9220_mac_csr_write(ADDRL, *(__u32 *)p);
 	p = ndev->mac_addr + 4;
-	lan9220_mac_csr_write(ADDRH, *(u16 *)p);
+	lan9220_mac_csr_write(ADDRH, *(__u16 *)p);
 
 	return 0;
 }
@@ -241,7 +241,7 @@ static int lan9220_poll(struct net_device *ndev)
 static __INIT__ int lan9220_probe(void)
 {
 	int ret;
-	u32 mac_id;
+	__u32 mac_id;
 	struct net_device *ndev;
 	const char *chip_name = NULL;;
 

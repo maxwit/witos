@@ -2,7 +2,7 @@
 
 static void s3c24x_reboot(void)
 {
-	u32 val;
+	__u32 val;
 
 	val = readl(VA(WATCHDOG_BASE + WTCON));
 	val = val | (1 << 5) | 1;

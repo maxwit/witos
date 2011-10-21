@@ -60,20 +60,20 @@ struct tag *setup_ramdisk_atag(struct tag *cur_tag, struct image_cache *rd_cache
 	cur_tag->hdr.tag = ATAG_RAMDISK;
 	cur_tag->hdr.size = tag_size(TagRamDisk);
 	cur_tag->stRamDisk.flags = 3; // fixme!!
-	cur_tag->stRamDisk.nStart = (u32)rd_cache->cache_base;
+	cur_tag->stRamDisk.nStart = (__u32)rd_cache->cache_base;
 	cur_tag->stRamDisk.size  = rd_cache->cache_size;
 
 	return cur_tag;
 }
 #endif
 
-struct tag *setup_initrd_atag(struct tag *cur_tag, void *image_buff, u32 image_size)
+struct tag *setup_initrd_atag(struct tag *cur_tag, void *image_buff, __u32 image_size)
 {
 	cur_tag = tag_next(cur_tag);
 
 	cur_tag->hdr.tag  = ATAG_INITRD2;
 	cur_tag->hdr.size = tag_size(tag_initrd);
-	cur_tag->u.initrd.start = (u32)image_buff;
+	cur_tag->u.initrd.start = (__u32)image_buff;
 	cur_tag->u.initrd.size  = image_size;
 
 	return cur_tag;

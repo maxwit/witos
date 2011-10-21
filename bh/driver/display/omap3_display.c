@@ -9,8 +9,8 @@
 
 static int omap3530_set_vmode(struct display *disp, const struct lcd_vmode *vm)
 {
-	u32 fmt, bpp;
-	u32 dma = disp->video_mem_pa;
+	__u32 fmt, bpp;
+	__u32 dma = disp->video_mem_pa;
 
 	// fixme
 	switch (disp->pix_fmt)
@@ -53,7 +53,7 @@ static int omap3530_set_vmode(struct display *disp, const struct lcd_vmode *vm)
 static int __INIT__ omap3530_display_init(void)
 {
 	void *va;
-	u32 dma;
+	__u32 dma;
 	const struct lcd_vmode *vm;
 	struct display *disp;
 

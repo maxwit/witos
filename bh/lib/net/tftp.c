@@ -4,20 +4,20 @@
 
 struct tftp_packet
 {
-	u16 op_code;
+	__u16 op_code;
 	union
 	{
-		u16 block;
-		u16 error;
+		__u16 block;
+		__u16 error;
 	};
-	u8 data[0];
+	__u8 data[0];
 } __PACKED__;
 
-static int tftp_make_rrq(u8 *buff, const char *file_name)
+static int tftp_make_rrq(__u8 *buff, const char *file_name)
 {
 	int len;
 
-	*(u16 *)buff = TFTP_RRQ;
+	*(__u16 *)buff = TFTP_RRQ;
 	len = 2;
 
 	strcpy((char *)buff + len, file_name);
@@ -35,7 +35,7 @@ static int tftp_make_rrq(u8 *buff, const char *file_name)
 	return len;
 }
 
-static void tftp_send_ack(const int fd, const u16 blk, struct sockaddr_in *remote_addr)
+static void tftp_send_ack(const int fd, const __u16 blk, struct sockaddr_in *remote_addr)
 {
 	struct tftp_packet tftp_pkt;
 
@@ -51,12 +51,12 @@ int tftp_download(struct tftp_opt *opt)
 {
 	int  ret;
 	int  sockfd;
-	u8   buf[TFTP_BUF_LEN];
+	__u8   buf[TFTP_BUF_LEN];
 	char server_ip[IPV4_STR_LEN], local_ip[IPV4_STR_LEN];
-	u32  pkt_len, load_len;
-	u16  blk_num;
-	u8  *buff_ptr;
-	u32  client_ip;
+	__u32  pkt_len, load_len;
+	__u16  blk_num;
+	__u8  *buff_ptr;
+	__u32  client_ip;
 	struct tftp_packet *tftp_pkt;
 	struct sockaddr_in *local_addr, *remote_addr;
 	struct bdev_file *file;
@@ -100,7 +100,7 @@ int tftp_download(struct tftp_opt *opt)
 
 	printf(" \"%s\": %s => %s\n", opt->file_name, server_ip, local_ip);
 
-	pkt_len = tftp_make_rrq((u8 *)tftp_pkt, opt->file_name);
+	pkt_len = tftp_make_rrq((__u8 *)tftp_pkt, opt->file_name);
 
 	remote_addr = malloc(sizeof(*remote_addr));
 	if (remote_addr == NULL)

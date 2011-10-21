@@ -10,7 +10,7 @@ int mii_get_link_speed(struct mii_phy *phy)
 	{
 		if (ndev->mdio_read(ndev, phy->mii_id, MII_REG_BMS) & 0x20) // or 0x24
 		{
-			u16 link = ndev->mdio_read(ndev, phy->mii_id, MII_REG_STAT);
+			__u16 link = ndev->mdio_read(ndev, phy->mii_id, MII_REG_STAT);
 
 			switch (link >> 12)
 			{
@@ -45,7 +45,7 @@ int mii_get_link_connection(struct mii_phy *phy)
 	return ndev->mdio_read(ndev, phy->mii_id, MII_REG_BMS) & 0x4;
 }
 
-struct mii_phy *mii_phy_probe(struct net_device *ndev, u8 mii_id)
+struct mii_phy *mii_phy_probe(struct net_device *ndev, __u8 mii_id)
 {
 	struct mii_phy *phy = zalloc(sizeof(*phy)); // fixme
 	// if null
@@ -70,7 +70,7 @@ struct mii_phy *mii_phy_probe(struct net_device *ndev, u8 mii_id)
 
 void mii_reset_phy(struct net_device *ndev, struct mii_phy *phy)
 {
-	u16 val;
+	__u16 val;
 	int time_out = 100;
 
 	ndev->mdio_write(ndev, phy->mii_id, MII_REG_BMC, MII_PHY_RESET);

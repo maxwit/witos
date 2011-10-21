@@ -1,6 +1,6 @@
 #pragma once
 
-#define MAKEWORD(a, b)      ((u16)(((u8)(a)) | ((u16)((u8)(b))) << 8))
+#define MAKEWORD(a, b)      ((__u16)(((__u8)(a)) | ((__u16)((__u8)(b))) << 8))
 
 #define BI_RGB        0L
 #define BI_RLE8       1L
@@ -9,43 +9,43 @@
 
 #pragma pack(1)
 typedef struct tagBITMAPFILEHEADER {
-	u16    bfType;
-	u32   bfSize;
-	u16    bfReserved1;
-	u16    bfReserved2;
-	u32   bfOffBits;
+	__u16    bfType;
+	__u32   bfSize;
+	__u16    bfReserved1;
+	__u16    bfReserved2;
+	__u32   bfOffBits;
 } BITMAPFILEHEADER, *LPBITMAPFILEHEADER, *PBITMAPFILEHEADER;
 #pragma pack()
 
 typedef struct tagBITMAPINFOHEADER{
-	u32      biSize;
+	__u32      biSize;
 	long       biWidth;
 	long       biHeight;
-	u16       biPlanes;
-	u16       biBitCount;
-	u32      biCompression;
-	u32      biSizeImage;
+	__u16       biPlanes;
+	__u16       biBitCount;
+	__u32      biCompression;
+	__u32      biSizeImage;
 	long       biXPelsPerMeter;
 	long       biYPelsPerMeter;
-	u32      biClrUsed;
-	u32      biClrImportant;
+	__u32      biClrUsed;
+	__u32      biClrImportant;
 } BITMAPINFOHEADER, *LPBITMAPINFOHEADER, *PBITMAPINFOHEADER;
 
 struct djpeg_opts{
-	u32 width;
-	u32 height;
-	u8 *jpegbuf;
-	u8 *bmpbuf;
-	u8 *rgbdata;
+	__u32 width;
+	__u32 height;
+	__u8 *jpegbuf;
+	__u8 *bmpbuf;
+	__u8 *rgbdata;
 	LPBITMAPINFOHEADER imgbi;
 	LPBITMAPFILEHEADER imgbf;
 };
 
 typedef struct tagRGBQUAD {
-	u8    rgbBlue;
-	u8    rgbGreen;
-	u8    rgbRed;
-	u8    rgbReserved;
+	__u8    rgbBlue;
+	__u8    rgbGreen;
+	__u8    rgbRed;
+	__u8    rgbReserved;
 } RGBQUAD;
 
 typedef RGBQUAD  *LPRGBQUAD;
@@ -66,8 +66,8 @@ typedef RGBQUAD  *LPRGBQUAD;
 #define W7 565  /* 2048*sqrt(2)*cos(7*pi/16) */
 
 void init_table();
-int init_tag(u8* jpegbuf);
-int decode(u8* rgbbuf);
+int init_tag(__u8* jpegbuf);
+int decode(__u8* rgbbuf);
 int jpeg2bmp_decode(struct djpeg_opts *djpeg2bmp);
 PBITMAPINFOHEADER get_bmpinfoheader();
 PBITMAPFILEHEADER get_bmpfileheader();

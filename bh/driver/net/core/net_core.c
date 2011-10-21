@@ -13,11 +13,11 @@ struct host_addr
 
 struct pseudo_header
 {
-	u8  src_ip[IPV4_ADR_LEN];
-	u8  des_ip[IPV4_ADR_LEN];
-	u8  zero;
-	u8  prot;
-	u16 size;
+	__u8  src_ip[IPV4_ADR_LEN];
+	__u8  des_ip[IPV4_ADR_LEN];
+	__u8  zero;
+	__u8  prot;
+	__u16 size;
 };
 
 static struct list_node g_host_list;
@@ -28,7 +28,7 @@ static const char *g_arp_desc[] = {"N/A", "Request", "Reply"};
 #endif
 static int ndev_count = 0;
 
-static int pseudo_calculate_checksum(struct sock_buff *skb, u16 *checksum)
+static int pseudo_calculate_checksum(struct sock_buff *skb, __u16 *checksum)
 {
 	struct pseudo_header *pse_hdr;
 	struct socket *sock = skb->sock;
@@ -65,33 +65,33 @@ static int pseudo_calculate_checksum(struct sock_buff *skb, u16 *checksum)
 	return 0;
 }
 
-static void ether_send_packet(struct sock_buff *skb, const u8 mac[], u16 eth_type);
+static void ether_send_packet(struct sock_buff *skb, const __u8 mac[], __u16 eth_type);
 
 struct socket *udp_search_socket(const struct udp_header *, const struct ip_header *);
 
 struct socket *tcp_search_socket(const struct tcp_header *, const struct ip_header *);
 
 struct socket *icmp_search_socket(const struct ping_packet *ping_pkt, const struct ip_header *ip_pkt);
-static inline BOOL ip_is_bcast(u32 ip)
+static inline bool ip_is_bcast(__u32 ip)
 {
-	u32 mask;
+	__u32 mask;
 	int ret;
 
 	ret = ndev_ioctl(NULL, NIOC_GET_MASK, &mask);
 	if (ret < 0)
 	{
-		return FALSE;
+		return false;
 	}
 
 	if (~(mask | ip) == 0)
-		return TRUE;
+		return true;
 
-	return FALSE;
+	return false;
 }
 
-static inline void mac_fill_bcast(u8 mac[])
+static inline void mac_fill_bcast(__u8 mac[])
 {
-	memset(mac,(u8)0xff, MAC_ADR_LEN);
+	memset(mac,(__u8)0xff, MAC_ADR_LEN);
 }
 
 #ifdef CONFIG_NET_DEBUG
@@ -120,7 +120,7 @@ static void ether_info(struct ether_header *eth_head)
 static void dump_sock_buff(const struct sock_buff *skb)
 {
 	int idx;
-	u8 *data;
+	__u8 *data;
 
 	for (idx = 0, data = skb->head; idx < skb->size; idx++, data++)
 	{
@@ -351,10 +351,10 @@ static int tcp_layer_deliver(struct sock_buff *skb, const struct ip_header *ip_h
 }
 
 static int init_ping_packet(struct ping_packet *ping_pkt,
-				const u8 *buff, u8 type, u32 size, u16 id, u16 seq)
+				const __u8 *buff, __u8 type, __u32 size, __u16 id, __u16 seq)
 {
 	char *data = NULL;
-	u32 hdr_len = sizeof(struct ping_packet);
+	__u32 hdr_len = sizeof(struct ping_packet);
 
 	if (NULL == ping_pkt || NULL == buff)
 	    return -EINVAL;
@@ -374,9 +374,9 @@ static int init_ping_packet(struct ping_packet *ping_pkt,
 	return 0;
 }
 
-int ping_send(struct sock_buff *rx_skb, const struct ip_header *ip_hdr, u8 type)
+int ping_send(struct sock_buff *rx_skb, const struct ip_header *ip_hdr, __u8 type)
 {
-	u8 ping_buff[PING_PACKET_LENGTH];
+	__u8 ping_buff[PING_PACKET_LENGTH];
 	size_t hdr_len = sizeof(struct ping_packet);
 	struct socket sock;
 	struct sock_buff *tx_skb;
@@ -402,7 +402,7 @@ int ping_send(struct sock_buff *rx_skb, const struct ip_header *ip_hdr, u8 type)
 
 	tx_skb->sock = &sock;
 
-	init_ping_packet(ping_pkt, (u8 *)rx_ping_head + hdr_len, type, PING_PACKET_LENGTH, rx_ping_head->id, rx_ping_head->seqno);
+	init_ping_packet(ping_pkt, (__u8 *)rx_ping_head + hdr_len, type, PING_PACKET_LENGTH, rx_ping_head->id, rx_ping_head->seqno);
 
 	memcpy(tx_skb->data, ping_pkt, PING_PACKET_LENGTH);
 
@@ -458,7 +458,7 @@ static int icmp_deliver(struct sock_buff *skb, const struct ip_header *ip_hdr)
 int ip_layer_deliver(struct sock_buff *skb)
 {
 	struct ip_header *ip_hdr;
-	u8 ip_hdr_len;
+	__u8 ip_hdr_len;
 
 	ip_hdr = (struct ip_header *)skb->data;
 	ip_hdr_len = (ip_hdr->ver_len & 0xf) << 2;
@@ -510,11 +510,11 @@ int ip_layer_deliver(struct sock_buff *skb)
 	return ip_hdr->up_prot;
 }
 
-void ip_send_packet(struct sock_buff *skb, u8 prot)
+void ip_send_packet(struct sock_buff *skb, __u8 prot)
 {
-	u8 mac[MAC_ADR_LEN];
-	u8 *pmac = NULL;
-	u32 nip;
+	__u8 mac[MAC_ADR_LEN];
+	__u8 *pmac = NULL;
+	__u32 nip;
 	struct ip_header *ip_hdr;
 	struct eth_addr *remote_addr = NULL;
 	struct socket *sock = skb->sock;
@@ -527,7 +527,7 @@ void ip_send_packet(struct sock_buff *skb, u8 prot)
 
 	ip_hdr->ver_len   = 0x45;
 	ip_hdr->tos       = 0;
-	ip_hdr->total_len = htons((u16)skb->size);
+	ip_hdr->total_len = htons((__u16)skb->size);
 	ip_hdr->id        = htons(ip_id); //
 	ip_hdr->flag_frag = htons(0x4000);
 	ip_hdr->ttl       = 64;
@@ -568,12 +568,12 @@ void ip_send_packet(struct sock_buff *skb, u8 prot)
 }
 
 //------------------------ ARP Layer -------------------------
-void arp_send_packet(const u8 nip[], const u8 *mac, u16 op_code)
+void arp_send_packet(const __u8 nip[], const __u8 *mac, __u16 op_code)
 {
 	struct sock_buff *skb;
 	struct arp_packet *arp_pkt;
-	u8 mac_addr[MAC_ADR_LEN];
-	u32 src_ip;
+	__u8 mac_addr[MAC_ADR_LEN];
+	__u32 src_ip;
 
 	skb = skb_alloc(ETH_HDR_LEN, ARP_PKT_LEN);
 	if (NULL == skb)
@@ -608,8 +608,8 @@ void arp_send_packet(const u8 nip[], const u8 *mac, u16 op_code)
 static int arp_recv_packet(struct sock_buff *skb)
 {
 	struct arp_packet *arp_pkt;
-	u32 ip;
-	u32 local_ip;
+	__u32 ip;
+	__u32 local_ip;
 
 	arp_pkt = (struct arp_packet *)skb->data;
 
@@ -711,10 +711,10 @@ int netif_rx(struct sock_buff *skb)
 }
 
 //------------------ Send Package to Hardware -----------------
-void ether_send_packet(struct sock_buff *skb, const u8 mac[], u16 eth_type)
+void ether_send_packet(struct sock_buff *skb, const __u8 mac[], __u16 eth_type)
 {
 	struct ether_header *eth_head;
-	u8 mac_addr[MAC_ADR_LEN];
+	__u8 mac_addr[MAC_ADR_LEN];
 
 	skb->data -= ETH_HDR_LEN;
 	skb->size += ETH_HDR_LEN;
@@ -740,11 +740,11 @@ void ether_send_packet(struct sock_buff *skb, const u8 mac[], u16 eth_type)
 	skb_free(skb);
 }
 
-u16 net_calc_checksum(const void *buff, u32 size)
+__u16 net_calc_checksum(const void *buff, __u32 size)
 {
 	int n;
-	u32	chksum;
-	const u16 *p;
+	__u32	chksum;
+	const __u16 *p;
 
 	chksum = 0;
 
@@ -752,9 +752,9 @@ u16 net_calc_checksum(const void *buff, u32 size)
 		chksum += *p;
 
 	if (n == 1) {
-		u16 tmp = 0;
+		__u16 tmp = 0;
 
-		*(u8 *)&tmp = *(u8 *)p;
+		*(__u8 *)&tmp = *(__u8 *)p;
 
 		chksum += tmp;
 	}
@@ -766,7 +766,7 @@ u16 net_calc_checksum(const void *buff, u32 size)
 }
 
 // fixme!
-struct sock_buff *skb_alloc(u32 prot_len, u32 data_len)
+struct sock_buff *skb_alloc(__u32 prot_len, __u32 data_len)
 {
 	struct sock_buff *skb;
 
@@ -798,25 +798,25 @@ void skb_free(struct sock_buff *skb)
 	free(skb);
 }
 
-int net_get_server_ip(u32 *ip)
+int net_get_server_ip(__u32 *ip)
 {
 	char buff[CONF_VAL_LEN];
 	const char *attr = "net.server";
 
 	if (0 == conf_get_attr(attr, buff)) {
-		if (str_to_ip((u8 *)ip, buff) < 0) {
+		if (str_to_ip((__u8 *)ip, buff) < 0) {
 			DPRINT_ATTR(attr, ATTR_FMT_ERR);
-			str_to_ip((u8 *)ip, DEFAULT_SERVER_IP);
+			str_to_ip((__u8 *)ip, DEFAULT_SERVER_IP);
 		}
 	} else {
 		DPRINT_ATTR(attr, ATTR_NOT_FOUND);
-		str_to_ip((u8 *)ip, DEFAULT_SERVER_IP);
+		str_to_ip((__u8 *)ip, DEFAULT_SERVER_IP);
 	}
 
 	return 0;
 }
 
-int net_set_server_ip(u32 ip)
+int net_set_server_ip(__u32 ip)
 {
 	char buff[IPV4_STR_LEN];
 	const char *attr = "net.server";
@@ -832,12 +832,12 @@ int net_set_server_ip(u32 ip)
 
 
 
-struct eth_addr *getaddr(u32 nip)
+struct eth_addr *getaddr(__u32 nip)
 {
 	struct list_node *iter;
 	struct host_addr *host;
-	u32 psr;
-	u32 *dip;
+	__u32 psr;
+	__u32 *dip;
 	struct eth_addr *addr = NULL;
 
 	lock_irq_psr(psr);
@@ -846,7 +846,7 @@ struct eth_addr *getaddr(u32 nip)
 	{
 		host = container_of(iter, struct host_addr, node);
 
-		dip = (u32 *)host->in_addr.ip;
+		dip = (__u32 *)host->in_addr.ip;
 		if (*dip == nip)
 		{
 			addr = &host->in_addr;
@@ -891,9 +891,9 @@ int ndev_register(struct net_device *ndev)
 	char buff[CONF_VAL_LEN];
 	char attr[CONF_ATTR_LEN];
 	struct mii_phy *phy;
-	u32 ip;
-	u32 net_mask;
-	u8 mac_addr[MAC_ADR_LEN];
+	__u32 ip;
+	__u32 net_mask;
+	__u8 mac_addr[MAC_ADR_LEN];
 
 	if (!ndev || !ndev->send_packet || !ndev->set_mac_addr)
 	{
@@ -908,13 +908,13 @@ int ndev_register(struct net_device *ndev)
 	// set ip address
 	sprintf(attr, "net.%s.address", ndev->ifx_name);
 	if (0 == conf_get_attr(attr, buff)) {
-		if (str_to_ip((u8 *)&ip, buff) < 0) {
+		if (str_to_ip((__u8 *)&ip, buff) < 0) {
 			DPRINT_ATTR(attr, ATTR_FMT_ERR);
-			str_to_ip((u8 *)&ip, DEFAULT_LOCAL_IP);
+			str_to_ip((__u8 *)&ip, DEFAULT_LOCAL_IP);
 		}
 	} else {
 		DPRINT_ATTR(attr, ATTR_NOT_FOUND);
-		str_to_ip((u8 *)&ip, DEFAULT_LOCAL_IP);
+		str_to_ip((__u8 *)&ip, DEFAULT_LOCAL_IP);
 	}
 	ret = ndev_ioctl(ndev, NIOC_SET_IP, (void *)ip);
 	//
@@ -922,13 +922,13 @@ int ndev_register(struct net_device *ndev)
 	// set net mask
 	sprintf(attr, "net.%s.netmask", ndev->ifx_name);
 	if (0 == conf_get_attr(attr, buff)) {
-		if (str_to_ip((u8 *)&net_mask, buff) < 0) {
+		if (str_to_ip((__u8 *)&net_mask, buff) < 0) {
 			DPRINT_ATTR(attr, ATTR_FMT_ERR);
-			str_to_ip((u8 *)&net_mask, DEFAULT_NETMASK);
+			str_to_ip((__u8 *)&net_mask, DEFAULT_NETMASK);
 		}
 	} else {
 		DPRINT_ATTR(attr, ATTR_NOT_FOUND);
-		str_to_ip((u8 *)&net_mask, DEFAULT_NETMASK);
+		str_to_ip((__u8 *)&net_mask, DEFAULT_NETMASK);
 	}
 	ret = ndev_ioctl(ndev, NIOC_SET_MASK, (void *)net_mask);
 	//
@@ -983,13 +983,13 @@ int ndev_register(struct net_device *ndev)
 struct net_device *ndev_new(size_t chip_size)
 {
 	struct net_device *ndev;
-	u32 core_size = (sizeof(struct net_device) + WORD_SIZE - 1) & ~(WORD_SIZE - 1);
+	__u32 core_size = (sizeof(struct net_device) + WORD_SIZE - 1) & ~(WORD_SIZE - 1);
 
 	ndev = zalloc(core_size + chip_size);
 	if (NULL == ndev)
 		return NULL;
 
-	ndev->chip = (struct net_device *)((u8 *)ndev + core_size);
+	ndev->chip = (struct net_device *)((__u8 *)ndev + core_size);
 	ndev->phy_mask = 0xFFFFFFFF;
 
 	// set default name
@@ -1090,7 +1090,7 @@ int ndev_ioctl(struct net_device *ndev, int cmd, void *arg)
 {
 	struct mii_phy *phy;
 	struct link_status *status;
-	u16 speed;
+	__u16 speed;
 
 	// fixme!!!
 	if (NULL == ndev)
@@ -1099,19 +1099,19 @@ int ndev_ioctl(struct net_device *ndev, int cmd, void *arg)
 	switch (cmd)
 	{
 	case NIOC_GET_IP:
-		*(u32 *)arg = ndev->ip;
+		*(__u32 *)arg = ndev->ip;
 		break;
 
 	case NIOC_SET_IP:
-		ndev->ip = (u32)arg;
+		ndev->ip = (__u32)arg;
 		break;
 
 	case NIOC_GET_MASK:
-		*(u32 *)arg = ndev->mask;
+		*(__u32 *)arg = ndev->mask;
 		break;
 
 	case NIOC_SET_MASK:
-		ndev->mask = (u32)arg;
+		ndev->mask = (__u32)arg;
 		break;
 
 	case NIOC_GET_MAC:

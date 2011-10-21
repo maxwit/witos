@@ -39,12 +39,12 @@
 
 struct nand_chip
 {
-	u32 cmmd_port;
-	u32 addr_port;
-	u32 data_port;
+	__u32 cmmd_port;
+	__u32 addr_port;
+	__u32 data_port;
 
-	u32 write_size;
-	u32 block_size;
+	__u32 write_size;
+	__u32 block_size;
 
 	int (*flash_ready)(struct nand_chip *);
 };
@@ -119,9 +119,9 @@ typedef enum
 
 struct nand_buffer
 {
-	u8 ecccalc[NAND_MAX_OOB_SIZE];
-	u8 ecccode[NAND_MAX_OOB_SIZE];
-	u8 data_buff[NAND_MAX_PAGESIZE + NAND_MAX_OOB_SIZE];
+	__u8 ecccalc[NAND_MAX_OOB_SIZE];
+	__u8 ecccode[NAND_MAX_OOB_SIZE];
+	__u8 data_buff[NAND_MAX_PAGESIZE + NAND_MAX_OOB_SIZE];
 };
 
 struct nand_chip;
@@ -136,8 +136,8 @@ struct nand_bad_blk
 	int len;
 	int maxblocks;
 	int reserved_block_code;
-	u8  version[NAND_MAX_CHIPS];
-	u8 *pattern;
+	__u8  version[NAND_MAX_CHIPS];
+	__u8 *pattern;
 };
 
 struct nand_chip
@@ -145,10 +145,10 @@ struct nand_chip
 	struct flash_chip parent;
 	struct nand_ctrl *master;
 
-	u32  device_id;
-	u32  vendor_id;
+	__u32  device_id;
+	__u32  vendor_id;
 
-	u32  flags;
+	__u32  flags;
 
 	int  phy_erase_shift;
 	int  bbt_erase_shift;
@@ -160,9 +160,9 @@ struct nand_chip
 
 	struct oob_opt ops;
 
-	u8    *bbt;
+	__u8    *bbt;
 
-	u8    *oob_buf;
+	__u8    *oob_buf;
 
 	struct nand_buffer   *buffers;
 
@@ -170,7 +170,7 @@ struct nand_chip
 	struct nand_bad_blk    *bbt_md;
 	struct nand_bad_blk    *bad_blk_patt;
 
-	u32  bus_idx;
+	__u32  bus_idx;
 	const char *name; // [MTD_DEV_NAME_LEN];
 
 	struct list_node nand_node;
@@ -183,32 +183,32 @@ struct nand_ctrl
 	void  *data_reg;
 
 	int   slaves;
-	u32   max_slaves;
+	__u32   max_slaves;
 
 	int   chip_delay;
 	NAND_STATE  state;
 
 	// private :
-	u8    (*read_byte)(struct nand_ctrl *);
-	u16   (*read_word)(struct nand_ctrl *);
-	void  (*write_buff)(struct nand_ctrl *, const u8 *, int);
-	void  (*read_buff)(struct nand_ctrl *, u8 *, int);
-	int   (*verify_buff)(struct nand_ctrl *, const u8 *, int);
-	void  (*select_chip)(struct nand_chip *, BOOL);
-	int   (*block_bad)(struct nand_chip *, u32, int);
-	int   (*block_mark_bad)(struct nand_chip *, u32);
+	__u8    (*read_byte)(struct nand_ctrl *);
+	__u16   (*read_word)(struct nand_ctrl *);
+	void  (*write_buff)(struct nand_ctrl *, const __u8 *, int);
+	void  (*read_buff)(struct nand_ctrl *, __u8 *, int);
+	int   (*verify_buff)(struct nand_ctrl *, const __u8 *, int);
+	void  (*select_chip)(struct nand_chip *, bool);
+	int   (*block_bad)(struct nand_chip *, __u32, int);
+	int   (*block_mark_bad)(struct nand_chip *, __u32);
 	void  (*cmd_ctrl)(struct nand_chip *, int, unsigned int);
 	int   (*flash_ready)(struct nand_chip *);
-	void  (*command)(struct nand_chip * nand, u32 cmd, int col, int row);
+	void  (*command)(struct nand_chip * nand, __u32 cmd, int col, int row);
 	int   (*wait_func)(struct nand_chip *);
 	void  (*erase_block)(struct nand_chip *, int);
 	int   (*scan_bad_block)(struct nand_chip *);
 
 	// public:
-	int   (*read_page)(struct nand_chip *, u8 *);
-	void  (*write_page)(struct nand_chip *, const u8 *);
-	int   (*read_page_raw)(struct nand_chip *, u8 *);
-	void  (*write_page_raw)(struct nand_chip *, const u8 *);
+	int   (*read_page)(struct nand_chip *, __u8 *);
+	void  (*write_page)(struct nand_chip *, const __u8 *);
+	int   (*read_page_raw)(struct nand_chip *, __u8 *);
+	void  (*write_page_raw)(struct nand_chip *, const __u8 *);
 	int   (*read_oob)(struct nand_chip *, int, int);
 	int   (*write_oob)(struct nand_chip *, int);
 
@@ -218,12 +218,12 @@ struct nand_ctrl
 	struct nand_oob_layout *soft_oob_layout;
 	struct nand_oob_layout *curr_oob_layout;
 
-	u32  ecc_data_len;
-	u32  ecc_code_len;
+	__u32  ecc_data_len;
+	__u32  ecc_code_len;
 
 	void  (*ecc_enable)(struct nand_chip *nand, int mode);
-	int   (*ecc_generate)(struct nand_chip *nand, const u8 *data, u8 *ecc);
-	int   (*ecc_correct)(struct nand_chip *nand, u8 *data, u8 *ecc_read, u8 *ecc_calc);
+	int   (*ecc_generate)(struct nand_chip *nand, const __u8 *data, __u8 *ecc);
+	int   (*ecc_correct)(struct nand_chip *nand, __u8 *data, __u8 *ecc_read, __u8 *ecc_calc);
 
 	const char *name;
 
@@ -244,10 +244,10 @@ struct nand_device_desc
 {
 	const char *name;
 	int id;
-	u32 write_size;
-	u32 chip_size;
-	u32 erase_size;
-	u32 flags;
+	__u32 write_size;
+	__u32 chip_size;
+	__u32 erase_size;
+	__u32 flags;
 };
 
 struct nand_vendor_name
@@ -277,8 +277,8 @@ struct nand_vendor_name
 #define NAND_BBT_SCAN_MAXBLOCKS    4
 
 int nand_scan_bbt(struct nand_chip *nand);
-int nand_update_bbt(struct nand_chip *nand, u32 offs);
-int nand_is_bad_bbt(struct nand_chip *nand, u32 offs);
+int nand_update_bbt(struct nand_chip *nand, __u32 offs);
+int nand_is_bad_bbt(struct nand_chip *nand, __u32 offs);
 int nand_erase(struct nand_chip *nand, struct erase_opt *opt);
 
 #define NAND_BBP_LARGE        0
@@ -289,9 +289,9 @@ int nand_erase(struct nand_chip *nand, struct erase_opt *opt);
 
 ECC_MODE nand_set_ecc_mode(struct nand_ctrl *nfc, ECC_MODE new_mode);
 
-int nand_calculate_ecc(struct nand_chip *nand, const u8 *data, u8 *ecc);
+int nand_calculate_ecc(struct nand_chip *nand, const __u8 *data, __u8 *ecc);
 
-int nand_correct_data(struct nand_chip *nand, u8 *dat, u8 *read_ecc, u8 *calc_ecc);
+int nand_correct_data(struct nand_chip *nand, __u8 *dat, __u8 *read_ecc, __u8 *calc_ecc);
 
 #define PAGE_SIZE_AUTODETECT 0
 

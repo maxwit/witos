@@ -1,6 +1,6 @@
 #include <uart/uart.h>
 
-int uart_recv_byte_timeout(u8 *ch, int timeout)
+int uart_recv_byte_timeout(__u8 *ch, int timeout)
 {
 	int t = 0;
 
@@ -19,7 +19,7 @@ int uart_recv_byte_timeout(u8 *ch, int timeout)
 	return -ETIMEDOUT;
 }
 
-int uart_read(int id, u8 *buff, int count, int timeout)
+int uart_read(int id, __u8 *buff, int count, int timeout)
 {
 	int size = 0;
 
@@ -46,7 +46,7 @@ int uart_read(int id, u8 *buff, int count, int timeout)
 	return size;
 }
 
-void uart_write(int id, const u8 *buff, int count, int timeout)
+void uart_write(int id, const __u8 *buff, int count, int timeout)
 {
 	while (count > 0)
 	{

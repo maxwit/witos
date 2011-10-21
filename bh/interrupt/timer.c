@@ -3,25 +3,25 @@
 
 #define DEFAULT_LOOPS_PERJIFFIES 1 << 8
 
-static volatile u32 g_tick_count = 1;
+static volatile __u32 g_tick_count = 1;
 
-static volatile u32 loops_perjiffies = DEFAULT_LOOPS_PERJIFFIES;
+static volatile __u32 loops_perjiffies = DEFAULT_LOOPS_PERJIFFIES;
 
-static volatile u32 loops_perusec = DEFAULT_LOOPS_PERJIFFIES; //fixme
+static volatile __u32 loops_perusec = DEFAULT_LOOPS_PERJIFFIES; //fixme
 
 void inc_tick(void)
 {
 	g_tick_count++;
 }
 
-u32 get_tick(void)
+__u32 get_tick(void)
 {
 	return g_tick_count;
 }
 
-void mdelay(u32 n)
+void mdelay(__u32 n)
 {
-	volatile u32 curr_tick = get_tick();
+	volatile __u32 curr_tick = get_tick();
 
 	// yes, we'd write the loop in this way :P
 	while (1)
@@ -31,11 +31,11 @@ void mdelay(u32 n)
 	}
 }
 
-extern void __udelay(u32 n);
+extern void __udelay(__u32 n);
 
-void calibrate_delay(u32 ticks_persecond)
+void calibrate_delay(__u32 ticks_persecond)
 {
-	volatile u32 cur_ticks;
+	volatile __u32 cur_ticks;
 
 	printf("Default	loops for perjiffies is %d\n", loops_perjiffies);
 
@@ -88,20 +88,20 @@ void calibrate_delay(u32 ticks_persecond)
 	loops_perusec = (loops_perjiffies * ticks_persecond) / 1000000; //fixme
 }
 
-void udelay(u32 n)
+void udelay(__u32 n)
 {
 	__udelay(loops_perusec * n);
 }
 
 #else
-void udelay(u32 n)
+void udelay(__u32 n)
 {
-	volatile u32 m = n * (HCLK_RATE >> 20) >> 6;
+	volatile __u32 m = n * (HCLK_RATE >> 20) >> 6;
 
 	while (m-- > 0);
 }
 
-void mdelay(u32 n)
+void mdelay(__u32 n)
 {
 	udelay(1000 * n);
 }

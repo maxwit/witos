@@ -8,11 +8,11 @@ int main(int argc, char *argv[])
 {
 	int ret, i;
 	int fd;
-	u32 nip;
-	u16 seq_num = 1;
-	u8 buf[MAX_LEN];
-	u8 ip_hdr_len;
-	u8 ping_buff[PING_LEN];
+	__u32 nip;
+	__u16 seq_num = 1;
+	__u8 buf[MAX_LEN];
+	__u8 ip_hdr_len;
+	__u8 ping_buff[PING_LEN];
 	char dest_ip[IPV4_STR_LEN];
 	struct ping_packet *ping_pkt;
 	struct ip_header *ip;
@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
 	}
 	else
 	{
-		ret = str_to_ip((u8 *)&nip, argv[1]);
+		ret = str_to_ip((__u8 *)&nip, argv[1]);
 		if (ret < 0)
 		{
 			printf("Illegal IP (%s)!\n", argv[1]);

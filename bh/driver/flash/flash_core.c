@@ -28,7 +28,7 @@ static int get_root_dev(int *root_dev)
 
 	attr = "linux.root_dev";
 	if (0 == conf_get_attr(attr, buff)) {
-		if (str_to_val(buff, (u32 *)root_dev) < 0)
+		if (str_to_val(buff, (__u32 *)root_dev) < 0)
 		{
 			DPRINT_ATTR(attr, ATTR_FMT_ERR);
 			*root_dev = DEFAULT_ROOT_DEV;
@@ -52,10 +52,10 @@ void __INIT__ flash_add_part_tab(const struct part_attr *attr, int num)
 // 1. to fix cross/overlapped parts
 // 2. as an API and called from flash core
 static int __INIT__ flash_adjust_part_tab(struct flash_chip *host,
-						struct part_attr *new_attr,	const struct part_attr *attr_tmpl, u32 parts)
+						struct part_attr *new_attr,	const struct part_attr *attr_tmpl, __u32 parts)
 {
 	int index = 0;
-	u32 curr_base;
+	__u32 curr_base;
 
 	if (parts > MAX_FLASH_PARTS)
 	{
@@ -128,7 +128,7 @@ static int __INIT__ flash_adjust_part_tab(struct flash_chip *host,
 		}
 		else if (PT_OS_LINUX == new_attr->part_type)
 		{
-			u32 end, gap;
+			__u32 end, gap;
 
 			end = new_attr->part_base + new_attr->part_size;
 			gap = end & (MB(1) - 1);
@@ -183,7 +183,7 @@ static int __INIT__ flash_adjust_part_tab(struct flash_chip *host,
 static int g_flash_count = 0;
 
 static int part_read(struct flash_chip *slave,
-				u32 from, u32 len, u32 *retlen, u8 *buff)
+				__u32 from, __u32 len, __u32 *retlen, __u8 *buff)
 {
 	struct flash_chip *master = slave->master;
 
@@ -191,7 +191,7 @@ static int part_read(struct flash_chip *slave,
 }
 
 static int part_write(struct flash_chip *slave,
-				u32 to, u32 len, u32 *retlen, const u8 *buff)
+				__u32 to, __u32 len, __u32 *retlen, const __u8 *buff)
 {
 	struct flash_chip *master = slave->master;
 
@@ -207,7 +207,7 @@ static int part_erase(struct flash_chip *slave, struct erase_opt *opt)
 }
 
 static int part_read_oob(struct flash_chip *slave,
-				u32 from, struct oob_opt *ops)
+				__u32 from, struct oob_opt *ops)
 {
 	struct flash_chip *master = slave->master;
 
@@ -215,21 +215,21 @@ static int part_read_oob(struct flash_chip *slave,
 }
 
 static int part_write_oob(struct flash_chip *slave,
-				u32 to,	struct oob_opt *opt)
+				__u32 to,	struct oob_opt *opt)
 {
 	struct flash_chip *master = slave->master;
 
 	return master->write_oob(master, slave->bdev.bdev_base + to, opt);
 }
 
-static int part_block_is_bad(struct flash_chip *slave, u32 off)
+static int part_block_is_bad(struct flash_chip *slave, __u32 off)
 {
 	struct flash_chip *master = slave->master;
 
 	return master->block_is_bad(master, slave->bdev.bdev_base + off);
 }
 
-static int part_block_mark_bad(struct flash_chip *slave, u32 off)
+static int part_block_mark_bad(struct flash_chip *slave, __u32 off)
 {
 	struct flash_chip *master = slave->master;
 

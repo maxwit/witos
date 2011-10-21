@@ -31,7 +31,7 @@ static char shell_getchar(void)
 	{
 		int ret;
 
-		ret = uart_read(CONFIG_DBGU_ID, (u8 *)&ch, 1, WAIT_ASYNC);
+		ret = uart_read(CONFIG_DBGU_ID, (__u8 *)&ch, 1, WAIT_ASYNC);
 		if (ret > 0)
 			break;
 
@@ -190,8 +190,8 @@ static int cmd_match(char *buf, int *cur_pos, int *cur_max)
 	char (*psz_result)[MAX_ARG_LEN];
 	char ch;
 	const struct gapp *app;
-	u32 nLen;
-	BOOL bFlag;
+	__u32 nLen;
+	bool bFlag;
 	int pre_space_count = 0;
 
 	nLen = g_app_end - g_app_begin;
@@ -234,12 +234,12 @@ static int cmd_match(char *buf, int *cur_pos, int *cur_max)
 	default:
 		for (i = *cur_pos; (ch = psz_result[0][i - pre_space_count]); *cur_pos = ++i)
 		{
-			bFlag = FALSE;
+			bFlag = false;
 			for (k = 1; k < j; k++)
 			{
 				if (ch != psz_result[k][i - pre_space_count])
 				{
-					bFlag = TRUE;
+					bFlag = true;
 				}
 			}
 

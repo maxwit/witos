@@ -4,7 +4,7 @@
 
 // #define PWM_FREQUENCY 50.625MHz //depends on PCLK
 
-static int s3c24x0_pwm_isr(u32 irq, void *dev)
+static int s3c24x0_pwm_isr(__u32 irq, void *dev)
 {
 	inc_tick();
 	// printf("%s() pwm interrupt!\n", __func__);

@@ -69,7 +69,7 @@ int flash_close(struct flash_chip *flash)
 int flash_read(struct flash_chip *flash, void *buff, int start, int count)
 {
 	int ret;
-	u32 ret_len;
+	__u32 ret_len;
 
 	if (FLASH_OOB_RAW == flash->oob_mode)
 	{
@@ -113,13 +113,13 @@ int flash_read(struct flash_chip *flash, void *buff, int start, int count)
 	return 0;
 }
 
-long flash_write(struct flash_chip *flash, const void *buff, u32 count, u32 ppos)
+long flash_write(struct flash_chip *flash, const void *buff, __u32 count, __u32 ppos)
 {
 	int ret = 0;
-	u32 ret_len;
+	__u32 ret_len;
 	struct oob_opt opt;
-	u32 size = 0;
-	u8 *buff_ptr = (u8 *)buff;
+	__u32 size = 0;
+	__u8 *buff_ptr = (__u8 *)buff;
 
 	switch (flash->oob_mode)
 	{
@@ -127,7 +127,7 @@ long flash_write(struct flash_chip *flash, const void *buff, u32 count, u32 ppos
 		memset(&opt, 0, sizeof(struct oob_opt));
 		opt.op_mode   = FLASH_OOB_RAW;
 		opt.data_len  = count;
-		opt.data_buff = (u8 *)buff;
+		opt.data_buff = (__u8 *)buff;
 		opt.oob_len   = flash->oob_size;
 
 		ret = flash->write_oob(flash, ppos, &opt);
@@ -204,7 +204,7 @@ long flash_write(struct flash_chip *flash, const void *buff, u32 count, u32 ppos
 	return 0;
 }
 
-int flash_erase(struct flash_chip *flash, u32 start, u32 size, u32 flags)
+int flash_erase(struct flash_chip *flash, __u32 start, __u32 size, __u32 flags)
 {
 	int ret;
 	struct erase_opt opt;

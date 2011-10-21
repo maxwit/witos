@@ -2,7 +2,7 @@
 
 #define FONTDATAMAX 4096
 
-static const u8 fontdata_8x16[FONTDATAMAX] = {
+static const __u8 fontdata_8x16[FONTDATAMAX] = {
 
 	/* 0 0x00 '^@' */
 	0x00, /* 00000000 */

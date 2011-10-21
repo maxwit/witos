@@ -4,9 +4,9 @@
 
 static struct int_pin irq_pin_set[MAX_IRQ_NUM];
 
-static int handle_dev_irq_list(u32 irq, struct irq_dev *dev_list);
+static int handle_dev_irq_list(__u32 irq, struct irq_dev *dev_list);
 
-int irq_register_isr(u32 irq, IRQ_DEV_HANDLER isr, void *dev)
+int irq_register_isr(__u32 irq, IRQ_DEV_HANDLER isr, void *dev)
 {
 	struct irq_dev *idev, **p;
 	struct int_pin *pin;
@@ -37,7 +37,7 @@ int irq_register_isr(u32 irq, IRQ_DEV_HANDLER isr, void *dev)
 	return 0;
 }
 
-void irq_handle(u32 irq)
+void irq_handle(__u32 irq)
 {
 	struct int_pin *pin;
 
@@ -56,7 +56,7 @@ void irq_handle(u32 irq)
 
 ///////////
 
-static void default_mack(u32 irq)
+static void default_mack(__u32 irq)
 {
 	struct int_pin *pin = irq_pin_set + irq;
 
@@ -64,7 +64,7 @@ static void default_mack(u32 irq)
 	pin->intctrl->ack(irq);
 }
 
-int irq_assoc_intctl(u32 irq, struct int_ctrl *intctrl)
+int irq_assoc_intctl(__u32 irq, struct int_ctrl *intctrl)
 {
 	struct int_pin *pin = irq_pin_set + irq;
 
@@ -78,7 +78,7 @@ int irq_assoc_intctl(u32 irq, struct int_ctrl *intctrl)
 	return 0;
 }
 
-int irq_set_trigger(u32 irq, u32 type)
+int irq_set_trigger(__u32 irq, __u32 type)
 {
 	struct int_pin *pin;
 
@@ -88,7 +88,7 @@ int irq_set_trigger(u32 irq, u32 type)
 }
 
 // fixme
-void irq_handle_level(struct int_pin *pin, u32 irq)
+void irq_handle_level(struct int_pin *pin, __u32 irq)
 {
 	struct irq_dev *dev_list = pin->dev_list;
 
@@ -102,7 +102,7 @@ void irq_handle_level(struct int_pin *pin, u32 irq)
 }
 
 //Don't support vector interrupt :)
-void vectorirq_handle_level(struct int_pin *pin, u32 irq)
+void vectorirq_handle_level(struct int_pin *pin, __u32 irq)
 {
 	struct irq_dev *dev_list = pin->dev_list;
 
@@ -117,7 +117,7 @@ void vectorirq_handle_level(struct int_pin *pin, u32 irq)
 	pin->intctrl->umask(irq);
 }
 
-void irq_handle_edge(struct int_pin *pin, u32 irq)
+void irq_handle_edge(struct int_pin *pin, __u32 irq)
 {
 	struct irq_dev *dev_list = pin->dev_list;
 
@@ -128,7 +128,7 @@ void irq_handle_edge(struct int_pin *pin, u32 irq)
 	handle_dev_irq_list(irq, dev_list);
 }
 
-void irq_handle_simple(struct int_pin *pin, u32 irq)
+void irq_handle_simple(struct int_pin *pin, __u32 irq)
 {
 	struct irq_dev *dev_list = pin->dev_list;
 
@@ -137,7 +137,7 @@ void irq_handle_simple(struct int_pin *pin, u32 irq)
 	handle_dev_irq_list(irq, dev_list);
 }
 
-void irq_set_handler(u32 irq, IRQ_PIN_HANDLER irq_handle, int chain_flag)
+void irq_set_handler(__u32 irq, IRQ_PIN_HANDLER irq_handle, int chain_flag)
 {
 	struct int_pin *pin;
 
@@ -151,7 +151,7 @@ void irq_set_handler(u32 irq, IRQ_PIN_HANDLER irq_handle, int chain_flag)
 	}
 }
 
-static int handle_dev_irq_list(u32 irq, struct irq_dev *idev)
+static int handle_dev_irq_list(__u32 irq, struct irq_dev *idev)
 {
 	int retval = IRQ_NONE;
 
@@ -169,21 +169,21 @@ static int handle_dev_irq_list(u32 irq, struct irq_dev *idev)
 }
 
 #else
-u32 read_irq_num(void)
+__u32 read_irq_num(void)
 {
 	BUG();
 }
 
-void irq_handle(u32 irq)
+void irq_handle(__u32 irq)
 {
 }
 
-int irq_set_trigger(u32 irq, u32 type)
+int irq_set_trigger(__u32 irq, __u32 type)
 {
 	return -EINVAL;
 }
 
-int irq_register_isr(u32 irq, IRQ_DEV_HANDLER isr, void *dev)
+int irq_register_isr(__u32 irq, IRQ_DEV_HANDLER isr, void *dev)
 {
 	return -EINVAL;
 }

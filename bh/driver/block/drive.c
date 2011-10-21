@@ -9,12 +9,12 @@
 
 struct msdos_part
 {
-	u8  boot_flag;
-	u8  chs_start[3];
-	u8  type;
-	u8  chs_end[3];
-	u32 lba_start;
-	u32 lba_size;
+	__u8  boot_flag;
+	__u8  chs_start[3];
+	__u8  type;
+	__u8  chs_end[3];
+	__u32 lba_start;
+	__u32 lba_size;
 };
 
 static struct list_node g_master_list;
@@ -27,7 +27,7 @@ static int msdos_part_scan(struct disk_drive *drive, struct part_attr part_tab[]
 
 	assert(drive != NULL);
 
-	u8 buff[drive->sect_size];
+	__u8 buff[drive->sect_size];
 
 	drive->get_block(drive, 0, buff);
 

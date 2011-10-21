@@ -9,8 +9,8 @@
 
 static int s3c6410_set_vmode(struct display *disp, const struct lcd_vmode *vm)
 {
-	u32 fmt, bpp;
-	u32 dma = disp->video_mem_pa;
+	__u32 fmt, bpp;
+	__u32 dma = disp->video_mem_pa;
 
 	// fixme
 	switch (disp->pix_fmt)
@@ -61,8 +61,8 @@ static int s3c6410_set_vmode(struct display *disp, const struct lcd_vmode *vm)
 static int __INIT__ s3c6410_display_init(void)
 {
 	void *va;
-	u32 dma;
-	u32 val;
+	__u32 dma;
+	__u32 val;
 	const struct lcd_vmode *vm;
 	struct display *disp;
 

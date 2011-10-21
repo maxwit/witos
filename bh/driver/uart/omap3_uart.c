@@ -1,29 +1,29 @@
 #include <uart/uart.h>
 
-static void omap3530_uart_send_byte(u8 b)
+static void omap3530_uart_send_byte(__u8 b)
 {
 	while (readb(VA(UART_BASE + SSR_REG)) & 0x1);
 
 	writeb(VA(UART_BASE + THR_REG), b);
 }
 
-static u8 omap3530_uart_recv_byte(void)
+static __u8 omap3530_uart_recv_byte(void)
 {
 	while (!(readb(VA(UART_BASE + LSR_REG)) & 0x1));
 
 	return readb(VA(UART_BASE + RHR_REG));
 }
 
-u32 uart_rxbuf_count()
+__u32 uart_rxbuf_count()
 {
 	return readb(VA(UART_BASE + LSR_REG)) & 0x1;
 }
 
 static int omap3530_uart_init(void)
 {
-	u32 word;
-	u8	byte;
-	u16  half;
+	__u32 word;
+	__u8	byte;
+	__u16  half;
 
 #if 0
 	//select source 48M

@@ -9,15 +9,15 @@
 
 struct process_bar
 {
-	u32 nMin;
-	u32 nMax;
-	u32 nCurr;
+	__u32 nMin;
+	__u32 nMax;
+	__u32 nCurr;
 
 	char cBar[];
 };
 
-int create_progress_bar(struct process_bar **ppNew, u32 nMin, u32 nMax);
+int create_progress_bar(struct process_bar **ppNew, __u32 nMin, __u32 nMax);
 
-void progress_bar_set_val(struct process_bar *pBar, u32 nLen);
+void progress_bar_set_val(struct process_bar *pBar, __u32 nLen);
 
 int delete_progress_bar(struct process_bar *pBar);

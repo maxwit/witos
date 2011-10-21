@@ -37,7 +37,7 @@ const struct part_attr at91sam9263_part_tab[] =
 
 static int __INIT__ at91sam9263_init(void)
 {
-	u32 mask;
+	__u32 mask;
 
 	at91_gpio_conf_input(PIOE, 1 << 31, 0);
 

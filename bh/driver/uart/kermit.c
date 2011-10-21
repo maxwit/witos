@@ -26,9 +26,9 @@
 #define ENC_PRINT(c) (c + KERM_KEY_SPACE)
 #define DEC_PRINT(c) (c - KERM_KEY_SPACE)
 
-static void send_ack_packet(u32 seq, char type)
+static void send_ack_packet(__u32 seq, char type)
 {
-	u8 buff[KERM_ACK_LEN];
+	__u8 buff[KERM_ACK_LEN];
 	int index = 0, checksum = 0;
 
 	buff[index++] = MARK_START;
@@ -58,17 +58,17 @@ static void send_ack_packet(u32 seq, char type)
 
 int kermit_load(struct loader_opt *opt)
 {
-	u8 buff[KERM_BUF_LEN];
-	u8 curr_char;
+	__u8 buff[KERM_BUF_LEN];
+	__u8 curr_char;
 	int index, count, checksum, len, seq, real_seq = 0;
 	int type = KERM_TYPE_BREAK; // fixme
-	u8 *curr_addr = (u8 *)opt->load_addr;
+	__u8 *curr_addr = (__u8 *)opt->load_addr;
 	int i;
 
 #ifndef CONFIG_GTH
 	if (!opt->load_addr)
 	{
-		u8 data[KERM_BUF_LEN];
+		__u8 data[KERM_BUF_LEN];
 		curr_addr = data;
 	}
 	else

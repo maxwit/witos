@@ -11,7 +11,7 @@ void putchar(char ch)
 		uart_send_byte('\n');
 }
 
-static const char *int_to_hex_str(u32 val, char str[])
+static const char *int_to_hex_str(__u32 val, char str[])
 {
 	char *p = str + BUF_LEN;
 
@@ -38,7 +38,7 @@ static const char *int_to_hex_str(u32 val, char str[])
 }
 
 #if ARM_ARCH >= 6
-static const char *int_to_oct_str(u32 val, char str[])
+static const char *int_to_oct_str(__u32 val, char str[])
 {
 	char *p = str + BUF_LEN;
 
@@ -64,7 +64,7 @@ int printf(const char *fmt, ...)
 {
 	char buf[BUF_LEN];
 	const char *p, *q;
-	const u32 *arg = (const u32 *)&fmt + 1;
+	const __u32 *arg = (const __u32 *)&fmt + 1;
 
 	for (p = fmt; *p != '\0'; p++)
 	{

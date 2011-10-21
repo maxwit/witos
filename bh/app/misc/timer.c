@@ -3,7 +3,7 @@
 int main(int argc, char *argv[])
 {
 #ifdef CONFIG_IRQ_SUPPORT
-	volatile u32 count;
+	volatile __u32 count;
 
 #if 1
 	for (count = 0; count < 10000; count++)
@@ -11,7 +11,7 @@ int main(int argc, char *argv[])
 		printf("%s(): %d\n", __func__, get_tick());
 	}
 #else
-	volatile u32 m = get_tick() + 10;
+	volatile __u32 m = get_tick() + 10;
 
 	do
 	{

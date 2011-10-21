@@ -44,11 +44,11 @@ static int flash_bdev_open(struct bdev_file *file, const char *type)
 static int flash_bdev_close(struct bdev_file *file)
 {
 	int ret = 0, rest;
-	u32 flash_pos;
+	__u32 flash_pos;
 	struct block_buff   *blk_buff;
 	struct flash_chip   *flash;
 	struct block_device *bdev;
-	u32 eflag = EDF_ALLOWBB;
+	__u32 eflag = EDF_ALLOWBB;
 
 	assert(file && file->bdev);
 
@@ -60,7 +60,7 @@ static int flash_bdev_close(struct bdev_file *file)
 	if (file->cur_pos > 0 || rest > 0) // fixme: if mode=write
 	{
 		int type;
-		u32 pos_adj;
+		__u32 pos_adj;
 
 		//printf("%s(): pos = 0x%08x, blk_base = 0x%08x, blk_off = 0x%08x, rest = 0x%08x\n",
 			// __func__, file->cur_pos + file->attr->part_base, blk_buff->blk_base, blk_buff->blk_off, rest);
@@ -134,17 +134,17 @@ L1:
 	return ret < 0 ? ret : 0;
 }
 
-static ssize_t flash_bdev_read(struct bdev_file *file, void *buff, u32 size)
+static ssize_t flash_bdev_read(struct bdev_file *file, void *buff, __u32 size)
 {
 	printf("%s() not supported!\n");
 	return -EIO;
 }
 
-static ssize_t flash_bdev_write(struct bdev_file *file, const void *buff, u32 size)
+static ssize_t flash_bdev_write(struct bdev_file *file, const void *buff, __u32 size)
 {
 	int ret = 0;
-	u32 buff_room, flash_pos;
-	u32 eflag = EDF_ALLOWBB;
+	__u32 buff_room, flash_pos;
+	__u32 eflag = EDF_ALLOWBB;
 	PART_TYPE part_type;
 	struct flash_chip   *flash;
 	struct block_buff   *blk_buff;
@@ -177,19 +177,19 @@ static ssize_t flash_bdev_write(struct bdev_file *file, const void *buff, u32 si
 	{
 		if (size >= buff_room)
 		{
-			u32 size_adj;
+			__u32 size_adj;
 
 			memcpy(blk_buff->blk_off, buff, buff_room);
 
 			size -= buff_room;
-			buff  = (u8 *)buff + buff_room;
+			buff  = (__u8 *)buff + buff_room;
 
 			buff_room = blk_buff->blk_size;
 
 #ifdef CONFIG_IMAGE_CHECK
 			if (file->cur_pos < blk_buff->blk_size)
 			{
-				if (FALSE == check_image_type(part_type, blk_buff->blk_base))
+				if (false == check_image_type(part_type, blk_buff->blk_base))
 				{
 					printf("\nImage part_type mismatch!"
 						"Please check the image name and the target bdev_file!\n");
@@ -286,12 +286,12 @@ static struct part_attr *PartGetAttr(struct part_info *pt_info, int nFreeIndex)
 	return pt_info->attr_tab + nFreeIndex;
 }
 
-static BOOL inline PartProtected(PART_TYPE epart_type)
+static bool inline PartProtected(PART_TYPE epart_type)
 {
 	return PT_BL_GTH == epart_type;
 }
 
-int GuPartCreate(struct part_info *pt_info, int nFreeIndex, u32 size, PART_TYPE part_type)
+int GuPartCreate(struct part_info *pt_info, int nFreeIndex, __u32 size, PART_TYPE part_type)
 {
 	struct part_attr *pFreeAttr;
 
@@ -349,7 +349,7 @@ int GuPartCreate(struct part_info *pt_info, int nFreeIndex, u32 size, PART_TYPE 
 #endif
 
 #if 0
-const char *part_type2str(u32 type)
+const char *part_type2str(__u32 type)
 {
 	switch(type)
 	{
@@ -401,7 +401,7 @@ int part_show(const struct flash_chip *flash)
 	int index = 0;
 #if 0
 	struct part_attr attr_tab[MAX_FLASH_PARTS];
-	u32 nIndex, nRootIndex;
+	__u32 nIndex, nRootIndex;
 	const char *pBar = "--------------------------------------------------------------------";
 	struct linux_config *pLinuxParam;
 

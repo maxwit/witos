@@ -43,7 +43,7 @@ static const struct part_attr mw2440_part_tab[] =
 
 static int __INIT__ s3c2440_init(void)
 {
-	u32 val;
+	__u32 val;
 
 #if 1
 	val = readl(VA(S3C24X0_GPBCON));

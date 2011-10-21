@@ -4,25 +4,25 @@
 static int is_dot(int x, int y, char c, struct font_descript *font)
 {
 	int w, h;
-	u8 *data;
+	__u8 *data;
 
 	w = (font->width + 7) / 8;
 	h = c * font->height + y;
 
-	data = (u8 *)font->data + w * h;
+	data = (__u8 *)font->data + w * h;
 	data += x / 8;
 	x = x % 8;
 
 	return (*data >> (7 - x)) & 0x01;
 }
 
-int draw_char(struct display *disp, int x, int y, struct font_descript *font, u32 color, char c)
+int draw_char(struct display *disp, int x, int y, struct font_descript *font, __u32 color, char c)
 {
 	int width  = disp->video_mode->width;
-	u16 *buff;
+	__u16 *buff;
 	int i, j;
 
-	buff = (u16 *)disp->video_mem_va;
+	buff = (__u16 *)disp->video_mem_va;
 
 	for (i = 0; i < font->height; i++)
 	{
@@ -37,7 +37,7 @@ int draw_char(struct display *disp, int x, int y, struct font_descript *font, u3
 	return 0;
 }
 
-int draw_string(struct display *disp, int x, int y, struct font_descript *font, u32 color, const char * str)
+int draw_string(struct display *disp, int x, int y, struct font_descript *font, __u32 color, const char * str)
 {
 	while (*str)
 	{
@@ -49,15 +49,15 @@ int draw_string(struct display *disp, int x, int y, struct font_descript *font, 
 	return 0;
 }
 
-int set_screen(u32 pixel)
+int set_screen(__u32 pixel)
 {
-	u16 *buff;
+	__u16 *buff;
 	int height, width;
 	int i, j;
 	struct display *disp;
 
 	disp = get_system_display();
-	buff = (u16 *)disp->video_mem_va;
+	buff = (__u16 *)disp->video_mem_va;
 	height = disp->video_mode->height;
 	width  = disp->video_mode->width;
 

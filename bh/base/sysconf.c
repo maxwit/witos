@@ -10,9 +10,9 @@
 
 static struct sys_config *g_sysconf;
 
-static u32 conf_checksum(u32 *new_sum)
+static __u32 conf_checksum(__u32 *new_sum)
 {
-	u32 old_sum = g_sysconf->checksum;
+	__u32 old_sum = g_sysconf->checksum;
 
 	g_sysconf->checksum = 0;
 	g_sysconf->checksum = ~net_calc_checksum(g_sysconf, g_sysconf->offset + g_sysconf->size);
@@ -156,7 +156,7 @@ int conf_get_attr(const char *attr, char val[])
 
 int conf_load()
 {
-	u32 new_sum, old_sum;
+	__u32 new_sum, old_sum;
 
 	g_sysconf = (struct sys_config*)CONFIG_SYS_START_MEM;
 
@@ -173,7 +173,7 @@ int conf_load()
 int conf_store()
 {
 	int ret;
-	u32 conf_base, conf_size;
+	__u32 conf_base, conf_size;
 	struct flash_chip *flash;
 
 	flash = flash_open(BOOT_FLASH_ID);

@@ -3,35 +3,35 @@
 #include <net/mii.h>
 #include "smsc91x.h"
 
-static inline void smsc91x_switch_bank(u16 reg)
+static inline void smsc91x_switch_bank(__u16 reg)
 {
 	writew(VA(SMSC91X_BASE + 0xe), 0x3300 + reg);
 }
 
-static inline u32 smsc91x_readl(u16 reg)
+static inline __u32 smsc91x_readl(__u16 reg)
 {
 	return readl(VA(SMSC91X_BASE + reg));
 }
 
-static inline u16 smsc91x_read(u16 reg)
+static inline __u16 smsc91x_read(__u16 reg)
 {
 	return readw(VA(SMSC91X_BASE + reg));
 }
 
-static inline void smsc91x_write(u16 reg, u16 val)
+static inline void smsc91x_write(__u16 reg, __u16 val)
 {
 	writew(VA(SMSC91X_BASE + reg), val);
 }
 
-static inline void smsc91x_writel(u16 reg, u32 val)
+static inline void smsc91x_writel(__u16 reg, __u32 val)
 {
 	writel(VA(SMSC91X_BASE + reg), val);
 }
 
 static int smsc91x_recv_packet(struct net_device *ndev)
 {
-	u16 pack_num, status, len, *data;
-	u32  i;
+	__u16 pack_num, status, len, *data;
+	__u32  i;
 	struct sock_buff *skbuf;
 
 	smsc91x_switch_bank(0x2);
@@ -55,7 +55,7 @@ static int smsc91x_recv_packet(struct net_device *ndev)
 	skbuf =skb_alloc(0, len);
 	skbuf->size = len;
 
-	data = (u16 *)skbuf->data;
+	data = (__u16 *)skbuf->data;
 
 	for (i = 0; i < (len >> 1); i++)
 	{
@@ -76,12 +76,12 @@ static int smsc91x_recv_packet(struct net_device *ndev)
 
 static int smsc91x_send_packet(struct net_device *ndev, struct sock_buff *skb)
 {
-	u32 len, i;
-	u16 *data;
+	__u32 len, i;
+	__u16 *data;
 
 	// 4 CRC bytes and 2 bytes control bytes
 	len  = skb->size + 6;
-	data = (u16 *)(skb->data);
+	data = (__u16 *)(skb->data);
 
 	smsc91x_switch_bank(0x2);
 
@@ -102,7 +102,7 @@ static int smsc91x_send_packet(struct net_device *ndev, struct sock_buff *skb)
 	return len;
 }
 
-static int smsc91x_set_mac(struct net_device *ndev, const u8 mac[])
+static int smsc91x_set_mac(struct net_device *ndev, const __u8 mac[])
 {
 	int i;
 
@@ -123,7 +123,7 @@ static int smsc91x_poll(struct net_device *ndev)
 
 static int smsc91x_hw_init(void)
 {
-	u16 val;
+	__u16 val;
 
 	smsc91x_switch_bank(0x1);
 	//enable EPH Power
@@ -171,7 +171,7 @@ static int smsc91x_hw_init(void)
 static int __INIT__ smsc91x_init(void)
 {
 	int ret;
-	u16 chip_id;
+	__u16 chip_id;
 	struct net_device *ndev;
 
 	// probe chip

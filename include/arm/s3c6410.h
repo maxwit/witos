@@ -49,11 +49,11 @@ void chip_select(void);
 
 void chip_unselect(void);
 
-void spi_send_receive(u8 *send, int send_count, u8 *receive, int receive_count);
+void spi_send_receive(__u8 *send, int send_count, __u8 *receive, int receive_count);
 
-u8 is_rx_overrun(void);
+__u8 is_rx_overrun(void);
 
-u8 is_tx_overrun(void);
+__u8 is_tx_overrun(void);
 
 int s3c6410_interrupt_init(void);
 

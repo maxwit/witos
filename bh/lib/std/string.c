@@ -169,8 +169,8 @@ char *strrchr(const char *psrc, size_t c)
 
 void *memcpy(void *pdst, const void *psrc, size_t count)
 {
-	u8 *pd;
-	const u8 *ps;
+	__u8 *pd;
+	const __u8 *ps;
 
 	pd = pdst;
 	ps = psrc;
@@ -186,8 +186,8 @@ void *memcpy(void *pdst, const void *psrc, size_t count)
 
 void *memmove(void *pdst, const void *psrc, size_t count)
 {
-	u8 *pd;
-	const u8 *ps;
+	__u8 *pd;
+	const __u8 *ps;
 
 	if (pdst < psrc)
 	{
@@ -232,7 +232,7 @@ void *memset(void *psrc, int c, size_t count)
 
 long memcmp(const void* pdst, const void* psrc, size_t count)
 {
-	const u8 *ps, *pd;
+	const __u8 *ps, *pd;
 
 	pd = pdst;
 	ps = psrc;

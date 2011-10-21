@@ -3,9 +3,9 @@
 
 static int show_net_info(struct net_device *ndev)
 {
-	u8 local[IPV4_ADR_LEN];
-	u8 mask[IPV4_ADR_LEN];
-	u8 mac[MAC_ADR_LEN];
+	__u8 local[IPV4_ADR_LEN];
+	__u8 mask[IPV4_ADR_LEN];
+	__u8 mac[MAC_ADR_LEN];
 	struct link_status net_status;
 	const char *speed = "none";
 
@@ -69,8 +69,8 @@ static int show_net_info(struct net_device *ndev)
 int main(int argc, char *argv[])
 {
 	int i;
-	u32 local_ip, local_mask;
-	u8 mac[MAC_ADR_LEN];
+	__u32 local_ip, local_mask;
+	__u8 mac[MAC_ADR_LEN];
 	struct net_device *ndev;
 	struct list_node *iter, *ndev_list;
 
@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		if (str_to_ip((u8*)&local_ip, argv[i]) == 0)
+		if (str_to_ip((__u8*)&local_ip, argv[i]) == 0)
 		{
 			ndev_ioctl(ndev, NIOC_SET_IP, (void*)local_ip);
 			continue;
@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
 
 		if (strcmp(argv[i], "netmask") == 0)
 		{
-			if (++i == argc || str_to_ip((u8*)&local_mask, argv[i]))
+			if (++i == argc || str_to_ip((__u8*)&local_mask, argv[i]))
 			{
 				printf("Invalid netmask!\n");
 				return -EINVAL;

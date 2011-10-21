@@ -15,4 +15,4 @@
 #define PT_STR_UBIFS    "ubifs"
 #define PT_STR_FREE     "free"
 
-const char *part_type2str(u32 type);
+const char *part_type2str(__u32 type);

@@ -66,7 +66,7 @@ static struct spi_slave mw61_spi_slave[] =
 
 static int __INIT__ mw61_init(void)
 {
-	u32 val;
+	__u32 val;
 	struct spi_slave  *spi_slave;
 	struct spi_master *spi_master;
 

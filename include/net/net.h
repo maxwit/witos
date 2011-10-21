@@ -98,9 +98,9 @@ struct sockaddr;
 //
 struct ether_header
 {
-	u8 des_mac[MAC_ADR_LEN];
-	u8 src_mac[MAC_ADR_LEN];
-	u16 frame_type;
+	__u8 des_mac[MAC_ADR_LEN];
+	__u8 src_mac[MAC_ADR_LEN];
+	__u16 frame_type;
 };
 
 //
@@ -109,30 +109,30 @@ struct ether_header
 
 struct arp_packet
 {
-	u16  hard_type;
-	u16  prot_type;
-	u8   hard_size;
-	u8   prot_size;
-	u16  op_code;
-	u8   src_mac[MAC_ADR_LEN];
-	u8   src_ip[IPV4_ADR_LEN];
-	u8   des_mac[MAC_ADR_LEN];
-	u8   des_ip[IPV4_ADR_LEN];
+	__u16  hard_type;
+	__u16  prot_type;
+	__u8   hard_size;
+	__u8   prot_size;
+	__u16  op_code;
+	__u8   src_mac[MAC_ADR_LEN];
+	__u8   src_ip[IPV4_ADR_LEN];
+	__u8   des_mac[MAC_ADR_LEN];
+	__u8   des_ip[IPV4_ADR_LEN];
 } __PACKED__;
 
 //
 struct ip_header
 {
-	u8   ver_len;
-	u8   tos;
-	u16  total_len;
-	u16  id;
-	u16  flag_frag;
-	u8   ttl;
-	u8   up_prot;
-	u16  chksum;
-	u8   src_ip[IPV4_ADR_LEN];
-	u8   des_ip[IPV4_ADR_LEN];
+	__u8   ver_len;
+	__u8   tos;
+	__u16  total_len;
+	__u16  id;
+	__u16  flag_frag;
+	__u8   ttl;
+	__u8   up_prot;
+	__u16  chksum;
+	__u8   src_ip[IPV4_ADR_LEN];
+	__u8   des_ip[IPV4_ADR_LEN];
 };
 
 //
@@ -143,28 +143,28 @@ struct ip_header
 //
 struct icmp_packet
 {
-	u8  type;
-	u8  code;
-	u16 chksum;
+	__u8  type;
+	__u8  code;
+	__u16 chksum;
 };
 
 //
 struct ping_packet
 {
-	u8    type;
-	u8    code;
-	u16  chksum;
-	u16  id;
-	u16  seqno;
+	__u8    type;
+	__u8    code;
+	__u16  chksum;
+	__u16  id;
+	__u16  seqno;
 };
 
 //
 struct udp_header
 {
-	u16 src_port;
-	u16 dst_port;
-	u16 udp_len;
-	u16 checksum;
+	__u16 src_port;
+	__u16 dst_port;
+	__u16 udp_len;
+	__u16 checksum;
 };
 
 #define FLG_FIN  (1 << 0)
@@ -215,7 +215,7 @@ struct tcp_option
 };
 ///////////////////////////////////
 
-typedef u32 socklen_t;
+typedef __u32 socklen_t;
 typedef unsigned short sa_family_t;
 
 #define __SOCKADDR_COMMON(sa_prefix) \
@@ -229,7 +229,7 @@ struct sockaddr
 
 struct in_addr
 {
-	u32 s_addr;
+	__u32 s_addr;
 };
 
 struct sockaddr_in
@@ -277,15 +277,15 @@ struct socket
 
 struct eth_addr
 {
-	u8  ip[4];
-	u8  mac[6];
+	__u8  ip[4];
+	__u8  mac[6];
 };
 
 struct sock_buff
 {
-	u8  *head;
-	u8  *data;
-	u16  size;
+	__u8  *head;
+	__u8  *data;
+	__u16  size;
 
 	struct list_node node;
 	struct socket *sock;
@@ -294,10 +294,10 @@ struct sock_buff
 
 struct net_device_stat
 {
-	u32 rx_packets;
-	u32 tx_packets;
-	u32 tx_errors;
-	u32 rx_errors;
+	__u32 rx_packets;
+	__u32 tx_packets;
+	__u32 tx_errors;
+	__u32 rx_errors;
 };
 
 struct link_status
@@ -315,25 +315,25 @@ struct net_device
 	char ifx_name[NET_NAME_LEN];
 	struct list_node ndev_node;
 	//
-	u32 ip;
-	u32 mask;
-	u8  mac_addr[MAC_ADR_LEN];
+	__u32 ip;
+	__u32 mask;
+	__u8  mac_addr[MAC_ADR_LEN];
 	void *chip;
 
 	struct net_device_stat stat;
 
 	//
 	int (*send_packet)(struct net_device *ndev, struct sock_buff *skb);
-	int (*set_mac_addr)(struct net_device *ndev, const u8 mac[]);
+	int (*set_mac_addr)(struct net_device *ndev, const __u8 mac[]);
 #ifndef CONFIG_IRQ_SUPPORT
 	int (*ndev_poll)(struct net_device *ndev);
 #endif
 
 	// PHY
-	u32 phy_mask;
+	__u32 phy_mask;
 	struct list_node phy_list;
-	u16 (*mdio_read)(struct net_device *ndev, u8 mii_id, u8 reg);
-	void (*mdio_write)(struct net_device *ndev, u8 mii_id, u8 reg, u16 val);
+	__u16 (*mdio_read)(struct net_device *ndev, __u8 mii_id, __u8 reg);
+	void (*mdio_write)(struct net_device *ndev, __u8 mii_id, __u8 reg, __u16 val);
 };
 
 static inline __u16 htons(__u16 val)
@@ -356,16 +356,16 @@ static inline __u32 ntohl(__u32 val)
 	return BE32_TO_CPU(val);
 }
 
-struct sock_buff *skb_alloc(u32 prot_len, u32 data_len);
+struct sock_buff *skb_alloc(__u32 prot_len, __u32 data_len);
 
 void skb_free(struct sock_buff * skb);
 
 ///////////
-struct eth_addr *getaddr(u32 nip);
-struct eth_addr *gethostaddr(const u32 nip);
+struct eth_addr *getaddr(__u32 nip);
+struct eth_addr *gethostaddr(const __u32 nip);
 
-void arp_send_packet(const u8 nip[], const u8 *mac, u16 op_code);
-void ip_send_packet(struct sock_buff *skb, u8 bProtocal);
+void arp_send_packet(const __u8 nip[], const __u8 *mac, __u16 op_code);
+void ip_send_packet(struct sock_buff *skb, __u8 bProtocal);
 void udp_send_packet(struct sock_buff *skb);
 void tcp_send_packet(struct sock_buff *skb, __u8 flags, struct tcp_option *opt);
 
@@ -376,13 +376,13 @@ int bind(int fd, const struct sockaddr *addr, socklen_t len);
 int connect(int fd, const struct sockaddr *addr, socklen_t len);
 ssize_t send(int fd, const void *buf, size_t n, int flag);
 ssize_t recv(int fd, void *buf, size_t n, int flag);
-ssize_t sendto(int fd, const void *buf, u32 n, int flags, const struct sockaddr *dest_addr, socklen_t addrlen);
-long recvfrom(int fd, void *buf, u32 n, int flags, struct sockaddr *src_addr, socklen_t *addrlen);
+ssize_t sendto(int fd, const void *buf, __u32 n, int flags, const struct sockaddr *dest_addr, socklen_t addrlen);
+long recvfrom(int fd, void *buf, __u32 n, int flags, struct sockaddr *src_addr, socklen_t *addrlen);
 int sk_close(int fd);
 
 struct net_device *net_get_dev(const char *ifx_name);
 
-u16 net_calc_checksum(const void *buff, u32 size);
+__u16 net_calc_checksum(const void *buff, __u32 size);
 
 struct net_device *ndev_new(size_t chip_size);
 
@@ -414,6 +414,6 @@ struct list_node *net_get_device_list(void);
 
 int ndev_ioctl(struct net_device *ndev, int cmd, void *arg);
 
-int net_get_server_ip(u32 *ip);
+int net_get_server_ip(__u32 *ip);
 
-int net_set_server_ip(u32 ip);
+int net_set_server_ip(__u32 ip);

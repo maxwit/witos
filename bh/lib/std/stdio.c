@@ -102,7 +102,7 @@ char *gets(char *s)
 //#define ISDIGIT(x) (x >= '0' && x <= '9')
 
 static char *num_to_ascii(char *buf,
-				  		u32 num,
+				  		__u32 num,
 				  		int width,
 				  		int base,
 				  		int output_style)

@@ -4,32 +4,32 @@
 #define EXTINT_OFF       (IRQ_EINT4 - 4)
 #define INTMSK_TCnADC    (1UL << (IRQ_TC_ADC - IRQ_EINT0))
 
-u32 read_irq_num(void)
+__u32 read_irq_num(void)
 {
 	return readl(VA(S3C2410_INTOFFSET));
 }
 
-static void s3c24x0_irq_mask(u32 irq)
+static void s3c24x0_irq_mask(__u32 irq)
 {
-	u32 mask;
+	__u32 mask;
 
 	mask = readl(VA(S3C2410_INTMSK));
 	mask |= 1UL << (irq - IRQ_EINT0);
 	writel(VA(S3C2410_INTMSK), mask);
 }
 
-static void s3c24x0_irq_ack(u32 irq)
+static void s3c24x0_irq_ack(__u32 irq)
 {
-	u32 dwVal = 1UL << (irq - IRQ_EINT0);
+	__u32 dwVal = 1UL << (irq - IRQ_EINT0);
 
 	writel(VA(S3C2410_SRCPND), dwVal);
 	writel(VA(S3C2410_INTPND), dwVal);
 }
 
-static void s3c24x0_irq_mack(u32 irq)
+static void s3c24x0_irq_mack(__u32 irq)
 {
-	u32 dwVal = 1UL << (irq - IRQ_EINT0);
-	u32 mask;
+	__u32 dwVal = 1UL << (irq - IRQ_EINT0);
+	__u32 mask;
 
 	mask = readl(VA(S3C2410_INTMSK));
 	writel(VA(S3C2410_INTMSK), mask | dwVal);
@@ -38,9 +38,9 @@ static void s3c24x0_irq_mack(u32 irq)
 	writel(VA(S3C2410_INTPND), dwVal);
 }
 
-static void s3c24x0_irq_umask(u32 irq)
+static void s3c24x0_irq_umask(__u32 irq)
 {
-	u32 mask;
+	__u32 mask;
 
 	irq -= IRQ_EINT0;
 
@@ -64,9 +64,9 @@ struct int_ctrl s3c24x0_intctl =
 	.umask = s3c24x0_irq_umask,
 };
 
-static void s3c24x0_ext_mask(u32 irq)
+static void s3c24x0_ext_mask(__u32 irq)
 {
-	u32 mask;
+	__u32 mask;
 
 	irq -= EXTINT_OFF;
 
@@ -75,10 +75,10 @@ static void s3c24x0_ext_mask(u32 irq)
 	writel(VA(S3C2410_EINTMASK), mask);
 }
 
-static void s3c24x0_ext_ack(u32 irq)
+static void s3c24x0_ext_ack(__u32 irq)
 {
-	u32 req;
-	u32 bit;
+	__u32 req;
+	__u32 bit;
 
 	bit = 1UL << (irq - EXTINT_OFF);
 
@@ -102,9 +102,9 @@ static void s3c24x0_ext_ack(u32 irq)
 	}
 }
 
-static void s3c24x0_ext_umask(u32 irq)
+static void s3c24x0_ext_umask(__u32 irq)
 {
-	u32 mask;
+	__u32 mask;
 
 	irq -= EXTINT_OFF;
 
@@ -113,11 +113,11 @@ static void s3c24x0_ext_umask(u32 irq)
 	writel(VA(S3C2410_EINTMASK), mask);
 }
 
-int s3c24x0_ext_set_trigger(u32 irq, unsigned int type)
+int s3c24x0_ext_set_trigger(__u32 irq, unsigned int type)
 {
-	u32 extint_reg, gpcon_reg;
-	u32 gpcon_offset, extint_offset;
-	u32 newvalue = 0, value;
+	__u32 extint_reg, gpcon_reg;
+	__u32 gpcon_offset, extint_offset;
+	__u32 newvalue = 0, value;
 
 	if ((irq >= IRQ_EINT0) && (irq <= IRQ_EINT3))
 	{
@@ -207,9 +207,9 @@ static struct int_ctrl s3c24x0_intctl_ext0to3 =
 	.set_trigger = s3c24x0_ext_set_trigger,
 };
 
-static inline void s3c24x0_subic_mask(u32 irq, unsigned int parentbit, int subcheck)
+static inline void s3c24x0_subic_mask(__u32 irq, unsigned int parentbit, int subcheck)
 {
-	u32 mask, submask;
+	__u32 mask, submask;
 
 	submask = readl(VA(S3C2410_INTSUBMSK));
 	mask = readl(VA(S3C2410_INTMSK));
@@ -224,9 +224,9 @@ static inline void s3c24x0_subic_mask(u32 irq, unsigned int parentbit, int subch
 	writel(VA(S3C2410_INTSUBMSK), submask);
 }
 
-static inline void s3c24x0_subic_umask(u32 irq, unsigned int parentbit)
+static inline void s3c24x0_subic_umask(__u32 irq, unsigned int parentbit)
 {
-	u32 mask, submask;
+	__u32 mask, submask;
 
 	submask = readl(VA(S3C2410_INTSUBMSK));
 	mask = readl(VA(S3C2410_INTMSK));
@@ -238,9 +238,9 @@ static inline void s3c24x0_subic_umask(u32 irq, unsigned int parentbit)
 	writel(VA(S3C2410_INTMSK), mask);
 }
 
-static inline void s3c24x0_subic_mack(u32 irq, unsigned int parentmask, unsigned int group)
+static inline void s3c24x0_subic_mack(__u32 irq, unsigned int parentmask, unsigned int group)
 {
-	u32 bit = 1UL << (irq - IRQ_UART0_RX);
+	__u32 bit = 1UL << (irq - IRQ_UART0_RX);
 
 	s3c24x0_subic_mask(irq, parentmask, group);
 
@@ -250,7 +250,7 @@ static inline void s3c24x0_subic_mack(u32 irq, unsigned int parentmask, unsigned
 	writel(VA(S3C2410_INTPND), parentmask);
 }
 
-static inline void s3c24x0_subic_ack(u32 irq, unsigned int parentmask, unsigned int group)
+static inline void s3c24x0_subic_ack(__u32 irq, unsigned int parentmask, unsigned int group)
 {
 	unsigned int bit = 1UL << (irq - IRQ_UART0_RX);
 
@@ -260,17 +260,17 @@ static inline void s3c24x0_subic_ack(u32 irq, unsigned int parentmask, unsigned 
 	writel(VA(S3C2410_INTPND), parentmask);
 }
 
-static void s3c24x0_adc_mask(u32 irq)
+static void s3c24x0_adc_mask(__u32 irq)
 {
 	s3c24x0_subic_mask(irq, INTMSK_TCnADC, 3 << 9);
 }
 
-static void s3c24x0_adc_umask(u32 irq)
+static void s3c24x0_adc_umask(__u32 irq)
 {
 	s3c24x0_subic_umask(irq, INTMSK_TCnADC);
 }
 
-static void s3c24x0_adc_ack(u32 irq)
+static void s3c24x0_adc_ack(__u32 irq)
 {
 	s3c24x0_subic_ack(irq, INTMSK_TCnADC, 3 << 9);
 }
@@ -282,7 +282,7 @@ static struct int_ctrl s3c_irq_adc =
 	.umask = s3c24x0_adc_umask,
 };
 
-static void s3c24x0_parse_adc_irq(struct int_pin *ipin, u32 irq)
+static void s3c24x0_parse_adc_irq(struct int_pin *ipin, __u32 irq)
 {
 	unsigned int nSubPnd;
 
@@ -302,9 +302,9 @@ static void s3c24x0_parse_adc_irq(struct int_pin *ipin, u32 irq)
 	}
 }
 
-static void s3c24x0_parse_ext_irq(struct int_pin *ipin, u32 irq)
+static void s3c24x0_parse_ext_irq(struct int_pin *ipin, __u32 irq)
 {
-	u32 ext_pnd = readl(VA(S3C2410_EINTPEND));
+	__u32 ext_pnd = readl(VA(S3C2410_EINTPEND));
 
 	switch (irq)
 	{

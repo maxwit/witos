@@ -32,8 +32,8 @@ struct block_device;
 struct part_attr
 {
 	PART_TYPE part_type;
-	u32   part_base;
-	u32   part_size;
+	__u32   part_base;
+	__u32   part_size;
 	char  part_name[PART_NAME_LEN];
 };
 

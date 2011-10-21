@@ -27,7 +27,7 @@ options:
 int main(int argc, char *argv[])
 {
 	int ret, opt;
-	BOOL reset_all = FALSE;
+	bool reset_all = false;
 
 	usage(argc, argv);
 
@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
 		case 'r':
 			if (!strcmp(optarg, "all"))
 			{
-				reset_all = TRUE;
+				reset_all = true;
 				printf("reseting all configuration to default!");
 			}
 			else if (!strcmp(optarg, "net"))

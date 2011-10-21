@@ -7,7 +7,7 @@
 //#define CONF_DEBUG
 
 static void s3c2440_mmc_set_hclk(void);
-static int s3c2440_send_cmd(struct mmc_host *mmc, u32 index, u32 arg, RESP resp);
+static int s3c2440_send_cmd(struct mmc_host *mmc, __u32 index, __u32 arg, RESP resp);
 static int s3c2440_read_data(struct mmc_host *mmc, void *buf);
 static int s3c2440_write_data(struct mmc_host *mmc, const void *buf);
 
@@ -31,7 +31,7 @@ void  s3c2440_mmc_set_hclk(void)
 int s3c2440_write_data(struct mmc_host *mmc, const void *buf)
 {
 	int i;
-	u32 val;
+	__u32 val;
 
 	for (i = 0; i < 512 / 4; )
 	{
@@ -41,7 +41,7 @@ int s3c2440_write_data(struct mmc_host *mmc, const void *buf)
 
 		if (val & 1 << 13)
 		{
-			writel(VA(S3C24X0_SDIBASE + 0x40), ((u32 *)buf)[i]);
+			writel(VA(S3C24X0_SDIBASE + 0x40), ((__u32 *)buf)[i]);
 			i++;
 		}
 	}
@@ -69,7 +69,7 @@ int s3c2440_write_data(struct mmc_host *mmc, const void *buf)
 int s3c2440_read_data(struct mmc_host *mmc, void *buf)
 {
 	int i = 0;
-	u32 val;
+	__u32 val;
 
 	while (1)
 	{
@@ -78,7 +78,7 @@ int s3c2440_read_data(struct mmc_host *mmc, void *buf)
 
 		if (val & 1 << 12)
 		{
-			((u32 *)buf)[i] = readl(VA(S3C24X0_SDIBASE + 0x40));
+			((__u32 *)buf)[i] = readl(VA(S3C24X0_SDIBASE + 0x40));
 			i++;
 		}
 		else
@@ -88,9 +88,9 @@ int s3c2440_read_data(struct mmc_host *mmc, void *buf)
 	return i;
 }
 
-int s3c2440_send_cmd(struct mmc_host *mmc, u32 index, u32 arg, RESP resp)
+int s3c2440_send_cmd(struct mmc_host *mmc, __u32 index, __u32 arg, RESP resp)
 {
-	u32 cval, val;
+	__u32 cval, val;
 
 	cval   = index | CMDSTAR;
 
@@ -178,7 +178,7 @@ int s3c2440_send_cmd(struct mmc_host *mmc, u32 index, u32 arg, RESP resp)
 
 static int __INIT__ s3c2440_mmc_init(void)
 {
-	u32 val;
+	__u32 val;
 
 	val = readl(VA(S3C24XX_GPECON));
 	val &= 0x3ffc00;

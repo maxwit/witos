@@ -8,8 +8,8 @@
 
 struct mem_region
 {
-	u32   pre_size;
-	u32   curr_size;
+	__u32   pre_size;
+	__u32   curr_size;
 	struct list_node ln_mem_region;
 };
 
@@ -17,15 +17,15 @@ static struct list_node g_free_region_list;
 
 static inline struct mem_region *get_successor(struct mem_region *region)
 {
-	return (struct mem_region *)((u8 *)region + DWORD_SIZE + GET_SIZE(region));
+	return (struct mem_region *)((__u8 *)region + DWORD_SIZE + GET_SIZE(region));
 }
 
 static inline struct mem_region *get_predeccessor(struct mem_region *region)
 {
-	return (struct mem_region *)((u8 *)region - (region->pre_size & ~(WORD_SIZE - 1)) - DWORD_SIZE);
+	return (struct mem_region *)((__u8 *)region - (region->pre_size & ~(WORD_SIZE - 1)) - DWORD_SIZE);
 }
 
-static void inline region_set_size(struct mem_region *region, u32 size)
+static void inline region_set_size(struct mem_region *region, __u32 size)
 {
 	struct mem_region *succ_region;
 
@@ -35,7 +35,7 @@ static void inline region_set_size(struct mem_region *region, u32 size)
 	succ_region->pre_size = size;
 }
 
-static int __INIT__ __heap_init(u32 start, u32 end)
+static int __INIT__ __heap_init(__u32 start, __u32 end)
 {
 	struct mem_region *first, *tail;
 
@@ -49,7 +49,7 @@ static int __INIT__ __heap_init(u32 start, u32 end)
 	tail  = (struct mem_region *)(end - DWORD_SIZE);  // sizeof(*tail)
 
 	first->pre_size = 1;
-	first->curr_size = (u32)tail - (u32)first - DWORD_SIZE;
+	first->curr_size = (__u32)tail - (__u32)first - DWORD_SIZE;
 
 	tail->pre_size = first->curr_size;
 	tail->curr_size = 1;
@@ -86,9 +86,9 @@ void *malloc(size_t size)
 {
 	void *p = NULL;
 	struct list_node *iter;
-	u32 alloc_size, reset_size;
+	__u32 alloc_size, reset_size;
 	struct mem_region *curr_region, *succ_region;
-	u32 psr;
+	__u32 psr;
 
 	lock_irq_psr(psr);
 
@@ -133,11 +133,11 @@ do_alloc:
 void free(void *p)
 {
 	struct mem_region *curr_region, *succ_region;
-	u32 psr;
+	__u32 psr;
 
 	lock_irq_psr(psr);
 
-	curr_region = (struct mem_region *)((u32)p - DWORD_SIZE);
+	curr_region = (struct mem_region *)((__u32)p - DWORD_SIZE);
 	succ_region = get_successor(curr_region);
 
 	if (IS_FREE(succ_region->curr_size))
@@ -165,7 +165,7 @@ void free(void *p)
 	unlock_irq_psr(psr);
 }
 
-void *zalloc(u32 len)
+void *zalloc(__u32 len)
 {
 	void *p;
 
@@ -177,13 +177,13 @@ void *zalloc(u32 len)
 	return p;
 }
 
-void *dma_malloc(size_t len, u32 *pa)
+void *dma_malloc(size_t len, __u32 *pa)
 {
 	void *va;
 
 	va = malloc(len);
 
-	*pa = (u32)va;
+	*pa = (__u32)va;
 
 	return va;
 }

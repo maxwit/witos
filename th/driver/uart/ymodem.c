@@ -15,7 +15,7 @@
 // fixme: reset fifo
 static void uart_clear_buff()
 {
-	u8  tmp;
+	__u8  tmp;
 	int ret;
 
 	while (1)
@@ -47,13 +47,13 @@ int ymodem_load(struct loader_opt *opt)
 	int ret;
 	int size = 0, count;
 	int blk = 0;
-	u8 stx, blk_num[2], crc[2];
-	u8 *curr_addr;
+	__u8 stx, blk_num[2], crc[2];
+	__u8 *curr_addr;
 
 #ifndef CONFIG_GTH
 	if (!opt->load_addr)
 	{
-		u8 data[1024];
+		__u8 data[1024];
 
 		curr_addr = data;
 	}
@@ -97,7 +97,7 @@ int ymodem_load(struct loader_opt *opt)
 #ifndef CONFIG_GTH
 	for (count = 0; count < size; count++)
 	{
-		ret = uart_recv_byte_timeout((u8 *)opt->file_name + count, MODEM_TIMEOUT);
+		ret = uart_recv_byte_timeout((__u8 *)opt->file_name + count, MODEM_TIMEOUT);
 
 		if (ret == 0)
 		{
@@ -154,8 +154,8 @@ int ymodem_load(struct loader_opt *opt)
 
 		blk_num[0] = uart_recv_byte();
 		blk_num[1] = uart_recv_byte();
-		if ((blk_num[0] ^ blk_num[1]) != (u8)0xFF ||
-			blk_num[0] != (u8)(blk & 0xFF))
+		if ((blk_num[0] ^ blk_num[1]) != (__u8)0xFF ||
+			blk_num[0] != (__u8)(blk & 0xFF))
 		{
 			uart_clear_buff();
 			uart_send_byte(NAK);

@@ -40,17 +40,17 @@ char *strrchr(const char *, size_t);
 
 //------------------ Extra String APIs ------------------
 
-int hex_str_to_val(const char *str, u32 *val);
-int val_to_hex_str(char *str, u32 val);
+int hex_str_to_val(const char *str, __u32 *val);
+int val_to_hex_str(char *str, __u32 val);
 
-int dec_str_to_val(const char *str, u32 *val);
+int dec_str_to_val(const char *str, __u32 *val);
 int val_to_dec_str(char *str, long val);
 
-int hr_str_to_val(const char *str, u32 *val);
-int val_to_hr_str(u32 val, char str[]);
+int hr_str_to_val(const char *str, __u32 *val);
+int val_to_hr_str(__u32 val, char str[]);
 
-int str_to_val(const char *str, u32 *val);
+int str_to_val(const char *str, __u32 *val);
 
-int str_to_ip(u8 ip_val[], const char *ip_str);
-int ip_to_str(char ip_str[], const u32 ip);
-int str_to_mac(u8 mac[], const char *str);
+int str_to_ip(__u8 ip_val[], const char *ip_str);
+int ip_to_str(char ip_str[], const __u32 ip);
+int str_to_mac(__u8 mac[], const char *str);

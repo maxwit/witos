@@ -4,22 +4,22 @@
 
 #if 0
 // tmp
-static inline void udelay(u32 n)
+static inline void udelay(__u32 n)
 {
 	volatile long m = n;
 
 	while (m-- >= 0);
 }
 #else
-void udelay(u32 n);
+void udelay(__u32 n);
 #endif
 
-void mdelay(u32 n);
+void mdelay(__u32 n);
 
 #define ndelay udelay
 
-u32 get_tick(void);
+__u32 get_tick(void);
 
 void inc_tick(void);
 
-void calibrate_delay(u32);
+void calibrate_delay(__u32);

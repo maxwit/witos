@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
 		switch(ch)
 		{
 		case 'a':
-			if ((str_to_val(optarg, (u32 *)&p)) < 0)
+			if ((str_to_val(optarg, (__u32 *)&p)) < 0)
 			{
 				printf("Invaild argument\n");
 
@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
 			break;
 
 		case 'n':
-			if ((str_to_val(optarg, (u32 *)&i)) < 0)
+			if ((str_to_val(optarg, (__u32 *)&i)) < 0)
 			{
 				printf("Invaild argument\n");
 				printf("%s\n", MD_USAGE);
@@ -113,7 +113,7 @@ static void usage(int argc, char *argv[])
 
 int main(int argc, char *argv[])
 {
-	u32 addr, val;
+	__u32 addr, val;
 
 	usage(argc, argv);
 #if 0
@@ -123,8 +123,8 @@ int main(int argc, char *argv[])
 		return -EINVAL;
 	}
 
-	str_to_val(argv[1], (u32 *)&addr);
-	str_to_val(argv[2], (u32 *)&val);
+	str_to_val(argv[1], (__u32 *)&addr);
+	str_to_val(argv[2], (__u32 *)&val);
 #endif
 
 	addr = 0;

@@ -2,13 +2,13 @@
 #include <net/net.h>
 #include "cs8900.h"
 
-static inline u16 cs8900_inw(u16 reg)
+static inline __u16 cs8900_inw(__u16 reg)
 {
 	writew(VA(CS8900_IOBASE + 0x0A), reg);
 	return readw(VA(CS8900_IOBASE + 0x0C));
 }
 
-static inline void cs8900_outw(u16 reg, u16 val)
+static inline void cs8900_outw(__u16 reg, __u16 val)
 {
 	writew(VA(CS8900_IOBASE + 0x0A), reg);
 	writew(VA(CS8900_IOBASE + 0x0C), val);
@@ -17,7 +17,7 @@ static inline void cs8900_outw(u16 reg, u16 val)
 static int cs8900_reset(void)
 {
 	int i;
-	u16 val;
+	__u16 val;
 
 	val = cs8900_inw(PP_SelfCTL);
 	val |= 0x40;
@@ -37,9 +37,9 @@ static int cs8900_reset(void)
 static int cs89x0_send_packet(struct net_device *ndev, struct sock_buff *skb)
 {
 	int i;
-	u16 isq_stat;
-	const u16 *buff;
-	u32 psr;
+	__u16 isq_stat;
+	const __u16 *buff;
+	__u32 psr;
 
 	lock_irq_psr(psr);
 
@@ -55,7 +55,7 @@ static int cs89x0_send_packet(struct net_device *ndev, struct sock_buff *skb)
 		printf("BusST = 0x%04x\n", isq_stat);
 	}
 
-	buff = (const u16 *)skb->data;
+	buff = (const __u16 *)skb->data;
 
 	for (i = 0; i < skb->size; i += 2)
 	{
@@ -70,22 +70,22 @@ static int cs89x0_send_packet(struct net_device *ndev, struct sock_buff *skb)
 	return 0;
 }
 
-static int cs89x0_set_mac(struct net_device *ndev, const u8 mac[])
+static int cs89x0_set_mac(struct net_device *ndev, const __u8 mac[])
 {
 	int i;
 
 	for (i = 0; i < 6; i += 2)
-		cs8900_outw(0x158 + i, *(u16 *)(mac + i));
+		cs8900_outw(0x158 + i, *(__u16 *)(mac + i));
 
 	return 0;
 }
 
-static int cs89x0_isr(u32 irq, void *dev)
+static int cs89x0_isr(__u32 irq, void *dev)
 {
 	int i;
-	u16 isq_stat;
-	u16 rx_stat, rx_size;
-	u16 *buff;
+	__u16 isq_stat;
+	__u16 rx_stat, rx_size;
+	__u16 *buff;
 	struct sock_buff *skb;
 	// struct net_device *ndev = dev;
 
@@ -103,7 +103,7 @@ static int cs89x0_isr(u32 irq, void *dev)
 
 			skb = skb_alloc(0, rx_size);
 			// if NULL
-			buff = (u16 *)skb->data;
+			buff = (__u16 *)skb->data;
 
 			for (i = 0; i < rx_size; i += 2)
 			{
@@ -122,9 +122,9 @@ static int cs89x0_isr(u32 irq, void *dev)
 static int cs89x0_poll(struct net_device *ndev)
 {
 	int i;
-	u16 rx_event;
-	u16 rx_stat, rx_size;
-	u16 *buff;
+	__u16 rx_event;
+	__u16 rx_stat, rx_size;
+	__u16 *buff;
 	struct sock_buff *skb;
 
 	rx_event = cs8900_inw(0x0124);
@@ -141,7 +141,7 @@ static int cs89x0_poll(struct net_device *ndev)
 
 	skb = skb_alloc(0, rx_size);
 	// if NULL
-	buff = (u16 *)skb->data;
+	buff = (__u16 *)skb->data;
 
 	for (i = 0; i < rx_size; i += 2)
 	{
@@ -160,7 +160,7 @@ static int cs89x0_poll(struct net_device *ndev)
 static int __INIT__ cs89x0_init(void)
 {
 	int ret;
-	u16 ven_id, dev_id, val, line_st;
+	__u16 ven_id, dev_id, val, line_st;
 	struct net_device *ndev;
 
 	ven_id = cs8900_inw(0x00);

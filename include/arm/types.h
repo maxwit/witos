@@ -1,12 +1,12 @@
 #pragma once
 
-typedef unsigned char    u8, __u8;
-typedef unsigned short   u16, __u16;
-typedef unsigned int     u32, __u32, size_t;
-typedef int              ssize_t;
-typedef enum {FALSE, TRUE} BOOL;
+typedef unsigned char  __u8;
+typedef unsigned short __u16;
+typedef unsigned int   __u32, size_t;
+typedef signed int     ssize_t;
+typedef enum {false, true} bool;
 
-#define WORD_SIZE              sizeof(u32)
+#define WORD_SIZE              sizeof(__u32)
 #define WORD_ALIGN_UP(addr)    (((addr) + WORD_SIZE - 1) & ~(WORD_SIZE - 1))
 #define WORD_ALIGN_DOWN(addr)  ((addr) & ~(WORD_SIZE - 1))
 #define DWORD_SIZE             (WORD_SIZE << 1)

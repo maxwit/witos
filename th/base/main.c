@@ -17,11 +17,11 @@ int main(void)
 	read_cpu_id();
 
 #ifdef CONFIG_SDRAM_TESTING
-	volatile u32 *p = (u32 *)SDRAM_BASE;
+	volatile __u32 *p = (__u32 *)SDRAM_BASE;
 
-	while (p < (u32 *)(SDRAM_BASE + SDRAM_SIZE))
+	while (p < (__u32 *)(SDRAM_BASE + SDRAM_SIZE))
 	{
-		u32 val1 = *p, val2;
+		__u32 val1 = *p, val2;
 
 		val2 = ~val1;
 		*p = val2;

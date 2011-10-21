@@ -11,9 +11,9 @@
 
 #define GB_SYSCFG_MAGICNUM  0x5a5a5a5a
 
-typedef __u32 u32;
-typedef __u16 u16;
-typedef __u8 u8;
+typedef __u32 __u32;
+typedef __u16 __u16;
+typedef __u8 __u8;
 
 struct sys_config
 {
@@ -23,11 +23,11 @@ struct sys_config
 	__u32 checksum;
 };
 
-static u16 calc_checksum(const void *buff, u32 size)
+static __u16 calc_checksum(const void *buff, __u32 size)
 {
 	int n;
-	u32	chksum;
-	const u16 *p;
+	__u32	chksum;
+	const __u16 *p;
 
 	chksum = 0;
 
@@ -35,9 +35,9 @@ static u16 calc_checksum(const void *buff, u32 size)
 		chksum += *p;
 
 	if (n == 1) {
-		u16 tmp = 0;
+		__u16 tmp = 0;
 
-		*(u8 *)&tmp = *(u8 *)p;
+		*(__u8 *)&tmp = *(__u8 *)p;
 
 		chksum += tmp;
 	}
@@ -48,7 +48,7 @@ static u16 calc_checksum(const void *buff, u32 size)
 	return chksum & 0xffff;
 }
 
-static u32 checksum(struct sys_config *g_sys)
+static __u32 checksum(struct sys_config *g_sys)
 {
 	g_sys->checksum = 0;
 	g_sys->checksum = ~calc_checksum(g_sys, g_sys->offset + g_sys->size);
