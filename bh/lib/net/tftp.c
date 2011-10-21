@@ -40,7 +40,7 @@ static void tftp_send_ack(const int fd, const u16 blk, struct sockaddr_in *remot
 	struct tftp_packet tftp_pkt;
 
 	tftp_pkt.op_code = TFTP_ACK;
-	tftp_pkt.block = CPU_TO_BE16(blk);
+	tftp_pkt.block = htons(blk);
 
 	sendto(fd, &tftp_pkt, TFTP_HDR_LEN, 0,
 		(const struct sockaddr*)remote_addr, sizeof(*remote_addr));
@@ -147,7 +147,7 @@ int tftp_download(struct tftp_opt *opt)
 		switch (tftp_pkt->op_code)
 		{
 		case TFTP_DAT:
-			if (BE16_TO_CPU(tftp_pkt->block) == blk_num)
+			if (ntohs(tftp_pkt->block) == blk_num)
 			{
 				tftp_send_ack(sockfd, blk_num, remote_addr);
 				blk_num++;
@@ -180,7 +180,7 @@ int tftp_download(struct tftp_opt *opt)
 			{
 #ifdef TFTP_DEBUG
 				printf("\t%s(): LOST Packet = 0x%x (0x%x).\r",
-					__func__, blk_num, BE16_TO_CPU(tftp_pkt->block));
+					__func__, blk_num, ntohs(tftp_pkt->block));
 #endif
 				tftp_send_ack(sockfd, blk_num - 1, remote_addr);
 			}
@@ -189,14 +189,14 @@ int tftp_download(struct tftp_opt *opt)
 
 		case TFTP_ERR:
 			printf("\n%s(): %s (Error num = %d)\n",
-				__func__, tftp_pkt->data, BE16_TO_CPU(tftp_pkt->error));
+				__func__, tftp_pkt->data, ntohs(tftp_pkt->error));
 
 			ret = -EIO;
 			goto L1;
 
 		default:
 			printf("\n%s(): Unsupported opcode 0x%02x! (CurBlkNum = %d)\n",
-				__func__, BE16_TO_CPU(tftp_pkt->op_code), blk_num);
+				__func__, ntohs(tftp_pkt->op_code), blk_num);
 
 			ret = -EIO;
 			goto L1;

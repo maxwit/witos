@@ -520,7 +520,7 @@ struct socket *tcp_search_socket(const struct tcp_header *tcp_pkt, const struct 
 		if (saddr->sin_port != tcp_pkt->dst_port)
 		{
 #if 0
-			printf("from %d, src port: 0x%x != 0x%x\n", ip_pkt->src_ip[3], BE16_TO_CPU(saddr->src_port), BE16_TO_CPU(tcp_pkt->dst_port));
+			printf("from %d, src port: 0x%x != 0x%x\n", ip_pkt->src_ip[3], ntohs(saddr->src_port), BE16_TO_CPU(tcp_pkt->dst_port));
 #endif
 			continue;
 		}
@@ -595,7 +595,7 @@ struct socket *udp_search_socket(const struct udp_header *udp_pkt, const struct 
 		if (saddr->sin_port != udp_pkt->dst_port)
 		{
 #if 0
-			printf("from %d, src port: 0x%x != 0x%x\n", ip_pkt->src_ip[3], BE16_TO_CPU(saddr->src_port), BE16_TO_CPU(udp_pkt->dst_port));
+			printf("from %d, src port: 0x%x != 0x%x\n", ip_pkt->src_ip[3], ntohs(saddr->src_port), BE16_TO_CPU(udp_pkt->dst_port));
 #endif
 			continue;
 		}

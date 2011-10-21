@@ -53,7 +53,7 @@ static int pseudo_calculate_checksum(struct sock_buff *skb, u16 *checksum)
 		return -EINVAL;
 	}
 
-	pse_hdr->size = CPU_TO_BE16(skb->size);
+	pse_hdr->size = htons(skb->size);
 
 	if (skb->size & 1)
 	{
@@ -98,7 +98,7 @@ static inline void mac_fill_bcast(u8 mac[])
 static void ether_info(struct ether_header *eth_head)
 {
 
-	printf("\tEther frame type: 0x%04x\n", BE16_TO_CPU(eth_head->frame_type));
+	printf("\tEther frame type: 0x%04x\n", ntohs(eth_head->frame_type));
 
 	printf("\tdest mac: %02x:%02x:%02x:%02x:%02x:%02x\n",
 		eth_head->des_mac[0],
@@ -166,9 +166,9 @@ void tcp_send_packet(struct sock_buff *skb, __u8 flags, struct tcp_option *opt)
 #endif
 	// fixme!!!
 	if (flags & FLG_ACK)
-		tcp_hdr->win_size = CPU_TO_BE16(457);
+		tcp_hdr->win_size = htons(457);
 	else
-		tcp_hdr->win_size = CPU_TO_BE16(14600);
+		tcp_hdr->win_size = htons(14600);
 	tcp_hdr->checksum = 0;
 	tcp_hdr->urg_ptr  = 0;
 
@@ -199,7 +199,7 @@ void udp_send_packet(struct sock_buff *skb)
 	//
 	udp_hdr->src_port = sock->saddr[SA_SRC].sin_port;
 	udp_hdr->dst_port = sock->saddr[SA_DST].sin_port;
-	udp_hdr->udp_len  = CPU_TO_BE16(skb->size);
+	udp_hdr->udp_len  = htons(skb->size);
 	udp_hdr->checksum = 0;
 
 	ip_send_packet(skb, PROT_UDP);
@@ -273,7 +273,7 @@ static int tcp_layer_deliver(struct sock_buff *skb, const struct ip_header *ip_h
 	{
 	case FLG_SYN:
 	case FLG_SYN | FLG_ACK:
-		sock->ack_num = BE32_TO_CPU(tcp_hdr->seq_num) + 1;
+		sock->ack_num = ntohl(tcp_hdr->seq_num) + 1;
 		skb_free(skb);
 		tcp_send_ack(sock);
 
@@ -289,12 +289,12 @@ static int tcp_layer_deliver(struct sock_buff *skb, const struct ip_header *ip_h
 	case FLG_FIN | FLG_ACK | FLG_PSH:
 		if (skb->size > 0)
 		{
-			sock->ack_num = BE32_TO_CPU(tcp_hdr->seq_num) + skb->size;
+			sock->ack_num = ntohl(tcp_hdr->seq_num) + skb->size;
 			list_add_tail(&skb->node, &sock->rx_qu);
 		}
 		else
 		{
-			sock->ack_num = BE32_TO_CPU(tcp_hdr->seq_num) + 1;
+			sock->ack_num = ntohl(tcp_hdr->seq_num) + 1;
 
 			if (TCPS_FIN_WAIT1 == sock->state)
 			{
@@ -336,7 +336,7 @@ static int tcp_layer_deliver(struct sock_buff *skb, const struct ip_header *ip_h
 		}
 
 	case FLG_ACK | FLG_PSH:
-		sock->ack_num = BE32_TO_CPU(tcp_hdr->seq_num) + skb->size;
+		sock->ack_num = ntohl(tcp_hdr->seq_num) + skb->size;
 		list_add_tail(&skb->node, &sock->rx_qu);
 		tcp_send_ack(sock);
 
@@ -444,7 +444,7 @@ static int icmp_deliver(struct sock_buff *skb, const struct ip_header *ip_hdr)
 	            ip_hdr->des_ip[1],
 	            ip_hdr->des_ip[2],
 	            ip_hdr->des_ip[3],
-	            BE16_TO_CPU(ping_hdr->seqno));
+	            ntohs(ping_hdr->seqno));
 
 	    break;
 
@@ -464,7 +464,7 @@ int ip_layer_deliver(struct sock_buff *skb)
 	ip_hdr_len = (ip_hdr->ver_len & 0xf) << 2;
 
 	skb->data += ip_hdr_len;
-	skb->size = BE16_TO_CPU(ip_hdr->total_len) - ip_hdr_len;
+	skb->size = ntohs(ip_hdr->total_len) - ip_hdr_len;
 
 	if (ip_hdr_len < IP_HDR_LEN)
 	{
@@ -527,13 +527,12 @@ void ip_send_packet(struct sock_buff *skb, u8 prot)
 
 	ip_hdr->ver_len   = 0x45;
 	ip_hdr->tos       = 0;
-	ip_hdr->total_len = (u16)CPU_TO_BE16((u16)skb->size);
-	ip_hdr->id        = (u16)CPU_TO_BE16(ip_id); //
-	ip_hdr->flag_frag = (u16)CPU_TO_BE16(0x4000);
+	ip_hdr->total_len = htons((u16)skb->size);
+	ip_hdr->id        = htons(ip_id); //
+	ip_hdr->flag_frag = htons(0x4000);
 	ip_hdr->ttl       = 64;
 	ip_hdr->up_prot   = prot;
 	ip_hdr->chksum    = 0;
-
 	ip_id++;
 
 	memcpy(ip_hdr->src_ip, &sock->saddr[SA_SRC].sin_addr, IPV4_ADR_LEN);
@@ -543,7 +542,7 @@ void ip_send_packet(struct sock_buff *skb, u8 prot)
 
 	nip = sock->saddr[SA_DST].sin_addr.s_addr;
 
-	if (ip_is_bcast(BE32_TO_CPU(nip)))
+	if (ip_is_bcast(ntohl(nip)))
 	{
 		mac_fill_bcast(mac);
 		pmac = mac;
@@ -585,7 +584,7 @@ void arp_send_packet(const u8 nip[], const u8 *mac, u16 op_code)
 
 	arp_pkt = (struct arp_packet *)skb->data;
 
-	arp_pkt->hard_type = CPU_TO_BE16(1);
+	arp_pkt->hard_type = htons(1);
 	arp_pkt->prot_type = ETH_TYPE_IP;
 	arp_pkt->hard_size = MAC_ADR_LEN;
 	arp_pkt->prot_size = IPV4_ADR_LEN;
@@ -623,7 +622,7 @@ static int arp_recv_packet(struct sock_buff *skb)
 	memcpy(&ip, arp_pkt->src_ip, 4);
 
 	DPRINT("\t%s ARP received from: %d.%d.%d.%d\n",
-		g_arp_desc[BE16_TO_CPU(arp_pkt->op_code)],
+		g_arp_desc[ntohs(arp_pkt->op_code)],
 		arp_pkt->src_ip[0], arp_pkt->src_ip[1], arp_pkt->src_ip[2], arp_pkt->src_ip[3]);
 
 	switch (arp_pkt->op_code)

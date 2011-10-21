@@ -157,10 +157,10 @@ int main(int argc, char *argv[])
 	}
 
 	local_addr.sin_addr.s_addr = 0;
-	local_addr.sin_port = CPU_TO_BE16(68);
+	local_addr.sin_port = htons(68);
 
 	memset(&remote_addr.sin_addr, 0xff, IPV4_ADR_LEN);
-	remote_addr.sin_port = CPU_TO_BE16(67);
+	remote_addr.sin_port = htons(67);
 
 	ret = bind(sockfd, (const struct sockaddr *) &local_addr, sizeof(local_addr));
 	if (ret < 0)

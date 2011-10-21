@@ -14,7 +14,7 @@ Load file from uart with kermit, and write to storage or memory only (default to
 command list:r
 	load
 	send
-	config
+    setup
 	test
 
 See 'uart <command> -h' for more information on a specific command.
