@@ -2,11 +2,18 @@ description:
   g-bios system configuration utility.
 
 usage:
-  config [options] [<attribute> [<value>]]
+  config [<options>] [<attr> [<value>]]
 
 options:
-    -a <attr> <value>     adds a new attribue with value
-    -r <attr>             removes the attribute
-    -g <attr>             get value
-    -l                    list all
-    -h                    this help
+    -a <attr> <value>
+     adds a new attribue with value.
+    -d <attr>
+     removes the attribute.
+    -s <attr> <value>
+     set the <attr> with new <value>.
+    -g <attr>
+     get value of <attr>.
+    -l
+     list all information. (default)
+    -h
+     this help.

@@ -1,12 +1,11 @@
 description:
-  List information about the FILEs
+  list the contents of a directory or block device.
 
-Usage:
-  ls [OPTION]... [FILE]...
+usage:
+  ls [<options>]
 
 options:
-  <volume> Optional parameters, the HOME volume by default
-  -l [FILE]
-   list detail information of the FILE (the current directory by default), if the FILE is a device, the infomation of the device will be list
+  -l
+   list detail information (default).
   -h
-   human readable
+   this help.

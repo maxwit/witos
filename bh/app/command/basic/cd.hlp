@@ -1,8 +1,6 @@
 description:
-  Change directory to the destination volume
+  Change CWD.
 
 usage:
-  cd [<volume>]
-
-options:
-  <volume> Optional parameters, the HOME volume by default
+  cd [<vol>]
+  change CWD to the volume <vol> (HOME by default).
