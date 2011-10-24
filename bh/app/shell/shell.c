@@ -796,12 +796,12 @@ static int cmd_exec(const char *command_line)
 			current->argv = argv;
 			current->exe  = exe;
 			current->help = get_help(argv[0]); // fixme
-			set_current_thread(current);
+			set_current_task(current);
 
 			getopt_init();
 			ret = main(argc, argv);
 
-			set_current_thread(NULL);
+			set_current_task(NULL);
 			free(current);
 
 #if 0

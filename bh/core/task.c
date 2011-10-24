@@ -3,12 +3,12 @@
 
 static struct task *g_current;
 
-struct task *get_current_thread(void)
+struct task *get_current_task(void)
 {
 	return g_current;
 }
 
-void set_current_thread(struct task *current)
+void set_current_task(struct task *current)
 {
 	g_current = current;
 }
@@ -32,7 +32,7 @@ int usage(void)
 	const struct task *current;
 	const struct help_info *help, *subcmd;
 
-	current = get_current_thread();
+	current = get_current_task();
 	assert(current);
 
 	help = current->help;
