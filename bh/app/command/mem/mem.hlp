@@ -1,36 +1,34 @@
+descrition:
+  memory debug utility.
 
-static void usage(int argc, char *argv[])
-{
-	printf("Usage: mw <ADDR> <VAL>\n"
-		"Write the VAL to ADDR of memory.\n");
-}
+usage:
+  mem <command> [<args>]
 
-static void usage(int argc, char *argv[])
-{
-#if 0
-
-Usage: mem <command> [<args>]
 command list:
-    dump     display memory in hex and/or ascii modes
-    write    write data to specified memory address
-	set      set a memory region
-	used     show used/free infomation
+  move     memory move
+  copy     memory copy
+  set      memory set
+  dump     display memory in hex and/or ascii modes
+  free     show used/free infomation
 
-See 'mem <command> -h' for more information on a specific command.
+specific move/copy options:
+  -s <src>
+   source address
+  -d <dst>
+   destination address
+  -l <size>
+   move/copy size, in byte|K|M|G, default is byte.
 
-generic options:
-    -a <memory>    start memory address
-	-w <width>     unit size (1/2/4 bytes)
-	-h             this help
+specific set options: (mem set [<options>] [<val1>, ...])
+  -a <address>
+   write the value list to memory begin with <address>.
+  -w <1|2|4|8>
+   operation unit, default is 4-byte.
 
-specific dump options :
-    -s <bytes>     default is sector size
-    -d <d|D|o|O|x|X>
-
-specific write options :
-	-a <address> <value list>
-                   write the value list to memory from <address> in unit specified by -w
-
-#endif
-}
-
+specific dump options:
+  -a <address>
+   start memory address.
+  -l <len>
+   data size to dump.
+  -d <o|O|d|D|x|X>
+   display format, default is hex.
