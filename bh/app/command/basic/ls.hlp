@@ -1,10 +1,12 @@
+description:
+  List information about the FILEs
 
-static void usage(int argc, char *argv[])
-{
-	printf("Usage: ls [OPTION]... [FILE]...\n"
-		"List information about the FILEs (the current directory by default).\n"
-		"\nOPTION:\n"
-		"\t-l : list detail information of the file \n"
-		"\t-h : human readable\n");
-}
+Usage:
+  ls [OPTION]... [FILE]...
 
+options:
+  <volume> Optional parameters, the HOME volume by default
+  -l [FILE]
+   list detail information of the FILE (the current directory by default), if the FILE is a device, the infomation of the device will be list
+  -h
+   human readable
