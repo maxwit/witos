@@ -1,33 +1,20 @@
+description:
+  disk utility xxxx
 
-static void usage(int argc, char *argv[])
-{
-#if 0
+usage:
+  disk <command> [<args>]
 
-Usage: disk <command> [<args>]
 command list:
     scan     scan all MMC/SD devices, echo informations
     dump     read and echo MMC/SD datas in each block
     write    write data from memory to disk drive
 
-See 'disk <command> -h' for more information on a specific command.
-
 generic options:
-    -a <address>   start disk address
-    -m <memory>    start memory address
-	-s <size>      data size (1/2/4 bytes)
-	-h             this help
-
-#endif
-
-	if (!strcmp(argv[1], "scan"))
-		printf("\nUsage: mmc scan\n");
-	else if (!strcmp(argv[1], "dump"))
-		printf("\nUsage: mmc dump [option <value>]\n"
-				"\nOptions:\n"
-				"  -a \tset start address\n"
-				"  -h \tthis help\n"
-				);
-	else
-		;
-}
-
+    -a <address>
+     start disk address
+    -m <memory>
+     start memory address
+	-s <size>
+     data size (1/2/4 bytes)
+	-h
+     this help
