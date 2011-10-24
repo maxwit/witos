@@ -2,7 +2,7 @@ descritioin:
   Trivial File Transfer Protocol client. 
 
 usage:
-  tftp <command> [<args>]
+  tftp [<command> [<args>]
 
 command list:
   get    download file
