@@ -15,8 +15,6 @@ command list:
 generic options:
   -a <address>
    flash address, in byte|page|block|K|M|G.
-  -m <memory>
-   memory address, in byte.
   -h
    this help.
 
@@ -27,6 +25,8 @@ specific dump options:
 specific read/write options:
   -f <file>
    image file name to read or write.
+  -m <memory>
+   memory address, in byte. it will change the JUMP adress.
 
 specific erase options:
   -c <size>

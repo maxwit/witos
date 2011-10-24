@@ -1,36 +1,27 @@
+descritioin:
+  Trivial File Transfer Protocol client. 
 
-static void usage(int argc, char *argv[])
-{
-#if 0
-
-Usage: tftp <command> [<args>]
+usage:
+  tftp <command> [<args>]
 
 command list:
-	get         download file
-    put         upload file
-
-See 'disk <command> -h' for more information on a specific command.
+  get    download file
+  put    upload file
 
 generic options:
-	-r <URL>     remote URL, i.e. "10.0.0.2:69/g-bios-bh.bin".
-	-l <path>    local path.
-	-m <mode>    transfer mode: text or binary (default is binary).
-	-t <type>    image type for image file burning (default auto detect)
-    -v           verbose.
-    -h           this help
+  -r <URL>
+   remote URL, i.e. "10.0.0.2:69/g-bios-bh.bin".
+  -l <path>
+   local path.
+  -m <mode>
+   transfer mode: text or binary (default is binary).
+  -t <type>
+   image type for image file burning (default auto detect)
+  -v
+   verbose mode.
+  -h
+   this help.
 
-<get> options:
-    -a <addr>    only load to the memory address <addr>,
-                 without writing to stoarge.
-
-#endif
-
-	printf("Usage: tftp [option <value>] [-f] <filename>\n"
-		"\noptions:\n"
-		"  -a   \tmemory address [needed in few cases]\n"
-		"  -m   \tonly download to memory, without writing to storage\n"
-		"  -f   \tfile name for download\n"
-		"  -s   \ttftp server ip\n"
-		"  -h   \tthis help\n");
-}
-
+specific get options:
+  -a <address>
+   only load to the memory <address>, without writing to stoarge. (affect GO).
