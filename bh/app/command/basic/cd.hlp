@@ -1,9 +1,8 @@
+description:
+  Change directory to the destination volume
 
-static void usage(int argc, char *argv[])
-{
-	if (2 == argc)
-		printf("Invalid volume \"%s\"!\n", argv[1]);
+usage:
+  cd [<volume>]
 
-	printf("Usage: cd <volume>\n");
-}
-
+options:
+  <volume> Optional parameters, the HOME volume by default
