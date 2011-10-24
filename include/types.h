@@ -15,7 +15,7 @@
 // #define PRINT_ARG_FORMAT __attribute__((format (printf, 1, 2)))
 
 #define DECLARE_REBOOT(func) \
-	void reboot(void) __attribute__((alias(#func)))
+	void reset(void) __attribute__((alias(#func)))
 
 #define NULL  ((void *)0)
 

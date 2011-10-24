@@ -248,3 +248,7 @@
 #define DISPC_VID_PICTURE_SIZE	0x0028
 #define DISPC_VID_ACCU0			0x002C
 #define DISPC_VID_ACCU1			0x0030
+
+// reset
+#define PRM_BASE		0x48307200
+#define PRM_RSTCTRL		0x50

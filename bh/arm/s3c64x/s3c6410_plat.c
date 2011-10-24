@@ -138,4 +138,13 @@ static int __INIT__ mw61_init(void)
 	return 0;
 }
 
+static void s3c6410_reset(void)
+{
+	__u32 val;
+
+	val = readl(VA(RST_BASE + RST_STAT));
+	val |= 0x1;
+	writel(VA(RST_BASE + RST_STAT), val);
+}
+
 PLAT_INIT(mw61_init);
