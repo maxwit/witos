@@ -1,11 +1,13 @@
 description:
-  Get a valid ip address from the dhcp server for interface
+  dynamic host configuration protocol client.
 
 usage:
-  dhclient [-s <address>] [interface]
+  dhclient [<options>]
 
 options:
-  -s <address>
-   update Server IP address to DHCP server
+  -s
+   update the server address in system configuration to the DHCP server.
+  -x <NIC>
+   specify the network interface.
   -h 
-   this help
+   this help.
