@@ -1,5 +1,5 @@
 description:
-  disk utility xxxx
+  generic disk drive utility. support MMC/eMMC/SD, ATA, SCSI, etc.
 
 usage:
   disk <command> [<args>]
@@ -11,10 +11,10 @@ command list:
 
 generic options:
     -a <address>
-     start disk address
+     start disk address, in byte or sector.
     -m <memory>
-     start memory address
-	-s <size>
-     data size (1/2/4 bytes)
+     start memory address.
+	-w <1|2|4|8>
+     data unit size.
 	-h
-     this help
+     this help.
