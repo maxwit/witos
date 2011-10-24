@@ -25,6 +25,15 @@ extern const struct help_info g_help_begin[], g_help_end[];
 static struct command_stack *g_cmd_stack = NULL;
 static char g_cur_vol, g_home_vol = 'A';
 
+extern int help(int argc, char *argv[]);
+
+const static struct command build_in_cmd[] = {
+	{
+		.name = "help",
+		.main = help,
+	},
+};
+
 static char shell_getchar(void)
 {
 	char ch;
@@ -203,6 +212,14 @@ static int cmd_match(char *buf, int *cur_pos, int *cur_max)
 	}
 
 	pre_space_count = get_pre_space_count(buf);
+
+	for (exe = build_in_cmd; exe < build_in_cmd + ARRAY_ELEM_NUM(build_in_cmd); exe++)
+	{
+		if (!*cur_pos || strncmp(exe->name, buf + pre_space_count, *cur_pos - pre_space_count) == 0)
+		{
+			strcpy(psz_result[j++], exe->name);
+		}
+	}
 
 	for (exe = g_exe_begin; exe < g_exe_end; exe++)
 	{
@@ -782,41 +799,50 @@ static int cmd_exec(const char *command_line)
 		return argc;
 
 	// fixme
+	for (exe = build_in_cmd; exe < build_in_cmd + ARRAY_ELEM_NUM(build_in_cmd); exe++) {
+		if (!strncmp(exe->name, argv[0], MAX_ARG_LEN)) {
+			goto L1;
+		}
+	}
+
 	for (exe = g_exe_begin; exe < g_exe_end; exe++) {
 		if (!strncmp(exe->name, argv[0], MAX_ARG_LEN)) {
-			main = exe->main;
-			if (!main)
-				return -EINVAL;
-
-			current = malloc(sizeof(*current));
-			if (!current)
-				return -ENOMEM;
-
-			current->argc = argc;
-			current->argv = argv;
-			current->exe  = exe;
-			current->help = get_help(argv[0]); // fixme
-			set_current_task(current);
-
-			getopt_init();
-			ret = main(argc, argv);
-
-			set_current_task(NULL);
-			free(current);
-
-#if 0
-			if (ret < 0)
-				printf("fail to exec %s! (exit %d)\n", argv[0], ret);
-#endif
-
-			putchar('\n');
-			return ret;
+			goto L1;
 		}
 	}
 
 	printf("  command \"%s\" not found!\n"
 		   "  Please use \"help\" to get g-bios command list.\n", argv[0]);
 	return -ENOEXEC;
+
+L1:
+	main = exe->main;
+	if (!main)
+		return -EINVAL;
+
+	current = malloc(sizeof(*current));
+	if (!current)
+		return -ENOMEM;
+
+	current->argc = argc;
+	current->argv = argv;
+	current->exe  = exe;
+	current->help = get_help(argv[0]); // fixme
+	set_current_task(current);
+
+	getopt_init();
+	ret = main(argc, argv);
+
+	set_current_task(NULL);
+	free(current);
+
+#if 0
+	if (ret < 0)
+		printf("fail to exec %s! (exit %d)\n", argv[0], ret);
+#endif
+
+	putchar('\n');
+	return ret;
 }
 
 // fixme: to be removed

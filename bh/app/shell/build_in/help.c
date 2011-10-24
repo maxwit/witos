@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-int main(int argc, char *argv[])
+int help(int argc, char *argv[])
 {
 	int ret;
 	const struct command *exe;
