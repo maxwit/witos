@@ -5,13 +5,13 @@ usage:
   config [<options>] [<attr> [<value>]]
 
 options:
-    -a <attr> <value>
-     adds a new attribue with value.
-    -d <attr>
-     removes the attribute.
-    -s <attr> <value>
-     set the <attr> with new <value>.
-    -g <attr>
-     get value of <attr>.
-    -l
-     list all information. (default)
+  -a <attr> <value>
+   adds a new attribue with value.
+  -d <attr>
+   removes the attribute.
+  -s <attr> <value>
+   set the <attr> with new <value>.
+  -g <attr>
+   get value of <attr>.
+  -l
+   list all information. (default)

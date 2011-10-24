@@ -2,7 +2,7 @@ description:
   g-bios boot kernel configuration utility
 
 usage:
-  boot [options] ...
+  boot [OS] [<options>] ...
 
 options:
   -t [kernel_image_name]
