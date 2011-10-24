@@ -1,1 +1,1 @@
-dir-y := $(CONFIG_ARCH) base filesys driver interrupt lib app mem shell
+dir-y := $(CONFIG_ARCH) core mm driver fs lib app

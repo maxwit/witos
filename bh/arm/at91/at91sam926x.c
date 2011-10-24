@@ -44,10 +44,10 @@ void  at91_gpio_conf_output(__u32 nPioIdx, __u32 mask, int isPullUp)
 }
 */
 
-static void at91_reboot(void)
+static void at91_reset(void)
 {
 	writel(VA(AT91SAM926X_PA_RSTC), 0xa5 << 24 | 0xd);
 }
 
-DECLARE_REBOOT(at91_reboot);
+DECLARE_REBOOT(at91_reset);
 

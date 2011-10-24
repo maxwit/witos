@@ -1,0 +1,9 @@
+
+static void usage(int argc, char *argv[])
+{
+	printf("Usage:go [address]\n");
+#if 0
+	if address is not specified, jump to the default jump address!
+#endif
+}
+

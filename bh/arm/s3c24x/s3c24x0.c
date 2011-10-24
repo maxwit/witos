@@ -1,6 +1,6 @@
 #include <arm/s3c24x0.h>
 
-static void s3c24x_reboot(void)
+static void s3c24x_reset(void)
 {
 	__u32 val;
 
@@ -11,4 +11,4 @@ static void s3c24x_reboot(void)
 	while(1);
 }
 
-DECLARE_REBOOT(s3c24x_reboot);
+DECLARE_REBOOT(s3c24x_reset);

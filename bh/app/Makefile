@@ -1,11 +1,1 @@
-dir-y += sysconf
-dir-$(CONFIG_FLASH) += flash
-dir-y += memory
-dir-$(CONFIG_NET) += net
-dir-y += serial
-dir-y += boot
-dir-y += shell
-dir-y += misc
-dir-$(CONFIG_FS) += fs
-dir-$(CONFIG_MMC) += disk
-dir-$(CONFIG_DISPLAY) += display
+dir-y = shell command help

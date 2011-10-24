@@ -1,0 +1,23 @@
+
+static void usage(int argc, char *argv[])
+{
+#if 0
+Usage: config [options] [<attribute> [<value>]]
+g-bios system configuration utility.
+
+options:
+    -a <attr> <value>     adds a new attribue with value
+    -r <attr>             removes the attribute
+    -g <attr>             get value
+    -l                    list all
+    -h                    this help
+
+#endif
+	printf("Usage: config [OPTION [VAL]]\n"
+		"Operate system configuration information!\n"
+		"\nOPTION:\n"
+		"\t-l : List system configuration information!"
+		"\t-r [all|net|boot]: reset system configuration(default all).\n"
+		"\t-h : this help message.\n");
+}
+

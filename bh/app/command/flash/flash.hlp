@@ -1,0 +1,64 @@
+static void usage(int argc, char *argv[])
+{
+#if 0
+Usage: flash <command> [<args>]
+flash utility xxxx
+
+command list:
+  info      show the information of partition and host
+  dump      print flash data
+  read      load data from flash to memory
+  write     store the data from memory to flash
+  erase     erase flash
+  scanbb    scan flash bad block
+
+See 'flash <command> -h' for more information on a specific command.
+
+generic options:
+  -a <address>
+   flash address, in byte|page|block|K|M|G.
+  -m <memory>
+   memory address, in byte.
+  -h
+   this help.
+
+specific dump options:
+  -d <d|D|o|O|x|X>
+   display format.
+
+specific read/write options:
+  -f <file>
+   image file name to read or write.
+
+specific erase options:
+  -c <size>
+   cleanmark size for JFFS2.
+
+#else
+	// common options for eash flash command:
+	printf("  -a    flash address (in byte/page/block/K/M/G)\n"
+		"  -s    size of data\n"
+		"  -h    this message\n"
+		);
+
+	if (0 == strcmp(argv[1], "scanbb"))
+	{
+		// TODO: add usage here!
+	}
+	else if (0 == strcmp(argv[1], "erase"))
+	{
+		printf("  -f    force allow bad block\n"
+			"  -c   cleanmarker size (support JFFS2)\n");
+	}
+	else if (0 == strcmp(argv[1], "read") || 0 == strcmp(argv[1], "write"))
+	{
+		printf("  -m   memory address\n");
+	}
+	else if (0 == strcmp(argv[1], "info"))
+	{
+		// TODO: add usage here!
+	}
+
+	printf("  -h	 this message\n");
+#endif
+}

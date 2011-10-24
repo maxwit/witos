@@ -1,0 +1,9 @@
+
+static void usage(int argc, char *argv[])
+{
+	if (2 == argc)
+		printf("Invalid volume \"%s\"!\n", argv[1]);
+
+	printf("Usage: cd <volume>\n");
+}
+

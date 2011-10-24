@@ -3,31 +3,66 @@
 #include <types.h>
 #include <init.h>
 
-#define __GBIOS_APP__       __attribute__((section(".gbios_application")))
-#define MAX_ARG_LEN			512
-#define MAX_ARGC			64
-#define CMD_OPTION_LEN					32
-#define CMD_OPTION_COUNT				64
-#define CMD_MAX_LEN						128
+#define __GSECT_EXE__       __attribute__((section(".gsect_exe")))
+#define __GSECT_HELP__      __attribute__((section(".gsect_help")))
 
-struct cmd_info
-{
-	const char *name;
-	int (*cmd)(int argc, char *argv[]);
-};
+#define MAX_ARG_LEN         512
+#define MAX_ARGC            64
 
-struct gapp
+// command
+struct command
 {
 	const char *name;
 	int (*main)(int argc, char *argv[]);
 };
 
-#define INSTALL_APPLICATION(app_name, app_main) \
-	static const __USED__ __GBIOS_APP__ struct gapp __gbios_app_##app_name = { \
-		.name = #app_name, \
-		.main = app_main, \
+#define REGISTER_EXECUTIVE(id, entry) \
+	static const __USED__ __GSECT_EXE__ struct command __g_exe_##id##__ = { \
+		.name = #id, \
+		.main = entry, \
 	}
 
-void insert_one_key(char input_c, char *buf, int *cur_pos, int *cur_max);
-void show_input_buff(char *buf, const int cur_pos, const int cur_max);
-void show_prompt(void);
+// help
+struct option {
+	const char *opt;
+	const char *desc;
+};
+
+struct help_info {
+	const char *name;
+	const char *desc;
+	int level;
+	int count;
+	union {
+		const struct help_info *cmdv;
+		const struct option *optv;
+		const void *list;
+	} u;
+};
+
+#define REGISTER_HELP_INFO(n, d, l, v) \
+	static const __USED__ __GSECT_HELP__ struct help_info __g_help_##n##__ = { \
+		.name  = #n, \
+		.desc  = d, \
+		.level = l, \
+		.count = ARRAY_ELEM_NUM(v), \
+		.u.list = v, \
+	}
+
+#define REGISTER_HELP_L1(n, d, v) REGISTER_HELP_INFO(n, d, 1, v)
+#define REGISTER_HELP_L2(n, d, v) REGISTER_HELP_INFO(n, d, 2, v)
+
+// run-time thread
+struct task
+{
+	int argc;
+	char **argv;
+	const struct command *exe;
+	const struct help_info *help;
+};
+
+struct task *get_current_thread(void);
+
+void set_current_thread(struct task *);
+
+int usage(void);
