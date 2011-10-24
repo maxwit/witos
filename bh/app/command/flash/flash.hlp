@@ -15,8 +15,6 @@ command list:
 generic options:
   -a <address>
    flash address, in byte|page|block|K|M|G.
-  -h
-   this help.
 
 specific dump options:
   -d <d|D|o|O|x|X>

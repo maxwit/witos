@@ -62,7 +62,4 @@ struct task
 };
 
 struct task *get_current_task(void);
-
 void set_current_task(struct task *);
-
-int usage(void);

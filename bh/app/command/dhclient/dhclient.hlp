@@ -9,5 +9,3 @@ options:
    update the server address in system configuration to the DHCP server.
   -x <NIC>
    specify the network interface.
-  -h 
-   this help.

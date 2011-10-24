@@ -1,6 +1,5 @@
 #include <string.h>
 #include <block.h>
-#include <shell.h>
 
 #define IS_ALPHBIT(c) (((c) >= 'a' && (c) <= 'z') || \
 			((c) >= 'A' && (c) <= 'Z'))

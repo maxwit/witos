@@ -19,8 +19,6 @@ generic options:
    image type for image file burning (default auto detect)
   -v
    verbose mode.
-  -h
-   this help.
 
 specific get options:
   -a <address>

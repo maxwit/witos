@@ -7,5 +7,3 @@ usage:
 options:
   -l
    list detail information (default).
-  -h
-   this help.

@@ -16,5 +16,3 @@ generic options:
      start memory address.
 	-w <1|2|4|8>
      data unit size.
-	-h
-     this help.

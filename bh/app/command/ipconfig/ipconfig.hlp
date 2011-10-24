@@ -21,6 +21,3 @@ options:
 
   -s
    save to sysconfig
-
-  -h
-   this help

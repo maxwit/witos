@@ -3,7 +3,7 @@
 #include <sysconf.h>
 #include <string.h>
 #include <bar.h>
-#include <app.h>
+#include <task.h>
 
 static int flash_str_to_val(char * str, __u32 * val, char *unit)
 {

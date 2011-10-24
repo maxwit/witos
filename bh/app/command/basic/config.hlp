@@ -15,5 +15,3 @@ options:
      get value of <attr>.
     -l
      list all information. (default)
-    -h
-     this help.

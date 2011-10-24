@@ -1,1 +1,1 @@
-dir-y = shell command help
+dir-y = shell command

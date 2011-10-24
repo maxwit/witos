@@ -7,5 +7,3 @@ usage:
 options:
   -v
    show more verbose messages when rebooting.
-  -h
-   this help

@@ -2,7 +2,7 @@
 #include <mmc/mmc_ops.h>
 #include <getopt.h>
 #include <string.h>
-#include <app.h>
+#include <task.h>
 
 #define BUFF_LEN		512
 #define BLK_LEN			512

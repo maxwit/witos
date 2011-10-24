@@ -11,8 +11,6 @@ command list:
 generic options:
   -v
    verbose mode
-  -h
-   this help.
 
 specific get options:
   -m <memory>

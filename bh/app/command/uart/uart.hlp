@@ -21,5 +21,3 @@ generic options:
    load data to memory, but not write to storage.if <address> is not specified, then malloc one. (affect GO!)
   -v
    verbose mode
-  -h
-   this help
