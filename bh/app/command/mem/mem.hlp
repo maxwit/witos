@@ -7,6 +7,7 @@ usage:
 command list:
   move     memory move
   copy     memory copy
+  write    memory write
   set      memory set
   dump     display memory in hex and/or ascii modes
   free     show used/free infomation
@@ -23,7 +24,7 @@ specific set options: (mem set [<options>] [<val1>, ...])
   -a <address>
    write the value list to memory begin with <address>.
   -w <1|2|4|8>
-   operation unit, default is 4-byte.
+   operation unit, default is 1-byte.
 
 specific dump options:
   -a <address>
