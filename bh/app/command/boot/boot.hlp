@@ -1,19 +1,25 @@
+description:
+  g-bios boot kernel configuration utility
 
-static void usage(int argc, char *argv[])
-{
-	printf("Usage: boot [options] \n"
-		"\noptions:\n"
-		"\t-t [kernel_image_name]:  download kernel image via tftp\n"
-		"\t-s <mmc:kernel_image_name>:  load kernel image via mmc\n"
-		"\t-f [<part_num>]:  root=/dev/mtdblock<part_num>\n"
-		"\t-n [nfs_server:/path/to/nfs/root]:  boot via NFS\n"
-		"\t-l [kernel command line]:  boot via spcified CmdLine\n"
-		"\t-r [ramdisk_image_name]:  boot with Ramdisk\n"
-		"\t-c <console_name, baudrate>:  set console name and baudrate\n"
-		"\t-m <machine ID>:  set board machine ID\n"
-		"\t-v:  print the linux parameters and quit\n"
-		"\nExamples:\n"
-		"\t..."
-		);
-}
+usage:
+  boot [options] ...
 
+options:
+  -t [kernel_image_name]
+   download kernel image via tftp
+  -s <mmc:kernel_image_name>
+   load kernel image via mmc
+  -f [<part_num>]
+   root=/dev/mtdblock<part_num>
+  -n [nfs_server:/path/to/nfs/root]
+   boot via NFS
+  -l [kernel command line]
+   boot via spcified CmdLine
+  -r [ramdisk_image_name]
+   boot with Ramdisk
+  -c <console_name, baudrate>
+   set console name and baudrate
+  -m <machine ID>
+   set board machine ID
+  -v
+   print the linux parameters and quit
