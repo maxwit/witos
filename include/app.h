@@ -52,7 +52,7 @@ struct help_info {
 #define REGISTER_HELP_L1(n, d, v) REGISTER_HELP_INFO(n, d, 1, v)
 #define REGISTER_HELP_L2(n, d, v) REGISTER_HELP_INFO(n, d, 2, v)
 
-// run-time thread
+// run-time task
 struct task
 {
 	int argc;
@@ -61,8 +61,8 @@ struct task
 	const struct help_info *help;
 };
 
-struct task *get_current_thread(void);
+struct task *get_current_task(void);
 
-void set_current_thread(struct task *);
+void set_current_task(struct task *);
 
 int usage(void);
