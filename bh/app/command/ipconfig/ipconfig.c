@@ -14,10 +14,8 @@ static int show_net_info(struct net_device *ndev)
 	ndev_ioctl(ndev, NIOC_GET_MAC, mac);
 	ndev_ioctl(ndev, NIOC_GET_STATUS, &net_status);
 
-	if (net_status.connected)
-	{
-		switch (net_status.link_speed)
-		{
+	if (net_status.connected) {
+		switch (net_status.link_speed) {
 		case ETHER_SPEED_10M_HD:
 			speed = "10M_HD";
 			break;
@@ -68,23 +66,23 @@ static int show_net_info(struct net_device *ndev)
 
 int main(int argc, char *argv[])
 {
-	int i;
 	__u32 local_ip, local_mask;
 	__u8 mac[MAC_ADR_LEN];
+	int flag_ip, flag_mask, flag_mac, flag_conf;
 	struct net_device *ndev;
 	struct list_node *iter, *ndev_list;
+	int opt;
+	char ip[IPV4_STR_LEN];
+	char mask[IPV4_STR_LEN];
 
 	ndev_list = net_get_device_list();
-	if (list_is_empty(ndev_list))
-	{
+	if (list_is_empty(ndev_list)) {
 		printf("There're no net device found!\n");
 		return -ENODEV;
 	}
 
-	if (argc == 1)
-	{
-		list_for_each(iter, ndev_list)
-		{
+	if (argc == 1) {
+		list_for_each(iter, ndev_list) {
 			ndev = container_of(iter, struct net_device, ndev_node);
 			show_net_info(ndev);
 		}
@@ -94,60 +92,85 @@ int main(int argc, char *argv[])
 
 	ndev = container_of(ndev_list->next, struct net_device, ndev_node);
 
-	for (i = 1; i < argc; i++)
-	{
-		if (strlen(argv[i]) >= 3)
-		{
-			if (argv[i][0] == 'e' && argv[i][1] == 't' && argv[i][2] == 'h')
-			{
-				list_for_each(iter, ndev_list)
-				{
-					ndev = container_of(iter, struct net_device, ndev_node);
-					if (0 == strcmp(ndev->ifx_name, argv[i]))
-						break;
-				}
-				if (iter == ndev_list)
-				{
-					printf("The %s device not found!\n", argv[i]);
-					return -ENODEV;
-				}
-				continue;
-			}
-		}
-
-		if (str_to_ip((__u8*)&local_ip, argv[i]) == 0)
-		{
-			ndev_ioctl(ndev, NIOC_SET_IP, (void*)local_ip);
-			continue;
-		}
-
-		if (strcmp(argv[i], "netmask") == 0)
-		{
-			if (++i == argc || str_to_ip((__u8*)&local_mask, argv[i]))
-			{
+	flag_ip = flag_mask = flag_mac = flag_conf = 0;
+	while ((opt = getopt(argc, argv, "n:m:sh")) != -1) {
+		switch (opt) {
+		case 'n':
+			if (str_to_ip((__u8*)&local_mask, optarg)) {
 				printf("Invalid netmask!\n");
 				return -EINVAL;
 			}
-			ndev_ioctl(ndev, NIOC_SET_MASK, (void*)local_mask);
-			continue;
-		}
 
-		if (strcmp(argv[i], "hw") == 0 || strcmp(argv[i], "HW") == 0)
-		{
-			if (++i == argc || str_to_mac(mac, argv[i]))
-			{
+			flag_mask = 1;
+			break;
+
+		case 'm':
+			if (str_to_mac(mac, optarg)) {
 				printf("Invalid MAC address!\n");
 				return -EINVAL;
 			}
-			ndev_ioctl(ndev, NIOC_SET_MAC, (void*)mac);
-			continue;
+
+			flag_mac = 1;
+			break;
+
+		case 's':
+			flag_conf = 1;
+			break;
+
+		case 'h':
+		default:
+			usage();
+			break;
 		}
 	}
 
-	show_net_info(ndev);
+	if (str_to_ip((__u8*)&local_ip, argv[optind]) == 0) {
+		flag_ip = 1;
+	} else {
+		list_for_each(iter, ndev_list) {
+			ndev = container_of(iter, struct net_device, ndev_node);
+			if (0 == strcmp(ndev->ifx_name, argv[optind]))
+				break;
+		}
+		if (iter == ndev_list) {
+			printf("The %s device not found!\n", argv[optind]);
+			return -ENODEV;
+		}
 
-	//fixme
-	conf_store();
+		optind++;
+
+		if (optind < argc && str_to_ip((__u8*)&local_ip, argv[optind]) == 0)
+			flag_ip = 1;
+	}
+
+
+	if (flag_ip)
+		ndev_ioctl(ndev, NIOC_SET_IP, (void*)local_ip);
+
+	if (flag_mac)
+		ndev_ioctl(ndev, NIOC_SET_MAC, (void*)mac);
+
+	if (flag_mask)
+		ndev_ioctl(ndev, NIOC_SET_MASK, (void*)local_mask);
+
+	if (flag_conf) {
+		if (flag_ip) {
+			ip_to_str(ip, local_ip);
+			conf_set_attr("net.eth0.address", ip);
+		}
+
+		if (flag_mask) {
+			ip_to_str(mask, local_mask);
+			conf_set_attr("net.eth0.address", mask);
+		}
+
+		if (flag_mac)
+			conf_set_attr("net.eth0.mac", (char *)mac);
+
+		conf_store();
+	}
+
+	show_net_info(ndev);
 
 	return 0;
 }
