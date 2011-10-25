@@ -34,12 +34,48 @@ static struct flash_chip *get_current_flash()
 	v = get_curr_volume();
 	bdev = get_bdev_by_volume(v);
 	flash = container_of(bdev, struct flash_chip, bdev);
-	if (0 != strncmp(flash->bdev.dev.name, "mtdblock", MAX_DEV_NAME)) {
+	if (0 != strncmp(flash->bdev.dev.name, "mtdblock", strlen("mtdblock"))) {
 		printf("The current volume is not a flash device!\n");
 		return NULL;
 	}
 
 	return flash;
+}
+
+static int is_master(struct flash_chip *flash)
+{
+	if (NULL == strchr(flash->bdev.dev.name, 'p'))
+		return 1;
+
+	return 0;
+}
+
+static int info(int argc, char *argv[])
+{
+	struct flash_chip *flash;
+
+	flash = get_current_flash();
+	if (flash == NULL) {
+		return -ENODEV;
+	}
+
+	printf(
+		"volume     %c:\n"
+		"flash:     %s\n"
+		"device:    %s\n"
+		"base:      0x%08X\n"
+		"size:      0x%08X\n"
+		"pagesize:  0x%08X\n"
+		"blocksize: 0x%08x\n",
+		flash->bdev.volume,
+		is_master(flash) ? flash->name : flash->master->name,
+		flash->bdev.dev.name,
+		flash->bdev.bdev_base,
+		flash->bdev.bdev_size,
+		flash->write_size,
+		flash->erase_size);
+
+	return 0;
 }
 
 static int read_write(int argc, char *argv[])
@@ -94,8 +130,7 @@ static int read_write(int argc, char *argv[])
 	}
 
 	// must set -a flash_addr -l size -m mem_addr
-	if (flag != 3)
-	{
+	if (flag != 3) {
 		printf("Please set the option -a addr -l size -m address>\n");
 		usage();
 		return -EINVAL;
@@ -224,13 +259,10 @@ static int dump(int argc, char *argv[])
 	char size_unit	= 0;
 	struct flash_chip *flash;
 
-	while ((ch = getopt(argc, argv, "p:a:l:h")) != -1)
-	{
-		switch (ch)
-		{
+	while ((ch = getopt(argc, argv, "p:a:l:h")) != -1) {
+		switch (ch) {
 		case 'a':
-			if (flag || (flash_str_to_val(optarg, &start, &start_unit) < 0))
-			{
+			if (flag || (flash_str_to_val(optarg, &start, &start_unit) < 0)) {
 				printf("Invalid argument: \"%s\"\n", optarg);
 				usage();
 				return -EINVAL;
@@ -241,8 +273,7 @@ static int dump(int argc, char *argv[])
 			break;
 
 		case 'l':
-			if (flag == 2 || flash_str_to_val(optarg, (__u32 *)&size, &size_unit) < 0)
-			{
+			if (flag == 2 || flash_str_to_val(optarg, (__u32 *)&size, &size_unit) < 0) {
 				printf("Invalid argument: \"%s\"\n", optarg);
 				usage();
 				return -EINVAL;
@@ -260,28 +291,21 @@ static int dump(int argc, char *argv[])
 	}
 
 	flash = get_current_flash();
-	if (NULL == flash)
-	{
+	if (NULL == flash) {
 		return -ENODEV;
 	}
 
 	// -a xxxblock or -a xxxpage
-	if (start_unit == 'b')
-	{
+	if (start_unit == 'b') {
 		start *= flash->erase_size;
-	}
-	else if (start_unit == 'p')
-	{
+	} else if (start_unit == 'p') {
 		start *= flash->write_size;
 	}
 
 	// -l xxxblock or -l xxxpage
-	if (size_unit == 'b')
-	{
+	if (size_unit == 'b') {
 		size *= flash->erase_size;
-	}
-	else if (size_unit == 'p')
-	{
+	} else if (size_unit == 'p') {
 		size *= flash->write_size;
 	}
 
@@ -290,25 +314,20 @@ static int dump(int argc, char *argv[])
 
 	ALIGN_UP(size, flash->write_size + flash->oob_size);
 
-	if (start)
-	{
-		if (start + size >= flash->chip_size)
-		{
+	if (start) {
+		if (start + size >= flash->chip_size) {
 			printf("Address 0x%08x overflow!\n", start);
 			flash_close(flash);
 			return -EINVAL;
 		}
-	}
-	else
-	{
+	} else {
 		start = flash->bdev.bdev_base;
 	}
 
 	flash_close(flash);
 
 	buff = (__u8 *)malloc(size);
-	if (NULL == buff)
-	{
+	if (NULL == buff) {
 		return -ENOMEM;
 	}
 
@@ -318,8 +337,7 @@ static int dump(int argc, char *argv[])
 	// if ret < 0
 	ret = flash_read(flash, buff, start, size);
 
-	if (ret < 0)
-	{
+	if (ret < 0) {
 		printf("%s(): line %d execute flash_read_raw() error!\n"
 			"error = %d\n", __func__, __LINE__, ret);
 
@@ -497,11 +515,11 @@ int main(int argc, char *argv[])
 {
 	int i;
 
-	usage();
-	return 0;
-
-	struct command cmd[] =
-	{
+	struct command cmd[] = {
+		{
+			.name = "info",
+			.main = info
+		},
 		{
 			.name = "dump",
 			.main = dump
