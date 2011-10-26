@@ -13,6 +13,26 @@ static inline int get_reflesh_rate(const struct lcd_vmode *vm)
 	return 0;
 }
 
+static inline int vmode_print(const struct lcd_vmode *vm, const struct display *disp)
+{
+	if (vm == NULL || disp == NULL) {
+		return -1;
+	}
+
+	printf("Model: \"%s\"\n"
+		"Resolution  = %d X %d (%s)\n"
+		"Pixel Clock = %d (Reflesh = %d)\n"
+		"HFP = %d, HBP = %d, HPW = %d\n"
+		"VFP = %d, VBP = %d, VPW = %d\n",
+		vm->model,
+		vm->width, vm->height, PIXEL_DESC(disp->pix_fmt),
+		vm->pix_clk, get_reflesh_rate(vm),
+		vm->hfp, vm->hbp, vm->hpw,
+		vm->vfp, vm->vbp, vm->vpw);
+
+	return 0;
+}
+
 int main(int argc, char *argv[])
 {
 	int opt, ret = 0;
@@ -21,77 +41,66 @@ int main(int argc, char *argv[])
 	struct display *disp;
 	const struct lcd_vmode *vm;
 
-	usage();
-	return 0;
+	if (argc == 1) {
+		usage();
+		return -EINVAL;
+	}
 
-	while ((opt = getopt(argc, argv, "l::s:h")) != -1)
-	{
-		switch (opt)
-		{
+	while ((opt = getopt(argc, argv, "l::s:h")) != -1) {
+		switch (opt) {
 		case 'l':
 			disp = get_system_display();
-			if (!disp)
-			{
+			if (!disp) {
 				printf("Fail to open display!\n");
 				return -ENODEV;
 			}
 
-			if (NULL == optarg)
-			{
+			if (NULL == optarg) {
 				vm = disp->video_mode;
-
-				printf("Model: \"%s\"\n"
-					"Resolution  = %d X %x (%s)\n"
-					"Pixel Clock = %d (Reflesh = %d)\n"
-					"HFP = %d, HBP = %d, HPW = %d\n"
-					"VFP = %d, VBP = %d, VPW = %d\n",
-					vm->model,
-					vm->width, vm->height, PIXEL_DESC(disp->pix_fmt),
-					vm->pix_clk, get_reflesh_rate(vm),
-					vm->hfp, vm->hbp, vm->hpw,
-					vm->vfp, vm->vbp, vm->vpw);
+				vmode_print(vm, disp);
 
 				break;
 			}
 
-			for (id = 0; (vm = lcd_get_vmode_by_id(id)); id++)
-			{
-				printf("[%d] Model: \"%s\"\n"
-					"  Resolution  = %d X %x (%s)\n"
-					"  Pixel Clock = %d (Reflesh = %d)\n"
-					"  HFP = %d, HBP = %d, HPW = %d\n"
-					"  VFP = %d, VBP = %d, VPW = %d\n\n",
-					id, vm->model,
-					vm->width, vm->height, PIXEL_DESC(disp->pix_fmt),
-					vm->pix_clk, get_reflesh_rate(vm),
-					vm->hfp, vm->hbp, vm->hpw,
-					vm->vfp, vm->vbp, vm->vpw);
+			if (strcmp("all", optarg) != 0) {
+				usage();
+				return -EINVAL;
+			}
+
+			for (id = 0; (vm = lcd_get_vmode_by_id(id)); id++) {
+				printf("\n[%d] ", id);
+				vmode_print(vm, disp);
 			}
 
 			break;
 
 		case 's':
-			if (NULL == optarg)
-			{
+			if (NULL == optarg) {
 				usage();
 				return -EINVAL;
 			}
 
-			str_to_val(optarg, &id);
+			if (str_to_val(optarg, &id) < 0) {
+				vm = lcd_get_vmode_by_name(optarg);
+			} else {
+				vm = lcd_get_vmode_by_id(id);
+			}
+			if (vm == NULL) {
+				printf("Fail to get display mode!\n");
+				return -EINVAL;
+			}
 
 			disp = get_system_display();
-			if (!disp)
-			{
+			if (!disp) {
 				printf("Fail to open display!\n");
 				return -ENODEV;
 			}
 
-			vm = lcd_get_vmode_by_id(id);
-
 			ret = disp->set_vmode(disp, vm);
-			if (ret < 0)
-			{
-				printf("fail to set video mode \"%s\"\n", vm->model);
+			if (ret < 0) {
+				printf("Fail to set video mode \"%s\"!\n", vm->model);
+			} else {
+				printf("Success to set video mode \"%s\"!\n", vm->model);
 			}
 			break;
 
