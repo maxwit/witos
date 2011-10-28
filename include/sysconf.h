@@ -66,6 +66,9 @@ struct sys_config
 #define ATTR_FMT_ERR "string format error, it will be use default value!"
 
 
+void set_load_mem_addr(__u32 *addr);
+__u32 get_load_mem_addr();
+
 // API list
 int conf_load(void);
 int conf_get_attr(const char *attr, char val[]);

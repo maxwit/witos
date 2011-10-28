@@ -10,6 +10,16 @@
 
 static struct sys_config *g_sysconf;
 
+__u32 get_load_mem_addr()
+{
+	return 0;
+}
+
+void set_load_mem_addr(__u32 *addr)
+{
+	return;
+}
+
 static __u32 conf_checksum(__u32 *new_sum)
 {
 	__u32 old_sum = g_sysconf->checksum;
