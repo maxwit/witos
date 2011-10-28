@@ -24,19 +24,18 @@
 #define DHCPRELEASE		0x7
 #define DHCPINFOM		0x8
 
-struct dhcp_packet
-{
+struct dhcp_packet {
 	char	op;
 	char	htype;
 	char	hlen;
 	char	hops;
-	__u32		xid;
+	__u32	xid;
 	short	sec;
 	short	flags;
-	__u32		ciaddr;
-	__u32		yiaddr;
-	__u32		siaddr;
-	__u32		giaddr;
+	__u32	ciaddr;
+	__u32	yiaddr;
+	__u32	siaddr;
+	__u32	giaddr;
 	char	chaddr[16];
 	char	sname[64];
 	char	file[128];
@@ -99,6 +98,29 @@ static int send_dhcp_request(int sockfd, struct dhcp_packet *packet, struct sock
 				(const struct sockaddr *)remote_addr, sizeof(*remote_addr));
 }
 
+static int send_dhcp_declient(int sockfd, struct dhcp_packet *packet, struct sockaddr_in *remote_addr)
+{
+	__u32 declient_ip;
+
+	declient_ip = packet->yiaddr;
+
+	packet->option[0] = DHCP_MESSAGE;
+	packet->option[1] = DHCP_MESSAGE_LEN;
+	packet->option[2] = DHCPDECLINE;
+	packet->option[3] = DHCP_REQUEST_IP;
+	packet->option[4] = DHCP_REQUEST_IP_LEN;
+	// request ip
+	packet->option[5] = declient_ip & 0xff;
+	packet->option[6] = declient_ip >> 8 & 0xff;
+	packet->option[7] = declient_ip >> 16 & 0xff;
+	packet->option[8] = declient_ip >> 24;
+
+	packet->option[9] = 0xff;
+
+	return sendto(sockfd, packet, sizeof(*packet), 0,
+				(const struct sockaddr *)remote_addr, sizeof(*remote_addr));
+}
+
 // fixme!!!
 long random(void)
 {
@@ -110,25 +132,80 @@ long random(void)
 	return mac_addr[4] << 24 | mac_addr[3] << 16 | mac_addr[2] << 8 | mac_addr[1];
 }
 
-int main(int argc, char *argv[])
+static int check_ip_is_user(__u32 ip)
 {
 	int ret, i;
 	int sockfd;
 	struct sockaddr_in remote_addr, local_addr;
-	struct dhcp_packet packet;
-	socklen_t addrlen;
+	socklen_t addrlen = sizeof(struct sockaddr_in);
+
+	sockfd = socket(AF_INET, SOCK_RAW, PROT_ETH);
+	if (sockfd < 0) {
+		printf("socket() failed!\n");
+		return sockfd;
+	}
+
+	local_addr.sin_addr.s_addr = 0;
+	remote_addr.sin_addr.s_addr = ip;
+
+	ret = bind(sockfd, (struct sockaddr *) &local_addr, sizeof(local_addr));
+	if (ret < 0) {
+		printf("connect() failed!\n");
+		goto L1;
+	}
+
+	ret = sendto(sockfd, NULL, 0, 0, (struct sockaddr *)&remote_addr, addrlen);
+	if (ret < 0) {
+		printf("sendto arp error\n");
+		goto L1;
+	}
+
+	for (i = 0; i < 3; i++) {
+		if (qu_is_empty(sockfd)) {
+			if (i >= 3)
+				break;
+
+			udelay(10000000);
+			continue;
+		}
+
+		ret = 1;
+		goto L1;
+	}
+
+	ret = 0;
+
+L1:
+	close(sockfd);
+
+	return ret;
+}
+
+int main(int argc, char *argv[])
+{
+	int opt;
+	int ret, i, j;
+	int sockfd;
+	__u32 xid = random();
+	char nic_name[NET_NAME_LEN];
 	char ip_str[IPV4_STR_LEN];
 	__u8 mac_addr[MAC_ADR_LEN];
-	__u32 xid = random();
-	int opt;
-	bool sync_svr = false;
+	bool sync_svr = false, nic = false;
+	socklen_t addrlen;
+	struct net_device *ndev = NULL;
+	struct list_node *ndev_list, *iter;
+	struct sockaddr_in remote_addr, local_addr;
+	struct dhcp_packet packet;
 
-	while ((opt = getopt(argc, argv, "sh")) != -1)
-	{
-		switch (opt)
-		{
+	while ((opt = getopt(argc, argv, "x:sh")) != -1) {
+		switch (opt) {
 		case 's':
 			sync_svr = true;
+			break;
+
+		case 'x':
+			nic = true;
+			memcpy(nic_name, optarg, NET_NAME_LEN);
 			break;
 
 		default:
@@ -137,9 +214,24 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	if (nic) {
+		ndev_list= net_get_device_list();
+
+		list_for_each(iter, ndev_list) {
+			ndev = container_of(iter, struct net_device, ndev_node);
+
+			if (memcmp(ndev->ifx_name, nic_name, NET_NAME_LEN) == 0)
+				break;
+		}
+
+		if (iter == ndev_list) {
+			printf("device \'%s\' not found\n", nic_name);
+			return 1;
+		}
+	}
+
 	sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-	if (sockfd < 0)
-	{
+	if (sockfd < 0) {
 		printf("socket() failed!\n");
 		return sockfd;
 	}
@@ -151,8 +243,7 @@ int main(int argc, char *argv[])
 	remote_addr.sin_port = htons(67);
 
 	ret = bind(sockfd, (const struct sockaddr *) &local_addr, sizeof(local_addr));
-	if (ret < 0)
-	{
+	if (ret < 0) {
 		printf("connect() failed!\n");
 		goto ERROR;
 	}
@@ -162,92 +253,87 @@ int main(int argc, char *argv[])
 	init_dhcp_packet(&packet, xid, mac_addr);
 
 	ret = send_dhcp_discover(sockfd, &packet, &remote_addr);
-	if (ret < 0)
-	{
+	if (ret < 0) {
 		printf("send dhcp discover packet failed!");
 		goto ERROR;
 	}
 
 	addrlen = sizeof(remote_addr);
 
-	for (i = 0; i < 3; i++)
-	{
+	for (i = 0, j = 0; i < 3; i++) {
+#if 0
+		if (qu_is_empty(sockfd)) {
+			if (i >= 3)
+				break;
+
+			udelay(10000000);
+
+			continue;
+		}
+#endif
+
 		ret = recvfrom(sockfd, &packet, sizeof(packet), 0,
 				(struct sockaddr *)&remote_addr, &addrlen);
-		if (ret <= 0)
-		{
+		if (ret <= 0) {
 			printf("recv dhcp offer packet failed!");
 			goto ERROR;
 		}
 
-		if (packet.xid == xid)
-		{
-			ip_to_str(ip_str, packet.yiaddr);
+		if (packet.xid == xid) {
+			if (0 == j) {
+				if (packet.option[2] != DHCPOFFER) {
+					if (i < 3)
+						continue;
 
-			if (packet.option[2] != DHCPOFFER)
-			{
-				printf("Can't recv offer packet!\n");
-				ret = -ENONET;
-				goto ERROR;
+					printf("Can't recv offer packet!\n");
+					ret = -ENONET;
+					goto ERROR;
+				}
+
+				remote_addr.sin_addr.s_addr = 0xFFFFFFFF;
+
+				i = -1;
+				j++;
+
+				ret = send_dhcp_request(sockfd, &packet, &remote_addr);
+				if (ret < 0) {
+					printf("send dhcp request packet failed!");
+					goto ERROR;
+				}
+			} else {
+				if (packet.option[2] != DHCPACK) {
+					if (i < 3)
+						continue;
+
+					printf("Can't recv ACK packet!\n");
+					ret = -ENONET;
+					goto ERROR;
+				}
+
+				break;
 			}
-			break;
 		}
 	}
 
-	if (i >= 3)
-	{
-		printf("Timeout!\n");
-		ret = -ENONET;
+	if (i >= 3) {
+		printf("Time out\n");
 		goto ERROR;
 	}
 
-	remote_addr.sin_addr.s_addr = 0xFFFFFFFF;
+	ret = check_ip_is_user(packet.yiaddr);
+	if (ret != 0) {
+		ip_to_str(ip_str, packet.yiaddr);
+		printf("ip: %s is used\n", ip_str);
 
-	ret = send_dhcp_request(sockfd, &packet, &remote_addr);
-	if (ret < 0)
-	{
-		printf("send dhcp request packet failed!");
+		send_dhcp_declient(sockfd, &packet, &remote_addr);
+
 		goto ERROR;
 	}
 
-	for (i = 0; i < 3; i++)
-	{
-		ret = recvfrom(sockfd, &packet, sizeof(packet), 0,
-				(struct sockaddr *)&remote_addr, &addrlen);
+	ndev_ioctl(ndev, NIOC_SET_IP, (void *)packet.yiaddr);
 
-		if (ret <= 0)
-		{
-			printf("recv dhcp ACK/NAK packet failed!");
-			goto ERROR;
-		}
-
-		if (packet.xid == xid)
-		{
-			ip_to_str(ip_str, packet.yiaddr);
-
-			if (packet.option[2] != DHCPACK)
-			{
-				printf("Can't recv ACK packet!\n");
-				ret = -ENONET;
-				goto ERROR;
-			}
-
-			break;
-		}
-	}
-
-	if (i >= 3)
-	{
-		printf("Tomeout\n");
-		ret = -ENONET;
-		goto ERROR;
-	}
-
-	ndev_ioctl(NULL, NIOC_SET_IP, (void *)packet.yiaddr);
-
-	if (sync_svr)
-	{
-		net_set_server_ip(remote_addr.sin_addr.s_addr);
+	if (sync_svr) {
+		net_set_server_ip(packet.siaddr);
 		conf_store();
 	}
 

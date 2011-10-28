@@ -260,7 +260,7 @@ static ssize_t flash_bdev_write(struct bdev_file *file, const void *buff, __u32 
 			file->cur_pos += blk_buff->blk_size;
 			blk_buff->blk_off = blk_buff->blk_base;
 		}
-		else 
+		else
 		{ // fixme: symi write
 			memcpy(blk_buff->blk_off, buff, size);
 

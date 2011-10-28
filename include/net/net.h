@@ -51,6 +51,7 @@ enum __flags_type
 #define PROT_TCP  6
 #define PROT_UDP  17
 #define PROT_OSPF 89
+#define PROT_ETH	10 //fixme
 
 #define ETH_TYPE_IP   CPU_TO_BE16(0x0800)
 #define ETH_TYPE_ARP  CPU_TO_BE16(0x0806)
@@ -422,3 +423,7 @@ int net_set_server_ip(__u32 ip);
 #define SKIOCS_FLAGS 1
 
 int socket_ioctl(int fd, int cmd, int flags);
+
+int qu_is_empty(int fd);
+struct socket *arp_search_socket(const struct arp_packet *arp_pkt);
+int net_set_server_ip(__u32 ip);

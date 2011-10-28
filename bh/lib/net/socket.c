@@ -110,6 +110,27 @@ static struct sock_buff *sock_recv_packet(struct socket *sock)
 	return NULL;
 }
 
+int qu_is_empty(int fd)
+{
+	__u32 psr;
+	struct socket *sock;
+
+	sock = get_sock(fd);
+	if (NULL == sock)
+		return 1;
+
+	ndev_recv_poll();
+
+	lock_irq_psr(psr);
+	if (!list_is_empty(&sock->rx_qu))
+	{
+		unlock_irq_psr(psr);
+		return 0;
+	}
+	unlock_irq_psr(psr);
+
+	return 1;
+}
 
 int socket(int domain, int type, int protocol)
 {
@@ -267,8 +288,7 @@ int bind(int fd, const struct sockaddr *addr, socklen_t len)
 	struct sockaddr_in *sin;
 
 	sock = get_sock(fd);
-	if (NULL == sock)
-	{
+	if (NULL == sock) {
 		// printf
 		return -EINVAL;
 	}
@@ -277,18 +297,19 @@ int bind(int fd, const struct sockaddr *addr, socklen_t len)
 
 	sin->sin_family = addr->sa_family;
 
-	switch (addr->sa_family)
-	{
+	switch (addr->sa_family) {
 	case AF_INET:
 	default: // fixme: move default down
 		sa = (const struct sockaddr_in *)addr;
 
 		sin->sin_port = sa->sin_port ? sa->sin_port : htons(port_alloc(sock->type));
-
+#if 0
 		if (sa->sin_addr.s_addr == htonl(INADDR_ANY))
 			ret = ndev_ioctl(NULL, NIOC_GET_IP, &sin->sin_addr.s_addr);
 		else
 			sin->sin_addr = sa->sin_addr;
+#endif
+		sin->sin_addr = sa->sin_addr;
 
 		break;
 	}
@@ -305,22 +326,26 @@ ssize_t sendto(int fd, const void *buff, __u32 buff_size, int flags,
 
 	sock = get_sock(fd);
 
-	if (NULL == sock)
-	{
+	if (NULL == sock) {
 		// printf
 		return -EINVAL;
 	}
 
 	memcpy(&sock->saddr[SA_DST], dest_addr, addr_size);
 
-	switch (sock->type)
-	{
+	switch (sock->type) {
 	case SOCK_RAW:
-		skb = skb_alloc(ETH_HDR_LEN + IP_HDR_LEN, buff_size);
-		skb->sock = sock;
-		memcpy(skb->data, buff, buff_size);
-		ip_send_packet(skb, PROT_ICMP);
-		break;
+		if (PROT_ICMP == sock->protocol) {
+			skb = skb_alloc(ETH_HDR_LEN + IP_HDR_LEN, buff_size);
+			skb->sock = sock;
+			memcpy(skb->data, buff, buff_size);
+			ip_send_packet(skb, PROT_ICMP);
+			break;
+		}
+		else if (PROT_ETH == sock->protocol) {
+			arp_send_packet(&sock->saddr[SA_DST].sin_addr.s_addr, NULL, ARP_OP_REQ);
+			break;
+		}
 
 	case SOCK_DGRAM:
 		skb = skb_alloc(ETH_HDR_LEN + IP_HDR_LEN + UDP_HDR_LEN, buff_size);
@@ -687,6 +712,32 @@ struct socket *icmp_search_socket(const struct ping_packet *ping_pkt, const stru
 
 	return NULL;
 }
+
+
+
+struct socket *arp_search_socket(const struct arp_packet *arp_pkt)
+{
+	int fd;
+	struct socket *sock;
+
+	for (fd = 1; fd < MAX_SOCK_NUM; fd++)	{
+		sock = g_sock_fds[fd];
+
+		if (NULL == sock)
+			continue;
+
+		if (sock->type != SOCK_RAW || PROT_ETH != sock->protocol)
+			continue;
+
+		if (memcmp(&sock->saddr[SA_DST].sin_addr.s_addr, arp_pkt->src_ip, 4))
+			continue;
+
+		return sock;
+	}
+
+	return NULL;
+}
+
 
 void socket_init(void)
 {

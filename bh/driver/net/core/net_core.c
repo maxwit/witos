@@ -631,6 +631,7 @@ static int arp_recv_packet(struct sock_buff *skb)
 		if (getaddr(ip) == NULL)
 		{
 			struct host_addr *host;
+			struct socket *sock;
 
 			host = malloc(sizeof(struct host_addr));
 			if (NULL == host)
@@ -654,6 +655,14 @@ static int arp_recv_packet(struct sock_buff *skb)
 #endif
 
 			list_add_tail(&host->node, &g_host_list);
+
+			sock = arp_search_socket(arp_pkt);
+			if (NULL == sock) {
+				skb_free(skb);
+				break;
+			}
+
+			list_add_tail(&skb->node, &sock->rx_qu);
 		}
 
 		break;
@@ -662,14 +671,16 @@ static int arp_recv_packet(struct sock_buff *skb)
 		ndev_ioctl(NULL, NIOC_GET_IP, &local_ip);
 		if (0 == memcmp(arp_pkt->des_ip, &local_ip, IPV4_ADR_LEN))
 			arp_send_packet(arp_pkt->src_ip, arp_pkt->src_mac, ARP_OP_REP);
+
+		skb_free(skb);
 		break;
 
 	default:
 		printf("\t%s(): op_code error!\n", __func__);
+		skb_free(skb);
 		break;
 	}
 
-	skb_free(skb);
 
 	return 0;
 }
@@ -824,8 +835,6 @@ int net_set_server_ip(__u32 ip)
 
 	return 0;
 }
-
-
 
 struct eth_addr *getaddr(__u32 nip)
 {
