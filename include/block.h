@@ -67,7 +67,7 @@ struct block_device {
 	// fixme!
 	void *fs;
 	char volume;
-	const struct bdev_file *file;
+	struct bdev_file *file;
 
 	struct list_node bdev_node;
 };

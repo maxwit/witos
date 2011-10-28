@@ -171,7 +171,7 @@ static int get_file_to_flash(int data_fd)
 		return 0;
 	}
 
-	file->bdev = file;
+	file->bdev = bdev;
 
 	file->open(file,"jffs2");
 
@@ -200,7 +200,7 @@ static int get_file_to_mem(int data_fd, const struct ftp_opt *fopt)
 	char buff[BUF_LEN];
 
 	str_to_val(fopt->mem, &addr);
-	p = addr;
+	p = (char *)addr;
 
 	while(1) {
 		ret = recv(data_fd, buff, BUF_LEN - 1 , 0);
