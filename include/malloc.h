@@ -10,6 +10,8 @@ void *zalloc(size_t);
 
 void *dma_malloc(size_t size, __u32 *pa);
 
+struct list_node *get_heap_head_list(void);
+
 #define SAFE_FREE(p) \
 	do \
 	{  \

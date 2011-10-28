@@ -187,3 +187,8 @@ void *dma_malloc(size_t len, __u32 *pa)
 
 	return va;
 }
+
+struct list_node *get_heap_head_list(void)
+{
+		return &g_free_region_list;
+}
