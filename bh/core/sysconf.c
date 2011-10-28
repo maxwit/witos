@@ -176,8 +176,9 @@ int conf_store()
 	__u32 conf_base, conf_size;
 	struct flash_chip *flash;
 
-	flash = flash_open(BOOT_FLASH_ID);
+	flash = flash_open("mtdblock0");
 	if (NULL == flash) {
+		printf("open flash error\n");
 		return -ENODEV;
 	}
 

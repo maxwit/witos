@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
 
 	if (option != 'l' && option != 'g' && option != 'h') {
 		ret = conf_store();
-		if (ret)
+		if (ret < 0)
 			printf("\nconfig_store faild\n");
 	}
 

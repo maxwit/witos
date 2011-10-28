@@ -31,7 +31,9 @@ static int show_info(int flag)
 
 		if (!strncmp(block_dev->dev.name, "mtdblock", strlen("mtdblock"))) {
 			flash = container_of(block_dev, struct flash_chip, bdev);
-			printf("block size:   0x%08x\n", flash->oob_size);
+			printf("block size:   0x%08x\n"
+				   "page size:    0x%08x\n",
+				   flash->erase_size, flash->write_size);
 			if (strchr(block_dev->dev.name, 'p'))
 				printf("flash:        %s\n", flash->master->name);
 			else
