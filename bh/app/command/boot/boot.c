@@ -9,11 +9,8 @@
 
 #define UIMAGE_HEAD_SIZE     64
 
-#if 0
 static int mmc_load_image(PART_TYPE type, const char image_name[], __u8 **buff_ptr, __u32 *buff_len)
 {
-	return 0;
-#if 0
 	int ret;
 	int i;
 	__u8 *image_buf;
@@ -24,24 +21,20 @@ static int mmc_load_image(PART_TYPE type, const char image_name[], __u8 **buff_p
 		type == PT_OS_LINUX ? "linux" : "ramdisk");
 
 	image_buf = malloc(MB(3)); //fixme!!!
-	if (image_buf == NULL)
-	{
+	if (image_buf == NULL) {
 		printf("%s(): fail to malloc buffer!\n", __func__);
 		ret = -ENOMEM;
 		goto L0;
 	}
 
-	for (i = 0; i < MAX_FILE_NAME_LEN; i++)
-	{
+	for (i = 0; i < MAX_FILE_NAME_LEN; i++) {
 		if (image_name[i] == ':' || image_name[i] == '\0')
-		{
 			break;
-		}
 
 		dev_name[i] = image_name[i];
 	}
-	if (i == MAX_FILE_NAME_LEN)
-	{
+
+	if (i == MAX_FILE_NAME_LEN) {
 		DPRINT("%s(): file name length error!\n", __func__);
 		ret = -EINVAL;
 		goto L1;
@@ -50,22 +43,19 @@ static int mmc_load_image(PART_TYPE type, const char image_name[], __u8 **buff_p
 	dev_name[i] = '\0';
 
 	ret = mount("vfat", 0, dev_name, NULL);
-	if (ret < 0)
-	{
+	if (ret < 0) {
 		printf("fat_mount error, ret = %d\n", ret);
 		goto L1;
 	}
 
 	fd = fat_open(image_name, 0);
-	if (fd == NULL)
-	{
+	if (fd == NULL) {
 		printf("fat open error\n");
 		goto L1;
 	}
 
 	ret = fat_read(fd, image_buf, MB(3));
-	if (ret < 0)
-	{
+	if (ret < 0) {
 		printf("fail to read file %s\n", image_name);
 		ret = -EINVAL;
 		goto L2;
@@ -86,16 +76,15 @@ L1:
 	free(image_buf);
 L0:
 	return ret;
-#endif
 }
 
 static int part_load_image(PART_TYPE type, __u8 **buff_ptr, __u32 *buff_len)
 {
 	int  index;
-	__u32  offset;
 	int  part_num;
 	int  ret;
 	char image_name[MAX_FILE_NAME_LEN];
+	__u32  offset;
 	__u32  image_size, part_size;
 	struct part_attr   attr_tab[MAX_FLASH_PARTS];
 	struct flash_chip  *flash;
@@ -106,30 +95,26 @@ static int part_load_image(PART_TYPE type, __u8 **buff_ptr, __u32 *buff_len)
 		type == PT_OS_LINUX ? "kernel" : "ramdisk");
 
 	flash = flash_open(BOOT_FLASH_ID);
-	if (!flash)
-	{
+	if (!flash) {
 		ret = -ENODEV;
 		goto L0;
 	}
 
 	part_num = part_tab_read(flash, attr_tab, MAX_FLASH_PARTS);
-	if (part_num < 0)
-	{
+	if (part_num < 0) {
 		ret = -EIO;
 		goto L1;
 	}
 
 	for (index = 0; index < part_num && attr_tab[index].part_type != type; ++index);
 
-	if (index == part_num)
-	{
+	if (index == part_num) {
 		ret = -1;
 		goto L1;
 	}
 
 	part = flash_bdev_open(index, OP_RDONLY);
-	if (NULL == part)
-	{
+	if (NULL == part) {
 		ret = -1;
 		goto L1;
 	}
@@ -139,8 +124,7 @@ static int part_load_image(PART_TYPE type, __u8 **buff_ptr, __u32 *buff_len)
 	ret = part_get_image(part, image_name, &image_size);
 
 	// to be optimized
-	if (ret < 0 || image_size <= 0 || image_size >= part_get_size(part))
-	{
+	if (ret < 0 || image_size <= 0 || image_size >= part_get_size(part)) {
 		// if (ret < 0) {}
 
 		part_size = part_get_size(part);
@@ -153,15 +137,13 @@ static int part_load_image(PART_TYPE type, __u8 **buff_ptr, __u32 *buff_len)
 	}
 
 	buff = malloc(image_size);
-	if (!buff)
-	{
+	if (!buff) {
 		ret = -ENOMEM;
 		goto L2;
 	}
 
 	ret = flash_read(flash, buff, offset, image_size);
-	if (ret < 0)
-	{
+	if (ret < 0) {
 		ret = -EIO;
 		goto L2;
 	}
@@ -191,15 +173,13 @@ static int tftp_load_image(PART_TYPE type, char image_name[], __u8 **buff_ptr, _
 	net_get_server_ip(&dlopt.server_ip);
 	strcpy(dlopt.file_name, image_name);
 	dlopt.load_addr = malloc(MB(3)); //fixme!!!
-	if (!dlopt.load_addr)
-	{
+	if (!dlopt.load_addr) {
 		printf("%s(): fail to malloc buffer!\n", __func__);
 		return -ENOMEM;
 	}
 
 	ret = tftp_download(&dlopt);
-	if (ret < 0)
-	{
+	if (ret < 0) {
 		printf("fail to download %s!\n", image_name);
 		goto L1;
 	}
@@ -245,24 +225,21 @@ static int build_command_line(char *cmd_line, size_t max_len)
 	root_idx = linux_conf->root_dev;
 
 	flash = flash_open(BOOT_FLASH_ID);
-	if (NULL == flash)
-	{
+	if (NULL == flash) {
 		ret = -ENODEV;
 		printf("fail to open flash %d\n", BOOT_FLASH_ID);
 		goto L1;
 	}
 
 	mtd_dev = flash_get_mtd_name(flash);
-	if (mtd_dev == NULL)
-	{
+	if (mtd_dev == NULL) {
 		printf("fail to get mtd name!\n");
 		goto L2;
 	}
 
 	// MARK_MAXWIT_TRAINING {
 	part_num = part_tab_read(flash, attr_tab, MAX_FLASH_PARTS);
-	if (part_num < 0)
-	{
+	if (part_num < 0) {
 		printf("fail to read part table! (ret = %d)\n", part_num);
 		ret = part_num;
 		goto L2;
@@ -270,12 +247,10 @@ static int build_command_line(char *cmd_line, size_t max_len)
 
 	part_str += sprintf(part_str, "mtdparts=%s:", mtd_dev);
 
-	for (part_idx = 0; part_idx < part_num; part_idx++)
-	{
+	for (part_idx = 0; part_idx < part_num; part_idx++) {
 		struct part_attr *attr = attr_tab + part_idx;
 
-		switch (attr->part_type)
-		{
+		switch (attr->part_type) {
 		default:
 #ifdef CONFIG_FS_PARTS_ONLY
 			break;
@@ -287,17 +262,13 @@ static int build_command_line(char *cmd_line, size_t max_len)
 
 		case PT_BL_GBH:
 			if (gb_base > attr->part_base)
-			{
 				gb_base = attr->part_base;
-			}
 			gb_size += attr->part_size;
 			break;
 
 		case PT_BL_GCONF: // must be defined and the the last GB partition
 			if (gb_base > attr->part_base)
-			{
 				gb_base = attr->part_base;
-			}
 			gb_size += attr->part_size;
 
 			part_str += sprintf(part_str, "0x%x@0x%x(g-bios),", gb_size, gb_base);
@@ -331,17 +302,14 @@ static int build_command_line(char *cmd_line, size_t max_len)
 
 	assert(root_idx < part_num);
 
-	if (linux_conf->boot_mode & BM_NFS)
-	{
+	if (linux_conf->boot_mode & BM_NFS) {
 		str += sprintf(str, "root=/dev/nfs rw nfsroot=%s:%s",
 					server_ip, linux_conf->nfs_path);
 	}
-	else if (linux_conf->boot_mode & BM_FLASHDISK)
-	{
+	else if (linux_conf->boot_mode & BM_FLASHDISK) {
 		int root_type = attr_tab[root_idx].part_type;
 
-		switch (root_type)
-		{
+		switch (root_type) {
 		case PT_FS_CRAMFS:
 		case PT_FS_JFFS2:
 		case PT_FS_YAFFS:
@@ -362,14 +330,12 @@ static int build_command_line(char *cmd_line, size_t max_len)
 
 	str += sprintf(str, " %s", part_list);
 
-// MARK_MAXWIT_TRAINING: Linux Operation {
 #ifdef CONFIG_DHCP
 	str += sprintf(str, " ip=dhcp");
 #else
 	str += sprintf(str, " ip=%s:%s:%s:%s:maxwit.googlecode.com:eth0:off",
 				local_ip, server_ip, server_ip, net_mask);
 #endif
-// } MARK_MAXWIT_TRAINING
 
 	str += sprintf(str, " console=%s", linux_conf->console_device);
 
@@ -384,12 +350,10 @@ static int show_boot_args(void *tag_base)
 	int i = 0;
 	struct tag *arm_tag = tag_base;
 
-	while (ATAG_NONE != arm_tag->hdr.tag)
-	{
+	while (ATAG_NONE != arm_tag->hdr.tag) {
 		printf("[ATAG %d] ", i);
 
-		switch (arm_tag->hdr.tag)
-		{
+		switch (arm_tag->hdr.tag) {
 		case ATAG_CORE:
 			printf("ATAG Begin\n");
 			break;
@@ -440,18 +404,14 @@ int main(int argc, char *argv[])
 	linux_conf = sysconf_get_linux_param();
 	net_conf = sysconf_get_net_info();
 
-	while ((opt = getopt(argc, argv, "t::s:r::f::n::m:c:vl:h")) != -1)
-	{
-		switch (opt)
-		{
+	while ((opt = getopt(argc, argv, "t::s:r::f::n::m:c:vl:h")) != -1) {
+		switch (opt) {
 		case 't':
-			if (optarg == NULL)
-			{
+			if (optarg == NULL) {
 				linux_conf->boot_mode = BM_FLASHDISK;
 				linux_conf->kernel_image[0] = '\0';
 			}
-			else
-			{
+			else {
 				linux_conf->boot_mode = BM_TFTP;
 				strcpy(linux_conf->kernel_image, optarg);
 			}
@@ -472,13 +432,9 @@ int main(int argc, char *argv[])
 			linux_conf->boot_mode = BM_RAMDISK;
 
 			if (optarg == NULL)
-			{
 				linux_conf->ramdisk_image[0] = '\0';
-			}
 			else
-			{
 				strcpy(linux_conf->ramdisk_image, optarg);
-			}
 
 			break;
 
@@ -489,14 +445,10 @@ int main(int argc, char *argv[])
 				break;
 
 			if (str_to_val(optarg, &dev_num) < 0)
-			{
 				printf("Invalid partition number (%s)!\n", optarg);
-			}
 			else
-			{
 				// fixme: if num > nParts
 				linux_conf->root_dev = dev_num;
-			}
 
 			break;
 
@@ -510,8 +462,7 @@ int main(int argc, char *argv[])
 
 			while (*p && *p != ':' && *p != '/') p++;
 
-			switch (*p)
-			{
+			switch (*p) {
 			case ':':
 				*p = '\0';
 				strcpy(linux_conf->nfs_path, p + 1);
@@ -556,38 +507,25 @@ int main(int argc, char *argv[])
 	}
 
 	if (auto_gen)
-	{
 		build_command_line(linux_conf->cmd_line, DEFAULT_KCMDLINE_LEN);
-	}
 
 	strncpy(cmd_line, linux_conf->cmd_line, DEFAULT_KCMDLINE_LEN);
 
 	if (argc > 2 || (2 == argc && false == show_args))
-	{
-		sysconf_save();
-	}
+		conf_store();
 
-	BUG_ON ((linux_conf->boot_mode & ~BM_MASK) == 0);
+	assert(linux_conf->boot_mode & ~BM_MASK);
 
-	if (!show_args)
-	{
+	if (!show_args) {
 		if (linux_conf->boot_mode & BM_TFTP)
-		{
 			ret = tftp_load_image(PT_OS_LINUX, linux_conf->kernel_image, &kernel_image, &image_size);
-		}
 		else if (linux_conf->boot_mode & BM_MMC)
-		{
 			ret = mmc_load_image(PT_OS_LINUX, linux_conf->kernel_image, &kernel_image, &image_size);
-		}
 		else
-		{
 			ret = part_load_image(PT_OS_LINUX, &kernel_image, &image_size);
-		}
 
 		if (ret < 0)
-		{
 			goto L1;
-		}
 
 		printf("\n");
 
@@ -605,23 +543,15 @@ int main(int argc, char *argv[])
 
 	arm_tag = setup_cmdline_atag(arm_tag, cmd_line);
 
-	if (linux_conf->boot_mode & BM_RAMDISK)
-	{
-		if (!show_args)
-		{
+	if (linux_conf->boot_mode & BM_RAMDISK) {
+		if (!show_args) {
 			if (linux_conf->ramdisk_image[0] != '\0')
-			{
 				ret = tftp_load_image(PT_FS_RAMDISK, linux_conf->ramdisk_image, &ramdisk_image, &image_size);
-			}
 			else
-			{
 				ret = part_load_image(PT_FS_RAMDISK, &ramdisk_image, &image_size);
-			}
 
 			if (ret < 0)
-			{
 				goto L1;
-			}
 		}
 
 		// TODO: check the ramdisk
@@ -633,11 +563,9 @@ int main(int argc, char *argv[])
 
 	end_setup_atag(arm_tag);
 
-	if (show_args)
-	{
+	if (show_args) {
 		printf("\nMachine ID = %d (0x%x)\n", linux_conf->mach_id, linux_conf->mach_id);
 		show_boot_args((void *)ATAG_BASE);
-
 		return 0;
 	}
 
@@ -650,46 +578,4 @@ L1:
 	printf("\n");
 
 	return ret;
-}
-#else
-int main(int argc, char *argv[])
-{
-	usage();
-	return 0;
-}
-#endif
-
-void __INIT__ auto_boot_linux(void)
-{
-	int time_out = 3;
-	char *argv[1] = {"boot"};
-
-	while (1)
-	{
-		int index;
-
-		printf("\rAutoboot after %d seconds. Press any key to interrupt.", time_out);
-
-		if (0 == time_out)
-		{
-			break;
-		}
-
-		for (index = 0; index < 10; index++)
-		{
-			mdelay(100);
-
-			if (uart_rxbuf_count())
-			{
-				puts("\n");
-				return;
-			}
-		}
-
-		time_out--;
-	}
-
-	puts("\n");
-
-	main(1, argv); // fixme
 }

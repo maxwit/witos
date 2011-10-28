@@ -36,11 +36,10 @@ int usage(void)
 
 		printf("Usage: %s [options]\n", argv[0]);
 		if (help->desc)
-			printf("%s\n", help->desc);
+			printf("%s\n\n", help->desc);
 
 		printf("option list:\n");
 		list_option(help);
-
 	} else if (2 == help->level) {
 		subcmd = help->u.cmdv;
 
@@ -59,7 +58,7 @@ int usage(void)
 
 		printf("Usage: %s <command> [<args>]\n", argv[0]);
 		if (help->desc)
-			printf("%s\n", help->desc);
+			printf("%s\n\n", help->desc);
 
 		printf("command list:\n");
 		for (i = 0; i < help->count; i++) {

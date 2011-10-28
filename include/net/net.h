@@ -268,6 +268,7 @@ struct socket
 {
 	int type;
 	int protocol;
+	int obstruct_flags;
 	struct list_node tx_qu, rx_qu;
 	struct sockaddr_in saddr[2]; // fixme: sockaddr instead
 	enum tcp_state state;
@@ -417,3 +418,7 @@ int ndev_ioctl(struct net_device *ndev, int cmd, void *arg);
 int net_get_server_ip(__u32 *ip);
 
 int net_set_server_ip(__u32 ip);
+
+#define SKIOCS_FLAGS 1
+
+int socket_ioctl(int fd, int cmd, int flags);

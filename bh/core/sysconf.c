@@ -180,6 +180,7 @@ int conf_load()
 	return 0;
 }
 
+// fixme: to support other storage, such as MMC, ATA, ...
 int conf_store()
 {
 	int ret;

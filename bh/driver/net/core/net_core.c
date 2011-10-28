@@ -743,21 +743,16 @@ void ether_send_packet(struct sock_buff *skb, const __u8 mac[], __u16 eth_type)
 __u16 net_calc_checksum(const void *buff, __u32 size)
 {
 	int n;
-	__u32	chksum;
+	__u32 chksum;
 	const __u16 *p;
 
 	chksum = 0;
 
-	for (n = size, p = buff; n > 2; n -= 2, p++)
+	for (n = size, p = buff; n >= 2; n -= 2, p++)
 		chksum += *p;
 
-	if (n == 1) {
-		__u16 tmp = 0;
-
-		*(__u8 *)&tmp = *(__u8 *)p;
-
-		chksum += tmp;
-	}
+	if (n == 1)
+		chksum += *(__u8 *)p;
 
 	chksum = (chksum & 0xffff) + (chksum >> 16);
 	chksum = (chksum & 0xffff) + (chksum >> 16);

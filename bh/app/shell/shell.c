@@ -25,9 +25,9 @@ extern const struct help_info g_help_begin[], g_help_end[];
 static struct command_stack *g_cmd_stack = NULL;
 static char g_cur_vol, g_home_vol = 'A';
 
-extern int help(int argc, char *argv[]);
+int help(int argc, char *argv[]);
 
-const static struct command build_in_cmd[] = {
+static const struct command build_in_cmd[] = {
 	{
 		.name = "help",
 		.main = help,
@@ -446,7 +446,7 @@ static int cmd_line_status(char *buf, int *cur_pos)
 	return IS_CMD_MATCH;
 }
 
-static int cmd_read(char buf[])
+static int command_read_line(char buf[])
 {
 	char input_c;
 	int cur_pos = 0;
@@ -785,18 +785,13 @@ static inline const struct help_info *get_help(const char *name)
 	return NULL;
 }
 
-static int cmd_exec(const char *command_line)
+// fixme: move to task.c
+int exec(int argc, char *argv[])
 {
 	int ret;
-	int argc;
-	char *argv[MAX_ARGC];
 	const struct command *exe;
 	struct task *current;
 	int (*main)(int, char *[]);
-
-	argc = command_translate(command_line, argv);
-	if (argc < 0)
-		return argc;
 
 	// fixme
 	for (exe = build_in_cmd; exe < build_in_cmd + ARRAY_ELEM_NUM(build_in_cmd); exe++) {
@@ -861,7 +856,7 @@ static int __INIT__ init_cmd_queue(void)
 	return 0;
 }
 
-int exec_shell(void)
+int shell(void)
 {
 	init_cmd_queue();
 
@@ -871,11 +866,19 @@ int exec_shell(void)
 
 	while (1)
 	{
+		int argc;
+		char *argv[MAX_ARGC];
 		char line[MAX_ARG_LEN];
 
-		cmd_read(line);
-		// if argc < 0
-		cmd_exec(line);
+		command_read_line(line);
+
+		argc = command_translate(line, argv);
+		if (argc < 0) {
+			printf("Invalid command line: \"%s\"", line);
+			continue;
+		}
+
+		exec(argc, argv);
 	}
 
 	return 0;

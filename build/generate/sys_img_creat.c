@@ -34,13 +34,8 @@ static __u16 calc_checksum(const void *buff, __u32 size)
 	for (n = size, p = buff; n >= 2; n -= 2, p++)
 		chksum += *p;
 
-	if (n == 1) {
-		__u16 tmp = 0;
-
-		*(__u8 *)&tmp = *(__u8 *)p;
-
-		chksum += tmp;
-	}
+	if (n == 1)
+		chksum += *(__u8 *)p;
 
 	chksum = (chksum & 0xffff) + (chksum >> 16);
 	chksum = (chksum & 0xffff) + (chksum >> 16);

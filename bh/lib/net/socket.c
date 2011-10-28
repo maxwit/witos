@@ -46,17 +46,35 @@ static int tcp_wait_for_state(const struct socket *sock, enum tcp_state state)
 	return -ETIMEDOUT;
 }
 
+int socket_ioctl(int fd, int cmd, int flags)
+{
+	struct socket *sock;
+
+	sock = get_sock(fd);
+	if (NULL == sock)
+		return -ENOENT;
+
+	switch (cmd) {
+	case SKIOCS_FLAGS:
+		sock->obstruct_flags = flags;
+		break;
+
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
+}
 static struct sock_buff *sock_recv_packet(struct socket *sock)
 {
 	__u32 psr;
 	struct sock_buff *skb;
 	struct list_node *first;
+	int to = 10000; // timeout
+	int ret;
+	char key;
 
-	while (1)
-	{
-		int ret;
-		char key;
-
+	while (1) {
 		ret = uart_read(CONFIG_DBGU_ID, (__u8 *)&key, 1, WAIT_ASYNC);
 		if (ret > 0 && key == CHAR_CTRL_C)
 			return NULL;
@@ -64,25 +82,34 @@ static struct sock_buff *sock_recv_packet(struct socket *sock)
 		ndev_recv_poll();
 
 		lock_irq_psr(psr);
-		if (!list_is_empty(&sock->rx_qu))
-		{
+		if (!list_is_empty(&sock->rx_qu)) {
 			unlock_irq_psr(psr);
 			break;
 		}
 		unlock_irq_psr(psr);
 
-		udelay(10);
+		if (sock->obstruct_flags == 1) {
+			to--;
+			if (to == 0)
+				break;
+		}
+
+		udelay(100);
 	}
 
-	lock_irq_psr(psr);
-	first = sock->rx_qu.next;
-	list_del_node(first);
-	unlock_irq_psr(psr);
+	if (to > 0) {
+		lock_irq_psr(psr);
+		first = sock->rx_qu.next;
+		list_del_node(first);
+		unlock_irq_psr(psr);
 
-	skb = container_of(first, struct sock_buff, node);
+		skb = container_of(first, struct sock_buff, node);
+		return skb;
+	}
 
-	return skb;
+	return NULL;
 }
+
 
 int socket(int domain, int type, int protocol)
 {
