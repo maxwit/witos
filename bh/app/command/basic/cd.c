@@ -1,8 +1,35 @@
 #include <string.h>
 #include <block.h>
+#include <shell.h>
 
-#define IS_ALPHBIT(c) (((c) >= 'a' && (c) <= 'z') || \
+#define IS_ALPH(c) (((c) >= 'a' && (c) <= 'z') || \
 			((c) >= 'A' && (c) <= 'Z'))
+
+#define STR_LEN  128
+#define TAILL_NUM 239
+
+static void block_info_show(struct block_device *bdev)
+{
+	__u32 device_size = bdev->bdev_size;
+	char str[STR_LEN];
+
+	if (device_size >= (1 << 30)) {
+		sprintf(str, "%d.%dG",
+			device_size >> 30, (((device_size >> 20) & 0x3FF) * 10) >> 10);
+	} else if (device_size >= (1 << 20)) {
+		sprintf(str, "%d.%dM",
+			device_size >> 20, (((device_size >> 10) & 0x3FF) * 10) >> 10);
+	} else if (device_size >= (1 << 10)) {
+		sprintf(str, "%d.%dK",
+			device_size >> 10, ((device_size & 0x3FF) * 10) >> 10);
+	} else {
+		sprintf(str, "%d", device_size);
+	}
+
+	printf("0x%08x - 0x%08x %s (%c:) --- %s bytes\n",
+		bdev->bdev_base, bdev->bdev_base + bdev->bdev_size,
+		bdev->dev.name, bdev->volume, str);
+}
 
 int main(int argc, char *argv[])
 {
@@ -18,8 +45,8 @@ int main(int argc, char *argv[])
 	case 2:
 		vol = argv[1];
 
-		if (IS_ALPHBIT(vol[0]) && \
-			('\0' == vol[1] || (':' == vol[1] && '\0' == vol[1])))
+		if (IS_ALPH(vol[0]) && \
+			('\0' == vol[1] || (':' == vol[1] && '\0' == vol[2])))
 				v = vol[0];
 		else {
 			usage();
@@ -38,10 +65,11 @@ int main(int argc, char *argv[])
 		return -ENODEV;
 	}
 
-	// TODO: show more block info
-	printf("0x%08x - 0x%08x %s (%c:)\n",
-		bdev->bdev_base, bdev->bdev_base + bdev->bdev_size,
-		bdev->dev.name, bdev->volume);
+	block_info_show(bdev);
+
+	if (v >= 'a' && v <= 'z') {
+		v = v + 'A' -'a';
+	}
 
 	set_curr_volume(v);
 
