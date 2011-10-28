@@ -1,228 +1,598 @@
-\section{flash读写及分区}
-\subsection{flash}
-usage: flash <子命令> [可选参数 <值>]
+\section{存储设备操作}
 
+\subsection{flash}
+\textbf{usage}: flash <子命令> [可选参数 <值>]
+
+\subsubsection{子命令:}
 \begin{table}[H]
 %\centering
 \setlength{\parindent}{0pt}
 \begin{tabular}{|c|l|} \hline
 子命令名称 & 命令说明 \\ \hline
-%select & 选中某个flash设备，作为其他flash命令的操作对象 \\ \hline
+info & 显示相应分区或者设备的信息 \\ \hline
 dump & 查看flash页内容，以page为单位，包括oob \\ \hline
 read & 从Flash中加载数据到DDR \\ \hline
 write & Flash中写数据from DDR \\ \hline
 erase & 以block为单位，擦除flash一块内容 \\ \hline
 scanbb & 扫描指定分区上的坏快 \\ \hline
 \end{tabular}
-%\caption{Flash子命令}
 \end{table}
 
+%fixme: specific the size to read or write.
+\subsubsection{命令选项:}
+\begin{enumerate}
+	\item 通用选项：
+	\begin{itemize}
+		\item -a <address> \\
+		该地址的单位可以为：byte，page，block，K，M，G bytes。
+	\end{itemize}
+
+	\item 子命令选项：
+	\begin{enumerate}
+		\item dump
+		\begin{itemize}
+			\item -d <d|D|o|O|x|X> \\
+			分别以十进制、八进制和十六进制输出，其中选项大写表示。 %fixme
+		\end{itemize}
+
+		\item read/write
+		\begin{itemize}
+			\item -f <file> \\
+			其中file指需要读写的文件。
+			\item -m <memory> \\
+			memory地址按字节表示，它可能会影响到image的跳转地址。
+		\end{itemize}
+
+		\item erase
+		\begin{itemize}
+			\item -c <size> \\
+			cleanmark size for JFFS2. %fixme
+		\end{itemize}
+	\end{enumerate}
+\end{enumerate}
+
+\subsubsection{命令使用示例:}
+\begin{lstlisting}[numbers=none]
+$ flash dump -a 1M -d x
+$ flash read -a 100block -f file
+\end{lstlisting}
+
+\subsection{disk}
+\textbf{usage}: disk <子命令> [可选参数 <值>] \\
+\\ 通用的磁盘驱动工具，支持MMC/eMMC/SD，ATA，SCSI等。
+
+\subsubsection{子命令:}
 \begin{table}[H]
-\setlength{\parindent}{0pt}
-\begin{tabular}{|c|l|} \hline
-参数 & 功能 \\ \hline
--a & 设定起始地址\\ \hline
--l & 设定长度\\ \hline
--p & 设定分区，不与-a和-l并用\\ \hline
--m & mem的起始址址\\ \hline
--f & 强制erase（无论是否存在坏块）\\ \hline
--c & 擦除的同时写入cleanmark\\ \hline
-\end{tabular}
-\end{table}
-
-命令使用示例：\\
-\begin{itemize}
-\item flash erase -a 1M -l 32K
-\item flash erase -a 100block -l 16block -f
-\end{itemize}
-
-\subsection{part}
-usage: part [options]
-
-参数说明：
-
-\begin{table}[H]
-\begin{tabular}{|c|l|}
-\hline
-参数 & 功能 \\ \hline
--l & 显示分区表 \\ \hline
-%-i [N] & 显示分区N的具体信息 \\ \hline
-\end{tabular}
-\end{table}
-
-\subsection{ls}
-显示当前分区的具体信息
-
-\subsection{cd}
-切换分区
-
-\section{MMC/SD卡操作}
-\subsection{mmc}
-usage: mmc $<$子命令$>$ [options]
-
-\begin{table}[H]
-%\centering
 \setlength{\parindent}{0pt}
 \begin{tabular}{|c|l|} \hline
 子命令名称 & 命令说明 \\ \hline
-scan & 扫描所有MMC/SD设备，解析并打印设备信息 \\ \hline
-%select & 选中某个MMC/SD设备，作为其他MMC/SD命令的操作对象 \\ \hline
-dump & 查看MMC/SD上的数据，每次显示一个block \\ \hline
-%read & 从MMC/SD中加载数据到DDR \\ \hline
-%write & MMC/SD中写数据from DDR \\ \hline
-%erase & 以block为单位，擦除MMC/SD一块内容 \\ \hline
-\end{tabular}
-%\caption{MMC子命令}
-\end{table}
-
-MMC/SD命令选项及参数介绍：
-\begin{table}[H]
-\setlength{\parindent}{0pt}
-\begin{tabular}{|c|l|} \hline
-参数 & 功能 \\ \hline
--a & 设定起始地址\\ \hline
-%-l & 设定长度\\ \hline
-%-m & mem的起始址址\\ \hline
+scan & 遍历并显示所有分区或者设备的信息 \\ \hline
+dump & 以块为单位读并且显示所有设备数据 \\ \hline
+write & 将数据由DDR写到磁盘中 \\ \hline
 \end{tabular}
 \end{table}
 
-\section{网络连接}
+\subsubsection{命令选项:}
+\begin{enumerate}
+	\item -a <address>
+	指定磁盘的起始地址，以字节或者扇区为单位。
+	\item -m <memory>
+	指定内存起始地址。
+	\item -w <1|2|4|8>
+	指定每一个数据单元大小，其单位为字节。
+\end{enumerate}
 
-\subsection{ifconfig}
-usage: ifconfig [interface] [address] [netmask <address>] [hw [HW] <address>]
+\subsection{ls}
+\textbf{usage}: ls [<可选选项>] \\
+\\ 显示当前文件夹或者块设备的目录信息。
 
-选项及参数介绍：
-\begin{table}[H]
-\setlength{\parindent}{0pt}
-\begin{tabular}{|l|l|} \hline
-选项 & 功能描述 \\ \hline
-interface & 指定网络设备对象，如``eth0''。缺省为系统中第一个网络设备。 \\ \hline
-address & 配置网络设备IP地址为address \\ \hline
-netmask <address> & 配置netmask为address \\ \hline
-hw [HW] <address> & 配置设备的MAC地址为address。其中HW缺省为``ether'' \\ \hline
-\end{tabular}
-\end{table}
+\subsubsection{命令选项:}
+\begin{itemize}
+	\item -l \\
+	显示详细信息，该参数为默认参数。
+\end{itemize}
 
-不加任何option时显示interface的信息，具体包括：
+\subsection{cd}
+\textbf{usage}: cd [<vol>] \\
+\\ 切换分区，默认为home。
+
+\section{网络操作}
+
+\subsection{ipconfig}
+\textbf{usage}: ipconfig [<NIC>] [<IP>] [-n <netmask>] [-m <MAC>] [-s] [-h] \\
+\\ 网络接口参数配置工具。
+
+\subsubsection{命令选项:}
+\begin{itemize}
+	\item <NIC> \\
+	指定网络设备对象，如``eth0''。缺省为系统中第一个网络设备。
+	\item <IP> \\
+	配置网络设备IP地址。
+	\item -n <netmask> \\
+	指定子网掩码。
+	\item -m <MAC> \\
+	指定网卡MAC地址。
+	\item -s \\
+	将配置信息保存到系统配置文件。
+\end{itemize}
+
+\subsubsection{不加任何option时显示interface的信息，具体包括：}
 \begin{enumerate} \setlength{\itemsep}{-\itemsep}
-\item NIC芯片名称（ID及字符串表示）
-\item PHY信息：ID、地址
-\item 连接状态，包括速率
-\item RX/TX bytes
-\item error count
+	\item NIC芯片名称（ID及字符串表示）
+	\item PHY信息：ID、地址
+	\item 连接状态，包括速率
+	\item RX/TX bytes
+	\item error count
 \end{enumerate}
 
 \subsection{ping}
-usage：ping [DestIp] 
+\textbf{usage}：ping [<可选选项>]
 
-若DestIp不指定，则默认的server ip
+\subsubsection{命令选项:}
+\begin{itemize}
+	\item -c <count> \\
+	指定发送ICMP包的数目。
+\end{itemize}
 
 \subsection{tftp}
-usage：tftp [options] [filename]
+\textbf{usage}：tftp [可选子命令 <参数值>] \\
+\\ 简单文件传输协议工具。
 
-参数介绍：
+\subsubsection{子命令:}
 \begin{table}[H]
 \setlength{\parindent}{0pt}
 \begin{tabular}{|c|l|} \hline
-选项 & 功能描述 \\ \hline
- -s & 设定服务端IP \\ \hline
- -m & 下载的内容放在内存里，即，不烧录到flash上 \\ \hline
+子命令名称 & 命令说明 \\ \hline
+get & 下载文件 \\ \hline
+put & 上传文件 \\ \hline
 \end{tabular}
 \end{table}
+
+\subsubsection{命令选项:}
+\begin{enumerate}
+	\item 通用选项：
+	\begin{itemize}
+		\item -r <URL> \\
+		指定远端URL地址，如``10.0.0.2:69/g-bios-bh.bin''。
+		\item -l <path> \\
+		指定本地路径。%fixme
+		\item -m <mode> \\
+		指定tftp传输模式：文本或者二进制（默认为二进制）。
+		\item -t <type> \\
+		指定烧录image文件的类型，默认为自动检测。
+		\item -v \\
+		详细显示操作信息。
+	\end{itemize}
+
+	\item 子命令专有选项：
+	\begin{itemize}
+		\item -a <address> \\
+		下载到指定内存，不写回存储介质（该命令可能会影响到go命令）。
+	\end{itemize}
+\end{enumerate}
+
+\subsection{ftp}
+\textbf{usage}: ftp [<可选子命令>] [<可选参数>] [[user[:password]]@URL] \\
+\\ ftp 传输工具。
+
+\subsubsection{子命令:}
+\begin{table}[H]
+\setlength{\parindent}{0pt}
+\begin{tabular}{|c|l|} \hline
+子命令名称 & 命令说明 \\ \hline
+get & 从ftp服务器上下载文件（默认情况下为下载）\\ \hline
+put & 上传指定文件到服务器上 \\ \hline
+\end{tabular}
+\end{table}
+
+\subsubsection{命令选项:}
+\begin{enumerate}
+	\item 通用选项：
+	\begin{itemize}
+		\item -v \\
+		详细显示文件传输过程。
+	\end{itemize}
+
+	\item 专有选项：
+		\begin{enumerate}
+			\item get
+			\begin{itemize}
+				\item -m <memory> \\
+				仅仅下载到内存，它可能改变系统的跳转地址。 %fixme
+			\end{itemize}
+
+			\item put
+			\begin{itemize}
+				\item -f <file> \\
+				指定上传的文件。
+			\end{itemize}
+		\end{enumerate}
+\end{enumerate}
 
 \subsection{dhclient}
-usage：dhclient [options]
+\textbf{usage}：dhclient [<可选选项>] \\
+\\ DHCP客户端工具。
 
-参数介绍：
-\begin{table}[H]
-\setlength{\parindent}{0pt}
-\begin{tabular}{|c|l|} \hline
-选项 & 功能描述 \\ \hline
- -s & 同时将Server IP更新为DHCP Server \\ \hline
-\end{tabular}
-\end{table}
+\subsubsection{命令选项:}
+\begin{itemize}
+	\item -s \\
+	更新系统配置文件中DHCP服务器地址。
+	\item -x <NIC> \\
+	指定网络接口。
+\end{itemize}
 
 \section{串口协议及工具}
+\subsection{uart}
+\textbf{usage}: uart <子命令> [<可选参数值>] \\
+\\ uart串口传输工具。
 
-\subsection{kermit}
-usage：kermit [options]
-
-作用概述：串口文件传输%\footnote{目前kermit和ymodem仅支持下载}
-
-选项及参数介绍：
-\begin{table}[H]
-\setlength{\parindent}{0pt}
-\begin{tabular}{|c|m{10cm}|} \hline
-选项 & 功能描述 \\ \hline
- -m [address] & 将下载的数据放在内存中，而不直写到storage（如Flash）上。其中address为可选参数，表示memory地址；若不指定address，则由系统自动分配一块空间。 \\ \hline
-\end{tabular}
-\end{table}
-
-\subsection{ymodem}
-usage: ymodem [options]
-
-作用概述：串口文件传输%\footnote{目前kermit和ymodem仅支持下载}
-
-选项及参数介绍：
-\begin{table}[H]
-\setlength{\parindent}{0pt}
-\begin{tabular}{|c|m{10cm}|} \hline
-选项 & 功能描述 \\ \hline
- -m [address] & 将下载的数据放在内存中，而不直写到storage（如Flash）上。其中address为可选参数，表示memory地址；若不指定address，则由系统自动分配一块空间。 \\ \hline
-\end{tabular}
-\end{table}
-
-\section{Graphics和Display}
-\subsection{lcd}
-usage：lcd [options]
-
-参数介绍：
+\subsubsection{子命令:}
 \begin{table}[H]
 \setlength{\parindent}{0pt}
 \begin{tabular}{|c|l|} \hline
-选项 & 功能描述 \\ \hline
--l [all] & 列出LCD的video mode。all表示所有video mode，不加则仅显示当前的video mode \\ \hline
--s <N> & 将当前LCD的video mode设置为第N种mode。 \\ \hline
+子命令名称 & 命令说明 \\ \hline
+load & 下载文件\\ \hline
+send & 上传文件 \\ \hline
+setup & 设置uart串口传输接口\\ \hline
+test & 向主机发送测试字符（检测串口） \\ \hline
 \end{tabular}
 \end{table}
 
-\section{memory读写及指令跳转}
+\subsubsection{命令选项:}
+\begin{enumerate}
+	\item 通用选项：
+	\begin{itemize}
+		\item -p <k|kermit|y|ymodem> \\
+		选择串口传输协议（kermit 或者 ymodem），默认值由配置文件给出。
+		\item -f <file>
+		指定传输的文件。
+		\item -i <name>|<num> \\
+		指定UART接口ID，如数字0、1、2等，或者字符串``ttyS0''、``ttySAC1''等，默认值由配置文件给出。
+		\item -m [<address>] \\
+		将下载的数据放在内存中，而不直接写到storage（如Flash）上；若不指定address，则由系统自动分配一块空间。(它可能会影响到go命令)
+		\item -v \\
+		详细显示每步操作信息。
+	\end{itemize}
+\end{enumerate}
+
+\section{内存读写及指令跳转}
 
 \subsection{mem}
+\textbf{usage}: mem <子命令> [<可选参数>] \\
+\\ 内存调试工具
+
+\subsubsection{子命令:}
 \begin{table}[H]
 %\centering
-\begin{tabular}{|c|l|}
-\hline
-命令名称 & 命令说明\\ \hline
-read & 显示memory数据\\ \hline
-write & 将数据写入memory\\ \hline
-set & 将某个memory空间写入值\\ \hline
+\begin{tabular}{|c|l|} \hline
+命令名称 & 命令说明 \\ \hline
+move & memory move \\ \hline
+copy & memory copy \\ \hline
+write & memory write \\ \hline
+set & 将某个memory空间写入值 \\ \hline
+dump & 以十六进制或者字符型显示内存值 \\ \hline
+free & 显示内存 free/used 信息。\\ \hline
 \end{tabular}
 %\caption{md}
 \end{table}
+
+\subsubsection{命令选项:}
+\begin{enumerate}
+	\item move/copy
+	\begin{itemize}
+		\item -s <src> \\
+		指定源数据地址。
+		\item -d <dst> \\
+		指定目标地址。
+		\item -l <size> \\
+		移动或者复制数据大小，单位可以为K、M或者G字节，默认为字节。
+	\end{itemize}
+
+	\item set \\
+	\textbf{usage}: mem set [<选项>] [<参数值>, ...]
+	\begin{itemize}
+		\item -a <address> \\
+		指定写入内存的起始地址。
+		\item -w <1|2|4|8> \\
+		基本操作单元，默认为1字节。
+	\end{itemize}
+
+	\item dump
+	\begin{itemize}
+		\item -a <address> \\
+		指定内存的起始地址。
+		\item -l <len> \\
+		指定显示数据的大小。
+		\item -d <o|O|d|D|x|X> \\
+		指定显示的格式，默认为十六进制。
+	\end{itemize}
+\end{enumerate}
 
 \subsection{go}
-usage: go <address>
+\textbf{usage}: go [<address>] \\
+\\ 跳转的指定目标地址执行，可十进制表示，也可十六进制表示。
 
-address跳转的目标地址，可十进制表示，也可十六进制表示。
-
-示例: go 0xc000000　跳转到0xc000000处执行。
-
-\section{系统配置}
+\section{系统工具}
 \subsection{sysconf}
-\begin{table}[H]
-%\centering
-\begin{tabular}{|c|l|}
-\hline
-命令名称 & 命令说明\\ \hline
--r <all|net|boot> & sysconf reset \\ \hline
-\end{tabular}
-%\caption{md}
-\end{table}
+\textbf{usage}: config [<可选选项>] [<可选属性> [<值>]] \\
+\\ g-bios 系统配置工具。
 
-\section{其他命令}
-\subsection{help}
-列出g-bios系统中当前所有可用的命令
+\subsubsection{命令选项:}
+\begin{itemize}
+	\item -a <属性> <属性值> \\
+	增加一个新的属性，并赋值。
+	\item -d <属性> \\
+	删除属性。
+	\item -s <属性> <属性值> \\
+	给某一属性重新赋值。
+	\item -g <属性> \\
+	获取某一属性值。
+	\item -l \\
+	显示所有属性信息，默认设置。
+\end{itemize}
 
-\subsection{led}
-LED灯测试
+\subsection{boot}
+\textbf{usage}: boot [OS] [<选项>] \\
+\\ g-bios 启动 kerneli 配置工具。
+
+\subsubsection{命令选项:}
+\begin{itemize}
+	\item -t [kernel] \\
+	通过tftp下载kernel image。
+	\item -s <mmc:kernel> \\
+	通过mmc方式加载kernel。
+	\item -f [<part\_num>] \\
+	指定rootfs目录，如：root=/dev/mtdblock<part\_num>
+	\item -n [nfs\_server:] \\
+	通过nfs 方式加载rootfs。
+	\item -l [kernel command line] \\
+	指定kernel启动的commandline。
+	\item -r [ramdisk\_image\_name] \\
+	通过ramdisk启动kernel。
+	\item -c <console\_name, baudrate> \\
+	设置控制台名称以及波特率。%fixme
+	\item -m <machine ID> \\
+	指定板子的machine ID。
+	\item -v \\
+	打印linux启动参数并退出。
+\end{itemize}
+
+\subsection{reboot}
+\textbf{usage}: reboot [<可选选项>] \\
+\\ 重启系统。
+
+\subsubsection{命令选项：}
+\begin{itemize}
+	\item -v \\
+	再重启时显示更详细的信息。
+\end{itemize}
+
+
+% \section{flash读写及分区}
+% \subsection{flash}
+% usage: flash <子命令> [可选参数 <值>]
+%
+% \begin{table}[H]
+% %\centering
+% \setlength{\parindent}{0pt}
+% \begin{tabular}{|c|l|} \hline
+% 子命令名称 & 命令说明 \\ \hline
+% %select & 选中某个flash设备，作为其他flash命令的操作对象 \\ \hline
+% dump & 查看flash页内容，以page为单位，包括oob \\ \hline
+% read & 从Flash中加载数据到DDR \\ \hline
+% write & Flash中写数据from DDR \\ \hline
+% erase & 以block为单位，擦除flash一块内容 \\ \hline
+% scanbb & 扫描指定分区上的坏快 \\ \hline
+% \end{tabular}
+% %\caption{Flash子命令}
+% \end{table}
+%
+% \begin{table}[H]
+% \setlength{\parindent}{0pt}
+% \begin{tabular}{|c|l|} \hline
+% 参数 & 功能 \\ \hline
+% -a & 设定起始地址\\ \hline
+% -l & 设定长度\\ \hline
+% -p & 设定分区，不与-a和-l并用\\ \hline
+% -m & mem的起始址址\\ \hline
+% -f & 强制erase（无论是否存在坏块）\\ \hline
+% -c & 擦除的同时写入cleanmark\\ \hline
+% \end{tabular}
+% \end{table}
+%
+% 命令使用示例：\\
+% \begin{itemize}
+% \item flash erase -a 1M -l 32K
+% \item flash erase -a 100block -l 16block -f
+% \end{itemize}
+%
+% \subsection{part}
+% usage: part [options]
+%
+% 参数说明：
+%
+% \begin{table}[H]
+% \begin{tabular}{|c|l|}
+% \hline
+% 参数 & 功能 \\ \hline
+% -l & 显示分区表 \\ \hline
+% %-i [N] & 显示分区N的具体信息 \\ \hline
+% \end{tabular}
+% \end{table}
+%
+% \subsection{ls}
+% 显示当前分区的具体信息
+%
+% \subsection{cd}
+% 切换分区
+%
+% \section{MMC/SD卡操作}
+% \subsection{mmc}
+% usage: mmc $<$子命令$>$ [options]
+%
+% \begin{table}[H]
+% %\centering
+% \setlength{\parindent}{0pt}
+% \begin{tabular}{|c|l|} \hline
+% 子命令名称 & 命令说明 \\ \hline
+% scan & 扫描所有MMC/SD设备，解析并打印设备信息 \\ \hline
+% %select & 选中某个MMC/SD设备，作为其他MMC/SD命令的操作对象 \\ \hline
+% dump & 查看MMC/SD上的数据，每次显示一个block \\ \hline
+% %read & 从MMC/SD中加载数据到DDR \\ \hline
+% %write & MMC/SD中写数据from DDR \\ \hline
+% %erase & 以block为单位，擦除MMC/SD一块内容 \\ \hline
+% \end{tabular}
+% %\caption{MMC子命令}
+% \end{table}
+%
+% MMC/SD命令选项及参数介绍：
+% \begin{table}[H]
+% \setlength{\parindent}{0pt}
+% \begin{tabular}{|c|l|} \hline
+% 参数 & 功能 \\ \hline
+% -a & 设定起始地址\\ \hline
+% %-l & 设定长度\\ \hline
+% %-m & mem的起始址址\\ \hline
+% \end{tabular}
+% \end{table}
+%
+% \section{网络连接}
+%
+% \subsection{ifconfig}
+% usage: ifconfig [interface] [address] [netmask <address>] [hw [HW] <address>]
+%
+% 选项及参数介绍：
+% \begin{table}[H]
+% \setlength{\parindent}{0pt}
+% \begin{tabular}{|l|l|} \hline
+% 选项 & 功能描述 \\ \hline
+% interface & 指定网络设备对象，如``eth0''。缺省为系统中第一个网络设备。 \\ \hline
+% address & 配置网络设备IP地址为address \\ \hline
+% netmask <address> & 配置netmask为address \\ \hline
+% hw [HW] <address> & 配置设备的MAC地址为address。其中HW缺省为``ether'' \\ \hline
+% \end{tabular}
+% \end{table}
+%
+% 不加任何option时显示interface的信息，具体包括：
+% \begin{enumerate} \setlength{\itemsep}{-\itemsep}
+% \item NIC芯片名称（ID及字符串表示）
+% \item PHY信息：ID、地址
+% \item 连接状态，包括速率
+% \item RX/TX bytes
+% \item error count
+% \end{enumerate}
+%
+% \subsection{ping}
+% usage：ping [DestIp]
+%
+% 若DestIp不指定，则默认的server ip
+%
+% \subsection{tftp}
+% usage：tftp [options] [filename]
+%
+% 参数介绍：
+% \begin{table}[H]
+% \setlength{\parindent}{0pt}
+% \begin{tabular}{|c|l|} \hline
+% 选项 & 功能描述 \\ \hline
+%  -s & 设定服务端IP \\ \hline
+%  -m & 下载的内容放在内存里，即，不烧录到flash上 \\ \hline
+% \end{tabular}
+% \end{table}
+%
+% \subsection{dhclient}
+% usage：dhclient [options]
+%
+% 参数介绍：
+% \begin{table}[H]
+% \setlength{\parindent}{0pt}
+% \begin{tabular}{|c|l|} \hline
+% 选项 & 功能描述 \\ \hline
+%  -s & 同时将Server IP更新为DHCP Server \\ \hline
+% \end{tabular}
+% \end{table}
+%
+% \section{串口协议及工具}
+%
+% \subsection{kermit}
+% usage：kermit [options]
+%
+% 作用概述：串口文件传输%\footnote{目前kermit和ymodem仅支持下载}
+%
+% 选项及参数介绍：
+% \begin{table}[H]
+% \setlength{\parindent}{0pt}
+% \begin{tabular}{|c|m{10cm}|} \hline
+% 选项 & 功能描述 \\ \hline
+%  -m [address] & 将下载的数据放在内存中，而不直写到storage（如Flash）上。其中address为可选参数，表示memory地址；若不指定address，则由系统自动分配一块空间。 \\ \hline
+% \end{tabular}
+% \end{table}
+%
+% \subsection{ymodem}
+% usage: ymodem [options]
+%
+% 作用概述：串口文件传输%\footnote{目前kermit和ymodem仅支持下载}
+%
+% 选项及参数介绍：
+% \begin{table}[H]
+% \setlength{\parindent}{0pt}
+% \begin{tabular}{|c|m{10cm}|} \hline
+% 选项 & 功能描述 \\ \hline
+%  -m [address] & 将下载的数据放在内存中，而不直写到storage（如Flash）上。其中address为可选参数，表示memory地址；若不指定address，则由系统自动分配一块空间。 \\ \hline
+% \end{tabular}
+% \end{table}
+%
+% \section{Graphics和Display}
+% \subsection{lcd}
+% usage：lcd [options]
+%
+% 参数介绍：
+% \begin{table}[H]
+% \setlength{\parindent}{0pt}
+% \begin{tabular}{|c|l|} \hline
+% 选项 & 功能描述 \\ \hline
+% -l [all] & 列出LCD的video mode。all表示所有video mode，不加则仅显示当前的video mode \\ \hline
+% -s <N> & 将当前LCD的video mode设置为第N种mode。 \\ \hline
+% \end{tabular}
+% \end{table}
+%
+% \section{memory读写及指令跳转}
+%
+% \subsection{mem}
+% \begin{table}[H]
+% %\centering
+% \begin{tabular}{|c|l|}
+% \hline
+% 命令名称 & 命令说明\\ \hline
+% read & 显示memory数据\\ \hline
+% write & 将数据写入memory\\ \hline
+% set & 将某个memory空间写入值\\ \hline
+% \end{tabular}
+% %\caption{md}
+% \end{table}
+%
+% \subsection{go}
+% usage: go <address>
+%
+% address跳转的目标地址，可十进制表示，也可十六进制表示。
+%
+% 示例: go 0xc000000　跳转到0xc000000处执行。
+%
+% \section{系统配置}
+% \subsection{sysconf}
+% \begin{table}[H]
+% %\centering
+% \begin{tabular}{|c|l|}
+% \hline
+% 命令名称 & 命令说明\\ \hline
+% -r <all|net|boot> & sysconf reset \\ \hline
+% \end{tabular}
+% %\caption{md}
+% \end{table}
+%
+% \section{其他命令}
+% \subsection{help}
+% 列出g-bios系统中当前所有可用的命令
+%
+% \subsection{led}
+% LED灯测试
