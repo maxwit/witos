@@ -553,9 +553,8 @@ get_sign :
 			fmt = fmt_roll;//roll back fmt
 			continue;
 		}
-	ch_tmp_num = ch_num;
-	ch_tmp_num = num_to_ascii(ch_tmp_num, *para, width, base, output_style);
-	nTrueWidth = strlen(ch_num);
+	ch_tmp_num = num_to_ascii(ch_num, *para, width, base, output_style);
+	nTrueWidth = ch_tmp_num - ch_num;
 	for (i = 0; i < nTrueWidth; ++i)
 	{
 		IF_UNOVER(ch_num[i])

@@ -5,7 +5,7 @@
 #define IS_ALPH(c) (((c) >= 'a' && (c) <= 'z') || \
 			((c) >= 'A' && (c) <= 'Z'))
 
-#define STR_LEN  128
+#define STR_LEN  8
 #define TAILL_NUM 239
 
 static void block_info_show(struct block_device *bdev)
@@ -14,16 +14,16 @@ static void block_info_show(struct block_device *bdev)
 	char str[STR_LEN];
 
 	if (device_size >= (1 << 30)) {
-		sprintf(str, "%d.%dG",
+		snprintf(str, STR_LEN, "%d.%dG",
 			device_size >> 30, (((device_size >> 20) & 0x3FF) * 10) >> 10);
 	} else if (device_size >= (1 << 20)) {
-		sprintf(str, "%d.%dM",
+		snprintf(str, STR_LEN, "%d.%dM",
 			device_size >> 20, (((device_size >> 10) & 0x3FF) * 10) >> 10);
 	} else if (device_size >= (1 << 10)) {
-		sprintf(str, "%d.%dK",
+		snprintf(str, STR_LEN, "%d.%dK",
 			device_size >> 10, ((device_size & 0x3FF) * 10) >> 10);
 	} else {
-		sprintf(str, "%d", device_size);
+		snprintf(str, STR_LEN, "%d", device_size);
 	}
 
 	printf("0x%08x - 0x%08x %s (%c:) --- %s bytes\n",
