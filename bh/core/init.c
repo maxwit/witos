@@ -101,7 +101,7 @@ int main(void)
 
 	sys_init();
 
-	auto_boot();
+	// auto_boot();
 
 	shell();
 

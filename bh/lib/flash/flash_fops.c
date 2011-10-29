@@ -452,6 +452,79 @@ int part_show(const struct flash_chip *flash)
 	return index;
 }
 
+int set_bdev_file_attr(struct bdev_file *file)
+{
+	char file_attr[CONF_ATTR_LEN];
+	char file_val[CONF_VAL_LEN];
+	char *pn;
+
+	if (file == NULL) {
+		return -1;
+	}
+
+	pn = strchr(file->bdev->dev.name, 'p');
+
+	if (pn == NULL) {
+		return 0;
+	}
+
+	pn++;
+
+	// set file name
+	snprintf(file_attr, CONF_ATTR_LEN, "p%c.file.name", *pn);
+	if (conf_set_attr(file_attr, file->name) < 0) {
+		conf_add_attr(file_attr, file->name);
+	}
+
+	// set file size
+	snprintf(file_attr, CONF_ATTR_LEN, "p%c.file.size", *pn);
+	val_to_dec_str(file_val, file->size);
+	if (conf_get_attr(file_attr, file_val) < 0) {
+		conf_add_attr(file_attr, file->name);
+	}
+
+	return 0;
+}
+
+int get_bdev_file_attr(struct bdev_file * file)
+{
+	char file_attr[CONF_ATTR_LEN];
+	char file_val[CONF_VAL_LEN];
+	char *pn;
+
+	if (file == NULL) {
+		return -1;
+	}
+
+	pn = strchr(file->bdev->dev.name, 'p');
+
+	if (pn == NULL) {
+		file->name[0] = '\0';
+		file->size = 0;
+	} else {
+		pn++;
+
+		// get file name
+		snprintf(file_attr, CONF_ATTR_LEN, "p%c.file.name", *pn);
+		if (conf_get_attr(file_attr, file_val) < 0) {
+			file->name[0] = '\0';
+			file->size = 0;
+			return 0;
+		} else {
+			strncpy(file->name, file_val, MAX_FILE_NAME_LEN);
+		}
+
+		// get file size
+		snprintf(file_attr, CONF_ATTR_LEN, "p%c.file.size", *pn);
+		if (conf_get_attr(file_attr, file_val) < 0 || str_to_val(file_val, &file->size) < 0) {
+			file->name[0] = '\0';
+			file->size = 0;
+		}
+	}
+
+	return 0;
+}
+
 int flash_fops_init(struct block_device *bdev)
 {
 	struct bdev_file *file;
@@ -467,6 +540,10 @@ int flash_fops_init(struct block_device *bdev)
 	file->read  = flash_bdev_read;
 	file->write = flash_bdev_write;
 	file->close = flash_bdev_close;
+
+	bdev->file  = file;
+
+	get_bdev_file_attr(file);
 
 	return 0;
 }

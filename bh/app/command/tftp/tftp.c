@@ -1,6 +1,7 @@
 #include <getopt.h>
 #include <sysconf.h>
 #include <net/tftp.h>
+#include <flash/flash.h>
 
 #define PORT_LEN 6
 #define IS_ALPHBIT(c) (((c) >= 'a' && (c) <= 'z') || \
@@ -239,6 +240,11 @@ static int tftp_get_file(int argc, char **argv)
 	}
 
 	ret = tftp_download(&dlopt);
+	if (ret > 0) {
+		strncpy(dlopt.file->name, dlopt.file_name, MAX_FILE_NAME_LEN);
+		dlopt.file->size = ret;
+		set_bdev_file_attr(dlopt.file);
+	}
 
 	if (false == mem_only) {
 		if (ret > 0) {

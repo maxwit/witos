@@ -6,7 +6,6 @@
 
 // #define MTD_DEV_NAME_LEN    32
 
-#define MAX_FILE_NAME_LEN   64
 #define MAX_FLASH_PARTS	    16
 // #define DEF_VOL_ID          1  // fixme: default point to g-bios bottom half
 #define BOOT_FLASH_ID       0 // fixme
@@ -208,6 +207,11 @@ int flash_set_ecc_mode(struct flash_chip *flash, ECC_MODE newMode, ECC_MODE *pOl
 int flash_fops_init(struct block_device *bdev);
 
 // user APIs
+
+int set_bdev_file_attr(struct bdev_file * file);
+
+int get_bdev_file_attr(struct bdev_file * file);
+
 struct flash_chip *flash_open(const char *name);
 
 int flash_close(struct flash_chip *flash);

@@ -5,6 +5,7 @@
 #include <device.h>
 
 #define PART_NAME_LEN 32
+#define MAX_FILE_NAME_LEN   64
 
 typedef enum
 {
@@ -50,6 +51,8 @@ struct bdev_file {
 
 	size_t cur_pos;
 	const char *img_type;
+	char name[MAX_FILE_NAME_LEN];
+	size_t size;
 
 	int (*open)(struct bdev_file *, const char *);
 	int (*close)(struct bdev_file *);
