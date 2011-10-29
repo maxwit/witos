@@ -343,7 +343,7 @@ ssize_t sendto(int fd, const void *buff, __u32 buff_size, int flags,
 			break;
 		}
 		else if (PROT_ETH == sock->protocol) {
-			arp_send_packet(&sock->saddr[SA_DST].sin_addr.s_addr, NULL, ARP_OP_REQ);
+			arp_send_packet((__u8 *)&sock->saddr[SA_DST].sin_addr.s_addr, NULL, ARP_OP_REQ);
 			break;
 		}
 
