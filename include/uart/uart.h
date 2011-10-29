@@ -29,7 +29,6 @@ __u32 uart_rxbuf_count();
 int uart_ioctl(int id,int cmd,void * arg);
 
 int uart_recv_byte_timeout(__u8 *ch, int timeout);
-
 //
 
 #define DECLARE_UART_INIT(func) \
@@ -42,4 +41,3 @@ int uart_recv_byte_timeout(__u8 *ch, int timeout);
 	 __u8 uart_recv_byte() __attribute__((alias(#func)))
 
 #endif
-

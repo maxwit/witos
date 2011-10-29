@@ -1,4 +1,5 @@
 #include <loader.h>
+#include <sysconf.h>
 #include <uart/uart.h>
 #include <uart/ymodem.h>
 
@@ -17,8 +18,7 @@ static void uart_clear_buff()
 	__u8  tmp;
 	int ret;
 
-	while (1)
-	{
+	while (1) {
 		ret = uart_recv_byte_timeout(&tmp, MODEM_TIMEOUT);
 
 		if (ret < 0)
@@ -50,8 +50,7 @@ int ymodem_load(struct loader_opt *opt)
 	__u8 *curr_addr;
 
 #ifndef CONFIG_GTH
-	if (!opt->load_addr)
-	{
+	if (!opt->load_addr) {
 		__u8 data[1024];
 
 		curr_addr = data;
@@ -62,10 +61,11 @@ int ymodem_load(struct loader_opt *opt)
 		curr_addr = opt->load_addr;
 	}
 
+	set_load_mem_addr((__u32 *)curr_addr);
+
 	opt->load_size = 0;
 
-	while (1)
-	{
+	while (1) {
 		uart_send_byte('C');
 
 		ret = uart_recv_byte_timeout(&stx, 2000000);
@@ -73,14 +73,11 @@ int ymodem_load(struct loader_opt *opt)
 		if (ret < 0)
 			continue;
 
-		if (SOH == stx)
-		{
+		if (SOH == stx) {
 			// printf("SOH (%d)\n", stx);
 			size = 128;
 			break;
-		}
-		else if (STX == stx)
-		{
+		} else if (STX == stx) {
 			// printf("STX (%d)\n", stx);
 			size = 1024;
 			break;
@@ -91,18 +88,15 @@ int ymodem_load(struct loader_opt *opt)
 	blk_num[1] = uart_recv_byte();
 
 #ifndef CONFIG_GTH
-	for (count = 0; count < size; count++)
-	{
+	for (count = 0; count < size; count++) {
 		ret = uart_recv_byte_timeout((__u8 *)opt->file_name + count, MODEM_TIMEOUT);
 
-		if (ret == 0)
-		{
+		if (ret == 0) {
 			if ('\0' == opt->file_name[count])
 				break;
 		}
 #ifdef CONFIG_DEBUG
-		else
-		{
+		else {
 			printf("line %d: timeout!\n", __LINE__);
 		}
 #endif
@@ -120,29 +114,22 @@ int ymodem_load(struct loader_opt *opt)
 	uart_send_byte('C');
 
 	blk++;
-	while (1)
-	{
-		while (1)
-		{
+	while (1) {
+		while (1) {
 			ret = uart_recv_byte_timeout(&stx, MODEM_TIMEOUT);
 
 			if (ret < 0)
 				continue;
 
-			if (SOH == stx)
-			{
+			if (SOH == stx) {
 				// printf("SOH (%d)\n", stx);
 				size = 128;
 				break;
-			}
-			else if (STX == stx)
-			{
+			} else if (STX == stx) {
 				// printf("STX (%d)\n", stx);
 				size = 1024;
 				break;
-			}
-			else if (EOT == stx)
-			{
+			} else if (EOT == stx) {
 				// printf("Done!\n");
 				goto L1;
 			}
@@ -151,8 +138,7 @@ int ymodem_load(struct loader_opt *opt)
 		blk_num[0] = uart_recv_byte();
 		blk_num[1] = uart_recv_byte();
 		if ((blk_num[0] ^ blk_num[1]) != (__u8)0xFF ||
-			blk_num[0] != (__u8)(blk & 0xFF))
-		{
+			blk_num[0] != (__u8)(blk & 0xFF)) {
 			uart_clear_buff();
 			uart_send_byte(NAK);
 
@@ -164,12 +150,10 @@ int ymodem_load(struct loader_opt *opt)
 			continue;
 		}
 
-		for (count = 0; count < size; count++)
-		{
+		for (count = 0; count < size; count++) {
 			ret = uart_recv_byte_timeout(curr_addr + count, MODEM_TIMEOUT);
 
-			if (ret < 0)
-			{
+			if (ret < 0) {
 				printf("line %d: timeout.\n");
 				break;
 			}
@@ -179,7 +163,7 @@ int ymodem_load(struct loader_opt *opt)
 		ret = uart_recv_byte_timeout(&crc[1], MODEM_TIMEOUT);
 
 #ifndef CONFIG_GTH
-		// part_write(opt->part, curr_addr, count);
+		//part_write(opt->part, curr_addr, count);
 
 		if (opt->load_addr)
 #endif

@@ -10,8 +10,7 @@ static int s3c24x0_uart_init(void)
 	writel(VA(GPIO_BASE + GPH_CON), 0x16faaa);
 	writel(VA(GPIO_BASE + GPH_UP), 0x7ff);
 
-	for (num = 0; num < UART_NUM; num++)
-	{
+	for (num = 0; num < UART_NUM; num++) {
 		writel(UART_BASE(num) + ULCON, 0x3);
 		writel(UART_BASE(num) + UCON, 0x245);
 

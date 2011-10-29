@@ -1,5 +1,6 @@
 #include <errno.h>
 #include <loader.h>
+#include <sysconf.h>
 #include <uart/uart.h>
 #include <uart/kermit.h>
 #ifdef CONFIG_DEBUG
@@ -38,8 +39,7 @@ static void send_ack_packet(__u32 seq, char type)
 	buff[index]   = '\0';
 
 	index = 1;
-	while (buff[index])
-	{
+	while (buff[index]) {
 		checksum += buff[index];
 		index++;
 	}
@@ -49,8 +49,7 @@ static void send_ack_packet(__u32 seq, char type)
 	buff[index] = '\0';
 
 	index = 0;
-	while (buff[index])
-	{
+	while (buff[index]) {
 		uart_send_byte(buff[index]);
 		index++;
 	}
@@ -66,8 +65,7 @@ int kermit_load(struct loader_opt *opt)
 	int i;
 
 #ifndef CONFIG_GTH
-	if (!opt->load_addr)
-	{
+	if (!opt->load_addr) {
 		__u8 data[KERM_BUF_LEN];
 		curr_addr = data;
 	}
@@ -76,14 +74,15 @@ int kermit_load(struct loader_opt *opt)
 	{
 		curr_addr = opt->load_addr;
 	}
+
+	set_load_mem_addr((__u32 *)curr_addr);
+
 	opt->load_size = 0;
 
-	do
-	{
+	do {
 		while (MARK_START != uart_recv_byte());
 
-		for (index = 0; ; index++)
-		{
+		for (index = 0; ; index++) {
 			buff[index] = uart_recv_byte();
 
 			if (KERM_KEY_TERM == buff[index])
@@ -103,8 +102,7 @@ int kermit_load(struct loader_opt *opt)
 		checksum += seq;
 		seq -= KERM_KEY_SPACE;
 
-		if (seq != real_seq)
-		{
+		if (seq != real_seq) {
 			send_ack_packet(real_seq, KERM_TYPE_NACK);
 			continue;
 		}
@@ -118,18 +116,15 @@ int kermit_load(struct loader_opt *opt)
 		if (len) // fixme: handle extended length
 			len -= 2;
 
-		switch (type)
-		{
+		switch (type) {
 		case KERM_TYPE_HEAD:
 			i = 0;
-			while (len > 1)
-			{
+			while (len > 1) {
 				curr_char = buff[index++];
 				checksum += curr_char;
 				len--;
 
-				if (curr_char == KERM_KEY_SHARP)
-				{
+				if (curr_char == KERM_KEY_SHARP) {
 					curr_char = buff[index++];
 					checksum += curr_char;
 					len--;
@@ -146,14 +141,12 @@ int kermit_load(struct loader_opt *opt)
 			break;
 
 		case KERM_TYPE_DATA:
-			while (len > 1)
-			{
+			while (len > 1) {
 				curr_char = buff[index++];
 				checksum += curr_char;
 				len--;
 
-				if (curr_char == KERM_KEY_SHARP)
-				{
+				if (curr_char == KERM_KEY_SHARP) {
 					curr_char = buff[index++];
 					checksum += curr_char;
 					len--;
@@ -169,8 +162,7 @@ int kermit_load(struct loader_opt *opt)
 			break;
 
 		default:
-			while (len > 1)
-			{
+			while (len > 1) {
 				curr_char = buff[index++];
 				checksum += curr_char;
 				len--;
@@ -180,8 +172,7 @@ int kermit_load(struct loader_opt *opt)
 
 		/* checksum */
 		curr_char = buff[index++];
-		if (curr_char != (KERM_KEY_SPACE + (0x3f & (checksum + (0x03 & (checksum >> 6))))))
-		{
+		if (curr_char != (KERM_KEY_SPACE + (0x3f & (checksum + (0x03 & (checksum >> 6)))))) {
 #ifdef CONFIG_DEBUG
 			// while (1)
 				printf("Checksum error!\n");

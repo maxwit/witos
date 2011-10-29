@@ -20,6 +20,7 @@
 struct loader_opt
 {
 	void *load_addr;
+	int  load_flash;
 	int  load_size;
 	const char *prompt;
 #ifdef CONFIG_GTH

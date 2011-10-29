@@ -37,8 +37,7 @@ static void send_ack_packet(__u32 seq, char type)
 	buff[index]   = '\0';
 
 	index = 1;
-	while (buff[index])
-	{
+	while (buff[index]) {
 		checksum += buff[index];
 		index++;
 	}
@@ -48,8 +47,7 @@ static void send_ack_packet(__u32 seq, char type)
 	buff[index] = '\0';
 
 	index = 0;
-	while (buff[index])
-	{
+	while (buff[index]) {
 		uart_send_byte(buff[index]);
 		index++;
 	}
@@ -64,10 +62,10 @@ int kermit_load(struct loader_opt *opt)
 	__u8 *curr_addr = (__u8 *)opt->load_addr;
 
 #ifndef CONFIG_GTH
-	if (!opt->load_addr)
-	{
+	if (!opt->load_addr) {
 		__u8 data[KERM_BUF_LEN];
 		curr_addr = data;
+		printf("curr_addr = %p\n",data);
 	}
 	else
 #endif
@@ -76,12 +74,10 @@ int kermit_load(struct loader_opt *opt)
 	}
 	opt->load_size = 0;
 
-	do
-	{
+	do {
 		while (MARK_START != uart_recv_byte());
 
-		for (index = 0; ; index++)
-		{
+		for (index = 0; ; index++) {
 			buff[index] = uart_recv_byte();
 
 			if (KERM_KEY_TERM == buff[index])
@@ -101,8 +97,7 @@ int kermit_load(struct loader_opt *opt)
 		checksum += seq;
 		seq -= KERM_KEY_SPACE;
 
-		if (seq != real_seq)
-		{
+		if (seq != real_seq) {
 #ifdef CONFIG_DEBUG
 			// while (1)
 				printf("SEQ error: 0x%x != 0x%x\n", seq, real_seq);
@@ -120,8 +115,7 @@ int kermit_load(struct loader_opt *opt)
 		if (len) // fixme: handle extended length
 			len -= 2;
 
-		while (len > 1)
-		{
+		while (len > 1) {
 			curr_char = buff[index++];
 			checksum += curr_char;
 			len--;
@@ -129,8 +123,7 @@ int kermit_load(struct loader_opt *opt)
 			if (type != KERM_TYPE_DATA)
 				continue;
 
-			if (curr_char == KERM_KEY_SHARP) /* '#' */
-			{
+			if (curr_char == KERM_KEY_SHARP) {
 				curr_char = buff[index++];
 				checksum += curr_char;
 				len--;
@@ -147,8 +140,7 @@ int kermit_load(struct loader_opt *opt)
 
 		/* checksum */
 		curr_char = buff[index++];
-		if (curr_char != (KERM_KEY_SPACE + (0x3f & (checksum + (0x03 & (checksum >> 6))))))
-		{
+		if (curr_char != (KERM_KEY_SPACE + (0x3f & (checksum + (0x03 & (checksum >> 6)))))) {
 #ifdef CONFIG_DEBUG
 			// while (1)
 				printf("Checksum error!\n");
