@@ -164,6 +164,8 @@ int ymodem_load(struct loader_opt *opt)
 
 #ifndef CONFIG_GTH
 		//part_write(opt->part, curr_addr, count);
+		if (opt->file)
+			opt->file->write(opt->file, curr_addr, count);
 
 		if (opt->load_addr)
 #endif

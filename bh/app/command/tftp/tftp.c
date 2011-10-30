@@ -240,7 +240,7 @@ static int tftp_get_file(int argc, char **argv)
 	}
 
 	ret = tftp_download(&dlopt);
-	if (ret > 0) {
+	if (dlopt.file && ret > 0) {
 		strncpy(dlopt.file->name, dlopt.file_name, MAX_FILE_NAME_LEN);
 		dlopt.file->size = ret;
 		set_bdev_file_attr(dlopt.file);

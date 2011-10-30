@@ -134,7 +134,6 @@ L1:
 
 static int tftp_load_image(PART_TYPE type, char image_name[], __u8 **buff_ptr, __u32 *buff_len)
 {
-#if 0
 	int ret;
 	struct tftp_opt dlopt;
 
@@ -161,8 +160,6 @@ static int tftp_load_image(PART_TYPE type, char image_name[], __u8 **buff_ptr, _
 	*buff_len = ret;
 L1:
 	return ret;
-#endif
-	return 0;
 }
 
 // fixme: for debug stage while no flash driver available

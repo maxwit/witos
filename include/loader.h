@@ -28,7 +28,7 @@ struct loader_opt
 	int (*main)(struct loader_opt *opt);
 #else
 	char file_name[MAX_FILE_NAME_LEN];
-	struct partition *part;
+	struct bdev_file *file;
 #endif
 };
 

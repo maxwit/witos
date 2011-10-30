@@ -4,6 +4,7 @@
 #include <uart/uart.h>
 #include <sysconf.h>
 #include <getopt.h>
+#include <flash/flash.h>
 
 static int uart_load(int argc, char *argv[])
 {
@@ -15,6 +16,8 @@ static int uart_load(int argc, char *argv[])
 	size = 0;
 
 	memset(&ld_opt, 0x0, sizeof(ld_opt));
+
+	ld_opt.file = get_bdev_by_volume(get_curr_volume())->file;
 
 	while ((opt = getopt(argc, argv, "m::p:f:i:vh")) != -1) {
 		switch (opt) {
@@ -28,7 +31,7 @@ static int uart_load(int argc, char *argv[])
 				}
 			}
 
-			ld_opt.load_flash = 1;
+			ld_opt.file = NULL;
 
 			break;
 
@@ -66,6 +69,13 @@ static int uart_load(int argc, char *argv[])
 	} else {
 		usage();
 		return -EINVAL;
+	}
+
+	if (ld_opt.file && size > 0) {
+		strncpy(ld_opt.file->name, ld_opt.file_name, MAX_FILE_NAME_LEN);
+		ld_opt.file->size = size;
+
+		set_bdev_file_attr(ld_opt.file);
 	}
 
 	return size;
