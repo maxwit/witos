@@ -91,7 +91,7 @@ static int lan9220_hw_init(void)
 	while (lan9220_readl(HW_CFG) & 0x1);
 
 	// reset mac
-//	while (lan9220_readl(PMT_CTRL) & 0x1);
+	// while (lan9220_readl(PMT_CTRL) & 0x1);
 	val = lan9220_readl(PMT_CTRL);
 	lan9220_writel(PMT_CTRL, val | 0x1 << 10);
 	while (lan9220_readl(PMT_CTRL) & 0x1 << 10);
@@ -125,9 +125,7 @@ static int lan9220_send_packet(struct net_device *ndev, struct sock_buff *skb)
 	lan9220_writel(TX_DATA_PORT, cmd_B);
 
 	for (i = 0; i < skb->size; i += 4, data++)
-	{
 		lan9220_writel(TX_DATA_PORT, *data);
-	}
 
 	status = lan9220_readl(TX_CFG);
 	lan9220_writel(TX_CFG, status | 0x1 << 1);
@@ -152,36 +150,27 @@ static int lan9220_recv_packet(struct net_device *ndev)
 	info_status = lan9220_readl(RX_FIFO_INF);
 	packet_count = info_status >> 16 & 0xff;
 	if (0 == packet_count)
-	{
 		return 0;
-	}
 
-	while (packet_count--)
-	{
+	while (packet_count--) {
 		packet_status = lan9220_readl(RX_STATUS_PORT);
 		// fixme, need to discard the error packet
 		packet_length = packet_status >> 16 & 0x3fff;
 		if (0 == packet_length)
-		{
 			break;
-		}
 
 		packet_length_pad = packet_length;
 		ALIGN_UP(packet_length_pad, 4);
 
 		skb = skb_alloc(0, packet_length_pad);
 		if (NULL == skb)
-		{
 			return -ENOMEM;
-		}
 
 		skb->size = packet_length;
 		data = (__u32 *)skb->data;
 
 		for (i = 0; i < packet_length_pad; i += 4, data++)
-		{
 			*data = lan9220_readl(RX_DATA_PORT);
-		}
 
 		skb->size -= 4;
 		netif_rx(skb);
@@ -191,7 +180,6 @@ static int lan9220_recv_packet(struct net_device *ndev)
 
 	return 0;
 }
-
 
 static int lan9220_isr(__u32 irq, void *dev)
 {
@@ -203,21 +191,16 @@ static int lan9220_isr(__u32 irq, void *dev)
 	lan9220_writel(INT_STS, status);
 
 	if (0 == status)
-	{
 		return IRQ_NONE;
-	}
 
 	// fixme
 	if (status & 0x1 << 20)
-	{
 		lan9220_recv_packet(ndev);
-	}
 
 	return IRQ_HANDLED;
 #else
 
 	return lan9220_recv_packet(ndev);
-
 #endif
 }
 
@@ -246,10 +229,9 @@ static __INIT__ int lan9220_probe(void)
 	const char *chip_name = NULL;;
 
 	mac_id = lan9220_readl(ID_REV);
-	printf("MAC ID is %08x\n", mac_id);
+	printf("ID = 0x%08x\n", mac_id);
 
-	switch (mac_id >> 16)
-	{
+	switch (mac_id >> 16) {
 	case 0x0118:
 		lan9220_32bits = 1;
 		chip_name = "LAN9118 (32-bit)";
@@ -261,14 +243,13 @@ static __INIT__ int lan9220_probe(void)
 		break;
 
 	default:
+		chip_name = "Unknown";
 		break;
 	}
 
 	ndev = ndev_new(0);
 	if (NULL == ndev)
-	{
 		return -ENOMEM;
-	}
 
 	ndev->chip_name = chip_name;
 	ndev->set_mac_addr = lan9220_set_mac;
@@ -284,23 +265,19 @@ static __INIT__ int lan9220_probe(void)
 
 	ret = ndev_register(ndev);
 	if (ret < 0)
-	{
 		goto error;
-	}
 
 #ifdef CONFIG_IRQ_SUPPORT
 	ret = irq_register_isr(LAN9220_IRQ_NUM, lan9220_isr, ndev);
 	if (ret < 0)
-	{
 		goto error;
-	}
 #endif
-	ret = lan9220_hw_init();
 
+	ret = lan9220_hw_init();
 	return ret;
+
 error:
 	free(ndev);
-
 	return ret;
 }
 
