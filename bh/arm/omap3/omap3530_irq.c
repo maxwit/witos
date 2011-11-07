@@ -6,18 +6,18 @@ int read_irq_num(void)
 	__u32 val, shift;
 
 	irq_num = readl(VA(INTCPS_BASE + INTCPS_SIR_IRQ)) & 0x7f;
-	if (irq_num >= 29 && irq_num <= 34)
-	{
+
+	if (irq_num >= 29 && irq_num <= 34) {
 		val = readl(VA(GPIO_IRQ_STATUS1(irq_num - 29)));
+
 		shift = 0;
-		while (shift < 32)
-		{
+		while (shift < 32) {
 			if ((0x1UL << shift) & val)
-			{
 				break;
-			}
+
 			shift++;
 		}
+
 		irq_num = INTC_PINS + shift;
 	}
 
@@ -26,8 +26,7 @@ int read_irq_num(void)
 
 static void omap3530_irq_umask(__u32 irq_num)
 {
-	switch (irq_num)
-	{
+	switch (irq_num) {
 	case 20:
 		// GPMC INT
 		break;
@@ -56,8 +55,7 @@ static void omap3530_set_trigger(__u32 irq_num, __u32 irq_type)
 	if (irq_num < INTC_PINS)
 		return;
 
-	switch (irq_type)
-	{
+	switch (irq_type) {
 	case IRQ_TYPE_LOW:
 		break;
 	case IRQ_TYPE_HIGH:
@@ -71,8 +69,7 @@ static void omap3530_set_trigger(__u32 irq_num, __u32 irq_type)
 	}
 }
 
-static struct int_ctrl omap3530_intctl =
-{
+static struct int_ctrl omap3530_intctl = {
 	.mask  = omap3530_irq_mask,
 	.umask = omap3530_irq_umask,
 };
@@ -81,8 +78,7 @@ static int handle_dev_irq_list(__u32 irq, struct irq_dev *idev)
 {
 	int retval = IRQ_NONE;
 
-	do
-	{
+	do {
 		int ret;
 
 		ret = idev->dev_isr(irq, idev->device);
@@ -103,22 +99,21 @@ static void omap3530_handle(struct int_pin *pin, __u32 irq)
 
 	handle_dev_irq_list(irq, dev_list);
 
-	switch (irq)
-	{
-		case 20:
-			// GPMC INT
-			irq_status = readl(VA(GPMC_BASE + GPMC_IRQ_STATUS));
-			writel(VA(GPMC_BASE + GPMC_IRQ_STATUS), irq_status);
-			break;
+	switch (irq) {
+	case 20:
+		// GPMC INT
+		irq_status = readl(VA(GPMC_BASE + GPMC_IRQ_STATUS));
+		writel(VA(GPMC_BASE + GPMC_IRQ_STATUS), irq_status);
+		break;
 
-		case GPIO_IRQ(0) ...  GPIO_IRQ(191):
-			irq = (irq - INTC_PINS) >> 5;
-			irq_status = readl(VA(GPIO_IRQ_STATUS1(irq)));
-			writel(VA(GPIO_IRQ_STATUS1(irq)), irq_status);
-			break;
+	case GPIO_IRQ(0) ...  GPIO_IRQ(191):
+		irq = (irq - INTC_PINS) >> 5;
+		irq_status = readl(VA(GPIO_IRQ_STATUS1(irq)));
+		writel(VA(GPIO_IRQ_STATUS1(irq)), irq_status);
+		break;
 
-		default:
-			break;
+	default:
+		break;
 	}
 
 	writel(VA(INTCPS_BASE + INTCPS_CONTROL), 0x1);
@@ -134,14 +129,12 @@ int omap3530_irq_init(void)
 
 	writel(VA(INTCPS_BASE + INTCPS_SYSCONFIG), 0x1);
 
-	for (irq_num = 0; irq_num < MAX_IRQ_NUM; irq_num++)
-	{
+	for (irq_num = 0; irq_num < MAX_IRQ_NUM; irq_num++) {
 		irq_assoc_intctl(irq_num, &omap3530_intctl);
 		irq_set_handler(irq_num, omap3530_handle, 0);
+
 		if (irq_num < INTC_PINS)
-		{
 			writel(VA(INTCPS_BASE + INTCPS_ILRM(irq_num)), 0x0);
-		}
 	}
 
 	return 0;

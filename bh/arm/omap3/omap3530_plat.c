@@ -5,8 +5,7 @@
 #include <sysconf.h>
 
 // fxime: add __INITDATA__
-static const struct part_attr omap3530_part_tab[] =
-{
+static const struct part_attr omap3530_part_tab[] = {
 	{
 		.part_type = PT_BL_GTH,
 		.part_size = KB(512),
@@ -128,9 +127,7 @@ static int __INIT__ omap3530_init(void)
 	writel(VA(0x48004c30), val);
 
 #ifdef CONFIG_IRQ_SUPPORT
-
 	omap3530_irq_init();
-
 	irq_enable();
 #endif
 

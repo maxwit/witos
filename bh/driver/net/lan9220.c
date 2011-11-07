@@ -26,12 +26,9 @@ static inline __u32 lan9220_readl(__u8 reg)
 
 static inline void lan9220_writel(__u8 reg, __u32 val)
 {
-	if (lan9220_32bits)
-	{
+	if (lan9220_32bits) {
 		writel(VA(LAN9220_BASE + reg), val);
-	}
-	else
-	{
+	} else {
 		writew(VA(LAN9220_BASE + reg), val & 0xffff);
 		writew(VA(LAN9220_BASE + reg + 2), val >> 16 & 0xffff);
 	}
