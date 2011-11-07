@@ -1,7 +1,7 @@
+#include <autoconf.h>
 #include <net/net.h>
 #include <net/mii.h>
 #include <irq.h>
-
 #include "lan9220.h"
 
 #if 0
@@ -192,7 +192,7 @@ static int lan9220_isr(__u32 irq, void *dev)
 
 	if (0 == status)
 		return IRQ_NONE;
-
+	printf("%s(): status = 0x%08x\n", __func__, status);
 	// fixme
 	if (status & 0x1 << 20)
 		lan9220_recv_packet(ndev);
@@ -254,7 +254,7 @@ static __INIT__ int lan9220_probe(void)
 	ndev->chip_name = chip_name;
 	ndev->set_mac_addr = lan9220_set_mac;
 	ndev->send_packet = lan9220_send_packet;
-#ifndef CONFIG_IQR_SUPPORT
+#ifndef CONFIG_IRQ_SUPPORT
 	ndev->ndev_poll = lan9220_poll;
 #endif
 
