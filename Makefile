@@ -48,14 +48,9 @@ include/autoconf.h: .config
 
 # fixme
 %_defconfig:
-	@echo
-	@#./build/generate/dotconfig.sh $@
 	@./build/generate/defconfig.py $@
+	@echo "*** configure for $(@:%_defconfig=%) board ***"
 	@echo
-
-#####echo "******************"
-#####echo "*   .config      *"
-#####echo "******************"
 
 install:
 	@mkdir -p $(IMG_DIR)

@@ -117,9 +117,9 @@
 #define GPMC_CS_BASE(x) ((128 * (x)) << 20)
 
 // INTC
-#define INTC_PINS	96
-#define MAX_IRQ_NUM	(INTC_PINS + 32 * 6)
-#define GPIO_IRQ(n)		(INTC_PINS + n)
+#define INTC_PINS	        96
+#define MAX_IRQ_NUM	        (INTC_PINS + 32 * 6)
+#define GPIO_IRQ(n)		    (INTC_PINS + n)
 
 #define INTCPS_BASE	0x48200000
 #define INTCPS_SYSCONFIG	0x010

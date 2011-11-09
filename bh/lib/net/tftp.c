@@ -2,11 +2,9 @@
 #include <getopt.h>
 #include <sysconf.h>
 
-struct tftp_packet
-{
+struct tftp_packet {
 	__u16 op_code;
-	union
-	{
+	union {
 		__u16 block;
 		__u16 error;
 	};
@@ -411,38 +409,4 @@ L1:
 	free(local_addr);
 
 	return send_len;
-}
-
-PART_TYPE str2part_type(const char *str)
-{
-	int i;
-	struct str_part_type type[] = {
-		{
-			.str	= "g-bios-th",
-			.type	= PT_BL_GTH,
-		},
-		{
-			.str	= "g-bios-bh",
-			.type	= PT_BL_GBH,
-		},
-		{
-			.str	= "sys_conf",
-			.type	= PT_BL_GCONF,
-		},
-		{
-			.str	= "linux",
-			.type	= PT_OS_LINUX,
-		},
-		{
-			.str	= "uboot",
-			.type	= PT_BL_UBOOT,
-		},
-	};
-
-	for (i = 0; i < ARRAY_ELEM_NUM(type); i++) {
-		if (0 == strcmp(type[i].str, str)) {
-			return type[i].type;
-		}
-	}
-	return PT_NONE;
 }

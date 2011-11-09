@@ -7,11 +7,11 @@
 #define LAN9220_IRQ_NUM GPIO_IRQ(19)
 #endif
 
-#define MAC_CR         0x1
+#define MAC_CR          0x1
 #define ADDRH           0x2
-#define ADDRL            0x3
-#define MII_ACC	       0x6
-#define MII_DATA	0x7
+#define ADDRL           0x3
+#define MII_ACC	        0x6
+#define MII_DATA	    0x7
 
 #define RX_DATA_PORT	0x00
 #define TX_DATA_PORT	0x20
