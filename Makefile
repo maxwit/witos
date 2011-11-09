@@ -47,14 +47,18 @@ include/autoconf.h: .config
 	@sed -i '/^$$/d' $@
 
 # fixme
-%_defconfig:
+%_defconfig: build/generate/sys_img_creat
 	@./build/generate/defconfig.py $@
 	@echo "*** configure for $(@:%_defconfig=%) board ***"
+	@ $< build/configs/arm/$(@:%_def=%_sys)
 	@echo
+
+build/generate/sys_img_creat: build/generate/sys_img_creat.c
+	gcc -Wall $< -o $@
 
 install:
 	@mkdir -p $(IMG_DIR)
-	@for fn in $(wildcard [tb]h/g-bios-*.bin); do \
+	@for fn in $(wildcard [tb]h/g-bios-*.bin) g-bios-sys.bin; do \
 		cp -v $$fn $(IMG_DIR); \
 	done
 	@echo
