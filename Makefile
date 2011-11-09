@@ -68,6 +68,7 @@ clean:
 		make $(img_build)$$dir clean; \
 		rm -vf $$dir/g-bios-$$dir.*; \
 	 done
+	@rm -vf g-bios-sys.bin
 
 distclean: clean
 	@rm -vf .config include/autoconf.h
