@@ -1,6 +1,7 @@
 *.o
 include/autoconf.h
 .config
+.sysconfig
 build/menuconfig/Makefile
 build/menuconfig/menuconfig
 build/menuconfig/menuconfig.pro

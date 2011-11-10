@@ -36,7 +36,7 @@ include build/rules/common.mk
 
 dir-y := th bh
 
-all: $(dir-y)
+all: $(dir-y) build/g-bios-sys.bin
 
 $(dir-y): include/autoconf.h
 	@make $(img_build)$@
@@ -47,18 +47,22 @@ include/autoconf.h: .config
 	@sed -i '/^$$/d' $@
 
 # fixme
-%_defconfig: build/generate/sys_img_creat
+%_defconfig:
+	@echo "configure for $(@:%_defconfig=%) board"
 	@./build/generate/defconfig.py $@
-	@echo "*** configure for $(@:%_defconfig=%) board ***"
-	@ $< build/configs/arm/$(@:%_def=%_sys)
+	@cp build/configs/arm/$(@:%_defconfig=%_sysconfig) .sysconfig
 	@echo
 
 build/generate/sys_img_creat: build/generate/sys_img_creat.c
 	gcc -Wall $< -o $@
 
+# fixme
+build/g-bios-sys.bin: build/generate/sys_img_creat
+	@$< .sysconfig $@
+
 install:
 	@mkdir -p $(IMG_DIR)
-	@for fn in $(wildcard [tb]h/g-bios-*.bin) g-bios-sys.bin; do \
+	@for fn in $(wildcard [tb]h/g-bios-*.bin) build/g-bios-sys.bin; do \
 		cp -v $$fn $(IMG_DIR); \
 	done
 	@echo
@@ -68,7 +72,7 @@ clean:
 		make $(img_build)$$dir clean; \
 		rm -vf $$dir/g-bios-$$dir.*; \
 	 done
-	@rm -vf g-bios-sys.bin
+	@rm -vf build/g-bios-sys.bin
 
 distclean: clean
 	@rm -vf .config include/autoconf.h

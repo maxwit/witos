@@ -148,7 +148,7 @@ int conf_get_attr(const char *attr, char val[])
 	const char *p;
 	char *sys_data = (char *)g_sysconf + g_sysconf->offset;
 
-	printf("get -> %s\n", attr);
+	// DPRINT("get %s\n", attr);
 
 	p = search_attr(sys_data, g_sysconf->size, attr);
 	if (p == NULL) {
