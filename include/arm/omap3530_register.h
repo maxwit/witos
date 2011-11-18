@@ -73,8 +73,10 @@
 
 // GPIO
 #define GPIO1_BASE		0x48310000
-#define GPIO_BASE(i)	(0x49050000 + 0x2000 * (i - 2)) // i = 2 - 6
+#define GPIO_BASE(i)	(0x49050000 + 0x2000 * (i - 2)) // i = 2 ~ 6
 #define GPIO_OE			0x34
+#define LEVELDETECT0     0x40
+#define LEVELDETECT1     0x44
 #define GPIO_IRQ_STATUS1(gpio_index) \
 	(((gpio_index) == 0) ? 0x48310018 : 0x49050000 + ((gpio_index) - 1) * 0x2000 + 0x18)
 

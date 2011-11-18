@@ -13,10 +13,10 @@ else
 include $(path)/Makefile
 
 %.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -o $@ -c $<
 
 %.o: %.S
-	$(CC) $(ASFLAGS) -c $< -o $@
+	$(CC) $(ASFLAGS) -o $@ -c $<
 endif
 
 include build/rules/common.mk

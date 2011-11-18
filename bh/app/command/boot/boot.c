@@ -94,7 +94,7 @@ static int flash_load_image(PART_TYPE type, __u8 **buff_ptr, __u32 *buff_len)
 	// fixme
 	flash = flash_open("mtdblock0p4");
 	if (flash == NULL)
-		return -1;
+		return -ENODEV;
 
 	bdev = &flash->bdev;
 
@@ -103,9 +103,8 @@ static int flash_load_image(PART_TYPE type, __u8 **buff_ptr, __u32 *buff_len)
 
 	// to be optimized
 	if (image_size <= 0 || image_size >= bdev->bdev_size) {
-
-		printf("%s(): Image seems invalid, still try to load.\n"
-			"Current image size = %d/0x%08x, adjusting to partition size (%d/0x%08x)!\n",
+		printf("%s(): image seems invalid, still try to load.\n"
+			"current image size = %d(0x%08x), adjusted to partition size %d(0x%08x)!\n",
 			__func__, image_size, image_size, bdev->bdev_size, bdev->bdev_size);
 
 		image_size = bdev->bdev_size;
@@ -511,8 +510,10 @@ int main(int argc, char *argv[])
 		else
 			ret = flash_load_image(PT_OS_LINUX, &kernel_image_addr, &image_size);
 
-		if (ret < 0)
+		if (ret < 0) {
+			printf("fail to load linux image (ret = %d)!\n", ret);
 			goto L1;
+		}
 
 		printf("\n");
 
