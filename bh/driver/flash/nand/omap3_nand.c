@@ -16,7 +16,7 @@ static void omap3_nand_enable_hwecc(struct nand_chip *nand, int mode)
 	writel(VA(0x6E000000 + 0x1F8), 0x101);
 
 	val = readl(VA(0x6E000000 + 0x1F4));
-	val = 1 << 7 | 0 << 1 | 0x1;
+	val = 1 << 7 | 0x1;
 	writel(VA(0x6E000000 + 0x1F4), val);
 }
 
@@ -52,12 +52,9 @@ static int omap3_nand_correct_data(struct nand_chip *nand,
 	ecc_new = gen_true_ecc(ecc_calc);
 
 	if (!(ecc_old ^ ecc_new))
-	{
 		return 0;
-	}
 
 	// TODO:  add data correction code here
-
 	return -EIO;
 }
 
@@ -82,8 +79,7 @@ static int omap3_nand_init(struct nand_ctrl *nfc)
 	udelay(0x100);
 
 	// HW ECC init
-	if (nfc->ecc_mode == NAND_ECC_HW)
-	{
+	if (nfc->ecc_mode == NAND_ECC_HW) {
 	    writel(VA(0x6E000000 + 0x1F8), 0x101);
 	    writel(VA(0x6E000000 + 0x1FC), 0x3fcff000);
 	}
@@ -91,11 +87,9 @@ static int omap3_nand_init(struct nand_ctrl *nfc)
 	return 0;
 }
 
-static struct nand_oob_layout g_omap3_oob64_layout =
-{
+static struct nand_oob_layout g_omap3_oob64_layout = {
 	.ecc_code_len = 24,
-	.ecc_pos =
-	{
+	.ecc_pos = {
 	   2, 3, 4, 5, 6, 7, 8, 9,
 	   10, 11, 12, 13, 14, 15, 16, 17,
 	   18, 19, 20, 21, 22, 23, 24, 25
@@ -110,9 +104,7 @@ static int __INIT__ omap3_nand_probe(void)
 
 	nfc = nand_ctrl_new();
 	if (NULL == nfc)
-	{
 		return -ENOMEM;
-	}
 
 	nfc->cmmd_reg = VA(GPMC_BASE + GPMC_NAND_COMMAND_0);
 	nfc->addr_reg = VA(GPMC_BASE + GPMC_NAND_ADDRESS_0);
@@ -131,15 +123,14 @@ static int __INIT__ omap3_nand_probe(void)
 	omap3_nand_init(nfc);
 
 	ret = nand_ctrl_register(nfc);
-	if (ret < 0)
-	{
+	if (ret < 0) {
 		ret = -ENODEV;
 		goto L1;
 	}
 
 	return 0;
-L1:
 
+L1:
 	free(nfc);
 	return ret;
 }

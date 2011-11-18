@@ -23,22 +23,18 @@ struct flash_chip *flash_open(const char *name)
 int flash_ioctl(struct flash_chip *flash, int cmd, void *arg)
 {
 	int ret;
+	FLASH_CALLBACK *callback;
 
-	switch (cmd)
-	{
+	switch (cmd) {
 	case FLASH_IOCS_OOB_MODE:
 		flash->oob_mode = (OOB_MODE)arg;
 		break;
 
 	case FLASH_IOCS_CALLBACK:
-	{
-		FLASH_CALLBACK *callback;
-
 		callback = (FLASH_CALLBACK *)arg;
 		flash->callback_func = callback->func;
 		flash->callback_args = callback->args;
 		break;
-	}
 
 	case FLASH_IOC_SCANBB:
 		if (NULL == flash->scan_bad_block)
@@ -71,8 +67,7 @@ int flash_read(struct flash_chip *flash, void *buff, int start, int count)
 	int ret;
 	__u32 ret_len;
 
-	if (FLASH_OOB_RAW == flash->oob_mode)
-	{
+	if (FLASH_OOB_RAW == flash->oob_mode) {
 		struct oob_opt opt;
 
 		memset(&opt, 0, sizeof(struct oob_opt));
@@ -88,15 +83,12 @@ int flash_read(struct flash_chip *flash, void *buff, int start, int count)
 			return ret;
 
 		return opt.ret_len;
-	}
-	else
-	{
+	} else {
 		ret = flash->read(flash, start, count, &ret_len, buff);
 
 		// *start += ret_len;
 
-		if (ret < 0)
-		{
+		if (ret < 0) {
 #ifdef CONFIG_DEBUG
 			if (count != ret_len)
 				printf("ERROR: fail to read data! %s()\n", __func__);
@@ -121,8 +113,7 @@ long flash_write(struct flash_chip *flash, const void *buff, __u32 count, __u32 
 	__u32 size = 0;
 	__u8 *buff_ptr = (__u8 *)buff;
 
-	switch (flash->oob_mode)
-	{
+	switch (flash->oob_mode) {
 	case FLASH_OOB_RAW:
 		memset(&opt, 0, sizeof(struct oob_opt));
 		opt.op_mode   = FLASH_OOB_RAW;
@@ -132,13 +123,10 @@ long flash_write(struct flash_chip *flash, const void *buff, __u32 count, __u32 
 
 		ret = flash->write_oob(flash, ppos, &opt);
 
-		if (ret < 0)
-		{
+		if (ret < 0) {
 			DPRINT("%s() failed! ret = %d\n", __func__, ret);
 			return ret;
-		}
-		else if (opt.ret_len != opt.data_len)
-		{
+		} else if (opt.ret_len != opt.data_len) {
 			BUG();
 		}
 
@@ -147,14 +135,12 @@ long flash_write(struct flash_chip *flash, const void *buff, __u32 count, __u32 
 		return opt.ret_len;
 
 	case FLASH_OOB_AUTO:
-		if (count % (flash->write_size + flash->oob_size))
-		{
+		if (count % (flash->write_size + flash->oob_size)) {
 			DPRINT("%s(), size invalid!\n", __func__);
 			return -EINVAL;
 		}
 
-		while (size < count)
-		{
+		while (size < count) {
 			memset(&opt, 0, sizeof(struct oob_opt));
 			opt.op_mode   = FLASH_OOB_AUTO;
 			opt.data_buff = buff_ptr;
@@ -164,16 +150,13 @@ long flash_write(struct flash_chip *flash, const void *buff, __u32 count, __u32 
 
 			ret = flash->write_oob(flash, ppos, &opt);
 
-			if (ret < 0)
-			{
+			if (ret < 0) {
 				printf("%s() failed! ret = %d\n", __func__, ret);
 				return ret;
 			}
 
 			if (opt.ret_len != opt.data_len)
-			{
 				BUG();
-			}
 
 			ppos += flash->write_size; // + flash->oob_size;
 

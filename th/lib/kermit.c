@@ -175,4 +175,16 @@ Error:
 	return -EFAULT;
 }
 
-REGISTER_LOADER(k, kermit_load, "Kermit");
+// fixme
+static int kermit_loader(struct loader_opt *opt)
+{
+	opt->load_addr = CONFIG_GBH_START_MEM;
+	kermit_load(&opt);
+
+	opt->load_addr = CONFIG_SYS_START_MEM;
+	kermit_load(&opt);
+
+	return 0;
+}
+
+REGISTER_LOADER(k, kermit_loader, "Kermit");
