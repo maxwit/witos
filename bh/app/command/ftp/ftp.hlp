@@ -1,0 +1,21 @@
+description:
+  ftp utility xxxx
+
+usage:
+  ftp [<command>] [<options>] [[user[:password]]@URL]
+
+command list:
+  get   download file from FTP server (default).
+  put   upload fil to FTP server.
+
+generic options:
+  -v
+   verbose mode
+
+specific get options:
+  -m <memory>
+   load to memory, not to storage. it will change the JUMP adress.
+
+specific put options:
+  -f <file>
+   the file to put.

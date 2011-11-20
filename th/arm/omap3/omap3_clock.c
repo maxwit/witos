@@ -1,9 +1,9 @@
 
 // fixme!!!
 #ifdef CONFIG_GTH
-void udelay(u32 n)
+void udelay(__u32 n)
 {
-	volatile u32 m = n;
+	volatile __u32 m = n;
 
 	while (m-- > 0);
 }
@@ -11,7 +11,7 @@ void udelay(u32 n)
 
 int soc_init(void)
 {
-	u32 word;
+	__u32 word;
 
 	// disable WDT
 	writel(CM_FCLKEN_WKUP, 1 << 5);

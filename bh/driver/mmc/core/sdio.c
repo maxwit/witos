@@ -144,7 +144,7 @@ out:
 static int mmc_sdio_init_card(struct mmc_host *host)
 {
 	int i = 0, ret = 0;
-	u32  rocr;
+	__u32  rocr;
 
 	ret = mmc_io_rw_direct(host, 1, 0, 6, 8, NULL);
 	for (i = 0; i < 10; i++)

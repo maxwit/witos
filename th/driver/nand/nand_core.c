@@ -8,30 +8,30 @@
 #define IS_LARGE_PAGE(flash) (flash->write_size >= KB(1))
 #define IS_POW2(n)           (((n) & ((n) - 1)) == 0)
 
-static const u8 nand_ids[] =
+static const __u8 nand_ids[] =
 {
 	0x33, 0x35, 0x36, 0x39, 0x43, 0x45, 0x46, 0x49, 0x53, 0x55,
 	0x56, 0x59, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x78, 0x79,
 };
 
 // Basic operations
-static void __INLINE__ nand_write_cmd(struct nand_chip *flash, u8 cmd)
+static void inline nand_write_cmd(struct nand_chip *flash, __u8 cmd)
 {
 	writeb(flash->cmmd_port, cmd);
 }
 
-static void __INLINE__ nand_write_addr(struct nand_chip *flash, u8 addr)
+static void inline nand_write_addr(struct nand_chip *flash, __u8 addr)
 {
 	writeb(flash->addr_port, addr);
 }
 
 #ifdef CONFIG_NAND_16BIT
-static u16 __INLINE__ nand_read_data(struct nand_chip *flash)
+static __u16 inline nand_read_data(struct nand_chip *flash)
 {
 	return readw(flash->data_port);
 }
 #else
-static u8 __INLINE__ nand_read_data(struct nand_chip *flash)
+static __u8 inline nand_read_data(struct nand_chip *flash)
 {
 	return readb(flash->data_port);
 }
@@ -63,7 +63,7 @@ static int nand_wait_ready(struct nand_chip *flash)
 }
 
 static void nand_send_cmd(struct nand_chip *flash,
-						u32 cmd, int page_idx, int page_off)
+						__u32 cmd, int page_idx, int page_off)
 {
 	nand_write_cmd(flash, cmd);
 
@@ -100,7 +100,7 @@ static void nand_send_cmd(struct nand_chip *flash,
 
 int nand_probe(struct nand_chip *flash)
 {
-	u8  dev_id, ven_id, ext_id;
+	__u8  dev_id, ven_id, ext_id;
 	int front, end;
 
 	//
@@ -159,9 +159,9 @@ L1:
 }
 
 #ifdef CONFIG_NAND_16BIT
-static u16 *nand_read_page(struct nand_chip *flash, u32 page_idx, u16 *buff)
+static __u16 *nand_read_page(struct nand_chip *flash, __u32 page_idx, __u16 *buff)
 {
-	u32 len;
+	__u32 len;
 
 	nand_send_cmd(flash, NAND_CMMD_READ0, page_idx, 0);
 
@@ -174,9 +174,9 @@ static u16 *nand_read_page(struct nand_chip *flash, u32 page_idx, u16 *buff)
 	return buff;
 }
 #else
-static u8 *nand_read_page(struct nand_chip *flash, u32 page_idx, u8 *buff)
+static __u8 *nand_read_page(struct nand_chip *flash, __u32 page_idx, __u8 *buff)
 {
-	u32 len;
+	__u32 len;
 
 	nand_send_cmd(flash, NAND_CMMD_READ0, page_idx, 0);
 
@@ -194,13 +194,13 @@ static u8 *nand_read_page(struct nand_chip *flash, u32 page_idx, u8 *buff)
 __WEAK__
 int nand_load(struct nand_chip *flash, __u32 start_blk, void *start_mem)
 {
-	u32 cur_page, end_page;
-	u32 wshift = 0, eshift = 0, shift;
-	u32 bh_len = GBH_LOAD_SIZE; // fixme!!!
+	__u32 cur_page, end_page;
+	__u32 wshift = 0, eshift = 0, shift;
+	__u32 bh_len = GBH_LOAD_SIZE; // fixme!!!
 #ifdef CONFIG_NAND_16BIT
-	u16 *buff;
+	__u16 *buff;
 #else
-	u8 *buff;
+	__u8 *buff;
 #endif
 
 	buff = start_mem;
@@ -221,16 +221,16 @@ int nand_load(struct nand_chip *flash, __u32 start_blk, void *start_mem)
 
 	buff = nand_read_page(flash, cur_page, buff);
 
-	if (GBH_MAGIC == *(u32 *)(start_mem + GBH_MAGIC_OFFSET))
+	if (GBH_MAGIC == *(__u32 *)(start_mem + GBH_MAGIC_OFFSET))
 	{
-		bh_len = *(u32 *)(start_mem + GBH_SIZE_OFFSET);
+		bh_len = *(__u32 *)(start_mem + GBH_SIZE_OFFSET);
 #ifdef CONFIG_DEBUG
 		printf("g-bios BH found:) size = 0x%x\n", bh_len);
 #endif
 	}
-	else if (G_SYS_MAGIC == *(u32 *)(start_mem + G_SYS_MAGIC_OFFSET))
+	else if (G_SYS_MAGIC == *(__u32 *)(start_mem + G_SYS_MAGIC_OFFSET))
 	{
-		bh_len = *(u32 *)(start_mem + GBH_SIZE_OFFSET);
+		bh_len = *(__u32 *)(start_mem + GBH_SIZE_OFFSET);
 #ifdef CONFIG_DEBUG
 		printf("g-bios sysconf found:) size = 0x%x\n", bh_len);
 #endif

@@ -24,10 +24,10 @@
 #define omap3_mmc_write(offset, val) \
 	writel(VA(MMCHS1_BASE + (offset)), val)
 
-static int omap3_send_cmd(struct mmc_host *mmc, u32 index, u32 arg, RESP resp);
+static int omap3_send_cmd(struct mmc_host *mmc, __u32 index, __u32 arg, RESP resp);
 static int omap3_mmc_read_data(struct mmc_host *mmc, void *buf);
 static int omap3_mmc_write_data(struct mmc_host *mmc, const void *buf);
-static void mmc_clock_config(u32 iclk, u16 clk_div);
+static void mmc_clock_config(__u32 iclk, __u16 clk_div);
 static void omap3_set_hclk(void);
 static void omap3_set_lclk(void);
 static void omap3_soft_reset(void);
@@ -53,7 +53,7 @@ static void omap3_set_lclk(void)
 
 static int omap3_mmc_write_data(struct mmc_host *mmc, const void *buf)
 {
-	u32 val;
+	__u32 val;
 	int i, timeout = 0;
 
 	do
@@ -68,7 +68,7 @@ static int omap3_mmc_write_data(struct mmc_host *mmc, const void *buf)
 	{
 		for (i = 0; i < 512 / 4; i++)
 		{
-			val = ((u32*)buf)[i];
+			val = ((__u32*)buf)[i];
 			omap3_mmc_write(MMCHS_DATA, val);
 		}
 	}
@@ -94,7 +94,7 @@ static int omap3_mmc_write_data(struct mmc_host *mmc, const void *buf)
 
 static int omap3_mmc_read_data(struct mmc_host *mmc, void *buf)
 {
-	u32 val;
+	__u32 val;
 	int i, timeout = 0;
 
 	do
@@ -110,7 +110,7 @@ static int omap3_mmc_read_data(struct mmc_host *mmc, void *buf)
 		for (i = 0; i < 512 / 4; i++)
 		{
 			val = omap3_mmc_read(MMCHS_DATA);
-			((u32*)buf)[i] = val;
+			((__u32*)buf)[i] = val;
 		}
 	}else
 	{
@@ -134,9 +134,9 @@ static int omap3_mmc_read_data(struct mmc_host *mmc, void *buf)
 	return 0;
 }
 
-static int omap3_send_cmd(struct mmc_host *mmc, u32 index, u32 arg, RESP type)
+static int omap3_send_cmd(struct mmc_host *mmc, __u32 index, __u32 arg, RESP type)
 {
-	u32 cval, val, timeout;
+	__u32 cval, val, timeout;
 
 	cval = index << 24;
 
@@ -256,9 +256,9 @@ static int omap3_send_cmd(struct mmc_host *mmc, u32 index, u32 arg, RESP type)
 	return 0;
 }
 
-static void mmc_clock_config(u32 iclk, u16 clk_div)
+static void mmc_clock_config(__u32 iclk, __u16 clk_div)
 {
-	u32 val, cdiv;
+	__u32 val, cdiv;
 
 	val = omap3_mmc_read(MMCHS_SYSCTL);
 	val &= ~(1 << 2);
@@ -297,7 +297,7 @@ static void mmc_clock_config(u32 iclk, u16 clk_div)
 
 static void omap3_soft_reset(void)
 {
-	u32 val;
+	__u32 val;
 	val = omap3_mmc_read(MMCHS_SYSCTL);
 	val |= 1 << 24;
 	omap3_mmc_write(MMCHS_SYSCTL, val);
@@ -312,7 +312,7 @@ static void omap3_soft_reset(void)
 
 int mmc_init(void)
 {
-	u32 val;
+	__u32 val;
 	int timeout = 0;
 
 	for (val = 0x144; val <= 0x156; val += 2)

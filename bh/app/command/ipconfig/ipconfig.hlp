@@ -1,0 +1,23 @@
+description:
+  Ethernet interface configuration utility.
+
+
+usage:
+  ipconfig [<NIC>] [<IP>] [-n <netmask>] [-m <MAC>] [-s] [-h]
+
+
+options:
+  <NIC>
+   ethernet interface, i.e. "eth0"
+
+  <IP>
+   IPv4 address
+
+  -n <netmask>
+   netmask
+
+  -m <MAC>
+   Ethernet H/W address
+
+  -s
+   save to sysconfig

@@ -6,7 +6,7 @@
 static void s3c6410_spi_reset(struct spi_master *master)
 {
 	int i;
-	u32 val;
+	__u32 val;
 
 	writel(VA(PACKET_CNT_REG), 0);
 
@@ -43,7 +43,7 @@ static void s3c6410_spi_reset(struct spi_master *master)
 static void nor_chip_select(void)
 {
 #if 0
-	u32 val;
+	__u32 val;
 
 	val = readl(VA(CS_REG));
 	val &= ~0x1;
@@ -56,7 +56,7 @@ static void nor_chip_select(void)
 static void nor_chip_unselect(void)
 {
 #if 0
-	u32 val;
+	__u32 val;
 
 	val = readl(VA(CS_REG));
 	val |= 0x1;
@@ -71,10 +71,10 @@ static int s3c6410_spi_transfer(struct spi_slave *slave)
 {
 	enum TX_TYPE{TX, RX};
 	struct spi_trans_msg *trans;
-	u32 i, j, val;
-	u8 *tx_buf = NULL;
-	u32 len;
-	u8 *rx_buf = NULL;
+	__u32 i, j, val;
+	__u8 *tx_buf = NULL;
+	__u32 len;
+	__u8 *rx_buf = NULL;
 	struct list_node *msg_qu = &slave->msg_qu;
 
 	nor_chip_select();
@@ -121,7 +121,7 @@ static int s3c6410_spi_transfer(struct spi_slave *slave)
 			// read
 			for (i = 0; i < len; i += STEP_LEN)
 			{
-				u32 irx;
+				__u32 irx;
 
 		#ifdef USE_PKG_CNT
 				writel(VA(PACKET_CNT_REG), 1 << 16 | STEP_LEN);
@@ -177,7 +177,7 @@ static int s3c6410_spi_transfer(struct spi_slave *slave)
 
 static int __INIT__ s3c6410_spi_init(void)
 {
-	// u32 val;
+	// __u32 val;
 	struct spi_master *master;
 
 	writel(VA(CLK_CFG), 0x1 << 8 | 0x1);

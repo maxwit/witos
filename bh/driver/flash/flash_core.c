@@ -6,6 +6,42 @@ static struct list_node g_master_list;
 static const struct part_attr *g_part_attr;
 static int g_part_num = 0;
 
+static int set_root_dev(int root_dev)
+{
+	char buff[CONF_VAL_LEN];
+	char *attr;
+
+	attr = "linux.root_dev";
+	val_to_dec_str(buff, root_dev);
+	if (conf_set_attr(attr, buff) < 0) {
+		conf_add_attr(attr, buff);
+	}
+
+	return 0;
+}
+
+#if 0
+static int get_root_dev(int *root_dev)
+{
+	char buff[CONF_VAL_LEN];
+	char *attr;
+
+	attr = "linux.root_dev";
+	if (0 == conf_get_attr(attr, buff)) {
+		if (str_to_val(buff, (__u32 *)root_dev) < 0)
+		{
+			DPRINT_ATTR(attr, ATTR_FMT_ERR);
+			*root_dev = DEFAULT_ROOT_DEV;
+		}
+	} else {
+		DPRINT_ATTR(attr, ATTR_NOT_FOUND);
+		*root_dev = DEFAULT_ROOT_DEV;
+	}
+
+	return 0;
+}
+#endif
+
 void __INIT__ flash_add_part_tab(const struct part_attr *attr, int num)
 {
 	g_part_attr = attr;
@@ -16,11 +52,10 @@ void __INIT__ flash_add_part_tab(const struct part_attr *attr, int num)
 // 1. to fix cross/overlapped parts
 // 2. as an API and called from flash core
 static int __INIT__ flash_adjust_part_tab(struct flash_chip *host,
-						struct part_attr *new_attr,	const struct part_attr *attr_tmpl, u32 parts)
+						struct part_attr *new_attr,	const struct part_attr *attr_tmpl, __u32 parts)
 {
 	int index = 0;
-	u32 curr_base;
-	struct linux_config *linux_conf = sysconf_get_linux_param();
+	__u32 curr_base;
 
 	if (parts > MAX_FLASH_PARTS)
 	{
@@ -64,7 +99,7 @@ static int __INIT__ flash_adjust_part_tab(struct flash_chip *host,
 			}
 			else if (new_attr->part_type >= PT_FS_BEGIN && new_attr->part_type <= PT_FS_END)
 			{
-				linux_conf->root_dev = index;
+				set_root_dev(index);
 				break;
 			}
 
@@ -93,7 +128,7 @@ static int __INIT__ flash_adjust_part_tab(struct flash_chip *host,
 		}
 		else if (PT_OS_LINUX == new_attr->part_type)
 		{
-			u32 end, gap;
+			__u32 end, gap;
 
 			end = new_attr->part_base + new_attr->part_size;
 			gap = end & (MB(1) - 1);
@@ -147,23 +182,23 @@ static int __INIT__ flash_adjust_part_tab(struct flash_chip *host,
 
 static int g_flash_count = 0;
 
-static int flash_part_read(struct flash_chip *slave,
-				u32 from, u32 len, u32 *retlen, u8 *buff)
+static int part_read(struct flash_chip *slave,
+				__u32 from, __u32 len, __u32 *retlen, __u8 *buff)
 {
 	struct flash_chip *master = slave->master;
 
 	return master->read(master, slave->bdev.bdev_base + from, len, retlen, buff);
 }
 
-static int flash_part_write(struct flash_chip *slave,
-				u32 to, u32 len, u32 *retlen, const u8 *buff)
+static int part_write(struct flash_chip *slave,
+				__u32 to, __u32 len, __u32 *retlen, const __u8 *buff)
 {
 	struct flash_chip *master = slave->master;
 
 	return master->write(master, slave->bdev.bdev_base + to, len, retlen, buff);
 }
 
-static int flash_part_erase(struct flash_chip *slave, struct erase_opt *opt)
+static int part_erase(struct flash_chip *slave, struct erase_opt *opt)
 {
 	struct flash_chip *master = slave->master;
 
@@ -172,7 +207,7 @@ static int flash_part_erase(struct flash_chip *slave, struct erase_opt *opt)
 }
 
 static int part_read_oob(struct flash_chip *slave,
-				u32 from, struct oob_opt *ops)
+				__u32 from, struct oob_opt *ops)
 {
 	struct flash_chip *master = slave->master;
 
@@ -180,21 +215,21 @@ static int part_read_oob(struct flash_chip *slave,
 }
 
 static int part_write_oob(struct flash_chip *slave,
-				u32 to,	struct oob_opt *opt)
+				__u32 to,	struct oob_opt *opt)
 {
 	struct flash_chip *master = slave->master;
 
 	return master->write_oob(master, slave->bdev.bdev_base + to, opt);
 }
 
-static int part_block_is_bad(struct flash_chip *slave, u32 off)
+static int part_block_is_bad(struct flash_chip *slave, __u32 off)
 {
 	struct flash_chip *master = slave->master;
 
 	return master->block_is_bad(master, slave->bdev.bdev_base + off);
 }
 
-static int part_block_mark_bad(struct flash_chip *slave, u32 off)
+static int part_block_mark_bad(struct flash_chip *slave, __u32 off)
 {
 	struct flash_chip *master = slave->master;
 
@@ -210,6 +245,9 @@ int flash_register(struct flash_chip *flash)
 	snprintf(flash->bdev.dev.name, MAX_DEV_NAME, "mtdblock%d", g_flash_count);
 	g_flash_count++;
 
+	printf("registering flash device \"%s\":\n", flash->bdev.dev.name);
+
+	flash_fops_init(&flash->bdev); // fixme: not here!
 	ret = block_device_register(&flash->bdev);
 	// if ret < 0 ...
 	list_head_init(&flash->slave_list);
@@ -243,15 +281,16 @@ int flash_register(struct flash_chip *flash)
 		slave->master      = flash;
 		list_add_tail(&slave->slave_node, &flash->slave_list);
 
-		slave->read  = flash_part_read;
-		slave->write = flash_part_write;
-		slave->erase = flash_part_erase;
+		slave->read  = part_read;
+		slave->write = part_write;
+		slave->erase = part_erase;
 		slave->read_oob  = part_read_oob;
 		slave->write_oob = part_write_oob;
 		slave->block_is_bad   = part_block_is_bad;
 		slave->block_mark_bad = part_block_mark_bad;
 		slave->scan_bad_block = flash->scan_bad_block; // fixme
 
+		flash_fops_init(&slave->bdev);
 		ret = block_device_register(&slave->bdev);
 	}
 

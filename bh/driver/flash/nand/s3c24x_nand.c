@@ -23,13 +23,13 @@ static int s3c24x_nand_init(struct nand_ctrl *nfc);
 
 static int s3c24x_nand_is_ready(struct nand_chip *nand);
 
-static void s3c24x_nand_read_buff(struct nand_ctrl *nfc, u8 *buff, int size);
-static void s3c24x_nand_write_buff(struct nand_ctrl *nfc, const u8 *buff, int size);
+static void s3c24x_nand_read_buff(struct nand_ctrl *nfc, __u8 *buff, int size);
+static void s3c24x_nand_write_buff(struct nand_ctrl *nfc, const __u8 *buff, int size);
 
 static void s3c24x_nand_enable_hwecc(struct nand_chip *nand, int mode);
-static int s3c24x_nand_calc_hwecc(struct nand_chip *nand, const u8 *data, u8 *ecc);
+static int s3c24x_nand_calc_hwecc(struct nand_chip *nand, const __u8 *data, __u8 *ecc);
 static int s3c24x_nand_correct_data(struct nand_chip *nand,
-								u8 *data, u8 *ecc_read, u8 *ecc_calc);
+								__u8 *data, __u8 *ecc_read, __u8 *ecc_calc);
 
 static int __INIT__ s3c24x_nand_probe(void);
 
@@ -38,11 +38,11 @@ static int s3c24x_nand_is_ready(struct nand_chip *nand)
 	return readb(VA(NAND_CTRL_BASE + NF_STAT)) & 0x01;
 }
 
-static void  s3c24x_nand_read_buff(struct nand_ctrl *nfc, u8 *buff, int size)
+static void  s3c24x_nand_read_buff(struct nand_ctrl *nfc, __u8 *buff, int size)
 {
 	while (size > 3)
 	{
-		*(u32 *)buff = readl(VA(NAND_CTRL_BASE + NF_DATA));
+		*(__u32 *)buff = readl(VA(NAND_CTRL_BASE + NF_DATA));
 
 		buff += 4;
 		size -= 4;
@@ -57,11 +57,11 @@ static void  s3c24x_nand_read_buff(struct nand_ctrl *nfc, u8 *buff, int size)
 	}
 }
 
-static void  s3c24x_nand_write_buff(struct nand_ctrl *nfc, const u8 *buff, int size)
+static void  s3c24x_nand_write_buff(struct nand_ctrl *nfc, const __u8 *buff, int size)
 {
 	while (size > 3)
 	{
-		writel(VA(NAND_CTRL_BASE + NF_DATA), *(u32 *)buff);
+		writel(VA(NAND_CTRL_BASE + NF_DATA), *(__u32 *)buff);
 
 		buff += 4;
 		size -= 4;
@@ -78,7 +78,7 @@ static void  s3c24x_nand_write_buff(struct nand_ctrl *nfc, const u8 *buff, int s
 
 static void s3c24x_nand_enable_hwecc(struct nand_chip *nand, int mode)
 {
-	u32 val;
+	__u32 val;
 
 #ifdef CONFIG_S3C2410
 	val = readl(VA(NAND_CTRL_BASE + NF_CONF));
@@ -93,14 +93,14 @@ static void s3c24x_nand_enable_hwecc(struct nand_chip *nand, int mode)
 #endif
 }
 
-static int s3c24x_nand_calc_hwecc(struct nand_chip *nand, const u8 *data, u8 *ecc)
+static int s3c24x_nand_calc_hwecc(struct nand_chip *nand, const __u8 *data, __u8 *ecc)
 {
 #ifdef CONFIG_S3C2410
 	ecc[0] = readb(VA(NAND_CTRL_BASE + NF_ECC + 0));
 	ecc[1] = readb(VA(NAND_CTRL_BASE + NF_ECC + 1));
 	ecc[2] = readb(VA(NAND_CTRL_BASE + NF_ECC + 2));
 #elif defined(CONFIG_S3C2440) || defined(CONFIG_S3C6410)
-	u32 val;
+	__u32 val;
 
 #if defined(CONFIG_S3C2440)
 	val = readl(VA(NAND_CTRL_BASE + NF_ECC0));
@@ -117,9 +117,9 @@ static int s3c24x_nand_calc_hwecc(struct nand_chip *nand, const u8 *data, u8 *ec
 }
 
 static int s3c24x_nand_correct_data(struct nand_chip *nand,
-				u8 *data, u8 *ecc_read, u8 *ecc_calc)
+				__u8 *data, __u8 *ecc_read, __u8 *ecc_calc)
 {
-	u32 diff0, diff1, diff2;
+	__u32 diff0, diff1, diff2;
 
 	diff0 = ecc_read[0] ^ ecc_calc[0];
 	diff1 = ecc_read[1] ^ ecc_calc[1];
@@ -154,7 +154,7 @@ static int __INIT__ s3c24x_nand_probe(void)
 {
 	int i, ret;
 #ifdef CONFIG_S3C2410
-	u32 stat;
+	__u32 stat;
 #endif
 	struct nand_ctrl *nfc;
 	struct nand_chip *nand;

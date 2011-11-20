@@ -2,9 +2,9 @@
 
 // fixme!!!
 #ifdef CONFIG_GTH
-void udelay(u32 n)
+void udelay(__u32 n)
 {
-	volatile u32 m = n * (HCLK_RATE >> 20) >> 6;
+	volatile __u32 m = n * (HCLK_RATE >> 20) >> 6;
 
 	while (m-- > 0);
 }
@@ -13,7 +13,7 @@ void udelay(u32 n)
 // init clock, gpio, wdt, etc.
 int soc_init(void)
 {
-	u32	val = S3C6410_SRAM_BASE + S3C6410_SRAM_SIZE;
+	__u32	val = S3C6410_SRAM_BASE + S3C6410_SRAM_SIZE;
 
 	asm volatile ("mov sp, %0\n\t"::"r"(val));
 
@@ -81,8 +81,8 @@ int soc_init(void)
 
 int mem_init(void)
 {
-	u32 val;
-	u32 rcd, rfc, rp;
+	__u32 val;
+	__u32 rcd, rfc, rp;
 
 	ddr_write(P1MEMCCMD, 0x4);
 

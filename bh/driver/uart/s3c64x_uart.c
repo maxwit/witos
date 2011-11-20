@@ -3,7 +3,7 @@
 
 static int s3c6410_uart_init(void)
 {
-	u32 val;
+	__u32 val;
 	volatile int i;
 
 	writel(VA(0x7F008000), 0x22222222);
@@ -24,7 +24,7 @@ static int s3c6410_uart_init(void)
 	return 0;
 }
 
-u32 uart_rxbuf_count(void)
+__u32 uart_rxbuf_count(void)
 {
 #ifdef CONFIG_UART_ENABLE_FIFO
 	return s3c_uart_readl(UFSTAT) & 0x3F;
@@ -34,7 +34,7 @@ u32 uart_rxbuf_count(void)
 #endif
 }
 
-static u8 s3c6410_uart_recv_byte()
+static __u8 s3c6410_uart_recv_byte()
 {
 #ifdef CONFIG_UART_ENABLE_FIFO
 	while ((s3c_uart_readl(UFSTAT) & 0x3F) == 0);
@@ -46,7 +46,7 @@ static u8 s3c6410_uart_recv_byte()
 	return s3c_uart_readb(URXH);
 }
 
-static void s3c6410_uart_send_byte(u8 b)
+static void s3c6410_uart_send_byte(__u8 b)
 {
 #ifdef CONFIG_UART_ENABLE_FIFO
 	while (s3c_uart_readl(UFSTAT) & (1 << 14));

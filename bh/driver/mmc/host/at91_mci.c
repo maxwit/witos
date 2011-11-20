@@ -23,9 +23,9 @@
 #define at91_mci_write(reg, val) \
 		writel(VA(AT91_MCI_BASE + reg), val)
 
-static int at91_mci_cmd(struct mmc_host *mmc, u32 cmd, u32 arg)
+static int at91_mci_cmd(struct mmc_host *mmc, __u32 cmd, __u32 arg)
 {
-	u32 cmdr = cmd | MAXLAT, stat;
+	__u32 cmdr = cmd | MAXLAT, stat;
 
 	switch (cmd)
 	{
@@ -73,10 +73,10 @@ static int at91_mci_cmd(struct mmc_host *mmc, u32 cmd, u32 arg)
 	return 0;
 }
 
-static int at91_mci_isr(u32 irq, void *at91_mci)
+static int at91_mci_isr(__u32 irq, void *at91_mci)
 {
-	u32 stat = at91_mci_read(AT91_MCI_SR);
-	u32 mask = at91_mci_read(AT91_MCI_IMR);
+	__u32 stat = at91_mci_read(AT91_MCI_SR);
+	__u32 mask = at91_mci_read(AT91_MCI_IMR);
 
 	printf("%s(): status = 0x%08x, mask = 0x%08x\n",
 		__func__, stat, mask);
@@ -91,7 +91,7 @@ static struct mmc_host at91_mci =
 
 static int __INIT__ at91_mci_init(void)
 {
-	u32 val;
+	__u32 val;
 
 	at91_gpio_conf_periB(PIOA, 0x77, 0);
 

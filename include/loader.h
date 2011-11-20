@@ -20,6 +20,7 @@
 struct loader_opt
 {
 	void *load_addr;
+	int  load_flash;
 	int  load_size;
 	const char *prompt;
 #ifdef CONFIG_GTH
@@ -27,7 +28,7 @@ struct loader_opt
 	int (*main)(struct loader_opt *opt);
 #else
 	char file_name[MAX_FILE_NAME_LEN];
-	struct partition *part;
+	struct bdev_file *file;
 #endif
 };
 

@@ -1,13 +1,11 @@
 #include <uart/uart.h>
 
-int uart_recv_byte_timeout(u8 *ch, int timeout)
+int uart_recv_byte_timeout(__u8 *ch, int timeout)
 {
 	int t = 0;
 
-	while (t < timeout)
-	{
-		if (uart_rxbuf_count() > 0)
-		{
+	while (t < timeout) {
+		if (uart_rxbuf_count() > 0) {
 			*ch = uart_recv_byte();
 			return 0;
 		}
@@ -19,18 +17,15 @@ int uart_recv_byte_timeout(u8 *ch, int timeout)
 	return -ETIMEDOUT;
 }
 
-int uart_read(int id, u8 *buff, int count, int timeout)
+int uart_read(int id, __u8 *buff, int count, int timeout)
 {
 	int size = 0;
 
-	if (WAIT_INFINITE == timeout)
-	{
+	if (WAIT_INFINITE == timeout) {
 	}
 
-	if (WAIT_ASYNC == timeout)
-	{
-		for (size = 0; size < count; size++)
-		{
+	if (WAIT_ASYNC == timeout) {
+		for (size = 0; size < count; size++) {
 			if (uart_rxbuf_count() == 0)
 				break;
 
@@ -46,11 +41,9 @@ int uart_read(int id, u8 *buff, int count, int timeout)
 	return size;
 }
 
-void uart_write(int id, const u8 *buff, int count, int timeout)
+void uart_write(int id, const __u8 *buff, int count, int timeout)
 {
-	while (count > 0)
-	{
-
+	while (count > 0) {
 		buff++;
 		count--;
 	}
@@ -58,8 +51,7 @@ void uart_write(int id, const u8 *buff, int count, int timeout)
 
 int uart_ioctl(int id, int cmd, void *arg)
 {
-	switch (cmd)
-	{
+	switch (cmd) {
 	case UART_IOCG_RXCOUNT:
 		break;
 
@@ -72,4 +64,3 @@ int uart_ioctl(int id, int cmd, void *arg)
 
 	return 0;
 }
-

@@ -11,7 +11,7 @@ int at91_nand_flash_ready(struct nand_chip *nand)
 
 int nand_init(struct nand_chip *nand)
 {
-	u32 val;
+	__u32 val;
 
 #ifdef CONFIG_AT91SAM9261
 	val = readl(AT91SAM926X_PA_MATRIX + MATRIX_EBICSA);

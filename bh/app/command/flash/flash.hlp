@@ -1,0 +1,31 @@
+description:
+  flash utility xxxx
+
+usage:
+  flash <command> [<args>]
+
+command list:
+  info      show the information of partition and host
+  dump      print flash data
+  read      load data from flash to memory
+  write     store the data from memory to flash
+  erase     erase flash
+  scanbb    scan flash bad block
+
+generic options:
+  -a <address>
+   flash address, in byte|page|block|K|M|G.
+
+specific dump options:
+  -d <d|D|o|O|x|X>
+   display format.
+
+specific read/write options:
+  -f <file>
+   image file name to read or write.
+  -m <memory>
+   memory address, in byte. it will change the JUMP adress.
+
+specific erase options:
+  -c <size>
+   cleanmark size for JFFS2.

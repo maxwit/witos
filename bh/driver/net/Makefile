@@ -1,4 +1,4 @@
-obj-y = mii.o
+dir-y += core
 
 obj-$(CONFIG_DM9000)    += dm9000.o
 obj-$(CONFIG_CS8900)    += cs8900.o

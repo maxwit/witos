@@ -36,7 +36,7 @@ out:
 	return ret;
 }
 
-int mmc_read_blk(struct mmc_host *host, u8 *buf, int start)
+int mmc_read_blk(struct mmc_host *host, __u8 *buf, int start)
 {
 	int ret = 0;
 
@@ -59,7 +59,7 @@ int mmc_read_blk(struct mmc_host *host, u8 *buf, int start)
 	return 0;
 }
 
-int mmc_write_blk(struct mmc_host *host, const u8 *buf, int start)
+int mmc_write_blk(struct mmc_host *host, const __u8 *buf, int start)
 {
 	int ret = 0;
 
@@ -134,7 +134,7 @@ static int mmc_card_register(struct mmc_card *card)
 int mmc_sd_detect_card(struct mmc_host *host)
 {
 	int ret = 0;
-	u32 val;
+	__u32 val;
 	struct mmc_card *card;
 
 	if (!host)

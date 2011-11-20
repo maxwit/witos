@@ -3,7 +3,7 @@
 int read_irq_num(void)
 {
 	int irq_num;
-	u32 val, shift;
+	__u32 val, shift;
 
 	irq_num = readl(VA(INTCPS_BASE + INTCPS_SIR_IRQ)) & 0x7f;
 	if (irq_num >= 29 && irq_num <= 34)
@@ -21,12 +21,10 @@ int read_irq_num(void)
 		irq_num = INTC_PINS + shift;
 	}
 
-//	printf("irq_num %d\n", irq_num);
-
 	return irq_num;
 }
 
-static void omap3530_irq_umask(u32 irq_num)
+static void omap3530_irq_umask(__u32 irq_num)
 {
 	switch (irq_num)
 	{
@@ -48,12 +46,12 @@ static void omap3530_irq_umask(u32 irq_num)
 	writel(VA(INTCPS_BASE + INTCPS_MIRN_CLEN(irq_num >> 5)), 1 << (irq_num & 0x1f));
 }
 
-static void omap3530_irq_mask(u32 irq)
+static void omap3530_irq_mask(__u32 irq)
 {
 	writel(VA(INTCPS_BASE + INTCPS_MIRN_SETN(irq >> 5)), 1 << (irq & 0x1f));
 }
 
-static void omap3530_set_trigger(u32 irq_num, u32 irq_type)
+static void omap3530_set_trigger(__u32 irq_num, __u32 irq_type)
 {
 	if (irq_num < INTC_PINS)
 		return;
@@ -79,7 +77,7 @@ static struct int_ctrl omap3530_intctl =
 	.umask = omap3530_irq_umask,
 };
 
-static int handle_dev_irq_list(u32 irq, struct irq_dev *idev)
+static int handle_dev_irq_list(__u32 irq, struct irq_dev *idev)
 {
 	int retval = IRQ_NONE;
 
@@ -96,12 +94,12 @@ static int handle_dev_irq_list(u32 irq, struct irq_dev *idev)
 	return retval;
 }
 
-static void omap3530_handle(struct int_pin *pin, u32 irq)
+static void omap3530_handle(struct int_pin *pin, __u32 irq)
 {
-	u32 irq_status;
+	__u32 irq_status;
 	struct irq_dev *dev_list = pin->dev_list;
 
-	BUG_ON(NULL == dev_list);
+	assert(dev_list);
 
 	handle_dev_irq_list(irq, dev_list);
 

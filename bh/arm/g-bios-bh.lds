@@ -13,11 +13,18 @@ SECTIONS
 		*(.data)
 	}
 
-	.gbios_application ALIGN(4):
+	.gsect_exe ALIGN(4):
 	{
-		g_app_begin = .;
-		*(.gbios_application)
-		g_app_end = .;
+		g_exe_begin = .;
+		*(.gsect_exe)
+		g_exe_end = .;
+	}
+
+	.gsect_help ALIGN(4):
+	{
+		g_help_begin = .;
+		*(.gsect_help)
+		g_help_end = .;
 	}
 
 	.gbios_init ALIGN(4):

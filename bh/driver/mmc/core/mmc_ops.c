@@ -17,7 +17,7 @@ int mmc_go_idle(struct mmc_host *host)
 	return ret;
 }
 
-int mmc_all_send_cid(struct mmc_host *host, u32 *cid)
+int mmc_all_send_cid(struct mmc_host *host, __u32 *cid)
 {
 	struct mmc_command cmd;
 	int ret = 0;
@@ -30,7 +30,7 @@ int mmc_all_send_cid(struct mmc_host *host, u32 *cid)
 
 	ret = host->send_cmd(host, cmd.index, cmd.arg, cmd.resp);
 
-	memcpy(cid, host->resp, sizeof(u32) * 4);
+	memcpy(cid, host->resp, sizeof(__u32) * 4);
 
 	return ret;
 }
@@ -69,7 +69,7 @@ int mmc_select_card(struct mmc_host *host)
 	return ret;
 }
 
-int mmc_send_if_cond(struct mmc_host *host, u32 ocr)
+int mmc_send_if_cond(struct mmc_host *host, __u32 ocr)
 {
 	struct mmc_command cmd;
 	int ret = 0;
@@ -90,7 +90,7 @@ static int mmc_app_cmd(struct mmc_host *host)
 	int ret;
 	struct mmc_command cmd;
 
-	BUG_ON(!host);
+	assert(host);
 
 	memset(&cmd, 0, sizeof(struct mmc_command));
 
@@ -123,7 +123,7 @@ int mmc_switch_width(struct mmc_host *host)
 	return ret;
 }
 
-int mmc_send_app_op_cond(struct mmc_host *host, u32 ocr, u32 *rocr)
+int mmc_send_app_op_cond(struct mmc_host *host, __u32 ocr, __u32 *rocr)
 {
 	int i = 0, ret = 0;
 	struct mmc_command cmd;
@@ -156,7 +156,7 @@ int mmc_send_app_op_cond(struct mmc_host *host, u32 ocr, u32 *rocr)
 	return ret;
 }
 
-int mmc_send_csd(struct mmc_host *host, u32 *csd)
+int mmc_send_csd(struct mmc_host *host, __u32 *csd)
 {
 	struct mmc_command cmd;
 	int ret = 0;
@@ -169,7 +169,7 @@ int mmc_send_csd(struct mmc_host *host, u32 *csd)
 
 	ret = host->send_cmd(host, cmd.index, cmd.arg, cmd.resp);
 
-	memcpy(csd, host->resp, sizeof(u32) * 4);
+	memcpy(csd, host->resp, sizeof(__u32) * 4);
 
 	return ret;
 }

@@ -23,8 +23,8 @@
 
 struct emac_buff_desc
 {
-	u32 addr;
-	u32 stat;
+	__u32 addr;
+	__u32 stat;
 };
 
 struct at91_emac
@@ -35,12 +35,12 @@ struct at91_emac
 
 static int at91_emac_recv(struct net_device *);
 static int at91_emac_send(struct net_device *, struct sock_buff *);
-static int at91_emac_isr(u32, void *);
-static int at91_emac_set_mac(struct net_device *, const u8 []);
+static int at91_emac_isr(__u32, void *);
+static int at91_emac_set_mac(struct net_device *, const __u8 []);
 
-static int at91_emac_isr(u32 irq, void *dev)
+static int at91_emac_isr(__u32 irq, void *dev)
 {
-	u32 stat;
+	__u32 stat;
 	struct net_device *ndev = dev;
 
 	stat = at91_emac_readl(EMAC_ISR);
@@ -64,16 +64,16 @@ static int at91_emac_poll(struct net_device *ndev)
 
 static int at91_emac_send(struct net_device *ndev, struct sock_buff *skb)
 {
-	u32 val;
+	__u32 val;
 	volatile struct emac_buff_desc *tx_rear;
-	u32 ulFlag;
+	__u32 ulFlag;
 	struct at91_emac *emac = ndev->chip;
 
 	lock_irq_psr(ulFlag);
 
 	tx_rear = emac->tx_rear++;
 
-	tx_rear->addr = (u32)skb->data;
+	tx_rear->addr = (__u32)skb->data;
 	tx_rear->stat = (1 << 15) | skb->size;
 
 	if (emac->tx_rear == emac->tx_queue + TX_BUFF_NUM)
@@ -95,34 +95,34 @@ static int at91_emac_send(struct net_device *ndev, struct sock_buff *skb)
 
 static int at91_emac_recv(struct net_device * ndev)
 {
-	u8 *pBufPtr = NULL;
+	__u8 *buf_ptr = NULL;
 	struct sock_buff *skb;
-	struct emac_buff_desc *rx_head, *pRxRear;
+	struct emac_buff_desc *rx_head, *rx_rear;
 	struct at91_emac *emac = ndev->chip;
 #ifdef CONFIG_DEBUG
-	u32 count = 0;
+	__u32 count = 0;
 #endif
 
 	rx_head = emac->rx_head;
-	pRxRear = (struct emac_buff_desc *)at91_emac_readl(EMAC_RBQP);
+	rx_rear = (struct emac_buff_desc *)at91_emac_readl(EMAC_RBQP);
 
-	BUG_ON(!(rx_head->stat & EMAC_SOF)); // fixme
+	assert(rx_head->stat & EMAC_SOF); // fixme
 
-	while (rx_head != pRxRear)
+	while (rx_head != rx_rear)
 	{
 		if (rx_head->stat & EMAC_SOF)
 		{
 			skb = skb_alloc(0, MAX_ETH_LEN);
 			// if NULL
-			pBufPtr = skb->data;
+			buf_ptr = skb->data;
 #ifdef CONFIG_DEBUG
 			count++;
 #endif
 		}
 
-		BUG_ON(pBufPtr == NULL); // fixme
-		memcpy(pBufPtr, (u8*)(rx_head->addr & ~0x3), RX_BUFF_LEN);
-		pBufPtr += RX_BUFF_LEN;
+		assert(buf_ptr); // fixme
+		memcpy(buf_ptr, (__u8*)(rx_head->addr & ~0x3), RX_BUFF_LEN);
+		buf_ptr += RX_BUFF_LEN;
 
 		rx_head->addr &= ~1;
 
@@ -131,7 +131,7 @@ static int at91_emac_recv(struct net_device * ndev)
 			skb->size = rx_head->stat & 0xfff;
 			netif_rx(skb);
 			ndev->stat.rx_packets++;
-			pBufPtr = NULL;
+			buf_ptr = NULL;
 		}
 
 		rx_head++;
@@ -149,9 +149,9 @@ static int at91_emac_recv(struct net_device * ndev)
 	return 0;
 }
 
-static u16 at91_emac_mdio_read(struct net_device *ndev, u8 mii_id, u8 reg)
+static __u16 at91_emac_mdio_read(struct net_device *ndev, __u8 mii_id, __u8 reg)
 {
-	u32 frame;
+	__u32 frame;
 
 	frame = (1 << 30) | (2 << 28) | (mii_id << 23) | (reg << 18) | (2 << 16);
 	at91_emac_writel(EMAC_MAN, frame);
@@ -160,10 +160,10 @@ static u16 at91_emac_mdio_read(struct net_device *ndev, u8 mii_id, u8 reg)
 
 	frame = at91_emac_readl(EMAC_MAN);
 
-	return (u16)(frame & 0xffff);
+	return (__u16)(frame & 0xffff);
 }
 
-static void at91_emac_mdio_write(struct net_device *ndev, u8 mii_id, u8 reg, u16 val)
+static void at91_emac_mdio_write(struct net_device *ndev, __u8 mii_id, __u8 reg, __u16 val)
 {
 	at91_emac_writel(EMAC_MAN, (1 << 30) | (1 << 28) | (mii_id << 23) | (reg << 18) | (2 << 16) | val);
 
@@ -173,10 +173,10 @@ static void at91_emac_mdio_write(struct net_device *ndev, u8 mii_id, u8 reg, u16
 static int __INIT__ at91_emac_init_ring(struct at91_emac *emac)
 {
 	int i;
-	u32 dma_buff_base;
+	__u32 dma_buff_base;
 
 	// init RX ring buffer
-	dma_buff_base = (u32)malloc(RX_BUFF_LEN * RX_BUFF_NUM);
+	dma_buff_base = (__u32)malloc(RX_BUFF_LEN * RX_BUFF_NUM);
 	// if 0
 
 	emac->rx_head = emac->rx_queue = (struct emac_buff_desc *)malloc(8 * RX_BUFF_NUM);
@@ -203,8 +203,8 @@ static int __INIT__ at91_emac_init_ring(struct at91_emac *emac)
 
 	emac->tx_queue[TX_BUFF_NUM - 1].stat |= 1 << 30;
 
-	at91_emac_writel(EMAC_RBQP, (u32)emac->rx_queue);
-	at91_emac_writel(EMAC_TBQP, (u32)emac->tx_queue);
+	at91_emac_writel(EMAC_RBQP, (__u32)emac->rx_queue);
+	at91_emac_writel(EMAC_TBQP, (__u32)emac->tx_queue);
 
 	DPRINT("RX buff = 0x%08x, TX buff = 0x%08x\n",
 		emac->rx_queue, emac->tx_queue);
@@ -214,7 +214,7 @@ static int __INIT__ at91_emac_init_ring(struct at91_emac *emac)
 
 static void __INIT__ at91_emac_init(struct at91_emac *emac)
 {
-	u32 conf;
+	__u32 conf;
 
 	at91_emac_init_ring(emac);
 
@@ -237,10 +237,10 @@ static void __INIT__ at91_emac_init(struct at91_emac *emac)
 	at91_emac_writel(EMAC_USRIO, 0x3);
 }
 
-static int at91_emac_set_mac(struct net_device *ndev, const u8 mac_addr[])
+static int at91_emac_set_mac(struct net_device *ndev, const __u8 mac_addr[])
 {
-	at91_emac_writel(EMAC_SA1B, *(u32 *)ndev->mac_addr);
-	at91_emac_writel(EMAC_SA1T, *(u16 *)(ndev->mac_addr + 4));
+	at91_emac_writel(EMAC_SA1B, *(__u32 *)ndev->mac_addr);
+	at91_emac_writel(EMAC_SA1T, *(__u16 *)(ndev->mac_addr + 4));
 
 	return 0;
 }

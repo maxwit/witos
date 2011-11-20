@@ -1,12 +1,12 @@
 #include <irq.h>
 
-static void s3c6410_irq_ack(u32 irq);
-static void s3c6410_irq_mask(u32 irq);
-static void s3c6410_irq_umask(u32 irq);
+static void s3c6410_irq_ack(__u32 irq);
+static void s3c6410_irq_mask(__u32 irq);
+static void s3c6410_irq_umask(__u32 irq);
 
-static inline u32 get_bit_index(u32 val)
+static inline __u32 get_bit_index(__u32 val)
 {
-	u32 shift = 0;
+	__u32 shift = 0;
 
 	while (shift < 32)
 	{
@@ -20,9 +20,9 @@ static inline u32 get_bit_index(u32 val)
 	return shift;
 }
 
-u32 read_irq_num(void)
+__u32 read_irq_num(void)
 {
-	u32 irq_num, val;
+	__u32 irq_num, val;
 
 	irq_num = readl(VA(VIC0_ADDRESS));
 	if (!irq_num)
@@ -56,9 +56,9 @@ u32 read_irq_num(void)
 	return irq_num;
 }
 
-static void s3c6410_irq_mask(u32 irq)
+static void s3c6410_irq_mask(__u32 irq)
 {
-	u32 val;
+	__u32 val;
 
 	switch (irq)
 	{
@@ -81,9 +81,9 @@ static void s3c6410_irq_mask(u32 irq)
 	}
 }
 
-static void s3c6410_irq_umask(u32 irq)
+static void s3c6410_irq_umask(__u32 irq)
 {
-	u32 val;
+	__u32 val;
 
 	switch (irq)
 	{
@@ -114,7 +114,7 @@ static void s3c6410_irq_umask(u32 irq)
 	}
 }
 
-static void s3c6410_irq_ack(u32 irq)
+static void s3c6410_irq_ack(__u32 irq)
 {
 	//fixme, should deal with the INT_EINT12 ~ 19 and GROUP1 ~ GROUP9
 	if ((irq >= INT_EINT(0)) && (irq <= INT_EINT(11)))
@@ -133,7 +133,7 @@ static void s3c6410_irq_ack(u32 irq)
 	}
 }
 
-static void s3c6410_irq_mack(u32 irq)
+static void s3c6410_irq_mack(__u32 irq)
 {
 }
 

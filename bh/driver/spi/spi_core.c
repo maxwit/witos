@@ -12,7 +12,7 @@ int spi_transfer(struct spi_slave *slave)
 	return master->transfer(slave);
 }
 
-int spi_write_then_read(struct spi_slave *slave, u8 *tx_buf, u32 n_tx, u8 *rx_buf, u32 n_rx)
+int spi_write_then_read(struct spi_slave *slave, __u8 *tx_buf, __u32 n_tx, __u8 *rx_buf, __u32 n_rx)
 {
 	enum TX_TYPE {TX, RX};
 	struct spi_trans_msg tx[2];

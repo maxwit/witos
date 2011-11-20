@@ -4,11 +4,11 @@ include .config
 
 path := $(patsubst %/,%,$(path))
 
-app_dir := bh/app/
+cmd_dir := bh/app/command/
 
 # check if $(path) is the sub directory of app
-ifeq ($(patsubst $(app_dir)%,$(app_dir),$(path)),$(app_dir))
-include build/rules/app.mk
+ifeq ($(patsubst $(cmd_dir)%,$(cmd_dir),$(path)),$(cmd_dir))
+include build/rules/cmd.mk
 else
 include $(path)/Makefile
 

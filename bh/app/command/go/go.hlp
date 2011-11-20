@@ -1,0 +1,5 @@
+description:
+  jump to the address without condition.
+
+usage:
+  go [<address>]

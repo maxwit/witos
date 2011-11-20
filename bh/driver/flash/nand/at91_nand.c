@@ -3,7 +3,7 @@
 
 static int __INIT__ at91_nand_init(void)
 {
-	u32 val;
+	__u32 val;
 
 #ifdef CONFIG_AT91SAM9261
 	val = readl(VA(AT91SAM926X_PA_MATRIX + MATRIX_EBICSA));

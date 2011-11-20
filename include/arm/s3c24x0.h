@@ -62,6 +62,6 @@ int s3c24x0_interrupt_init(void);
 
 int s3c24x0_timer_init(void);
 
-void calibrate_delay(u32);
+void calibrate_delay(__u32);
 
 #endif

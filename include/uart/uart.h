@@ -18,28 +18,26 @@
 #ifndef __ASSEMBLY__
 #include <types.h>
 
-int uart_read(int id, u8 *buff, int count, int timeout);
+int uart_read(int id, __u8 *buff, int count, int timeout);
 
-void uart_send_byte(u8 b);
+void uart_send_byte(__u8 b);
 
-u8 uart_recv_byte();
+__u8 uart_recv_byte();
 
-u32 uart_rxbuf_count();
+__u32 uart_rxbuf_count();
 
 int uart_ioctl(int id,int cmd,void * arg);
 
-int uart_recv_byte_timeout(u8 *ch, int timeout);
-
+int uart_recv_byte_timeout(__u8 *ch, int timeout);
 //
 
 #define DECLARE_UART_INIT(func) \
 	 int uart_init(void) __attribute__((alias(#func)))
 
 #define DECLARE_UART_SEND(func) \
-	 void uart_send_byte(u8 b) __attribute__((alias(#func)))
+	 void uart_send_byte(__u8 b) __attribute__((alias(#func)))
 
 #define DECLARE_UART_RECV(func) \
-	 u8 uart_recv_byte() __attribute__((alias(#func)))
+	 __u8 uart_recv_byte() __attribute__((alias(#func)))
 
 #endif
-

@@ -101,16 +101,16 @@ static void __nand_calculate_ecc(const unsigned char *buf, unsigned int eccsize,
 		       unsigned char *code)
 {
 	int i;
-	const u32 *bp = (u32 *)buf;
+	const __u32 *bp = (__u32 *)buf;
 	/* 256 or 512 bytes/ecc  */
-	const u32 eccsize_mult = eccsize >> 8;
-	u32 cur;		/* current value in buffer */
+	const __u32 eccsize_mult = eccsize >> 8;
+	__u32 cur;		/* current value in buffer */
 	/* rp0..rp15..rp17 are the various accumulated parities (per byte) */
-	u32 rp0, rp1, rp2, rp3, rp4, rp5, rp6, rp7;
-	u32 rp8, rp9, rp10, rp11, rp12, rp13, rp14, rp15, rp16;
-	u32 rp17 = 0; // uninitialized_var(rp17);	/* to make compiler happy */
-	u32 par;		/* the cumulative parity for all data */
-	u32 tmppar;	/* the cumulative parity for this iteration;
+	__u32 rp0, rp1, rp2, rp3, rp4, rp5, rp6, rp7;
+	__u32 rp8, rp9, rp10, rp11, rp12, rp13, rp14, rp15, rp16;
+	__u32 rp17 = 0; // uninitialized_var(rp17);	/* to make compiler happy */
+	__u32 par;		/* the cumulative parity for all data */
+	__u32 tmppar;	/* the cumulative parity for this iteration;
 				   for rp12, rp14 and rp16 at the end of the
 				   loop */
 
@@ -385,7 +385,7 @@ static int __nand_correct_data(unsigned char *buf,
 	unsigned char b0, b1, b2, bit_addr;
 	unsigned int byte_addr;
 	/* 256 or 512 bytes/ecc  */
-	const u32 eccsize_mult = eccsize >> 8;
+	const __u32 eccsize_mult = eccsize >> 8;
 
 	/*
 	 * b0 to b2 indicate which bit is faulty (if any)

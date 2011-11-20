@@ -14,7 +14,7 @@ typedef struct
 typedef union
 {
 	YAFFS_TAGS asTags;
-	u8 asBytes[8];
+	__u8 asBytes[8];
 } YAFFS_TAGS_UNION;
 
 //fixme: tmp code
@@ -80,14 +80,14 @@ static int yaffs_check_ecc_ontags(YAFFS_TAGS * tags)
 	return 0;
 }
 
-static BOOL check_yaffs1_image(const void *imagebuf)
+static bool check_yaffs1_image(const void *imagebuf)
 {
-	u8 free_oob_buff[YAFFS_OOB_SIZE];
+	__u8 free_oob_buff[YAFFS_OOB_SIZE];
 	struct oob_free_region *free;
-	u32 offset = 0;
-	u32 bytes = 0;
+	__u32 offset = 0;
+	__u32 bytes = 0;
 	int ret;
-	u8 *oob_buf = free_oob_buff;
+	__u8 *oob_buf = free_oob_buff;
 
 	memset(free_oob_buff, 0, YAFFS_OOB_SIZE);
 
@@ -102,29 +102,29 @@ static BOOL check_yaffs1_image(const void *imagebuf)
 
 	ret = yaffs_check_ecc_ontags((YAFFS_TAGS *)free_oob_buff);
 	if (ret < 0)
-		return FALSE;
+		return false;
 
-	return TRUE;
+	return true;
 }
 
-BOOL check_image_type(PART_TYPE type, const u8 *image_data)
+bool check_image_type(PART_TYPE type, const __u8 *image_data)
 {
 	switch (type)
 	{
 	case PT_BL_GTH:
-		return GTH_MAGIC == *(u32 *)(image_data + GTH_MAGIC_OFFSET);
+		return GTH_MAGIC == *(__u32 *)(image_data + GTH_MAGIC_OFFSET);
 
 	case PT_BL_GBH:
-		return GBH_MAGIC == *(u32 *)(image_data + GBH_MAGIC_OFFSET);
+		return GBH_MAGIC == *(__u32 *)(image_data + GBH_MAGIC_OFFSET);
 
 	case PT_BL_GCONF: // fixme
 		break;
 
 	case PT_OS_LINUX:
-		return LINUX_MAGIC == *(u32 *)(image_data + LINUX_MAGIC_OFFSET);
+		return LINUX_MAGIC == *(__u32 *)(image_data + LINUX_MAGIC_OFFSET);
 
 	case PT_FS_JFFS2:
-		return JFFS2_MAGIC == *(u16 *)(image_data + JFFS2_MAGIC_OFFSET);
+		return JFFS2_MAGIC == *(__u16 *)(image_data + JFFS2_MAGIC_OFFSET);
 
 	case PT_FS_YAFFS:
 		return check_yaffs1_image(image_data + YAFFS_OOB_SIZE);
@@ -133,14 +133,14 @@ BOOL check_image_type(PART_TYPE type, const u8 *image_data)
 		break;
 
 	case PT_FS_CRAMFS:
-		return TRUE; //fixme
+		return true; //fixme
 
 	case PT_FS_UBIFS:
-		return (UBIFS_MAGIC == *(u32 *)(image_data + UBIFS_MAGIC_OFFSET));
+		return (UBIFS_MAGIC == *(__u32 *)(image_data + UBIFS_MAGIC_OFFSET));
 
 	default:
-		return TRUE; // tmp, fixme!!!
+		return true; // tmp, fixme!!!
 	}
 
-	return TRUE; // fixme!
+	return true; // fixme!
 }

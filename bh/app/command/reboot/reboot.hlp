@@ -1,0 +1,9 @@
+description:
+  reboot the system, it will stop all services before H/W reset.
+
+usage:
+  reboot [<options>]
+
+options:
+  -v
+   show more verbose messages when rebooting.

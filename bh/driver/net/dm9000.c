@@ -9,21 +9,21 @@
 
 // TODO: support 16-bit BW
 
-static u8 dm9000_readb(u8 reg)
+static __u8 dm9000_readb(__u8 reg)
 {
 	writeb(VA(DM9000_INDEX_PORT), reg);
 	return readb(VA(DM9000_DATA_PORT));
 }
 
-static void dm9000_writeb(u8 reg, u8 val)
+static void dm9000_writeb(__u8 reg, __u8 val)
 {
 	writeb(VA(DM9000_INDEX_PORT), reg);
 	writeb(VA(DM9000_DATA_PORT), val);
 }
 
-static u16 dm9000_mdio_read(struct net_device *ndev, u8 mii_id, u8 reg)
+static __u16 dm9000_mdio_read(struct net_device *ndev, __u8 mii_id, __u8 reg)
 {
-	u16 val;
+	__u16 val;
 
 	// dm9000_writeb(DM9000_EPAR, DM9000_PHY_INTER | reg);
 	dm9000_writeb(DM9000_EPAR, (mii_id & 0x3) << 6 | reg);
@@ -38,7 +38,7 @@ static u16 dm9000_mdio_read(struct net_device *ndev, u8 mii_id, u8 reg)
 	return val;
 }
 
-static void dm9000_mdio_write(struct net_device *ndev, u8 mii_id, u8 reg, u16 val)
+static void dm9000_mdio_write(struct net_device *ndev, __u8 mii_id, __u8 reg, __u16 val)
 {
 	// dm9000_writeb(DM9000_EPAR, DM9000_PHY_INTER | reg);
 	dm9000_writeb(DM9000_EPAR, (mii_id & 0x3) << 6 | reg);
@@ -52,7 +52,7 @@ static void dm9000_mdio_write(struct net_device *ndev, u8 mii_id, u8 reg, u16 va
 	dm9000_writeb(DM9000_EPCR, 0x0);
 }
 
-static int dm9000_set_mac(struct net_device *ndev, const u8 *pMac)
+static int dm9000_set_mac(struct net_device *ndev, const __u8 *pMac)
 {
 	int i;
 
@@ -67,7 +67,7 @@ static int dm9000_set_mac(struct net_device *ndev, const u8 *pMac)
 static int dm9000_reset(void)
 {
 	int i;
-	u8 status;
+	__u8 status;
 
 	dm9000_writeb(DM9000_NCR, 1);
 	while (dm9000_readb(DM9000_NCR) & 1);
@@ -94,15 +94,15 @@ static int dm9000_reset(void)
 static int dm9000_send_packet(struct net_device *ndev, struct sock_buff *skb)
 {
 	int i;
-	const u16 *tx_data;
-	u16 tx_size;
-	u32 flag;
+	const __u16 *tx_data;
+	__u16 tx_size;
+	__u32 flag;
 
 	lock_irq_psr(flag);
 
 	writeb(VA(DM9000_INDEX_PORT), DM9000_MWCMD);
 
-	tx_data = (const u16 *)skb->data;
+	tx_data = (const __u16 *)skb->data;
 	tx_size = skb->size;
 
 	for (i = 0; i < tx_size; i += sizeof(*tx_data))
@@ -128,9 +128,9 @@ static int dm9000_send_packet(struct net_device *ndev, struct sock_buff *skb)
 static int dm9000_recv_packet(struct net_device *ndev)
 {
 	int i;
-	u8 val;
-	u16 *rx_data;
-	u16 rx_stat, rx_size;
+	__u8 val;
+	__u16 *rx_data;
+	__u16 rx_stat, rx_size;
 	struct sock_buff *skb;
 
 	while (1)
@@ -172,7 +172,7 @@ static int dm9000_recv_packet(struct net_device *ndev)
 		}
 		else
 		{
-			rx_data  = (u16 *)skb->data;  // or head;
+			rx_data  = (__u16 *)skb->data;  // or head;
 
 			for (i = 0; i < rx_size; i += 2)
 			{
@@ -192,9 +192,9 @@ static int dm9000_recv_packet(struct net_device *ndev)
 	return 0;
 }
 
-static int dm9000_isr(u32 irq, void *dev)
+static int dm9000_isr(__u32 irq, void *dev)
 {
-	u8 status;
+	__u8 status;
 	struct net_device* ndev = dev;
 
 	status = dm9000_readb(DM9000_ISR);
@@ -221,7 +221,7 @@ static int dm9000_isr(u32 irq, void *dev)
 	//fixme: move to upper layer
 	if (status & 0x20)
 	{
-		u8 link = dm9000_readb(0x1) & 1 << 6;
+		__u8 link = dm9000_readb(0x1) & 1 << 6;
 
 		printf("dm9000 link %s\n", link ? "up" : "down");
 	}
@@ -239,8 +239,8 @@ static int dm9000_poll(struct net_device *ndev)
 static int __INIT__ dm9000_init(void)
 {
 	int ret;
-	u16 ven_id, dev_id;
-	u8  rev;
+	__u16 ven_id, dev_id;
+	__u8  rev;
 	struct net_device *ndev;
 	const char *chip_name;
 

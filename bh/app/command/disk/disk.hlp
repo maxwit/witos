@@ -1,0 +1,18 @@
+description:
+  generic disk drive utility. support MMC/eMMC/SD, ATA, SCSI, etc.
+
+usage:
+  disk <command> [<args>]
+
+command list:
+    scan     scan all MMC/SD devices, echo informations
+    dump     read and echo MMC/SD datas in each block
+    write    write data from memory to disk drive
+
+generic options:
+    -a <address>
+     start disk address, in byte or sector.
+    -m <memory>
+     start memory address.
+	-w <1|2|4|8>
+     data unit size.

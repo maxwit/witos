@@ -1,0 +1,11 @@
+description:
+  a useful debug utility for display controller.
+
+usage:
+  display [<options>]
+
+options:
+  -l [<all>]
+   list video mode (current video mode by default)
+  -s <model> | <N>
+   set current video to the built-in model (by name <model> or NO. <N>).

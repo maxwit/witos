@@ -1,0 +1,9 @@
+description:
+  list the contents of a directory or block device.
+
+usage:
+  ls [<options>]
+
+options:
+  -l
+   list detail information (default).

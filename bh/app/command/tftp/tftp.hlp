@@ -1,0 +1,25 @@
+descritioin:
+  Trivial File Transfer Protocol client. 
+
+usage:
+  tftp [<command> [<args>]
+
+command list:
+  get    download file
+  put    upload file
+
+generic options:
+  -r <URL>
+   remote URL, i.e. "10.0.0.2:69/g-bios-bh.bin".
+  -l <path>
+   local path.
+  -m <mode>
+   transfer mode: text or binary (default is binary).
+  -t <type>
+   image type for image file burning (default auto detect)
+  -v
+   verbose mode.
+
+specific get options:
+  -a <address>
+   only load to the memory <address>, without writing to stoarge. (affect GO).

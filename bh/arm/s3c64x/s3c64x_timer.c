@@ -1,8 +1,8 @@
 #include <irq.h>
 
-static int s3c6410_timer_isr(u32 irq, void *dev)
+static int s3c6410_timer_isr(__u32 irq, void *dev)
 {
-	u32 val;
+	__u32 val;
 
 	if (!(readl(VA(TIN_CSTAT)) & 1 << 6))
 	{
@@ -26,7 +26,7 @@ static int s3c6410_timer_isr(u32 irq, void *dev)
 
 int __INIT__ s3c6410_timer_init(void)
 {
-	u32 val;
+	__u32 val;
 	int ret;
 
 	val = readl(VA(TCFG0));

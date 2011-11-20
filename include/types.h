@@ -9,15 +9,13 @@
 
 #define MKFOURCC(a, b, c, d)    (((a) << 24) | (b) << 16 | ((c) << 8) | (d))
 
-#define __INLINE__        inline
 #define __PACKED__        __attribute__((packed))
 #define __WEAK__          __attribute__((weak))
 
-// #define __FUNCTION__  __func__
 // #define PRINT_ARG_FORMAT __attribute__((format (printf, 1, 2)))
 
 #define DECLARE_REBOOT(func) \
-	void reboot(void) __attribute__((alias(#func)))
+	void reset(void) __attribute__((alias(#func)))
 
 #define NULL  ((void *)0)
 
@@ -34,6 +32,15 @@
 
 #define min(x, y) ((x) < (y) ? (x) : (y))
 #define max(x, y) ((x) > (y) ? (x) : (y))
+
+// fixme
+#define SWAP(a,b) \
+		do { \
+			typeof(a) __temp; \
+			__temp = (a); \
+			(a) = (b); \
+			(b) = __temp; \
+		} while(0)
 
 #define KB(n) ((n) << 10)
 #define MB(n) ((n) << 20)

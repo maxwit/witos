@@ -1,1 +1,1 @@
-dir-y := $(CONFIG_ARCH) base fs mm driver net lib app
+dir-y := $(CONFIG_ARCH) core mm driver fs lib app

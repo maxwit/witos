@@ -1,0 +1,9 @@
+description:
+  send ICMP ECHO_REQUEST to network hosts
+
+usage:
+  ping [<options>]
+
+options:
+  -c <count>
+   Stop after sending count ECHO_REQUEST packets. 

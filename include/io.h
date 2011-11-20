@@ -7,70 +7,70 @@
 
 #if CONFIG_GTH
 
-#define VA(x)  ((u32)(x))
+#define VA(x)  ((__u32)(x))
 
-static u8 __INLINE__ readb(u32 addr)
+static __u8 inline readb(__u32 addr)
 {
-	return *(volatile u8 *)addr;
+	return *(volatile __u8 *)addr;
 }
 
-static void __INLINE__ writeb(u32 addr, u8 val)
+static void inline writeb(__u32 addr, __u8 val)
 {
-	*(volatile u8 *)addr = val;
+	*(volatile __u8 *)addr = val;
 }
 
-static u16 __INLINE__ readw(u32 addr)
+static __u16 inline readw(__u32 addr)
 {
-	return *(volatile u16 *)addr;
+	return *(volatile __u16 *)addr;
 }
 
-static void __INLINE__ writew(u32 addr, u16 val)
+static void inline writew(__u32 addr, __u16 val)
 {
-	*(volatile u16 *)addr = val;
+	*(volatile __u16 *)addr = val;
 }
 
-static u32 __INLINE__ readl(u32 addr)
+static __u32 inline readl(__u32 addr)
 {
-	return *(volatile u32 *)addr;
+	return *(volatile __u32 *)addr;
 }
 
-static void __INLINE__ writel(u32 addr, u32 val)
+static void inline writel(__u32 addr, __u32 val)
 {
-	*(volatile u32 *)addr = val;
+	*(volatile __u32 *)addr = val;
 }
 
 #else
 
 #define VA(x)  ((void *)(x))
 
-static u8 __INLINE__ readb(void *addr)
+static __u8 inline readb(void *addr)
 {
-	return *(volatile u8 *)addr;
+	return *(volatile __u8 *)addr;
 }
 
-static void __INLINE__ writeb(void *addr, u8 val)
+static void inline writeb(void *addr, __u8 val)
 {
-	*(volatile u8 *)addr = val;
+	*(volatile __u8 *)addr = val;
 }
 
-static u16 __INLINE__ readw(void *addr)
+static __u16 inline readw(void *addr)
 {
-	return *(volatile u16 *)addr;
+	return *(volatile __u16 *)addr;
 }
 
-static void __INLINE__ writew(void *addr, u16 val)
+static void inline writew(void *addr, __u16 val)
 {
-	*(volatile u16 *)addr = val;
+	*(volatile __u16 *)addr = val;
 }
 
-static u32 __INLINE__ readl(void *addr)
+static __u32 inline readl(void *addr)
 {
-	return *(volatile u32 *)addr;
+	return *(volatile __u32 *)addr;
 }
 
-static void __INLINE__ writel(void *addr, u32 val)
+static void inline writel(void *addr, __u32 val)
 {
-	*(volatile u32 *)addr = val;
+	*(volatile __u32 *)addr = val;
 }
 
 #endif

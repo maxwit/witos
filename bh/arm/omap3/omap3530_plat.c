@@ -48,9 +48,9 @@ static const struct part_attr omap3530_part_tab[] =
 
 static int __INIT__ omap3530_init(void)
 {
-	u32 val, val4;
+	__u32 val, val4;
 #ifdef CONFIG_LAN9220
-	u16 val2;
+	__u16 val2;
 #endif
 
 	//
@@ -135,6 +135,15 @@ static int __INIT__ omap3530_init(void)
 #endif
 
 	return 0;
+}
+
+static void omap3530_reset(void)
+{
+	__u32 val;
+
+	val = readl(VA(PRM_BASE + PRM_RSTCTRL));
+	val |= 0x1 << 1;
+	writel(VA(PRM_BASE + PRM_RSTCTRL), val);
 }
 
 PLAT_INIT(omap3530_init);

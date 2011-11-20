@@ -38,7 +38,7 @@ void hang(char err);
 #ifndef __ASSEMBLY__
 
 #include <bitops.h>
-#include <app.h>
+#include <task.h>
 #include <string.h>
 #include <init.h>
 #include <malloc.h>

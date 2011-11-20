@@ -4,6 +4,9 @@
 #include <list.h>
 #include <device.h>
 
+#define PART_NAME_LEN 32
+#define MAX_FILE_NAME_LEN   64
+
 typedef enum
 {
 	PT_NONE,
@@ -25,24 +28,49 @@ typedef enum
 	PT_FS_END = PT_FS_UBIFS
 } PART_TYPE;
 
-#define PART_NAME_LEN 32
+struct block_device;
 
 struct part_attr
 {
 	PART_TYPE part_type;
-	u32   part_base;
-	u32   part_size;
+	__u32   part_base;
+	__u32   part_size;
 	char  part_name[PART_NAME_LEN];
 };
 
-struct block_device
-{
+struct block_buff {
+	// __u32  blk_id;
+	__u32  blk_size;
+	__u8  *blk_base;
+	__u8  *blk_off;
+};
+
+struct bdev_file {
+	struct block_device *bdev;
+	struct block_buff blk_buf;
+
+	size_t cur_pos;
+	const char *img_type;
+	char name[MAX_FILE_NAME_LEN];
+	size_t size;
+
+	int (*open)(struct bdev_file *, const char *);
+	int (*close)(struct bdev_file *);
+
+	ssize_t (*read)(struct bdev_file *, void *, size_t);
+	ssize_t (*write)(struct bdev_file *, const void *, size_t);
+};
+
+struct block_device {
 	struct device dev;
 
 	size_t bdev_base;
 	size_t bdev_size;
 
-	void *fs; // fixme
+	// fixme!
+	void *fs;
+	char volume;
+	struct bdev_file *file;
 
 	struct list_node bdev_node;
 };
@@ -50,3 +78,4 @@ struct block_device
 int block_device_register(struct block_device *bdev);
 
 struct block_device *get_bdev_by_name(const char *name);
+struct block_device *get_bdev_by_volume(char vol);

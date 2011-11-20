@@ -1,8 +1,8 @@
 #include <arm/s3c24x0.h>
 
-static void s3c24x_reboot(void)
+static void s3c24x_reset(void)
 {
-	u32 val;
+	__u32 val;
 
 	val = readl(VA(WATCHDOG_BASE + WTCON));
 	val = val | (1 << 5) | 1;
@@ -11,4 +11,4 @@ static void s3c24x_reboot(void)
 	while(1);
 }
 
-DECLARE_REBOOT(s3c24x_reboot);
+DECLARE_REBOOT(s3c24x_reset);

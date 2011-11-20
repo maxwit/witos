@@ -1,0 +1,23 @@
+description:
+  uart(serial) communication utility.
+
+Usage
+  uart <command> [<args>]
+
+command list:
+  load     download file.
+  send     upload file.
+  setup    setup uart interface.
+  test     send some charactors to host for testing.
+
+generic options:
+  -p <k|kermit|y|ymodem>
+   the protocol to use (kermit or ymodem). default from sysconfig
+  -f <file>
+   file name
+  -i <name>|<num>
+   UART interface ID, int number (0, 1, 2, ...) or string name (ttyS0, ttySAC1, ...). default from sysconfig
+  -m [<address>]
+   load data to memory, but not write to storage.if <address> is not specified, then malloc one. (affect GO!)
+  -v
+   verbose mode

@@ -10,7 +10,7 @@
 
 static struct mmc_host* g_mmc_host;
 
-int mmc_read_blk(struct mmc_host *host, u8 *buf, int start)
+int mmc_read_blk(struct mmc_host *host, __u8 *buf, int start)
 {
 	int ret = 0;
 
@@ -28,7 +28,7 @@ int mmc_read_blk(struct mmc_host *host, u8 *buf, int start)
 
 	for (i = 0; i < MMC_BLK_SIZE / 4; i++)
 	{
-		printf("%x", ((u32*)buf)[i]);
+		printf("%x", ((__u32*)buf)[i]);
 
 		if ((i + 1)% 8)
 		{
@@ -44,7 +44,7 @@ int mmc_read_blk(struct mmc_host *host, u8 *buf, int start)
 	return 0;
 }
 
-int mmc_write_blk(struct mmc_host *host, const u8 *buf, int start)
+int mmc_write_blk(struct mmc_host *host, const __u8 *buf, int start)
 {
 	int ret = 0;
 
@@ -81,7 +81,7 @@ int mmc_decode_cid(struct mmc_host *host)
 int mmc_sd_detect_card(struct mmc_host *host)
 {
 	int ret = 0, i;
-	u32 val;
+	__u32 val;
 	struct mmc_card *card;
 
 	if (!host)
@@ -130,7 +130,7 @@ int mmc_sd_detect_card(struct mmc_host *host)
 	if (ret)
 		goto out;
 
-	// memcpy(host->card.raw_cid, host->resp, sizeof(u32) * 4);
+	// memcpy(host->card.raw_cid, host->resp, sizeof(__u32) * 4);
 
 	ret = mmc_decode_cid(host);
 	if (ret)

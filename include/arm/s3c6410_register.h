@@ -463,3 +463,7 @@
 #define EINT0_CON       0x7f008900
 #define EINT0_MASK      0x7f008920
 #define VICO_INT_ENABLE 0x71200010
+
+// reset
+#define RST_BASE	0x7E00F900
+#define RST_STAT	0x4

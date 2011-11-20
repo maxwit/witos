@@ -3,28 +3,28 @@
 
 #define  PIO_IRQ_OFFSET  2
 
-static void at91sam926x_aic_ack(u32 irq)
+static void at91sam926x_aic_ack(__u32 irq)
 {
 	at91_aic_writel(AIC_ICCR, 1 << irq);
 }
 
-static void at91sam926x_aic_mask(u32 irq)
+static void at91sam926x_aic_mask(__u32 irq)
 {
 	at91_aic_writel(AIC_IDCR, 1 << irq);
 }
 
-static void at91sam926x_aic_mack(u32 irq)
+static void at91sam926x_aic_mack(__u32 irq)
 {
 	at91sam926x_aic_mask(irq);
 	at91sam926x_aic_ack(irq);
 }
 
-static void at91sam926x_aic_umask(u32 irq)
+static void at91sam926x_aic_umask(__u32 irq)
 {
 	at91_aic_writel(AIC_IECR, 1 << irq);
 }
 
-//static int	At91set_trigger(u32, u32);
+//static int	At91set_trigger(__u32, __u32);
 
 static struct int_ctrl at91sam926x_aic_intctrl =
 {
@@ -35,9 +35,9 @@ static struct int_ctrl at91sam926x_aic_intctrl =
 	//	.set_trigger	= At91Aicset_trigger,
 };
 
-static void at91sam926x_gpio_mask(u32 irq)
+static void at91sam926x_gpio_mask(__u32 irq)
 {
-	u32 nPioIdx, nPioPin;
+	__u32 nPioIdx, nPioPin;
 
 	irq -= 32;
 	nPioIdx = irq >> 5;
@@ -46,9 +46,9 @@ static void at91sam926x_gpio_mask(u32 irq)
 	writel(VA(PIO_BASE(nPioIdx) + PIO_IDR), 1 << nPioPin);
 }
 
-static void at91sam926x_gpio_umask(u32 irq)
+static void at91sam926x_gpio_umask(__u32 irq)
 {
-	u32 nPioIdx, nPioPin;
+	__u32 nPioIdx, nPioPin;
 
 	irq -= 32;
 	nPioIdx = irq >> 5;
@@ -62,7 +62,7 @@ static struct int_ctrl at91sam926x_gpio_intctrl = {
 	.umask = at91sam926x_gpio_umask,
 };
 
-u32 read_irq_num(void)
+__u32 read_irq_num(void)
 {
 	return at91_aic_readl(AIC_IVR);
 }
@@ -87,10 +87,10 @@ static void __INIT__ at91_aic_init(void)
 	//	at91_aic_writel(AIC_ICCR, ~0UL);
 }
 
-static void at91sam926x_gpio_irqparse(struct int_pin *ipin, u32 irq)
+static void at91sam926x_gpio_irqparse(struct int_pin *ipin, __u32 irq)
 {
-	u32 dwPioStat;
-	u32 nPioIdx, nPioPin;
+	__u32 dwPioStat;
+	__u32 nPioIdx, nPioPin;
 
 	nPioIdx = irq - PIO_IRQ_OFFSET;
 	dwPioStat = readl(VA(PIO_BASE(nPioIdx) + PIO_ISR));
@@ -108,8 +108,8 @@ static void at91sam926x_gpio_irqparse(struct int_pin *ipin, u32 irq)
 
 int __INIT__ at91sam926x_interrupt_init(void)
 {
-	u32 i, j;
-	u32 irq;
+	__u32 i, j;
+	__u32 irq;
 
 	at91_aic_init();
 

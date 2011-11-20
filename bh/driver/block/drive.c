@@ -9,12 +9,12 @@
 
 struct msdos_part
 {
-	u8  boot_flag;
-	u8  chs_start[3];
-	u8  type;
-	u8  chs_end[3];
-	u32 lba_start;
-	u32 lba_size;
+	__u8  boot_flag;
+	__u8  chs_start[3];
+	__u8  type;
+	__u8  chs_end[3];
+	__u32 lba_start;
+	__u32 lba_size;
 };
 
 static struct list_node g_master_list;
@@ -27,7 +27,7 @@ static int msdos_part_scan(struct disk_drive *drive, struct part_attr part_tab[]
 
 	assert(drive != NULL);
 
-	u8 buff[drive->sect_size];
+	__u8 buff[drive->sect_size];
 
 	drive->get_block(drive, 0, buff);
 
@@ -74,7 +74,8 @@ int disk_drive_register(struct disk_drive *drive)
 	int ret, i, n;
 	struct disk_drive *slave;
 	struct part_attr part_tab[MSDOS_MAX_PARTS];
-	struct list_node *iter;
+
+	printf("registering disk drive \"%s\":\n", drive->bdev.dev.name);
 
 	ret = block_device_register(&drive->bdev);
 	// if ret < 0 ...
@@ -108,6 +109,8 @@ int disk_drive_register(struct disk_drive *drive)
 	}
 
 #if 0
+	struct list_node *iter;
+
 	printf("%s:", drive->bdev.dev.name);
 	list_for_each(iter, &drive->slave_list)
 	{

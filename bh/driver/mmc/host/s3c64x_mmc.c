@@ -6,7 +6,7 @@
 #define MMC_PRINT(fmt, args ...)
 #endif
 
-static int s3c6410_send_cmd(struct mmc_host *mmc, u32 index, u32 arg, RESP resp);
+static int s3c6410_send_cmd(struct mmc_host *mmc, __u32 index, __u32 arg, RESP resp);
 static void s3c6410_set_hclk(void);
 static void s3c6410_set_lclk(void);
 static int s3c6410_mmc_read_data(struct mmc_host *mmc, void *buf);
@@ -20,9 +20,9 @@ static struct mmc_host s3c6410_mmc = {
 	.write_data = s3c6410_mmc_write_data,
 };
 
-static void s3c6410_config_clk(u8 clk_div)
+static void s3c6410_config_clk(__u8 clk_div)
 {
-	u16 hval;
+	__u16 hval;
 
 	writew(VA(MMC0_BASE + CLKCON), (clk_div << 8) | 1);
 	do
@@ -49,7 +49,7 @@ static void s3c6410_set_hclk(void)
 
 static int s3c6410_mmc_read_data(struct mmc_host *mmc, void *buf)
 {
-	u16 val;
+	__u16 val;
 	int i;
 
 	do
@@ -72,7 +72,7 @@ static int s3c6410_mmc_read_data(struct mmc_host *mmc, void *buf)
 
 	for (i = 0; i < 512 / 4 ; i++)
 	{
-		((u32*)buf)[i] = readl(VA(MMC0_BASE + BDAT));
+		((__u32*)buf)[i] = readl(VA(MMC0_BASE + BDAT));
 	}
 
 	do
@@ -96,7 +96,7 @@ static int s3c6410_mmc_read_data(struct mmc_host *mmc, void *buf)
 
 static int s3c6410_mmc_write_data(struct mmc_host *mmc, const void *buf)
 {
-	u16 val;
+	__u16 val;
 	int i;
 
 	do
@@ -118,7 +118,7 @@ static int s3c6410_mmc_write_data(struct mmc_host *mmc, const void *buf)
 
 	for (i = 0; i < 512 / 4; i++)
 	{
-		writel(VA(MMC0_BASE + BDAT), ((u32*)buf)[i]);
+		writel(VA(MMC0_BASE + BDAT), ((__u32*)buf)[i]);
 	}
 
 	do
@@ -141,9 +141,9 @@ static int s3c6410_mmc_write_data(struct mmc_host *mmc, const void *buf)
 
 	return 0;
 }
-static int s3c6410_send_cmd(struct mmc_host *mmc, u32 index, u32 arg, RESP resp)
+static int s3c6410_send_cmd(struct mmc_host *mmc, __u32 index, __u32 arg, RESP resp)
 {
-	u16 cval, val;
+	__u16 cval, val;
 
 	cval = index << 8 | 3 << 3;
 

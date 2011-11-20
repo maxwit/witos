@@ -1,0 +1,35 @@
+descrition:
+  memory debug utility.
+
+usage:
+  mem <command> [<args>]
+
+command list:
+  move     memory move
+  copy     memory copy
+  write    memory write
+  set      memory set
+  dump     display memory in hex and/or ascii modes
+  free     show used/free infomation
+
+specific move/copy options:
+  -s <src>
+   source address
+  -d <dst>
+   destination address
+  -l <size>
+   move/copy size, in byte|K|M|G, default is byte.
+
+specific set options: (mem set [<options>] [<val1>, ...])
+  -a <address>
+   write the value list to memory begin with <address>.
+  -w <1|2|4|8>
+   operation unit, default is 1-byte.
+
+specific dump options:
+  -a <address>
+   start memory address.
+  -l <len>
+   data size to dump.
+  -d <o|O|d|D|x|X>
+   display format, default is hex.

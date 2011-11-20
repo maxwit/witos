@@ -1,0 +1,6 @@
+description:
+  Change CWD.
+
+usage:
+  cd [<vol>]
+  change CWD to the volume <vol> (HOME by default).

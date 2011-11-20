@@ -84,9 +84,9 @@ typedef enum{
 
 struct mmc_command
 {
-	u32 index;
-	u32 arg;
-//	u32 val;
+	__u32 index;
+	__u32 arg;
+//	__u32 val;
 	RESP resp;
 };
 
@@ -112,26 +112,26 @@ struct sdio_cis
 
 struct mmc_cid
 {
-	u8	alw1:1;
-	u8	crc:7;
-	u16 mdt:12;
-	u16 rev:4;
-	u32 psn;
-	u8	prv;
-	u8	pnm[5];
-	u16 oid;
-	u8	mid;
+	__u8	alw1:1;
+	__u8	crc:7;
+	__u16 mdt:12;
+	__u16 rev:4;
+	__u32 psn;
+	__u8	prv;
+	__u8	pnm[5];
+	__u16 oid;
+	__u8	mid;
 }__PACKED__;
 
 struct mmc_card
 {
 	struct disk_drive drive;
 
-	u16 rca;
-	u16 dsr;
-	u32 blen;
-	u32	raw_cid[4];	/* raw card CID */
-	u32	raw_csd[4];	/* raw card CSD */
+	__u16 rca;
+	__u16 dsr;
+	__u32 blen;
+	__u32	raw_cid[4];	/* raw card CID */
+	__u32	raw_csd[4];	/* raw card CSD */
 	struct sdio_cccr	cccr;		/* common card info */
 	struct sdio_cis		cis;		/* common tuple info */
 	char card_name[6];
@@ -141,10 +141,10 @@ struct mmc_card
 
 struct mmc_host
 {
-	u32 resp[4];
+	__u32 resp[4];
 	struct mmc_card card;
 
-	int (*send_cmd)(struct mmc_host *mmc, u32 index, u32 arg, RESP resp);
+	int (*send_cmd)(struct mmc_host *mmc, __u32 index, __u32 arg, RESP resp);
 	void (*set_hclk)(void);
 	void (*set_lclk)(void);
 	int (*read_data)(struct mmc_host *mmc, void *buf);
@@ -154,8 +154,8 @@ struct mmc_host
 
 int mmc_register(struct mmc_host * mmc);
 struct mmc_host * mmc_get_host(int id);
-int mmc_read_blk(struct mmc_host *host, u8 *buf, int start);
-int mmc_write_blk(struct mmc_host *host, const u8 *buf, int start);
+int mmc_read_blk(struct mmc_host *host, __u8 *buf, int start);
+int mmc_write_blk(struct mmc_host *host, const __u8 *buf, int start);
 int mmc_erase_blk(struct mmc_host *host, int start);
 int mmc_decode_cid(struct mmc_host *host);
 int mmc_sd_detect_card(struct mmc_host *host);

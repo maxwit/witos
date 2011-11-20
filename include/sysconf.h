@@ -18,56 +18,7 @@
 #define BM_MMC         (8 << 8)
 #define BM_TFTP        (16 << 8)
 
-// Linux kernel and ramdisk
-#define NFS_PATH_LEN   256
-
-struct linux_config
-{
-	u32  boot_mode;
-
-	int  root_dev;
-
-	char kernel_image[MAX_FILE_NAME_LEN];
-	char ramdisk_image[MAX_FILE_NAME_LEN];
-
-	char nfs_path[NFS_PATH_LEN];
-
-	char console_device[CONSOLE_DEV_NAME_LEN + 1];
-	u32  mach_id;
-
-	char cmd_line[DEFAULT_KCMDLINE_LEN];
-};
-
-// networking configuration
-#define MAX_IFX_NUM    16
-
-struct ifx_config
-{
-	char name[NET_NAME_LEN];
-	u32  local_ip;
-	u32  net_mask;
-	u8   mac_addr[MAC_ADR_LEN];
-};
-
-struct net_config
-{
-	u32  server_ip;
-	struct ifx_config net_ifx[MAX_IFX_NUM];
-};
-
-int net_get_server_ip(u32 *ip);
-
-int net_set_server_ip(u32 ip);
-
-struct image_info *sysconf_get_image_info(void);
-
-struct net_config *sysconf_get_net_info(void);
-
-struct linux_config *sysconf_get_linux_param(void);
-
 int __INIT__ sysconf_init(void);
-
-int sysconf_save(void);
 
 /////////////////////////////
 struct sys_config
@@ -78,10 +29,50 @@ struct sys_config
 	__u32 checksum;
 };
 
+#define CONF_VAL_LEN 512
+#define CONF_ATTR_LEN 128
+
+// default net config attribute value
+#define DEFAULT_NETMASK       "255.255.255.0"
+#define DEFAULT_SERVER_IP     "10.0.0.1"
+#define DEFAULT_LOCAL_IP      "10.0.0.2"
+#define DEFAULT_NAME_IFX(n)   "eth"#n
+#define DEFAULT_MAC_ADDR      "10:20:30:40:50:60"
+
+// default linux config attribute value
+#define DEFAULT_BOOT_MODE     0x1234
+#define DEFAULT_KCMDLINE      "root=/dev/mtdblock3"
+#define DEFAULT_CONSOLE_DEV   "ttyS0"
+#define DEFAULT_KERNEL_IMG    "zImage"
+#define DEFAULT_RAMDISK       "initrd"
+#define DEFAULT_MACH_ID       0x5000
+#define DEFAULT_NFS_PATH      "/maxwit/image/boot"
+#define DEFAULT_ROOT_DEV      2
+
+#ifdef CONFIG_DEBUG
+#define DPRINT_ATTR(attr, dstr) \
+							do {\
+								printf("%s(), line %d\n", __func__, __LINE__);\
+								printf("%s %s\n", attr, dstr);\
+							} while (0)
+#else
+
+#define DPRINT_ATTR(attr, dstr) do {} while (0)
+
+#endif
+
+#define ATTR_NOT_FOUND "attribute is not found, it will be use default value!"
+
+#define ATTR_FMT_ERR "string format error, it will be use default value!"
+
+void set_load_mem_addr(__u32 *addr);
+__u32 get_load_mem_addr();
+
 // API list
 int conf_load(void);
 int conf_get_attr(const char *attr, char val[]);
 int conf_set_attr(const char *attr, const char *val);
 int conf_add_attr(const char *attr, const char *val);
 int conf_del_attr(const char *attr);
+int conf_list_attr(void);
 int conf_store(void);

@@ -1,5 +1,5 @@
 # UART Core Files
-obj-y = uart.o kermit.o ymodem.o
+obj-y = uart.o
 
 obj-$(CONFIG_UART_S3C24X) += s3c24x_uart.o
 obj-$(CONFIG_UART_S3C64X) += s3c64x_uart.o

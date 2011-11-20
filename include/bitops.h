@@ -5,7 +5,7 @@
 // fixme
 #ifndef ffs
 
-static int __INLINE__ generic_ffs(int x)
+static int inline generic_ffs(int x)
 {
 	int r = 1;
 

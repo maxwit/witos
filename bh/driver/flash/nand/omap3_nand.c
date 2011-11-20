@@ -11,7 +11,7 @@ static int omap3_nand_is_ready(struct nand_chip *nand)
 
 static void omap3_nand_enable_hwecc(struct nand_chip *nand, int mode)
 {
-	u32 val;
+	__u32 val;
 
 	writel(VA(0x6E000000 + 0x1F8), 0x101);
 
@@ -25,9 +25,9 @@ static void omap3_nand_enable_hwecc(struct nand_chip *nand, int mode)
 #define ECC_P1_128_O(val)    (((val) & 0x00FF0000)>>16) /* Bit 16 to Bit 23 */
 #define ECC_P512_2048_O(val) (((val) & 0x0F000000)>>24) /* Bit 24 to Bit 27 */
 
-static int omap3_nand_calc_hwecc(struct nand_chip *nand, const u8 *data, u8 *ecc)
+static int omap3_nand_calc_hwecc(struct nand_chip *nand, const __u8 *data, __u8 *ecc)
 {
-	u32 val;
+	__u32 val;
 
 	val = readl(VA(0x6E000000 + 0x200));
 
@@ -38,15 +38,15 @@ static int omap3_nand_calc_hwecc(struct nand_chip *nand, const u8 *data, u8 *ecc
 	return 0;
 }
 
-static inline u32 gen_true_ecc(u8 *ecc_buf)
+static inline __u32 gen_true_ecc(__u8 *ecc_buf)
 {
 	return ecc_buf[0] | (ecc_buf[1] << 16) | ((ecc_buf[2] & 0xF0) << 20) | ((ecc_buf[2] & 0x0F) << 8);
 }
 
 static int omap3_nand_correct_data(struct nand_chip *nand,
-				u8 *data, u8 *ecc_read, u8 *ecc_calc)
+				__u8 *data, __u8 *ecc_read, __u8 *ecc_calc)
 {
-	u32 ecc_old, ecc_new;
+	__u32 ecc_old, ecc_new;
 
 	ecc_old = gen_true_ecc(ecc_read);
 	ecc_new = gen_true_ecc(ecc_calc);

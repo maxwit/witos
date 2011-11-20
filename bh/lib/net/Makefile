@@ -1,1 +1,1 @@
-obj-y = net_api.o
+obj-y = socket.o tftp.o

@@ -2,15 +2,15 @@
 
 #include <types.h>
 
-int gk_init_heap(u32 start, u32 end);
-
-void *malloc(u32 size);
+void *malloc(size_t size);
 
 void free(void *p);
 
-void *zalloc(u32);
+void *zalloc(size_t);
 
-void *dma_malloc(size_t len, u32 *ulPhyAddr);
+void *dma_malloc(size_t size, __u32 *pa);
+
+struct list_node *get_heap_head_list(void);
 
 #define SAFE_FREE(p) \
 	do \

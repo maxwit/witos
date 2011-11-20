@@ -19,23 +19,23 @@ static struct part_attr g_defDataFlashParts[] =
 	},
 };
 
-static int DataFlashSpiEnable(u32);
+static int DataFlashSpiEnable(__u32);
 
 static int DataFlashSpiOps(struct flash_chip *);
 
-static int DataFlashStatus(struct flash_chip *, u8 *);
+static int DataFlashStatus(struct flash_chip *, __u8 *);
 
 static int DataFlashWaitReady(struct flash_chip *);
 
 static int DataFlashErase(struct flash_chip *, struct erase_opt *);
 
-static int DataFlashWrite(struct flash_chip *, u32, u32, u32 *, const u8 *);
+static int DataFlashWrite(struct flash_chip *, __u32, __u32, __u32 *, const __u8 *);
 
-static int DataFlashRead(struct flash_chip *, u32, u32, u32 *, u8 *);
+static int DataFlashRead(struct flash_chip *, __u32, __u32, __u32 *, __u8 *);
 
-static int DataFlashAdd(const char *, u32, u32, u32);
+static int DataFlashAdd(const char *, __u32, __u32, __u32);
 
-static int DataFlashSpiEnable(u32 ulCS)
+static int DataFlashSpiEnable(__u32 ulCS)
 {
 	volatile struct AT9261_SPI *pSpi0 = (struct AT9261_SPI *)AT91SAM926X_PA_SPI0;
 
@@ -59,8 +59,8 @@ static int DataFlashSpiEnable(u32 ulCS)
 static int DataFlashSpiOps(struct flash_chip *flash)
 {
 	struct DataFlash *pDataflash = container_of(flash, struct DataFlash, parent);
-	u32 ulTimeout;
-	u32 ulSrcAddr;
+	__u32 ulTimeout;
+	__u32 ulSrcAddr;
 	volatile struct AT9261_SPI *pSpi0 = (struct AT9261_SPI *)AT91SAM926X_PA_SPI0;
 
 	DPRINT("\ncmd:%02x%02x%02x%02x\n",
@@ -82,19 +82,19 @@ static int DataFlashSpiOps(struct flash_chip *flash)
 
 	pSpi0->dwSPIPTCR = AT91C_PDC_TXTDIS + AT91C_PDC_RXTDIS;
 
-	pSpi0->dwSPIRPR = (u32)pDataflash->stOprMsg.pRxCmdBuf;
-	pSpi0->dwSPITPR = (u32)pDataflash->stOprMsg.pTxCmdBuf;
+	pSpi0->dwSPIRPR = (__u32)pDataflash->stOprMsg.pRxCmdBuf;
+	pSpi0->dwSPITPR = (__u32)pDataflash->stOprMsg.pTxCmdBuf;
 
-	pSpi0->dwSPIRCR = (u16)pDataflash->stOprMsg.nRxCmdLen;
-	pSpi0->dwSPITCR = (u16)pDataflash->stOprMsg.nTxCmdLen;
+	pSpi0->dwSPIRCR = (__u16)pDataflash->stOprMsg.nRxCmdLen;
+	pSpi0->dwSPITCR = (__u16)pDataflash->stOprMsg.nTxCmdLen;
 
-	if (TRUE == pDataflash->stOprMsg.hasData)
+	if (true == pDataflash->stOprMsg.hasData)
 	{
-		pSpi0->dwSPIRNPR = (u32)pDataflash->stOprMsg.pRxDataBuf;
-		pSpi0->dwSPITNPR = (u32)pDataflash->stOprMsg.pTxDataBuf;
+		pSpi0->dwSPIRNPR = (__u32)pDataflash->stOprMsg.pRxDataBuf;
+		pSpi0->dwSPITNPR = (__u32)pDataflash->stOprMsg.pTxDataBuf;
 
-		pSpi0->dwSPIRNCR = (u16)pDataflash->stOprMsg.nRxDataLen;
-		pSpi0->dwSPITNCR = (u16)pDataflash->stOprMsg.nTxDataLen;
+		pSpi0->dwSPIRNCR = (__u16)pDataflash->stOprMsg.nRxDataLen;
+		pSpi0->dwSPITNCR = (__u16)pDataflash->stOprMsg.nTxDataLen;
 	}
 
 	ulTimeout = 0;
@@ -110,14 +110,14 @@ static int DataFlashSpiOps(struct flash_chip *flash)
 	return 0;
 }
 
-static int DataFlashStatus(struct flash_chip *flash, u8 *pbStatus)
+static int DataFlashStatus(struct flash_chip *flash, __u8 *pbStatus)
 {
 	struct DataFlash *pDataFlash = container_of(flash, struct DataFlash, parent);
-	u8 *pCmd;
+	__u8 *pCmd;
 
 	pDataFlash->stOprMsg.pRxCmdBuf = pDataFlash->stOprMsg.pTxCmdBuf = pCmd = pDataFlash->bCommand;
 	pDataFlash->stOprMsg.nRxCmdLen = pDataFlash->stOprMsg.nTxCmdLen = 2;
-	pDataFlash->stOprMsg.hasData   = FALSE;
+	pDataFlash->stOprMsg.hasData   = false;
 
 	pCmd[0] = OP_READ_STATUS;
 	pCmd[1] = 0;
@@ -125,7 +125,7 @@ static int DataFlashStatus(struct flash_chip *flash, u8 *pbStatus)
 	if (DataFlashSpiOps(flash) < 0)
 		return -EINVAL;
 
-	*pbStatus = *((u8 *)pDataFlash->stOprMsg.pRxCmdBuf + 1);
+	*pbStatus = *((__u8 *)pDataFlash->stOprMsg.pRxCmdBuf + 1);
 
 	DPRINT("status:%02x\n", *pbStatus);
 
@@ -136,7 +136,7 @@ static int DataFlashWaitReady(struct flash_chip *flash)
 {
 	struct DataFlash *pDataFlash = container_of(flash, struct DataFlash, parent);
 	int	ret;
-	u8 status;
+	__u8 status;
 
 	DataFlashSpiEnable(pDataFlash->ulChipSelect);
 
@@ -159,9 +159,9 @@ static int DataFlashWaitReady(struct flash_chip *flash)
 static int DataFlashErase(struct flash_chip *flash, struct erase_opt *pErsOp)
 {
 	struct DataFlash *pDataFlash = container_of(flash, struct DataFlash, parent);
-	u32 blocksize = pDataFlash->block_size, nLen = pErsOp->len;
-	u8   *pCmd;
-	u32 do_block = 0;
+	__u32 blocksize = pDataFlash->block_size, nLen = pErsOp->len;
+	__u8   *pCmd;
+	__u32 do_block = 0;
 
 	DataFlashSpiEnable(pDataFlash->ulChipSelect);
 
@@ -178,7 +178,7 @@ static int DataFlashErase(struct flash_chip *flash, struct erase_opt *pErsOp)
 
 	while (pErsOp->len > 0)
 	{
-		u32	pageaddr;
+		__u32	pageaddr;
 		int		status;
 		int		do_block;
 
@@ -186,13 +186,13 @@ static int DataFlashErase(struct flash_chip *flash, struct erase_opt *pErsOp)
 #if 0
 		do_block = ((pageaddr & 0x7) == 0) && (pErsOp->len >= blocksize);
 #else
-		do_block = FALSE;
+		do_block = false;
 #endif
 		pageaddr = pageaddr << pDataFlash->nPageShift;
 
 		pDataFlash->stOprMsg.pTxCmdBuf = pDataFlash->stOprMsg.pRxCmdBuf = pCmd = pDataFlash->bCommand;
 		pDataFlash->stOprMsg.nTxCmdLen = pDataFlash->stOprMsg.nRxCmdLen = 4;
-		pDataFlash->stOprMsg.hasData   = FALSE;
+		pDataFlash->stOprMsg.hasData   = false;
 
 		pCmd[0] = do_block ? OP_ERASE_BLOCK : OP_ERASE_PAGE;
 		pCmd[1] = (pageaddr & 0x00FF0000) >> 16;
@@ -233,14 +233,14 @@ static int DataFlashErase(struct flash_chip *flash, struct erase_opt *pErsOp)
 	return 0;
 }
 
-static int DataFlashWrite(struct flash_chip *flash, u32 to, u32 len,
-							   u32 *retlen, const u8 *buf)
+static int DataFlashWrite(struct flash_chip *flash, __u32 to, __u32 len,
+							   __u32 *retlen, const __u8 *buf)
 {
 	struct DataFlash *pDataFlash = container_of(flash, struct DataFlash, parent);
-	u32 pageaddr, addr, offset, writelen;
-	u32 remaining = len;
-	u8 *writebuf = (u8 *)buf;
-	u8 *pbCmd, *pTmpBuf;
+	__u32 pageaddr, addr, offset, writelen;
+	__u32 remaining = len;
+	__u8 *writebuf = (__u8 *)buf;
+	__u8 *pbCmd, *pTmpBuf;
 	int	status = -EINVAL;
 
 	DataFlashSpiEnable(pDataFlash->ulChipSelect);
@@ -280,7 +280,7 @@ static int DataFlashWrite(struct flash_chip *flash, u32 to, u32 len,
 		{
 			pDataFlash->stOprMsg.pTxCmdBuf = pDataFlash->stOprMsg.pRxCmdBuf = pbCmd = pDataFlash->bCommand;
 			pDataFlash->stOprMsg.nTxCmdLen = pDataFlash->stOprMsg.nRxCmdLen = 4;
-			pDataFlash->stOprMsg.hasData   = FALSE;
+			pDataFlash->stOprMsg.hasData   = false;
 			pbCmd[0] = OP_TRANSFER_BUF1;
 			pbCmd[1] = (addr & 0x00FF0000) >> 16;
 			pbCmd[2] = (addr & 0x0000FF00) >> 8;
@@ -298,7 +298,7 @@ static int DataFlashWrite(struct flash_chip *flash, u32 to, u32 len,
 		addr += offset;
 		pDataFlash->stOprMsg.pTxCmdBuf  = pDataFlash->stOprMsg.pRxCmdBuf = pbCmd = pDataFlash->bCommand;
 		pDataFlash->stOprMsg.nTxCmdLen  = pDataFlash->stOprMsg.nRxCmdLen = 4;
-		pDataFlash->stOprMsg.hasData    = TRUE;
+		pDataFlash->stOprMsg.hasData    = true;
 		//pDataFlash->stOprMsg.pTxDataBuf = pDataFlash->stOprMsg.pRxDataBuf = writebuf;
 		pDataFlash->stOprMsg.pTxDataBuf = writebuf;
 		pDataFlash->stOprMsg.pRxDataBuf = pTmpBuf;
@@ -328,7 +328,7 @@ static int DataFlashWrite(struct flash_chip *flash, u32 to, u32 len,
 		addr = pageaddr << pDataFlash->nPageShift;
 		pDataFlash->stOprMsg.pTxCmdBuf = pDataFlash->stOprMsg.pRxCmdBuf = pbCmd = pDataFlash->bCommand;
 		pDataFlash->stOprMsg.nTxCmdLen = pDataFlash->stOprMsg.nRxCmdLen = 4;
-		pDataFlash->stOprMsg.hasData   = FALSE;
+		pDataFlash->stOprMsg.hasData   = false;
 		pbCmd[0] = OP_COMPARE_BUF1;
 		pbCmd[1] = (addr & 0x00FF0000) >> 16;
 		pbCmd[2] = (addr & 0x0000FF00) >> 8;
@@ -373,14 +373,14 @@ static int DataFlashWrite(struct flash_chip *flash, u32 to, u32 len,
 	return status;
 }
 
-static int DataFlashRead(struct flash_chip *flash, u32 from, u32 len,
-			u32 *retlen, u8 *buf)
+static int DataFlashRead(struct flash_chip *flash, __u32 from, __u32 len,
+			__u32 *retlen, __u8 *buf)
 {
 	struct DataFlash *pDataFlash = container_of(flash, struct DataFlash, parent);
-	u32 addr, nPage ,nRemainLen, nReadLen;
-	u8 *pbCmd, *pbBuffer;
+	__u32 addr, nPage ,nRemainLen, nReadLen;
+	__u8 *pbCmd, *pbBuffer;
 	int	status;
-	u32 isBlock;
+	__u32 isBlock;
 
 	DataFlashSpiEnable(pDataFlash->ulChipSelect);
 
@@ -420,7 +420,7 @@ static int DataFlashRead(struct flash_chip *flash, u32 from, u32 len,
 
 		pDataFlash->stOprMsg.pTxCmdBuf  = pDataFlash->stOprMsg.pRxCmdBuf = pbCmd = pDataFlash->bCommand;
 		pDataFlash->stOprMsg.nTxCmdLen  = pDataFlash->stOprMsg.nRxCmdLen = 8;
-		pDataFlash->stOprMsg.hasData    = TRUE;
+		pDataFlash->stOprMsg.hasData    = true;
 		pDataFlash->stOprMsg.pRxDataBuf = pDataFlash->stOprMsg.pTxDataBuf = pbBuffer;
 		pDataFlash->stOprMsg.nRxDataLen = pDataFlash->stOprMsg.nTxDataLen = nReadLen;
 
@@ -462,7 +462,7 @@ static int DataFlashRead(struct flash_chip *flash, u32 from, u32 len,
 	return status;
 }
 
-static int DataFlashReadOOB(struct flash_chip *flash, u32 ulLen, struct oob_opt *pOps)
+static int DataFlashReadOOB(struct flash_chip *flash, __u32 ulLen, struct oob_opt *pOps)
 {
 	flash = flash;
 	ulLen  = ulLen;
@@ -471,7 +471,7 @@ static int DataFlashReadOOB(struct flash_chip *flash, u32 ulLen, struct oob_opt 
 	return 0;
 }
 
-static int DataFlashWriteOOB(struct flash_chip *flash, u32 ulLen, struct oob_opt *pOps)
+static int DataFlashWriteOOB(struct flash_chip *flash, __u32 ulLen, struct oob_opt *pOps)
 {
 	flash = flash;
 	ulLen  = ulLen;
@@ -480,7 +480,7 @@ static int DataFlashWriteOOB(struct flash_chip *flash, u32 ulLen, struct oob_opt
 	return 0;
 }
 
-static int DataFlashIsBad(struct flash_chip *flash, u32 nAddr)
+static int DataFlashIsBad(struct flash_chip *flash, __u32 nAddr)
 {
 	flash = flash;
 	nAddr  = nAddr;
@@ -488,7 +488,7 @@ static int DataFlashIsBad(struct flash_chip *flash, u32 nAddr)
 	return 0;
 }
 
-static int DataFlashMarkBad(struct flash_chip *flash, u32 nAddr)
+static int DataFlashMarkBad(struct flash_chip *flash, __u32 nAddr)
 {
 	flash = flash;
 	nAddr  = nAddr;
@@ -496,13 +496,13 @@ static int DataFlashMarkBad(struct flash_chip *flash, u32 nAddr)
 	return 0;
 }
 
-static int DataFlashAdd(const char *pszName, u32 nPages, u32 page_size, u32 nPageOffset)
+static int DataFlashAdd(const char *pszName, __u32 nPages, __u32 page_size, __u32 nPageOffset)
 {
 	struct DataFlash *pDataFlash;
 	struct flash_chip	 *flash;
-	u32 ulRet;
+	__u32 ulRet;
 	struct part_info *pt_info;
-	u32 nMbrLen;
+	__u32 nMbrLen;
 
 	pDataFlash = malloc(sizeof(struct DataFlash));
 	if (NULL == pDataFlash)
@@ -534,7 +534,7 @@ static int DataFlashAdd(const char *pszName, u32 nPages, u32 page_size, u32 nPag
 	flash->write        = DataFlashWrite;
 	flash->erase        = DataFlashErase;
 
-	flash->bad_allow   = FALSE;
+	flash->bad_allow   = false;
 	flash->read_oob    = DataFlashReadOOB;
 	flash->write_oob   = DataFlashWriteOOB;
 	flash->block_is_bad   = DataFlashIsBad;
@@ -566,11 +566,11 @@ static int DataFlashAdd(const char *pszName, u32 nPages, u32 page_size, u32 nPag
 		nMbrLen  = flash->nMbrSize;
 
 		pt_info = (struct part_info *)malloc(nMbrLen);
-		BUG_ON(NULL == pt_info);
+		assert(pt_info);
 
 		memset(pt_info, 0, nMbrLen);
 
-		flash->read(flash, flash->nMbrAddr, nMbrLen, &nMbrLen, (u8 *)pt_info);
+		flash->read(flash, flash->nMbrAddr, nMbrLen, &nMbrLen, (__u8 *)pt_info);
 
 		// fixme: add partition checking
 		if (GB_MAGIC_MBR == pt_info->nMagic)
@@ -594,7 +594,7 @@ void DataFlashSpiInit(void)
 	volatile struct AT9261_PIO *pPio = (struct AT9261_PIO *)AT91SAM926X_PA_PIOA;
 	volatile struct AT9261_PMC *pPmc = (struct AT9261_PMC *)AT91SAM926X_PA_PMC;
 	volatile struct AT9261_SPI *pSpi = (struct AT9261_SPI *)AT91SAM926X_PA_SPI0;
-	u32 ulPAEnable, ulPBEnable;
+	__u32 ulPAEnable, ulPBEnable;
 
 	ulPAEnable = 0x1 << 0 | 0x1 << 1 | 0x1 << 2 | 0x1 << 3 | 0x1 << 4 | 0x1 << 5 | 0x1 << 6;
 	ulPBEnable = 0x1 << 27 | 0x1 << 28 | 0x1 << 29;
@@ -622,8 +622,8 @@ void DataFlashSpiInit(void)
 static int __INIT__ DataFlashProbe(void)
 {
 	struct DataFlash stTmpDataFlash;
-	u8 status;
-	u32 ulRet;
+	__u8 status;
+	__u32 ulRet;
 
 	DataFlashSpiInit();
 

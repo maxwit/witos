@@ -1,0 +1,25 @@
+description:
+  g-bios boot kernel configuration utility
+
+usage:
+  boot [OS] [<options>] ...
+
+options:
+  -t [kernel_image_name]
+   download kernel image via tftp
+  -s <mmc:kernel_image_name>
+   load kernel image via mmc
+  -f [<part_num>]
+   root=/dev/mtdblock<part_num>
+  -n [nfs_server:/path/to/nfs/root]
+   boot via NFS
+  -l [kernel command line]
+   boot via spcified CmdLine
+  -r [ramdisk_image_name]
+   boot with Ramdisk
+  -c <console_name, baudrate>
+   set console name and baudrate
+  -m <machine ID>
+   set board machine ID
+  -v
+   print the linux parameters and quit

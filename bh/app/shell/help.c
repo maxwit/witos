@@ -1,46 +1,75 @@
+#include <errno.h>
+#include <task.h>
 
-extern const struct gapp g_app_begin[], g_app_end[];
-
-int main(int argc, char *argv[])
+static inline void list_option(const struct help_info *help)
 {
-	int ret;
-	const struct gapp *app;
+	int i;
+	const struct option *opt = help->u.optv;
 
-	switch (argc)
-	{
-	case 1:
-		printf("\ng-bios commands:\n");
+	for (i = 0; i < help->count; i++)
+		printf("  %s\n   %s\n", opt[i].opt, opt[i].desc);
+	printf("  -h\n   this help\n");
+}
 
-		for (app = g_app_begin; app < g_app_end; app++)
-			printf("  %-8s\n", app->name);
+int usage(void)
+{
+	int i;
+	int argc;
+	char **argv;
+	const struct option *opt;
+	const struct task *current;
+	const struct help_info *help, *subcmd;
 
-		ret = 0;
-		break;
+	current = get_current_task();
+	assert(current);
 
-	case 2:
-		for (app = g_app_begin; app < g_app_end; app++)
-		{
-			if (!strcmp(app->name, argv[1]))
-			{
-				ret = 0;
-				break;
+	argc = current->argc;
+	argv = current->argv;
+	help = current->help;
+	if (!help) {
+		printf("%s: help infomation not available.\n", argv[0]);
+		return -ENOENT;
+	}
+
+	if (1 == help->level) {
+		opt = help->u.optv;
+
+		printf("Usage: %s [options]\n", argv[0]);
+		if (help->desc)
+			printf("%s\n\n", help->desc);
+
+		printf("option list:\n");
+		list_option(help);
+	} else if (2 == help->level) {
+		subcmd = help->u.cmdv;
+
+		if (argc >= 2) {
+			for (i = 0; i < help->count; i++) {
+				if (!strcmp(subcmd[i].name, argv[1])) {
+					opt = subcmd[i].u.optv;
+
+					printf("specific %s options:\n", subcmd[i].name);
+					list_option(&subcmd[i]);
+
+					return 0;
+				}
 			}
 		}
 
-		if (g_app_end == app)
-		{
-			printf("help: %s: No such command\n", argv[1]);
-			ret = -ENOENT;
+		printf("Usage: %s <command> [<args>]\n", argv[0]);
+		if (help->desc)
+			printf("%s\n\n", help->desc);
+
+		printf("command list:\n");
+		for (i = 0; i < help->count; i++) {
+			assert(subcmd[i].desc);
+			printf("  %-12s%s\n", subcmd[i].name, subcmd[i].desc);
 		}
 
-		break;
-
-	default:
-		printf("error: too many arguments\n");
-
-		ret = -EINVAL;
-		break;
+		printf("See '%s <command> -h' for more information on a specific command.\n", argv[0]);
+	} else {
+		BUG();
 	}
 
-	return ret;
+	return 0;
 }

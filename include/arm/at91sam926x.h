@@ -97,15 +97,15 @@ int at91sam926x_timer_init(void);
 
 int at91_clock_enable(int);
 
-void at91_gpio_conf_periA(u32, u32, int);
+void at91_gpio_conf_periA(__u32, __u32, int);
 
-void at91_gpio_conf_periB(u32, u32, int);
+void at91_gpio_conf_periB(__u32, __u32, int);
 
-void  at91_gpio_conf_input(u32, u32, int);
+void  at91_gpio_conf_input(__u32, __u32, int);
 
-void  at91_gpio_conf_output(u32, u32, int);
+void  at91_gpio_conf_output(__u32, __u32, int);
 
-void calibrate_delay(u32);
+void calibrate_delay(__u32);
 
 #endif
 
