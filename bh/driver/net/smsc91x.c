@@ -201,7 +201,9 @@ static int __INIT__ smsc91x_init(void)
 	ndev->chip_name    = "LAN91C111";
 	ndev->set_mac_addr = smsc91x_set_mac;
 	ndev->send_packet  = smsc91x_send_packet;
+#ifndef CONFIG_IRQ_SUPPORT
 	ndev->ndev_poll    = smsc91x_poll; // only polling mode supported so far
+#endif
 
 	ret = ndev_register(ndev);
 

@@ -1,5 +1,5 @@
-
-#ifdef CONFIG_IRQ_SUPPORT
+#if 0
+// #ifdef CONFIG_IRQ_SUPPORT
 
 #define DEFAULT_LOOPS_PERJIFFIES 1 << 8
 

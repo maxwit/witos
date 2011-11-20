@@ -14,12 +14,13 @@ LD = $(CROSS_COMPILE)ld
 OBJDUMP = $(CROSS_COMPILE)objdump
 OBJCOPY = $(CROSS_COMPILE)objcopy
 
-# fxime: to add "-mtune=xxx"
-CFLAGS = -ffreestanding -nostdinc -nostdlib -fno-builtin -I$(TOP_DIR)/include -include g-bios.h -DGBIOS_VER_MAJOR=$(MAJOR_VER) -DGBIOS_VER_MINOR=$(MINOR_VER) -mno-thumb-interwork -march=$(CONFIG_ARCH_VER) -mabi=aapcs-linux -O2 -mpoke-function-name -Wall -Werror-implicit-function-declaration -D__G_BIOS__ -D__LITTLE_ENDIAN
+CFLAGS = -ffreestanding -nostdinc -nostdlib -fno-builtin -I$(TOP_DIR)/include -include g-bios.h -DGBIOS_VER_MAJOR=$(MAJOR_VER) -DGBIOS_VER_MINOR=$(MINOR_VER) -D__G_BIOS__ -D__LITTLE_ENDIAN -O2 -Wall -Werror-implicit-function-declaration -mno-thumb-interwork -march=$(CONFIG_ARCH_VER) -mabi=aapcs-linux -mpoke-function-name
 
 #ifeq ($(CONFIG_DEBUG),y)
 #	CFLAGS += -DCONFIG_DEBUG
 #endif
+
+# fxime: to add "-mtune=xxx, -mfloat-abi=xxx"
 
 ASFLAGS = $(CFLAGS) -D__ASSEMBLY__
 
@@ -36,7 +37,7 @@ include build/rules/common.mk
 
 dir-y := th bh
 
-all: $(dir-y)
+all: $(dir-y) build/g-bios-sys.bin
 
 $(dir-y): include/autoconf.h
 	@make $(img_build)$@
@@ -48,18 +49,21 @@ include/autoconf.h: .config
 
 # fixme
 %_defconfig:
-	@echo
-	@#./build/generate/dotconfig.sh $@
+	@echo "configure for $(@:%_defconfig=%) board"
 	@./build/generate/defconfig.py $@
+	@cp build/configs/arm/$(@:%_defconfig=%_sysconfig) .sysconfig
 	@echo
 
-#####echo "******************"
-#####echo "*   .config      *"
-#####echo "******************"
+build/generate/sys_img_creat: build/generate/sys_img_creat.c
+	gcc -Wall $< -o $@
+
+# fixme
+build/g-bios-sys.bin: build/generate/sys_img_creat
+	@$< .sysconfig $@
 
 install:
 	@mkdir -p $(IMG_DIR)
-	@for fn in $(wildcard [tb]h/g-bios-*.bin); do \
+	@for fn in $(wildcard [tb]h/g-bios-*.bin) build/g-bios-sys.bin; do \
 		cp -v $$fn $(IMG_DIR); \
 	done
 	@echo
@@ -69,6 +73,7 @@ clean:
 		make $(img_build)$$dir clean; \
 		rm -vf $$dir/g-bios-$$dir.*; \
 	 done
+	@rm -vf build/g-bios-sys.bin
 
 distclean: clean
 	@rm -vf .config include/autoconf.h

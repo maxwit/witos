@@ -94,7 +94,7 @@ static struct sock_buff *sock_recv_packet(struct socket *sock)
 				break;
 		}
 
-		udelay(100);
+		udelay(1000);
 	}
 
 	if (to > 0) {
@@ -292,7 +292,6 @@ int bind(int fd, const struct sockaddr *addr, socklen_t len)
 		// printf
 		return -EINVAL;
 	}
-
 	sin = &sock->saddr[SA_SRC];
 
 	sin->sin_family = addr->sa_family;
@@ -303,13 +302,13 @@ int bind(int fd, const struct sockaddr *addr, socklen_t len)
 		sa = (const struct sockaddr_in *)addr;
 
 		sin->sin_port = sa->sin_port ? sa->sin_port : htons(port_alloc(sock->type));
-#if 0
+#if 1
 		if (sa->sin_addr.s_addr == htonl(INADDR_ANY))
 			ret = ndev_ioctl(NULL, NIOC_GET_IP, &sin->sin_addr.s_addr);
 		else
 			sin->sin_addr = sa->sin_addr;
 #endif
-		sin->sin_addr = sa->sin_addr;
+//		sin->sin_addr = sa->sin_addr;
 
 		break;
 	}

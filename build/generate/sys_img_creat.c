@@ -63,26 +63,31 @@ int main(int argc, char *argv[])
 	char buff[LEN];
 	char *data;
 
-	if (argc != 3)
-	{
-		printf("Usage: %s sysconf.txt sysconf.img\n", argv[0]);
+	switch (argc) {
+	case 2:
+		txt_file = argv[1];
+		img_file = "g-bios-sys.bin";
+		break;
+
+	case 3:
+		txt_file = argv[1];
+		img_file = argv[2];
+		break;
+
+	default:
+		printf("Usage: %s sysconf [sysconf.img]\n", argv[0]);
 		return -EINVAL;
 	}
 
-	txt_file = argv[1];
-	img_file = argv[2];
-
 	txt_fd = open(txt_file, O_RDONLY);
-	if (txt_fd < 0)
-	{
+	if (txt_fd < 0) {
 		sprintf(str, "open %s", txt_file);
 		perror(str);
 		return txt_fd;
 	}
 
-	img_fd = open(img_file, O_WRONLY | O_CREAT, 0644);
-	if (img_fd < 0)
-	{
+	img_fd = open(img_file, O_WRONLY | O_CREAT, 0755);
+	if (img_fd < 0) {
 		sprintf(str, "open %s", img_file);
 		perror(str);
 		ret = img_fd;
@@ -90,8 +95,7 @@ int main(int argc, char *argv[])
 	}
 
 	ret = fstat(txt_fd, &file_stat);
-	if (ret < 0)
-	{
+	if (ret < 0) {
 		printf("Get file state failed!\n");
 		goto L2;
 	}
@@ -114,7 +118,8 @@ int main(int argc, char *argv[])
 
 	checksum(sys);
 
-	printf("Create sysconfig.img success! The chk sum is 0x%08X\n", sys->checksum);
+	printf("\"%s\" created! (checksum = 0x%08X)\n",
+		img_file, sys->checksum);
 
 	ret = write(img_fd, buff, sys->offset + sys->size);
 	if (ret < 0) {
@@ -123,6 +128,8 @@ int main(int argc, char *argv[])
 		goto L2;
 	}
 
+	// fixme
+	ret = 0;
 L2:
 	close(img_fd);
 L1:

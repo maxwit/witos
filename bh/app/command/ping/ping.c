@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
 		ip_to_str(dest_ip, nip);// use default server as ping server if no argument supplied.
 	}
 
-	fd = socket(AF_INET, SOCK_RAW, 0);
+	fd = socket(AF_INET, SOCK_RAW, PROT_ICMP);
 
 	ret = socket_ioctl(fd, SKIOCS_FLAGS, 1);
 	if (ret < 0) {
@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	printf("---------%s pinig statistics--------\n", dest_ip);
+	printf("---------%s ping statistics--------\n", dest_ip);
 
 	printf("%d packet transmitted, %d received, %d%% packet loss, time 27ms",
 			ping_times, ping_times - lost_packet_count,

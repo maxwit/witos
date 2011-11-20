@@ -1,7 +1,7 @@
+#include <autoconf.h>
 #include <net/net.h>
 #include <net/mii.h>
 #include <irq.h>
-
 #include "lan9220.h"
 
 #if 0
@@ -26,12 +26,9 @@ static inline __u32 lan9220_readl(__u8 reg)
 
 static inline void lan9220_writel(__u8 reg, __u32 val)
 {
-	if (lan9220_32bits)
-	{
+	if (lan9220_32bits) {
 		writel(VA(LAN9220_BASE + reg), val);
-	}
-	else
-	{
+	} else {
 		writew(VA(LAN9220_BASE + reg), val & 0xffff);
 		writew(VA(LAN9220_BASE + reg + 2), val >> 16 & 0xffff);
 	}
@@ -192,9 +189,10 @@ static int lan9220_isr(__u32 irq, void *dev)
 
 	if (0 == status)
 		return IRQ_NONE;
+	// printf("%s(): status = 0x%08x\n", __func__, status);
 
 	// fixme
-	if (status & 0x1 << 20)
+	if (status & 1 << 20 | 1 << 3)
 		lan9220_recv_packet(ndev);
 
 	return IRQ_HANDLED;
@@ -204,15 +202,10 @@ static int lan9220_isr(__u32 irq, void *dev)
 #endif
 }
 
-static int lan9220_set_mac(struct net_device *ndev, const __u8 *pMac)
+static int lan9220_set_mac(struct net_device *ndev, const __u8 *mac)
 {
-	void *p;
-
-	p = ndev->mac_addr;
-	lan9220_mac_csr_write(ADDRL, *(__u32 *)p);
-	p = ndev->mac_addr + 4;
-	lan9220_mac_csr_write(ADDRH, *(__u16 *)p);
-
+	lan9220_mac_csr_write(ADDRL, *(__u32 *)mac);
+	lan9220_mac_csr_write(ADDRH, *(__u16 *)(mac + 4));
 	return 0;
 }
 
@@ -254,7 +247,7 @@ static __INIT__ int lan9220_probe(void)
 	ndev->chip_name = chip_name;
 	ndev->set_mac_addr = lan9220_set_mac;
 	ndev->send_packet = lan9220_send_packet;
-#ifndef CONFIG_IQR_SUPPORT
+#ifndef CONFIG_IRQ_SUPPORT
 	ndev->ndev_poll = lan9220_poll;
 #endif
 
@@ -268,6 +261,7 @@ static __INIT__ int lan9220_probe(void)
 		goto error;
 
 #ifdef CONFIG_IRQ_SUPPORT
+	writel(GPIO1_BASE + LEVELDETECT1, 1 << 19); // fixme
 	ret = irq_register_isr(LAN9220_IRQ_NUM, lan9220_isr, ndev);
 	if (ret < 0)
 		goto error;

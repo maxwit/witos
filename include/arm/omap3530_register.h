@@ -73,8 +73,10 @@
 
 // GPIO
 #define GPIO1_BASE		0x48310000
-#define GPIO_BASE(i)	(0x49050000 + 0x2000 * (i - 2)) // i = 2 - 6
+#define GPIO_BASE(i)	(0x49050000 + 0x2000 * (i - 2)) // i = 2 ~ 6
 #define GPIO_OE			0x34
+#define LEVELDETECT0     0x40
+#define LEVELDETECT1     0x44
 #define GPIO_IRQ_STATUS1(gpio_index) \
 	(((gpio_index) == 0) ? 0x48310018 : 0x49050000 + ((gpio_index) - 1) * 0x2000 + 0x18)
 
@@ -117,9 +119,9 @@
 #define GPMC_CS_BASE(x) ((128 * (x)) << 20)
 
 // INTC
-#define INTC_PINS	96
-#define MAX_IRQ_NUM	(INTC_PINS + 32 * 6)
-#define GPIO_IRQ(n)		(INTC_PINS + n)
+#define INTC_PINS	        96
+#define MAX_IRQ_NUM	        (INTC_PINS + 32 * 6)
+#define GPIO_IRQ(n)		    (INTC_PINS + n)
 
 #define INTCPS_BASE	0x48200000
 #define INTCPS_SYSCONFIG	0x010
