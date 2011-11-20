@@ -254,7 +254,6 @@ int val_to_hr_str(u32 val, char str[])
 {
 	char *ch = str;
 	u32 sect;
-#if 1
 	int i;
 	struct
 	{
@@ -272,37 +271,6 @@ int val_to_hr_str(u32 val, char str[])
 			*ch++ = soff[i].sign;
 		}
 	}
-#else
-
-	if (sect = (val >> 30) & KB_MASK)
-	{
-		ch += val_to_dec_str(ch, sect);
-		*ch++ = 'G';
-	}
-
-	if (sect = (val >> 20) & KB_MASK)
-	{
-		ch += val_to_dec_str(ch, sect);
-		*ch++ = 'M';
-	}
-
-	if (sect = (val >> 10) & KB_MASK)
-	{
-		ch += val_to_dec_str(ch, sect);
-		*ch++ = 'K';
-	}
-
-	if (sect = val & KB_MASK)
-	{
-		ch += val_to_dec_str(ch, sect);
-		*ch++ = 'B';
-	}
-	else if (ch == str)
-	{
-		*ch++ = '0';
-		*ch++ = 'B';
-	}
-#endif
 
 	*ch = '\0';
 

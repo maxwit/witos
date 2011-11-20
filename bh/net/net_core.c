@@ -203,81 +203,6 @@ void udp_send_packet(struct sock_buff *skb)
 	ip_send_packet(skb, PROT_UDP);
 }
 
-struct sock_buff *ping_recv_packet(struct socket *sock)
-{
-	u32 psr;
-	struct sock_buff *skb;
-	struct list_node *first;
-
-	while (1)
-	{
-		int ret;
-		char key;
-
-		ret = uart_read(CONFIG_DBGU_ID, (u8 *)&key, 1, WAIT_ASYNC);
-		if (ret > 0 && key == CHAR_CTRL_C)
-			return NULL;
-
-		netif_rx_poll();
-
-		lock_irq_psr(psr);
-		if (!list_is_empty(&sock->rx_qu))
-		{
-			unlock_irq_psr(psr);
-			break;
-		}
-		unlock_irq_psr(psr);
-
-		udelay(10);
-	}
-
-	lock_irq_psr(psr);
-	first = sock->rx_qu.next;
-	list_del_node(first);
-	unlock_irq_psr(psr);
-
-	skb = container_of(first, struct sock_buff, node);
-
-	return skb;
-}
-struct sock_buff *udp_recv_packet(struct socket *sock)
-{
-	u32 psr;
-	struct sock_buff *skb;
-	struct list_node *first;
-
-	while (1)
-	{
-		int ret;
-		char key;
-
-		ret = uart_read(CONFIG_DBGU_ID, (u8 *)&key, 1, WAIT_ASYNC);
-		if (ret > 0 && key == CHAR_CTRL_C)
-			return NULL;
-
-		netif_rx_poll();
-
-		lock_irq_psr(psr);
-		if (!list_is_empty(&sock->rx_qu))
-		{
-			unlock_irq_psr(psr);
-			break;
-		}
-		unlock_irq_psr(psr);
-
-		udelay(10);
-	}
-
-	lock_irq_psr(psr);
-	first = sock->rx_qu.next;
-	list_del_node(first);
-	unlock_irq_psr(psr);
-
-	skb = container_of(first, struct sock_buff, node);
-
-	return skb;
-}
-
 static int udp_layer_deliver(struct sock_buff *skb, const struct ip_header *ip_hdr)
 {
 	struct udp_header *udp_hdr;
@@ -301,44 +226,6 @@ static int udp_layer_deliver(struct sock_buff *skb, const struct ip_header *ip_h
 	list_add_tail(&skb->node, &sock->rx_qu);
 
 	return 0;
-}
-
-struct sock_buff *tcp_recv_packet(struct socket *sock)
-{
-	u32 psr;
-	struct sock_buff *skb;
-	struct list_node *first;
-
-	while (1)
-	{
-		int ret;
-		char key;
-
-		ret = uart_read(CONFIG_DBGU_ID, (u8 *)&key, 1, WAIT_ASYNC);
-		if (ret > 0 && key == CHAR_CTRL_C)
-			return NULL;
-
-		netif_rx_poll();
-
-		lock_irq_psr(psr);
-		if (!list_is_empty(&sock->rx_qu))
-		{
-			unlock_irq_psr(psr);
-			break;
-		}
-		unlock_irq_psr(psr);
-
-		udelay(10);
-	}
-
-	lock_irq_psr(psr);
-	first = sock->rx_qu.next;
-	list_del_node(first);
-	unlock_irq_psr(psr);
-
-	skb = container_of(first, struct sock_buff, node);
-
-	return skb;
 }
 
 static int tcp_send_ack(struct socket *sock)
@@ -934,6 +821,7 @@ struct list_node *net_get_device_list(void)
 	return &g_ndev_list;
 }
 
+#if 0
 struct net_device *net_get_dev(const char *ifx)
 {
 	struct net_device *ndev;
@@ -951,12 +839,13 @@ struct net_device *net_get_dev(const char *ifx)
 
 	return NULL;
 }
+#endif
 
-int net_dev_register(struct net_device *ndev)
+int ndev_register(struct net_device *ndev)
 {
 	int index;
 	struct mii_phy *phy;
-	static u8 mac_addr[] = CONFIG_MAC_ADDR;
+	struct ifx_config *ifx_cfg = sysconf_get_net_info()->net_ifx;
 
 	if (!ndev || !ndev->send_packet || !ndev->set_mac_addr)
 	{
@@ -968,12 +857,23 @@ int net_dev_register(struct net_device *ndev)
 		printf("Warning: chip_name is NOT set!\n");
 	}
 
-	mac_addr[0] = (mac_addr[0] & ~1) + 2; // fixme
-
-	if (ndev_ioctl(ndev, NIOC_SET_MAC, mac_addr) < 0)
+	for (index = 0; ifx_cfg->name[0] && index < MAX_IFX_NUM; index++)
 	{
-		DPRINT("%s(): fail to set MAC address!\n");
-		return -EIO;
+		if (!strncmp(ndev->ifx_name, ifx_cfg->name, NET_NAME_LEN))
+		{
+			int ret;
+
+			ret = ndev_ioctl(ndev, NIOC_SET_IP, (void *)ifx_cfg->local_ip);
+			//
+			ret = ndev_ioctl(ndev, NIOC_SET_MASK, (void *)ifx_cfg->net_mask);
+			//
+			ret = ndev_ioctl(ndev, NIOC_SET_MAC, ifx_cfg->mac_addr);
+			//
+
+			break;
+		}
+
+		ifx_cfg++;
 	}
 
 	list_add_tail(&ndev->ndev_node, &g_ndev_list);
@@ -985,7 +885,7 @@ int net_dev_register(struct net_device *ndev)
 	if (!ndev->phy_mask || !ndev->mdio_read || !ndev->mdio_write)
 		return 0;
 
-	// detecting PHY
+	// detect PHY
 	for (index = 0; index < 32; index++)
 	{
 		if (!((1 << index) & ndev->phy_mask))
@@ -1009,7 +909,7 @@ int net_dev_register(struct net_device *ndev)
 	return 0;
 }
 
-struct net_device *net_dev_new(u32 chip_size)
+struct net_device *ndev_new(size_t chip_size)
 {
 	struct net_device *ndev;
 	u32 core_size = (sizeof(struct net_device) + WORD_SIZE - 1) & ~(WORD_SIZE - 1);
@@ -1032,19 +932,26 @@ struct net_device *net_dev_new(u32 chip_size)
 }
 
 #ifndef CONFIG_IRQ_SUPPORT
-int netif_rx_poll()
+int ndev_recv_poll()
 {
-	if (!g_curr_ndev)
-		return -ENODEV;
+	int ret = -ENODEV;
+	struct list_node *iter;
+	struct net_device *ndev;
 
-	if (!g_curr_ndev->ndev_poll)
-		return 0;
+	list_for_each(iter, &g_ndev_list)
+	{
+		ndev = container_of(iter, struct net_device, ndev_node);
 
-	return g_curr_ndev->ndev_poll(g_curr_ndev);
+		if (ndev->ndev_poll)
+			ret = ndev->ndev_poll(ndev);
+	}
+
+	return ret;
 }
 #endif
 
-int net_check_link_status()
+// fixme: remove this API
+int ndev_check_link_status()
 {
 	int speed, phy_count;
 	struct net_device *ndev;

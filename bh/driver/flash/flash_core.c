@@ -1,7 +1,7 @@
+#include <sysconf.h>
 #include <flash/flash.h>
-#include <flash/part.h>
 
-static struct flash_chip *g_flash_list[MAX_FLASH_DEVICES];
+static struct list_node g_master_list;
 
 static const struct part_attr *g_part_attr;
 static int g_part_num = 0;
@@ -20,6 +20,7 @@ static int __INIT__ flash_adjust_part_tab(struct flash_chip *host,
 {
 	int index = 0;
 	u32 curr_base;
+	struct linux_config *linux_conf = sysconf_get_linux_param();
 
 	if (parts > MAX_FLASH_PARTS)
 	{
@@ -40,7 +41,7 @@ static int __INIT__ flash_adjust_part_tab(struct flash_chip *host,
 		{
 			if (PT_BL_GBH == new_attr->part_type)
 			{
-				new_attr->part_base = GBH_START_BLK * host->erase_size;
+				new_attr->part_base = CONFIG_GBH_START_BLK * host->erase_size;
 
 				if (new_attr->part_base < curr_base)
 				{
@@ -57,9 +58,14 @@ static int __INIT__ flash_adjust_part_tab(struct flash_chip *host,
 		{
 			// fixme
 			if (PT_BL_GBH == new_attr->part_type && \
-				new_attr->part_base != GBH_START_BLK * host->erase_size)
+				new_attr->part_base != CONFIG_GBH_START_BLK * host->erase_size)
 			{
 				printf("%s() line %d: fixme!\n", __func__, __LINE__);
+			}
+			else if (new_attr->part_type >= PT_FS_BEGIN && new_attr->part_type <= PT_FS_END)
+			{
+				linux_conf->root_dev = index;
+				break;
 			}
 
 			new_attr->part_base = attr_tmpl->part_base;
@@ -80,11 +86,11 @@ static int __INIT__ flash_adjust_part_tab(struct flash_chip *host,
 			ALIGN_UP(new_attr->part_size, host->erase_size);
 		}
 
+#if 0
 		if (PT_BL_GCONF == new_attr->part_type)
 		{
 			host->conf_attr = new_attr;
 		}
-#if 0
 		else if (PT_OS_LINUX == new_attr->part_type)
 		{
 			u32 end, gap;
@@ -108,7 +114,7 @@ static int __INIT__ flash_adjust_part_tab(struct flash_chip *host,
 
 		if ('\0' == attr_tmpl->part_name[0])
 		{
-			strncpy(new_attr->part_name, part_type2str(new_attr->part_type), sizeof(new_attr->part_name));
+			// strncpy(new_attr->part_name, part_type2str(new_attr->part_type), sizeof(new_attr->part_name));
 		}
 		else
 		{
@@ -137,110 +143,141 @@ static int __INIT__ flash_adjust_part_tab(struct flash_chip *host,
 	return index;
 }
 
-static int __INIT__ attach_part_info(struct flash_chip *flash, struct part_info *pt_info)
+// TODO: support tab/chip macthing
+
+static int g_flash_count = 0;
+
+static int flash_part_read(struct flash_chip *slave,
+				u32 from, u32 len, u32 *retlen, u8 *buff)
 {
-	struct partition *part;
-	struct part_attr *attr;
+	struct flash_chip *master = slave->master;
 
-	flash->pt_info = pt_info;
-
-	part  = flash->part_tab;
-	attr  = pt_info->attr_tab;
-
-	while (part < flash->part_tab + MAX_FLASH_PARTS)
-	{
-		part->attr  = attr;
-		part->host  = flash;
-
-		part++;
-		attr++;
-	}
-
-	return 0;
+	return master->read(master, slave->bdev.bdev_base + from, len, retlen, buff);
 }
 
-static struct part_info g_part_info;
+static int flash_part_write(struct flash_chip *slave,
+				u32 to, u32 len, u32 *retlen, const u8 *buff)
+{
+	struct flash_chip *master = slave->master;
 
-// TODO: support tab/chip macthing
+	return master->write(master, slave->bdev.bdev_base + to, len, retlen, buff);
+}
+
+static int flash_part_erase(struct flash_chip *slave, struct erase_opt *opt)
+{
+	struct flash_chip *master = slave->master;
+
+	opt->estart += slave->bdev.bdev_base;
+	return master->erase(master, opt);
+}
+
+static int part_read_oob(struct flash_chip *slave,
+				u32 from, struct oob_opt *ops)
+{
+	struct flash_chip *master = slave->master;
+
+	return master->read_oob(master, slave->bdev.bdev_base + from, ops);
+}
+
+static int part_write_oob(struct flash_chip *slave,
+				u32 to,	struct oob_opt *opt)
+{
+	struct flash_chip *master = slave->master;
+
+	return master->write_oob(master, slave->bdev.bdev_base + to, opt);
+}
+
+static int part_block_is_bad(struct flash_chip *slave, u32 off)
+{
+	struct flash_chip *master = slave->master;
+
+	return master->block_is_bad(master, slave->bdev.bdev_base + off);
+}
+
+static int part_block_mark_bad(struct flash_chip *slave, u32 off)
+{
+	struct flash_chip *master = slave->master;
+
+	return master->block_mark_bad(master, slave->bdev.bdev_base + off);
+}
+
 int flash_register(struct flash_chip *flash)
 {
-	int i, ret = 0; // ret has no use currently
+	int i, n, ret;
+	struct flash_chip *slave;
+	struct part_attr part_tab[MAX_FLASH_PARTS];
 
-	for (i = 0; i < MAX_FLASH_DEVICES; i++)
+	snprintf(flash->bdev.dev.name, MAX_DEV_NAME, "mtdblock%d", g_flash_count);
+	g_flash_count++;
+
+	ret = block_device_register(&flash->bdev);
+	// if ret < 0 ...
+	list_head_init(&flash->slave_list);
+	list_add_tail(&flash->master_node, &g_master_list);
+
+	n = flash_adjust_part_tab(flash,
+			part_tab, g_part_attr, g_part_num);
+
+	for (i = 0; i < n; i++)
 	{
-		if (NULL == g_flash_list[i])
-		{
-			g_flash_list[i] = flash;
+		slave = zalloc(sizeof(*slave));
+		if (NULL == slave)
+			return -ENOMEM;
 
-			if (g_part_num > 0)
-			{
-				g_part_info.parts = flash_adjust_part_tab(flash,
-										g_part_info.attr_tab, g_part_attr, g_part_num);
+		// fixme
+		snprintf(slave->bdev.dev.name, PART_NAME_LEN, "%sp%d",
+			flash->bdev.dev.name, i + 1);
 
-				ret = attach_part_info(flash, &g_part_info);
+		slave->bdev.bdev_base = part_tab[i].part_base;
+		slave->bdev.bdev_size = part_tab[i].part_size;
 
-				part_show(flash);
-			}
+		slave->write_size  = flash->write_size;
+		slave->erase_size  = flash->erase_size;
+		slave->chip_size   = flash->chip_size;
+		slave->write_shift = flash->write_shift;
+		slave->erase_shift = flash->erase_shift;
+		slave->chip_shift  = flash->chip_shift;
+		slave->type        = flash->type;
+		slave->oob_size    = flash->oob_size;
+		slave->oob_mode    = flash->oob_mode;
+		slave->master      = flash;
+		list_add_tail(&slave->slave_node, &flash->slave_list);
 
-			return i;
-		}
+		slave->read  = flash_part_read;
+		slave->write = flash_part_write;
+		slave->erase = flash_part_erase;
+		slave->read_oob  = part_read_oob;
+		slave->write_oob = part_write_oob;
+		slave->block_is_bad   = part_block_is_bad;
+		slave->block_mark_bad = part_block_mark_bad;
+		slave->scan_bad_block = flash->scan_bad_block; // fixme
+
+		ret = block_device_register(&slave->bdev);
 	}
 
-	return -EBUSY;
+#if 0
+	part_show(flash);
+
+	if (PT_BL_GBH == part->attr->part_type)
+	{
+		part_set_home(0);
+		part_change(0);
+	}
+#endif
+
+	return ret;
 }
 
 int flash_unregister (struct flash_chip *flash)
 {
-	int i;
+	// TODO: check master or not
 
-	for (i = 0; i < MAX_FLASH_DEVICES; i++)
-	{
-		if (flash == g_flash_list[i])
-		{
-			g_flash_list[i] = NULL;
-
-			return i;
-		}
-	}
-
-	return -ENODEV;
-}
-
-struct flash_chip *flash_get(unsigned int num)
-{
-	struct flash_chip *flash;
-
-	if (num >= MAX_FLASH_DEVICES)
-		return NULL;
-
-	flash = g_flash_list[num];
-
-	return flash;
-}
-
-struct flash_chip *flash_get_by_name(const char *name)
-{
-	int i;
-	struct flash_chip *flash = NULL;
-
-	for (i = 0; i < MAX_FLASH_DEVICES; i++)
-	{
-		if (g_flash_list[i] && !strcmp(name, g_flash_list[i]->name))
-		{
-			flash = g_flash_list[i];
-			break;
-		}
-	}
-
-	return flash;
+	return 0;
 }
 
 static int __INIT__ flash_core_init(void)
 {
-	int i;
-
-	for (i = 0; i < MAX_FLASH_DEVICES; i++)
-		g_flash_list[i] = NULL;
+	list_head_init(&g_master_list);
 
 	return 0;
 }

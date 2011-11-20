@@ -1,5 +1,5 @@
+#include <sysconf.h>
 #include <flash/flash.h>
-#include <flash/part.h>
 #include <net/net.h>
 
 static const char banner[] = "\n\n" // CLRSCREEN
@@ -62,11 +62,15 @@ static void __INIT__ show_sys_info(void)
 {
 	printf("%s\n", banner);
 
-	net_check_link_status();
+	ndev_check_link_status();
 }
 
 int main(void)
 {
+	int ret;
+
+	ret = sysconf_init();
+
 	sys_init();
 
 	show_sys_info();
@@ -74,5 +78,5 @@ int main(void)
 	printf("\n");
 	exec_shell();
 
-	return -1;
+	return ret;
 }

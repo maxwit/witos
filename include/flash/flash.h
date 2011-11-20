@@ -143,20 +143,26 @@ struct partition
 
 struct flash_chip
 {
-	int   type;
-	char  name[BLOCK_DEV_NAME_LEN];
+	struct block_device bdev;
 
 	union
 	{
-		u32 write_size;
-		u32 page_size;
+		struct list_node master_node;
+		struct list_node slave_node;
 	};
+
 	union
 	{
-		u32 erase_size;
-		u32 block_size;
+		struct list_node slave_list;
+		struct flash_chip *master;
 	};
-	u32 chip_size;
+
+	int   type;
+	char  name[BLOCK_DEV_NAME_LEN];
+
+	size_t write_size;
+	size_t erase_size;
+	size_t chip_size; // fixme
 
 	u32 write_shift;
 	u32 erase_shift;
@@ -170,11 +176,6 @@ struct flash_chip
 
 	FLASH_HOOK_PARAM *callback_args;
 	FLASH_HOOK_FUNC   callback_func;
-
-	struct partition  part_tab[MAX_FLASH_PARTS];
-	struct part_info  *pt_info;
-
-	struct part_attr  *conf_attr; // fixme: should be cached???
 
 	int (*read)(struct flash_chip *, u32, u32, u32 *, u8 *);
 	int (*write)(struct flash_chip *, u32, u32 , u32 *, const u8 *);
@@ -207,10 +208,6 @@ int flash_register(struct flash_chip *flash);
 
 int flash_unregister(struct flash_chip *flash);
 
-struct flash_chip *flash_get(unsigned int num);
-
-struct flash_chip *flash_get_by_name(const char *name);
-
 const char *flash_get_mtd_name(const struct flash_chip *flash);
 
 void __INIT__ flash_add_part_tab(const struct part_attr *attr, int num);
@@ -229,7 +226,7 @@ typedef enum
 int flash_set_ecc_mode(struct flash_chip *flash, ECC_MODE newMode, ECC_MODE *pOldMode);
 
 // APIs
-struct flash_chip *flash_open(unsigned int num);
+struct flash_chip *flash_open(const char *name);
 
 int flash_close(struct flash_chip *flash);
 

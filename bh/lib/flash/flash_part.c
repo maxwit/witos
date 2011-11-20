@@ -1,6 +1,5 @@
 #include <sysconf.h>
 #include <flash/flash.h>
-#include <flash/part.h>
 
 static int g_home_index = -1; // to be removed
 static int g_curr_index = -1;
@@ -131,7 +130,7 @@ int part_close(struct partition *part)
 
 #if 0
 		case PT_BL_GBIOS:
-			flash_pos = part_base + (GBH_START_BLK << flash->erase_shift) + part->cur_pos;
+			flash_pos = part_base + (CONFIG_GBH_START_BLK << flash->erase_shift) + part->cur_pos;
 			ret = flash_erase(flash, flash_pos, rest, dwEraseFlag);
 			break;
 #endif
@@ -278,7 +277,7 @@ long part_write(struct partition *part, const void *buff, u32 size)
 				break;
 #if 0
 			case PT_BL_GBIOS:
-				flash_pos = part_base + (GBH_START_BLK << flash->erase_shift) + part->cur_pos;
+				flash_pos = part_base + (CONFIG_GBH_START_BLK << flash->erase_shift) + part->cur_pos;
 				break;
 #endif
 			case PT_FS_JFFS2:
@@ -544,7 +543,8 @@ const char *part_get_name(const struct part_attr *attr)
 // fixme
 int part_show(const struct flash_chip *flash)
 {
-	int index;
+	int index = 0;
+#if 0
 	struct part_attr attr_tab[MAX_FLASH_PARTS];
 	u32 nIndex, nRootIndex;
 	const char *pBar = "--------------------------------------------------------------------";
@@ -593,6 +593,6 @@ int part_show(const struct flash_chip *flash)
 
 	printf("%s\n", pBar);
 
+#endif
 	return index;
 }
-

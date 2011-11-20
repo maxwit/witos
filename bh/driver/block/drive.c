@@ -47,7 +47,7 @@ static int msdos_part_scan(struct disk_drive *drive, struct part_attr part_tab[]
 		part_tab[i].part_base = dos_pt[i].lba_start * drive->sect_size;
 		part_tab[i].part_size = dos_pt[i].lba_size * drive->sect_size;
 
-		printf("0x%08x - 0x%08x (%dM)\n",
+		DPRINT("0x%08x - 0x%08x (%dM)\n",
 			dos_pt[i].lba_start, dos_pt[i].lba_start + dos_pt[i].lba_size,
 			dos_pt[i].lba_size * drive->sect_size >> 20);
 	}
@@ -71,21 +71,20 @@ static int drive_put_block(struct disk_drive *drive, int start, const void *buff
 
 int disk_drive_register(struct disk_drive *drive)
 {
-	int ret, i;
-	struct part_attr part_tab[MSDOS_MAX_PARTS];
+	int ret, i, n;
 	struct disk_drive *slave;
-
-	list_head_init(&drive->slave_list);
+	struct part_attr part_tab[MSDOS_MAX_PARTS];
+	struct list_node *iter;
 
 	ret = block_device_register(&drive->bdev);
 	// if ret < 0 ...
+	list_head_init(&drive->slave_list);
+	list_add_tail(&drive->master_node, &g_master_list);
 
-	ret = msdos_part_scan(drive, part_tab);
-	// if ret < 0 ...
+	n = msdos_part_scan(drive, part_tab);
+	// if n < 0 ...
 
-	printf("%s:", drive->bdev.dev.name);
-
-	for (i = 0; i < ret; i++)
+	for (i = 0; i < n; i++)
 	{
 		slave = zalloc(sizeof(*slave));
 		if (NULL == slave)
@@ -98,19 +97,25 @@ int disk_drive_register(struct disk_drive *drive)
 		slave->bdev.bdev_size = part_tab[i].part_size;
 
 		slave->sect_size = drive->sect_size;
-		slave->get_block = drive_get_block;
-		slave->put_block = drive_put_block;
 		slave->master    = drive;
 		list_add_tail(&slave->slave_node, &drive->slave_list);
 
-		printf(" %s", slave->bdev.dev.name);
+		slave->get_block = drive_get_block;
+		slave->put_block = drive_put_block;
 
 		ret = block_device_register(&slave->bdev);
 		// if ret < 0 ...
 	}
-	printf("\n");
 
-	list_add_tail(&drive->master_node, &g_master_list);
+#if 0
+	printf("%s:", drive->bdev.dev.name);
+	list_for_each(iter, &drive->slave_list)
+	{
+		slave = container_of(iter, struct disk_drive, slave_list);
+		printf(" %s", slave->bdev.dev.name);
+	}
+	printf("\n");
+#endif
 
 	return ret;
 }

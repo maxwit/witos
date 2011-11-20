@@ -4,6 +4,7 @@ MAJOR_VER = 2
 MINOR_VER = 5
 
 TOP_DIR := $(shell pwd)
+IMG_DIR := $(CONFIG_IMAGE_PATH)/boot
 
 CROSS_COMPILE = $(CONFIG_CROSS_COMPILE:"%"=%)
 
@@ -14,7 +15,7 @@ OBJDUMP = $(CROSS_COMPILE)objdump
 OBJCOPY = $(CROSS_COMPILE)objcopy
 
 # fxime: to add "-mtune=xxx"
-CFLAGS = -ffreestanding -nostdinc -nostdlib -fno-builtin -I$(TOP_DIR)/include -include g-bios.h -DGBIOS_VER_MAJOR=$(MAJOR_VER) -DGBIOS_VER_MINOR=$(MINOR_VER) -mno-thumb-interwork -march=$(CONFIG_ARCH_VER) -mabi=aapcs-linux -O2 -mpoke-function-name -DGBH_START_BLK=$(CONFIG_GBH_START_BLK) -DGBH_START_MEM=$(CONFIG_GBH_START_MEM) -Wall -Werror-implicit-function-declaration -D__G_BIOS__ -D__LITTLE_ENDIAN
+CFLAGS = -ffreestanding -nostdinc -nostdlib -fno-builtin -I$(TOP_DIR)/include -include g-bios.h -DGBIOS_VER_MAJOR=$(MAJOR_VER) -DGBIOS_VER_MINOR=$(MINOR_VER) -mno-thumb-interwork -march=$(CONFIG_ARCH_VER) -mabi=aapcs-linux -O2 -mpoke-function-name -Wall -Werror-implicit-function-declaration -D__G_BIOS__ -D__LITTLE_ENDIAN
 
 #ifeq ($(CONFIG_DEBUG),y)
 #	CFLAGS += -DCONFIG_DEBUG
@@ -57,12 +58,10 @@ include/autoconf.h: .config
 #####echo "******************"
 
 install:
-	@mkdir -p $(CONFIG_IMAGE_PATH)
+	@mkdir -p $(IMG_DIR)
 	@for fn in $(wildcard [tb]h/g-bios-*.bin); do \
-		cp -v $$fn $(CONFIG_IMAGE_PATH); \
+		cp -v $$fn $(IMG_DIR); \
 	done
-	@echo
-	@ls -l $(CONFIG_IMAGE_PATH)/g-bios-[tb]h.bin
 	@echo
 
 clean:

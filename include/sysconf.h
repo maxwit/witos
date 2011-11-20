@@ -1,18 +1,11 @@
 #pragma once
 
-#include <flash/part.h>
+#include <fs/fs.h>
 #include <net/net.h>
 
 #define GB_SYSCFG_VER       7
 
-// fixme for page > 2K
-// #define FLASH_CONFIG_SIZE    KB(128)
-// #define FLASH_CONFIG_ADDR    (MB(1) - FLASH_CONFIG_SIZE) // fixme
-
-#define SC_RESET_MBR        (1 << 0)
-#define SC_RESET_NET        (1 << 1)
-#define SC_RESET_KERNEL     (1 << 2)
-#define SC_RESET_ALL        (~0)
+#define GB_SYSCFG_MAGICNUM  0x5a5a5a5a
 
 #define CONSOLE_DEV_NAME_LEN   63
 #define DEFAULT_KCMDLINE_LEN   512
@@ -72,8 +65,23 @@ struct net_config *sysconf_get_net_info(void);
 
 struct linux_config *sysconf_get_linux_param(void);
 
-int sysconf_reset(void);
-
-int sysconf_activate(void);
+int __INIT__ sysconf_init(void);
 
 int sysconf_save(void);
+
+/////////////////////////////
+struct sys_config
+{
+	__u32 magic;
+	__u32 size;
+	__u32 offset;
+	__u32 checksum;
+};
+
+// API list
+int conf_load(void);
+int conf_get_attr(const char *attr, char val[]);
+int conf_set_attr(const char *attr, const char *val);
+int conf_add_attr(const char *attr, const char *val);
+int conf_del_attr(const char *attr);
+int conf_store(void);

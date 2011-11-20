@@ -504,14 +504,14 @@ static struct file_system_type ext2_fs_type =
 };
 
 #ifdef __G_BIOS__
-static int __INIT__ ext2_fs_init(void)
+static int __INIT__ ext3_init(void)
 #else
-int ext2_fs_init(void)
+int ext3_init(void)
 #endif
 {
 	return file_system_type_register(&ext2_fs_type);
 }
 
 #ifdef __G_BIOS__
-SUBSYS_INIT(ext2_fs_init);
+SUBSYS_INIT(ext3_init);
 #endif

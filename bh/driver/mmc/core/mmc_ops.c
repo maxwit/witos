@@ -3,7 +3,6 @@
 
 int mmc_go_idle(struct mmc_host *host)
 {
-
 	struct mmc_command cmd;
 	int ret = 0;
 
@@ -35,6 +34,7 @@ int mmc_all_send_cid(struct mmc_host *host, u32 *cid)
 
 	return ret;
 }
+
 int mmc_set_relative_addr(struct mmc_host *host)
 {
 	struct mmc_command cmd;
@@ -83,7 +83,6 @@ int mmc_send_if_cond(struct mmc_host *host, u32 ocr)
 	ret = host->send_cmd(host, cmd.index, cmd.arg, cmd.resp);
 
 	return ret;
-
 }
 
 static int mmc_app_cmd(struct mmc_host *host)
@@ -155,7 +154,6 @@ int mmc_send_app_op_cond(struct mmc_host *host, u32 ocr, u32 *rocr)
 		*rocr = host->resp[0];
 
 	return ret;
-
 }
 
 int mmc_send_csd(struct mmc_host *host, u32 *csd)
@@ -194,7 +192,6 @@ int mmc_app_set_bus_width(struct mmc_host *host, int width)
 	ret = host->send_cmd(host, cmd.index, cmd.arg, cmd.resp);
 
 	return ret;
-
 }
 
 int mmc_set_block_len(struct mmc_host *host, int len)
@@ -213,6 +210,4 @@ int mmc_set_block_len(struct mmc_host *host, int len)
 	ret = host->send_cmd(host, cmd.index, cmd.arg, cmd.resp);
 
 	return ret;
-
 }
-

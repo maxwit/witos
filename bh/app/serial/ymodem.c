@@ -1,7 +1,6 @@
 #include <loader.h>
 #include <uart/ymodem.h>
 #include <uart/kermit.h>
-#include <flash/part.h>
 #include <sysconf.h>
 #include <getopt.h>
 
@@ -45,12 +44,14 @@ int main(int argc, char *argv[])
 
 	if (flag == 0)
 	{
+#if 0
 		if ((part = part_open(PART_CURR, OP_RDWR)) == NULL)
 		{
 			return -EINVAL;
 		}
 
 		ld_opt.part = part;
+#endif
 	}
 
 	if (strcmp(argv[0], "kermit") == 0)
@@ -63,6 +64,7 @@ int main(int argc, char *argv[])
 		size = ymodem_load(&ld_opt);
 	}
 
+#if 0
 	if (flag == 0)
 	{
 		part_set_image(part, ld_opt.file_name, ld_opt.load_size);
@@ -71,6 +73,7 @@ int main(int argc, char *argv[])
 
 		sysconf_save();
 	}
+#endif
 
 	return size;
 }

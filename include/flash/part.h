@@ -16,8 +16,6 @@
 #define PT_STR_UBIFS    "ubifs"
 #define PT_STR_FREE     "free"
 
-#define PT_MAX (PT_FREE + 1)
-
 const char *part_type2str(u32 type);
 
 struct part_info

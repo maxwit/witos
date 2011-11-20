@@ -6,19 +6,17 @@
 
 int main(int argc, char *argv[])
 {
-	int ret;
+	int ret, i;
 	int fd;
 	u32 nip;
-	int i, j;
 	u16 seq_num = 1;
 	u8 buf[MAX_LEN];
 	u8 ip_hdr_len;
-	u8  ping_buff[PING_LEN];
+	u8 ping_buff[PING_LEN];
 	char dest_ip[IPV4_STR_LEN];
 	struct ping_packet *ping_pkt;
 	struct ip_header *ip;
 	struct sockaddr_in local_addr, dest_addr;
-	u32 hdr_len = sizeof(struct ping_packet);
 	socklen_t addr_len = sizeof(struct sockaddr_in);
 
 	if (1 == argc) // use default server as ping server if no argument supplied.
