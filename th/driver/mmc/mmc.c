@@ -203,11 +203,11 @@ out:
 static int fat32_read(const char *bh_img, void *addr)
 {
 	int ret, i, j;
-	u8 *p;
-	u8 buf[MMC_BLK_SIZE];
-	u32 offset, dbr_offset, fat_offset, dat_offset;
-	u32 sec_size, clu_index;
-	u32 *fat_cache;
+	__u8 *p;
+	__u8 buf[MMC_BLK_SIZE];
+	__u32 offset, dbr_offset, fat_offset, dat_offset;
+	__u32 sec_size, clu_index;
+	__u32 *fat_cache;
 	struct fat_boot_sector dbr;
 	struct fat_dentry *entry;
 
@@ -217,7 +217,7 @@ static int fat32_read(const char *bh_img, void *addr)
 	{
 		goto mmc_read_error;
 	}
-	dbr_offset = *(u32 *)(buf + LBA_START_OFFSET);
+	dbr_offset = *(__u32 *)(buf + LBA_START_OFFSET);
 
 	// fixme, if sizeof(dbr) > MMC_BLK_SIZE, it will be wrong
 	ret = mmc_read_blk(g_mmc_host, buf, dbr_offset * MMC_BLK_SIZE);
@@ -225,7 +225,7 @@ static int fat32_read(const char *bh_img, void *addr)
 	{
 		goto mmc_read_error;
 	}
-	p = (u8 *)&dbr;
+	p = (__u8 *)&dbr;
 	for (i = 0; i < sizeof(dbr); i++)
 	{
 		p[i] = buf[i];
@@ -284,7 +284,7 @@ load_bh_img:
 	{
 		goto mmc_read_error;
 	}
-	fat_cache = (u32 *)buf;
+	fat_cache = (__u32 *)buf;
 
 	while (1)
 	{
