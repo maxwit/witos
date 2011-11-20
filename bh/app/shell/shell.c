@@ -831,12 +831,6 @@ L1:
 	set_current_task(NULL);
 	free(current);
 
-#if 0
-	if (ret < 0)
-		printf("fail to exec %s! (exit %d)\n", argv[0], ret);
-#endif
-
-	putchar('\n');
 	return ret;
 }
 
@@ -874,11 +868,12 @@ int shell(void)
 
 		argc = command_translate(line, argv);
 		if (argc < 0) {
-			printf("Invalid command line: \"%s\"", line);
+			printf("Invalid command line: \"%s\"\n", line);
 			continue;
 		}
 
 		exec(argc, argv);
+		putchar('\n');
 	}
 
 	return 0;

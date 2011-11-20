@@ -479,8 +479,8 @@ int set_bdev_file_attr(struct bdev_file *file)
 	// set file size
 	snprintf(file_attr, CONF_ATTR_LEN, "p%c.file.size", *pn);
 	val_to_dec_str(file_val, file->size);
-	if (conf_get_attr(file_attr, file_val) < 0) {
-		conf_add_attr(file_attr, file->name);
+	if (conf_set_attr(file_attr, file_val) < 0) {
+		conf_add_attr(file_attr, file_val);
 	}
 
 	return 0;

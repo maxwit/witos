@@ -6164,4 +6164,4 @@ static int font_sun_12x22_init(void)
 	return 0;
 }
 
-FONT_INIT(font_sun_12x22_init);
+INSTALL_FONT(font_sun_12x22_init);

@@ -133,4 +133,3 @@ handle_fiq:
 	stmfd sp!, {r0 - r7, lr}
 	bl    fiq_handle
 	ldmfd sp!, {r0 - r7, pc}^
-

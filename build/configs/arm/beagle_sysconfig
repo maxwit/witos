@@ -14,3 +14,10 @@ net.eth0.address     = 10.0.0.2
 net.eth0.gateway     = 10.0.0.1
 net.eth0.netmask     = 255.255.255.0
 net.eth0.mac         = 00:50:56:c0:00:18
+
+p1.file.name         = g-bios-th.bin
+p1.file.size         = 0x080000
+p2.file.name         = g-bios-bh.bin
+p2.file.size         = 0x200000
+p3.file.name         = g-bios-sys.bin
+p3.file.size         = 0x020000

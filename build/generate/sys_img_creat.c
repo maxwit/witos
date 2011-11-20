@@ -5,15 +5,11 @@
 #include <sys/stat.h>
 #include <linux/types.h>
 
-#define DBG_STR_LEN 128
-#define LEN (1024 * 8)
-#define GB_SYSCFG_VER 7
-
-#define GB_SYSCFG_MAGICNUM  0x5a5a5a5a
-
-typedef __u32 __u32;
-typedef __u16 __u16;
-typedef __u8 __u8;
+#define MKFOURCC(a, b, c, d)  (((a) << 24) | (b) << 16 | ((c) << 8) | (d))
+#define DBG_STR_LEN           128
+#define BUF_LEN               (1024 * 8)
+#define GB_SYSCFG_VER         7
+#define GB_SYSCFG_MAGIC       MKFOURCC('G', 's', 'y', 's')
 
 struct sys_config
 {
@@ -60,7 +56,7 @@ int main(int argc, char *argv[])
 	int txt_fd, img_fd;
 	int ret;
 	struct stat file_stat;
-	char buff[LEN];
+	char buff[BUF_LEN];
 	char *data;
 
 	switch (argc) {
@@ -104,12 +100,12 @@ int main(int argc, char *argv[])
 	data = buff + sizeof(*sys);
 
 	// init sysconfig head
-	sys->magic  = GB_SYSCFG_MAGICNUM;
+	sys->magic  = GB_SYSCFG_MAGIC;
 	sys->size   = file_stat.st_size;
 	sys->offset = sizeof(*sys);
 
 	// copy txt_file to img_file
-	ret = read(txt_fd, data, LEN - sys->offset);
+	ret = read(txt_fd, data, BUF_LEN - sys->offset);
 	if (ret < 0) {
 		sprintf(str, "read %s", txt_file);
 		perror(str);

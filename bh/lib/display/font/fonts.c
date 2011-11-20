@@ -51,7 +51,7 @@ struct font_descript *find_font(const char *name)
 	return NULL;
 }
 
-int __INIT__ font_init()
+static int __INIT__ font_init()
 {
 	list_head_init(&font_list);
 

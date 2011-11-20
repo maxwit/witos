@@ -43,8 +43,10 @@ void hang(char err);
 #include <init.h>
 #include <malloc.h>
 #include <list.h>
+#include <font/font.h>
 
 extern init_func_t init_call_begin[], init_call_end[];
+extern font_init_t font_init_begin[], font_init_end[];
 
 #endif
 #endif

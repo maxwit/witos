@@ -3,6 +3,7 @@
 // fixme: to be removed!
 #include <net/net.h>
 #include <uart/uart.h>
+#include <font/font.h>
 
 static const char banner[] = "\n\n" // CLRSCREEN
 	"\t+---------------------------------+\n"
@@ -19,6 +20,43 @@ static const char banner[] = "\n\n" // CLRSCREEN
 #endif
 #endif
 	;
+
+static int __INIT__ font_init(void)
+{
+	int count = 1;
+	font_init_t *font_scan = font_init_begin;
+	const char* func_name;
+
+	while (font_scan < font_init_end)
+	{
+		int ret;
+
+		printf("%d. [0x%08x]", count, *font_scan);
+		func_name = get_func_name(*font_scan);
+		if(func_name)
+		{
+			printf(" %s()", func_name);
+		}
+		putchar('\n');
+
+		ret = (*font_scan)();
+#ifdef CONFIG_DEBUG
+		if (ret < 0)
+			puts("Failed!");
+		else
+			puts("OK!");
+#endif
+
+		font_scan++;
+		count++;
+
+		printf("\n");
+	}
+
+	printf("(g-bios init fonts finished.)\n");
+
+	return 0;
+}
 
 static int __INIT__ sys_init(void)
 {
@@ -93,13 +131,19 @@ int main(void)
 {
 	int ret;
 
-	ret = sysconf_init();
+	ret = conf_load();
 	if (ret < 0) {
-		printf("fail to initialize system configuration!\n");
-		return ret;
+		printf("Warning: fail to initialize system configuration!\n"
+			"Trying reset to default!\n");
+
+		conf_reset();
 	}
 
+	font_init();
+
 	sys_init();
+
+	// TODO: check if sysconfig is dirty. if yes, save sysconf.
 
 	// auto_boot();
 

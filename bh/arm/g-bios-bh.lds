@@ -20,6 +20,14 @@ SECTIONS
 		g_exe_end = .;
 	}
 
+	.gbios_font ALIGN(4):
+	{
+		font_init_begin = .;
+		*(.Level0.gbios_font)
+		*(.Level1.gbios_font)
+		font_init_end = .;
+	}
+
 	.gsect_help ALIGN(4):
 	{
 		g_help_begin = .;

@@ -139,7 +139,7 @@ static int tftp_get_file(int argc, char **argv)
 	char vol;
 	bool mem_only = false;
 	struct tftp_opt dlopt;
-	struct block_device *cur_bdev =NULL;
+	struct block_device *cur_bdev = NULL;
 
 	memset(&dlopt, 0x0, sizeof(dlopt));
 	net_get_server_ip(&dlopt.server_ip);
@@ -148,7 +148,6 @@ static int tftp_get_file(int argc, char **argv)
 		switch(ch) {
 		case 'a':
 			ret = str_to_val(optarg, (__u32 *)&dlopt.load_addr);
-
 			if (ret < 0) {
 				usage();
 				return ret;
@@ -201,25 +200,21 @@ static int tftp_get_file(int argc, char **argv)
 		}
 	}
 
-	if (false == mem_only) {
-		if (NULL == cur_bdev) {
-			if (dlopt.type) {
-				// get_bdev_by_type()?
-				cur_bdev = get_bdev_by_volume('A');
-			} else {
-				if (dlopt.path[0]) {
-					vol = dlopt.path[0];
-				} else {
-					vol = get_curr_volume();
-				}
-
-				cur_bdev = get_bdev_by_volume(vol);
-			}
-
-			dlopt.file = (struct bdev_file *)cur_bdev->file;
-			dlopt.type = cur_bdev->file->img_type;
+	if (dlopt.type) {
+		// get_bdev_by_type()?
+		cur_bdev = get_bdev_by_volume('A');
+	} else {
+		if (dlopt.path[0]) {
+			vol = dlopt.path[0];
+		} else {
+			vol = get_curr_volume();
 		}
+
+		cur_bdev = get_bdev_by_volume(vol);
 	}
+
+	dlopt.file = (struct bdev_file *)cur_bdev->file;
+	dlopt.type = "jffs2";
 
 	if (optind < argc) {
 		if (optind + 1 == argc && !dlopt.file_name[0]) {
@@ -232,25 +227,28 @@ static int tftp_get_file(int argc, char **argv)
 	}
 
 	if (!dlopt.file_name[0]) {
-#if 1
-		strcpy(dlopt.file_name, "g-bios-th.bin");
-#else
-		get_default_file_name(cur_bdev, dlopt.file_name);
-#endif
+		if (cur_bdev->file->name[0] == '\0') {
+			printf("Please sepcify the filename!\n");
+			return -EINVAL;
+		}
+
+		strcpy(dlopt.file_name, cur_bdev->file->name);
 	}
 
 	ret = tftp_download(&dlopt);
-	if (dlopt.file && ret > 0) {
+	if (ret < 0) {
+		printf("fail to download \"%s\" (ret = %d)!\n", dlopt.file_name, ret);
+		return ret;
+	}
+
+	if (dlopt.file) {
 		strncpy(dlopt.file->name, dlopt.file_name, MAX_FILE_NAME_LEN);
 		dlopt.file->size = ret;
 		set_bdev_file_attr(dlopt.file);
 	}
 
-	if (false == mem_only) {
-		if (ret > 0) {
-			conf_store();
-		}
-	}
+	if (false == mem_only)
+		conf_store();
 
 	return ret;
 }

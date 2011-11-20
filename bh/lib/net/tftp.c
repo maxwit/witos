@@ -2,6 +2,8 @@
 #include <getopt.h>
 #include <sysconf.h>
 
+#define TFTP_DEBUG
+
 struct tftp_packet {
 	__u16 op_code;
 	union {
@@ -76,15 +78,17 @@ static int tftp_make_data(void *buff, __u16 blk_num, const void *data, __u16 pkt
 	return len;
 }
 
-static void tftp_send_ack(const int fd, const __u16 blk, struct sockaddr_in *remote_addr)
+static int tftp_send_ack(const int fd, const __u16 blk, struct sockaddr_in *remote_addr)
 {
+	int ret;
 	struct tftp_packet tftp_pkt;
 
 	tftp_pkt.op_code = TFTP_ACK;
 	tftp_pkt.block = htons(blk);
+	ret = sendto(fd, &tftp_pkt, TFTP_HDR_LEN, 0,
+			(struct sockaddr*)remote_addr, sizeof(*remote_addr));
 
-	sendto(fd, &tftp_pkt, TFTP_HDR_LEN, 0,
-		(const struct sockaddr*)remote_addr, sizeof(*remote_addr));
+	return ret;
 }
 
 // fixme
@@ -100,7 +104,7 @@ int tftp_download(struct tftp_opt *opt)
 	__u32  pkt_len, load_len;
 	struct bdev_file *file;
 	struct tftp_packet *tftp_pkt;
-	struct sockaddr_in *local_addr, *remote_addr;
+	struct sockaddr_in local_addr, remote_addr;
 	char server_ip[IPV4_STR_LEN], local_ip[IPV4_STR_LEN];
 
 	ndev_ioctl(NULL, NIOC_GET_IP, &client_ip);
@@ -115,6 +119,8 @@ int tftp_download(struct tftp_opt *opt)
 		return -EINVAL;
 	}
 
+	printf(" \"%s\": %s => %s\n", opt->file_name, server_ip, local_ip);
+
 	tftp_pkt = (struct tftp_packet *)buf;
 
 	sockfd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -124,37 +130,19 @@ int tftp_download(struct tftp_opt *opt)
 		return -EIO;
 	}
 
-	local_addr = malloc(sizeof(*local_addr));
-	if (local_addr == NULL) {
-		printf("%s(): error @ line %d!\n", __func__, __LINE__);
-		return -ENOMEM;
-	}
+	memset(&local_addr, 0, sizeof(local_addr));
+	local_addr.sin_addr.s_addr = client_ip;
+	ret = bind(sockfd, (struct sockaddr *)&local_addr, sizeof(struct sockaddr));
 
-	memset(local_addr, 0, sizeof(*local_addr));
-	// local_addr->sin_port = port_alloc(SOCK_DGRAM);
-	local_addr->sin_addr.s_addr = client_ip;
-	ret = bind(sockfd, (struct sockaddr *)local_addr, sizeof(struct sockaddr));
+	pkt_len = tftp_make_rrq((__u8 *)tftp_pkt, opt->file_name,
+				opt->mode[0] ? opt->mode : TFTP_MODE_OCTET);
 
-	printf(" \"%s\": %s => %s\n", opt->file_name, server_ip, local_ip);
-
-	if (!opt->mode[0]) {
-		pkt_len = tftp_make_rrq((__u8 *)tftp_pkt, opt->file_name, TFTP_MODE_OCTET);
-	} else {
-		pkt_len = tftp_make_rrq((__u8 *)tftp_pkt, opt->file_name, opt->mode);
-	}
-
-	remote_addr = malloc(sizeof(*remote_addr));
-	if (remote_addr == NULL) {
-		printf("%s(): error @ line %d!\n", __func__, __LINE__);
-		return -ENOMEM;
-	}
-
-	memset(remote_addr, 0, sizeof(*remote_addr));
-	remote_addr->sin_addr.s_addr = opt->server_ip; // bigendian
-	remote_addr->sin_port = htons(STD_PORT_TFTP);
+	memset(&remote_addr, 0, sizeof(remote_addr));
+	remote_addr.sin_addr.s_addr = opt->server_ip; // bigendian
+	remote_addr.sin_port = htons(STD_PORT_TFTP);
 
 	sendto(sockfd, tftp_pkt, pkt_len, 0,
-		(struct sockaddr *)remote_addr, sizeof(*remote_addr));
+		(struct sockaddr *)&remote_addr, sizeof(remote_addr));
 
 	file     = opt->file;
 	buff_ptr = opt->load_addr;
@@ -171,7 +159,7 @@ int tftp_download(struct tftp_opt *opt)
 
 	do {
 		pkt_len = recvfrom(sockfd, tftp_pkt, TFTP_BUF_LEN, 0,
-						(struct sockaddr *)remote_addr, &addrlen);
+						(struct sockaddr *)&remote_addr, &addrlen);
 		if(0 == pkt_len)
 			goto L1;
 
@@ -183,7 +171,7 @@ int tftp_download(struct tftp_opt *opt)
 		switch (tftp_pkt->op_code) {
 		case TFTP_DAT:
 			if (ntohs(tftp_pkt->block) == blk_num) {
-				tftp_send_ack(sockfd, blk_num, remote_addr);
+				tftp_send_ack(sockfd, blk_num, &remote_addr);
 				blk_num++;
 
 				load_len += pkt_len;
@@ -212,7 +200,7 @@ int tftp_download(struct tftp_opt *opt)
 				printf("\t%s(): LOST Packet = 0x%x (0x%x).\r",
 					__func__, blk_num, ntohs(tftp_pkt->block));
 #endif
-				tftp_send_ack(sockfd, blk_num - 1, remote_addr);
+				tftp_send_ack(sockfd, blk_num - 1, &remote_addr);
 			}
 
 			break;
@@ -241,8 +229,6 @@ L1:
 	if (file)
 		file->close(file);
 	sk_close(sockfd);
-	free(remote_addr);
-	free(local_addr);
 
 	return load_len;
 }

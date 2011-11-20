@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
 
 	printf("---------%s ping statistics--------\n", dest_ip);
 
-	printf("%d packet transmitted, %d received, %d%% packet loss, time 27ms",
+	printf("%d packet transmitted, %d received, %d%% packet loss, time 27ms\n",
 			ping_times, ping_times - lost_packet_count,
 			lost_packet_count  * 100 / ping_times);
 

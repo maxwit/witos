@@ -1,11 +1,12 @@
 #pragma once
 
+#include <types.h>
 #include <fs/fs.h>
 #include <net/net.h>
 
 #define GB_SYSCFG_VER       7
 
-#define GB_SYSCFG_MAGICNUM  0x5a5a5a5a
+#define GB_SYSCFG_MAGIC  MKFOURCC('G', 's', 'y', 's')
 
 #define CONSOLE_DEV_NAME_LEN   63
 #define DEFAULT_KCMDLINE_LEN   512
@@ -17,8 +18,6 @@
 #define BM_NFS         (4 << 8)
 #define BM_MMC         (8 << 8)
 #define BM_TFTP        (16 << 8)
-
-int __INIT__ sysconf_init(void);
 
 /////////////////////////////
 struct sys_config
@@ -70,6 +69,7 @@ __u32 get_load_mem_addr();
 
 // API list
 int conf_load(void);
+void conf_reset(void);
 int conf_get_attr(const char *attr, char val[]);
 int conf_set_attr(const char *attr, const char *val);
 int conf_add_attr(const char *attr, const char *val);

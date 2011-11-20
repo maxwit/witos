@@ -254,7 +254,7 @@ int main(int argc, char *argv[])
 
 	ret = send_dhcp_discover(sockfd, &packet, &remote_addr);
 	if (ret < 0) {
-		printf("send dhcp discover packet failed!");
+		printf("send dhcp discover packet failed!\n");
 		goto ERROR;
 	}
 

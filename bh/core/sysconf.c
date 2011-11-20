@@ -9,6 +9,7 @@
 #define SYSCONF_SIZE(config) ((config)->offset + (config)->size)
 
 static struct sys_config *g_sysconf;
+static bool g_conf_dirty = false;
 
 __u32 get_load_mem_addr()
 {
@@ -148,8 +149,6 @@ int conf_get_attr(const char *attr, char val[])
 	const char *p;
 	char *sys_data = (char *)g_sysconf + g_sysconf->offset;
 
-	// DPRINT("get %s\n", attr);
-
 	p = search_attr(sys_data, g_sysconf->size, attr);
 	if (p == NULL) {
 		DPRINT("Attribute \"%s\" is not exist, get attr error!\n", attr);
@@ -160,9 +159,8 @@ int conf_get_attr(const char *attr, char val[])
 	p++;
 
 	while (*p != '\n') {
-		if (*p != ' ') {
+		if (*p != ' ')
 			*val++ = *p;
-		}
 
 		p++;
 	}
@@ -178,11 +176,14 @@ int conf_load()
 
 	g_sysconf = (struct sys_config*)CONFIG_SYS_START_MEM;
 
+	if (GB_SYSCFG_MAGIC != g_sysconf->magic)
+		return -EINVAL;
+
 	old_sum = conf_checksum(&new_sum);
 
 	if (old_sum != new_sum)	{
 		DPRINT("checksum error! (0x%08x != 0x%08x)\n", new_sum, old_sum);
-		return -EINVAL;
+		return -EIO;
 	}
 
 	return 0;
@@ -258,13 +259,13 @@ int conf_list_attr()
 	return 0;
 }
 
-int __INIT__ sysconf_init(void)
+void conf_reset(void)
 {
-	int ret;
+	g_sysconf->magic  = GB_SYSCFG_MAGIC;
+	g_sysconf->size   = 0;
+	g_sysconf->offset = sizeof(*g_sysconf);
 
-	ret = conf_load();
+	conf_checksum(NULL);
 
-	// ...
-
-	return ret;
+	g_conf_dirty = true;
 }

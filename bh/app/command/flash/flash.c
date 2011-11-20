@@ -136,6 +136,7 @@ static int read_write(int argc, char *argv[])
 		return -EINVAL;
 	}
 
+#warning
 	flash = get_current_flash();
 	assert(flash);
 
@@ -493,8 +494,6 @@ static int erase(int argc, char *argv[])
 		}
 	}
 
-	flash_close(flash);
-
 	if (flash->chip_size < start + size)
 	{
 		printf("Out of chip size!\n");
@@ -507,6 +506,8 @@ static int erase(int argc, char *argv[])
 
 	printf("[0x%08x : 0x%08x]\n", start, size);
 	ret = flash_erase(flash, start, size, erase_flags);
+
+	flash_close(flash);
 
 	return ret;
 }

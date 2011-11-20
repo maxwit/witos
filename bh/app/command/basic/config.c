@@ -47,7 +47,6 @@ static int exec_conf(int option, char *arg, char *val)
 	return ret;
 }
 
-
 int main(int argc, char *argv[])
 {
 	int opt, option = 0;

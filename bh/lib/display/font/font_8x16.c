@@ -4627,4 +4627,4 @@ static int font_vga_8x16_init(void)
 	return 0;
 }
 
-FONT_INIT(font_vga_8x16_init);
+INSTALL_FONT(font_vga_8x16_init);

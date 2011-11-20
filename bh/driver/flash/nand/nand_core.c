@@ -1183,7 +1183,7 @@ static int nand_write(struct nand_chip *nand,
 	nand->ops.data_len = len;
 	nand->ops.data_buff = (__u8 *)buff;
 	nand->ops.oob_buff = NULL;
-	// nand->ops.op_mode = FLASH_OOB_PLACE;
+	nand->ops.op_mode = FLASH_OOB_PLACE;
 
 	ret = nand_write_by_opt(nand, to, &nand->ops);
 	*retlen = nand->ops.ret_len;
