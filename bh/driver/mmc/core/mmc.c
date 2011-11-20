@@ -123,9 +123,7 @@ static int mmc_card_register(struct mmc_card *card)
 	// TODO: fix size
 	drive->bdev.bdev_base = 0;
 	drive->bdev.bdev_size = 0;
-	drive->bdev.sect_size = MMC_BLK_SIZE;
-
-	list_head_init(&drive->slave_list);
+	drive->sect_size = MMC_BLK_SIZE;
 
 	drive->get_block = mmc_get_block;
 	drive->put_block = mmc_put_block;
@@ -218,7 +216,7 @@ struct mmc_host * mmc_get_host(int id)
 
 int mmc_register(struct mmc_host *host)
 {
-	int ret = 0, i = 0;
+	int ret = 0, i, n;
 
 	if (!host || !host->send_cmd)
 		return -EINVAL;
@@ -226,16 +224,25 @@ int mmc_register(struct mmc_host *host)
 	for (i = 0; i < MMC_HOST_NUM; i++)
 	{
 		if (NULL == g_mmc_host[i])
-			g_mmc_host[i] = host;
+			break;
 	}
 
-	ret = mmc_sd_detect_card(host);
-	if (ret < 0)
+	if (MMC_HOST_NUM == i)
+	{
+		ret = -EBUSY;
+		goto L1;
+	}
+
+	g_mmc_host[i] = host;
+
+	n = mmc_sd_detect_card(host);
+	if (n < 0)
 		printf("No SD Found!\n");
 	else
 		printf("Card = %s\n", host->card.card_name);
 
-	return 0;
+L1:
+	return ret;
 }
 
 static int __INIT__ mmc_core_init(void)

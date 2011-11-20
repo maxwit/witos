@@ -27,7 +27,7 @@ static int msdos_part_scan(struct disk_drive *drive, struct part_attr part_tab[]
 
 	assert(drive != NULL);
 
-	u8 buff[drive->bdev.sect_size];
+	u8 buff[drive->sect_size];
 
 	drive->get_block(drive, 0, buff);
 
@@ -44,12 +44,12 @@ static int msdos_part_scan(struct disk_drive *drive, struct part_attr part_tab[]
 		part_tab[i].part_type = PT_NONE;
 		part_tab[i].part_name[0] = '\0';
 
-		part_tab[i].part_base = dos_pt[i].lba_start * drive->bdev.sect_size;
-		part_tab[i].part_size = dos_pt[i].lba_size * drive->bdev.sect_size;
+		part_tab[i].part_base = dos_pt[i].lba_start * drive->sect_size;
+		part_tab[i].part_size = dos_pt[i].lba_size * drive->sect_size;
 
 		printf("0x%08x - 0x%08x (%dM)\n",
 			dos_pt[i].lba_start, dos_pt[i].lba_start + dos_pt[i].lba_size,
-			dos_pt[i].lba_size * drive->bdev.sect_size >> 20);
+			dos_pt[i].lba_size * drive->sect_size >> 20);
 	}
 
 	return i;
@@ -75,6 +75,8 @@ int disk_drive_register(struct disk_drive *drive)
 	struct part_attr part_tab[MSDOS_MAX_PARTS];
 	struct disk_drive *slave;
 
+	list_head_init(&drive->slave_list);
+
 	ret = block_device_register(&drive->bdev);
 	// if ret < 0 ...
 
@@ -86,20 +88,22 @@ int disk_drive_register(struct disk_drive *drive)
 	for (i = 0; i < ret; i++)
 	{
 		slave = zalloc(sizeof(*slave));
-		// if ...
+		if (NULL == slave)
+			return -ENOMEM;
 
-		snprintf(slave->bdev.dev.name, PART_NAME_LEN, "%sp%d", drive->bdev.dev.name, i + 1);
-		printf(" %s", slave->bdev.dev.name);
+		snprintf(slave->bdev.dev.name, PART_NAME_LEN, "%sp%d",
+			drive->bdev.dev.name, i + 1);
 
 		slave->bdev.bdev_base = part_tab[i].part_base;
 		slave->bdev.bdev_size = part_tab[i].part_size;
-		slave->bdev.sect_size = drive->bdev.sect_size;
 
-		slave->master = drive;
-		list_add_tail(&slave->slave_node, &drive->slave_list);
-
+		slave->sect_size = drive->sect_size;
 		slave->get_block = drive_get_block;
 		slave->put_block = drive_put_block;
+		slave->master    = drive;
+		list_add_tail(&slave->slave_node, &drive->slave_list);
+
+		printf(" %s", slave->bdev.dev.name);
 
 		ret = block_device_register(&slave->bdev);
 		// if ret < 0 ...
