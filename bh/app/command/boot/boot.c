@@ -104,7 +104,7 @@ static int flash_load_image(PART_TYPE type, __u8 **buff_ptr, __u32 *buff_len)
 	// to be optimized
 	if (image_size <= 0 || image_size >= bdev->bdev_size) {
 		printf("%s(): image seems invalid, still try to load.\n"
-			"current image size = %d(0x%08x), adjusted to partition size %d(0x%08x)!\n",
+			"current image size = %d(0x%x), adjusted to partition size %d(0x%x)!\n",
 			__func__, image_size, image_size, bdev->bdev_size, bdev->bdev_size);
 
 		image_size = bdev->bdev_size;
@@ -322,7 +322,6 @@ L1:
 
 static int show_boot_args(void *tag_base)
 {
-#if 0
 	int i = 0;
 	struct tag *arm_tag = tag_base;
 
@@ -357,7 +356,6 @@ static int show_boot_args(void *tag_base)
 		arm_tag = tag_next(arm_tag);
 		i++;
 	}
-#endif
 
 	return 0;
 }
@@ -494,8 +492,6 @@ int main(int argc, char *argv[])
 
 	if (auto_gen)
 		build_command_line(cmd_line, DEFAULT_KCMDLINE_LEN);
-
-	// strncpy(cmd_line, cmd_line, DEFAULT_KCMDLINE_LEN);
 
 	if (argc > 2 || (2 == argc && false == show_args))
 		conf_store();
