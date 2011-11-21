@@ -89,12 +89,6 @@ static int __INIT__ sys_init(void)
 
 	printf("(g-bios initialization finished.)\n");
 
-	// show system information
-	printf("%s\n", banner);
-
-	ndev_check_link_status();
-	printf("\n");
-
 	return 0;
 }
 
@@ -142,6 +136,12 @@ int main(void)
 	font_init();
 
 	sys_init();
+
+	// show system information
+	printf("%s\n", banner);
+
+	ndev_check_link_status();
+	printf("\n");
 
 	// TODO: check if sysconfig is dirty. if yes, save sysconf.
 

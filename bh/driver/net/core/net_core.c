@@ -900,14 +900,10 @@ int ndev_register(struct net_device *ndev)
 	__u8 mac_addr[MAC_ADR_LEN];
 
 	if (!ndev || !ndev->send_packet || !ndev->set_mac_addr)
-	{
 		return -EINVAL;
-	}
 
 	if (!ndev->chip_name)
-	{
 		printf("Warning: chip_name is NOT set!\n");
-	}
 
 	// set ip address
 	sprintf(attr, "net.%s.address", ndev->ifx_name);
@@ -961,15 +957,12 @@ int ndev_register(struct net_device *ndev)
 		return 0;
 
 	// detect PHY
-	for (index = 0; index < 32; index++)
-	{
+	for (index = 0; index < 32; index++) {
 		if (!((1 << index) & ndev->phy_mask))
 			continue;
 
 		phy = mii_phy_probe(ndev, index);
-
-		if (phy)
-		{
+		if (phy) {
 			phy->ndev = ndev;
 			list_add_tail(&phy->phy_node, &ndev->phy_list);
 

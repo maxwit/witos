@@ -8,8 +8,31 @@ int mii_get_link_speed(struct mii_phy *phy)
 
 	for(i = 0; i < 40; i++)
 	{
-		if (ndev->mdio_read(ndev, phy->mii_id, MII_REG_BMS) & 0x20) // or 0x24
+		if (ndev->mdio_read(ndev, phy->mii_id, MII_REG_BMS) & 0x4) // or 0x24
 		{
+#warning
+#ifdef CONFIG_LAN9220
+			__u16 link = ndev->mdio_read(ndev, phy->mii_id, MII_REG_SPCS);
+
+			switch ((link >> 2) & 0x7)
+			{
+			case 1:
+				return ETHER_SPEED_10M_HD;
+
+			case 5:
+				return ETHER_SPEED_10M_FD;
+
+			case 2:
+				return ETHER_SPEED_100M_HD;
+
+			case 6:
+				return ETHER_SPEED_100M_FD;
+
+			default:
+				printf("link status = 0x%04x\n", link);
+				break;
+			}
+#else
 			__u16 link = ndev->mdio_read(ndev, phy->mii_id, MII_REG_STAT);
 
 			switch (link >> 12)
@@ -30,6 +53,7 @@ int mii_get_link_speed(struct mii_phy *phy)
 				printf("link status = 0x%04x\n", link);
 				break;
 			}
+#endif
 		}
 
 		mdelay(100);
@@ -47,25 +71,27 @@ int mii_get_link_connection(struct mii_phy *phy)
 
 struct mii_phy *mii_phy_probe(struct net_device *ndev, __u8 mii_id)
 {
-	struct mii_phy *phy = zalloc(sizeof(*phy)); // fixme
-	// if null
+	__u16 ven_id, dev_id;
+	struct mii_phy *phy;
 
-	phy->ven_id = ndev->mdio_read(ndev, mii_id, MII_REG_ID1);
-	phy->dev_id = ndev->mdio_read(ndev, mii_id, MII_REG_ID2);
+	ven_id = ndev->mdio_read(ndev, mii_id, MII_REG_ID1);
+	dev_id = ndev->mdio_read(ndev, mii_id, MII_REG_ID2);
 
 	DPRINT("%s(): ID = 0x%04x, 0x%04x @ %d\n",
-		__func__, phy->ven_id, phy->dev_id, mii_id);
+		__func__, ven_id, dev_id, mii_id);
 
-	if (phy->ven_id != 0xFFFF && phy->ven_id != 0x0000 &&
-		phy->dev_id != 0xFFFF && phy->dev_id != 0x0000)
-	{
-		//
-		phy->mii_id = mii_id;
-		return phy;
-	}
+	if (ven_id == 0xFFFF || ven_id == 0x0000 ||
+			dev_id == 0xFFFF || dev_id == 0x0000)
+		return NULL;
 
-	free(phy);
-	return NULL;
+	phy = zalloc(sizeof(*phy));
+	// if null
+
+	phy->mii_id = mii_id;
+	phy->ven_id = ven_id;
+	phy->dev_id = dev_id;
+
+	return phy;
 }
 
 void mii_reset_phy(struct net_device *ndev, struct mii_phy *phy)

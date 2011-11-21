@@ -37,46 +37,30 @@ static inline void lan9220_writel(__u8 reg, __u32 val)
 static __u32 lan9220_mac_csr_read(__u32 csr_reg)
 {
 	lan9220_writel(MAC_CSR_CMD, 1 << 31 | 1 << 30 | csr_reg);
-
 	while (lan9220_readl(MAC_CSR_CMD) & 1 << 31);
-
 	return lan9220_readl(MAC_CSR_DATA);
 }
 
 static void lan9220_mac_csr_write(__u32 csr_reg, __u32 val)
 {
 	lan9220_writel(MAC_CSR_DATA, val);
-
 	lan9220_writel(MAC_CSR_CMD, 1 << 31 | csr_reg);
-
 	while (lan9220_readl(MAC_CSR_CMD) & 1 << 31);
 }
 
-#if 0
 static __u16 lan9220_mdio_read(struct net_device *ndev, __u8 mii_id, __u8 reg)
 {
-	//phy_addr is fixed in lan9220
-	mii_id = 0x01;
-
 	lan9220_mac_csr_write(MII_ACC, mii_id << 11 | reg << 6 | 1);
-
 	while (lan9220_mac_csr_read(MII_ACC) & 0x1);
-
 	return lan9220_mac_csr_read(MII_DATA) & 0xffff;
 }
 
 static void lan9220_mdio_write(struct net_device *ndev, __u8 mii_id, __u8 reg, __u16 val)
 {
-	//phy_addr is fixed in lan9220
-	mii_id = 0x01;
-
 	lan9220_mac_csr_write(MII_DATA, val & 0xffff);
-
 	lan9220_mac_csr_write(MII_ACC, mii_id << 11 | reg << 6 | 1 << 1 | 1);
-
 	while (lan9220_mac_csr_read(MII_ACC) & 0x1);
 }
-#endif
 
 static int lan9220_hw_init(void)
 {
@@ -250,11 +234,8 @@ static __INIT__ int lan9220_probe(void)
 #ifndef CONFIG_IRQ_SUPPORT
 	ndev->ndev_poll = lan9220_poll;
 #endif
-
-#if 0
 	ndev->mdio_read  = lan9220_mdio_read;
 	ndev->mdio_write = lan9220_mdio_write;
-#endif
 
 	ret = ndev_register(ndev);
 	if (ret < 0)

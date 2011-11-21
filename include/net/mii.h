@@ -20,6 +20,7 @@
 #define MII_REG_RXEC    22
 #define MII_REG_DISC    23
 #define MII_REG_RSLS    24
+#define MII_REG_SPCS    31
 
 #define MII_PHY_RESET   0x8000
 
