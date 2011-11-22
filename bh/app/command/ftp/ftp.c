@@ -13,8 +13,7 @@
 #define USER_PSWD_ERROR "530"
 #define NO_SUCH_FILE    "550"
 
-struct ftp_opt
-{
+struct ftp_opt {
 	__u16 svr_port;
 	__u32 svr_ip;
 	char src_file[BUF_LEN];
@@ -136,8 +135,7 @@ static int ftp_send_cmd(int cmd_fd, const char *cmd, const char *arg)
 
 	if (!strncmp(buff, USER_PSWD_ERROR, 3)) {
 		ret = -1;
-	}
-	else if (!strncmp(buff, NO_SUCH_FILE, 3)) {
+	} else if (!strncmp(buff, NO_SUCH_FILE, 3)) {
 		ret = -1;
 	}
 
@@ -158,15 +156,13 @@ static int get_file_to_flash(int data_fd)
 	cur_vol = get_curr_volume();
 
 	bdev = get_bdev_by_volume(cur_vol);
-	if (NULL== bdev)
-	{
+	if (NULL== bdev) {
 		printf("bdev null\n");
 		return -1;
 	}
 
 	file = bdev->file;
-	if (NULL == file)
-	{
+	if (NULL == file) {
 		printf("file null\n");
 		return 0;
 	}
@@ -349,8 +345,7 @@ static int get_arg(char *arg, struct ftp_opt *fopt)
 	char *cp;
 
 	//if specialize user(not anonymous)
-	if (*arg != '@')
-	{
+	if (*arg != '@') {
 		if ((arg = strchr(arg, ':')) != NULL)
 			arg++;
 

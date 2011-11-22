@@ -27,8 +27,7 @@ static int at91_mci_cmd(struct mmc_host *mmc, __u32 cmd, __u32 arg)
 {
 	__u32 cmdr = cmd | MAXLAT, stat;
 
-	switch (cmd)
-	{
+	switch (cmd) {
 	case MMC_CMD2:
 		cmdr |= RSPTYP136;
 		break;
@@ -47,8 +46,7 @@ static int at91_mci_cmd(struct mmc_host *mmc, __u32 cmd, __u32 arg)
 	at91_mci_write(AT91_MCI_ARGR, arg);
 	at91_mci_write(AT91_MCI_CMDR, cmdr);
 
-	while (1)
-	{
+	while (1) {
 		stat = at91_mci_read(AT91_MCI_SR);
 		if (stat & 0x1)
 			break;

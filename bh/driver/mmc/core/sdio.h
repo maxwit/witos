@@ -93,8 +93,7 @@
 
 int sdio_register(struct mmc_host *host);
 
-struct sdio_func_tuple
-{
+struct sdio_func_tuple {
 	struct sdio_func_tuple *next;
 	unsigned char code;
 	unsigned char size;

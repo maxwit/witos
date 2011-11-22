@@ -134,8 +134,7 @@ int mmc_send_app_op_cond(struct mmc_host *host, __u32 ocr, __u32 *rocr)
 	cmd.arg  = ocr;
 	cmd.resp = R3;
 
-	for (i = 0; i < MMC_CMD_RETRIES; i++)
-	{
+	for (i = 0; i < MMC_CMD_RETRIES; i++) {
 		ret = mmc_app_cmd(host);
 
 		udelay(100);

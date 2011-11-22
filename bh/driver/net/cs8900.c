@@ -23,8 +23,7 @@ static int cs8900_reset(void)
 	val |= 0x40;
 	cs8900_outw(PP_SelfCTL, val);
 
-	for (i = 0; i < 100; i++)
-	{
+	for (i = 0; i < 100; i++) {
 		if(!(cs8900_inw(PP_SelfCTL) & 0x40))
 			return 0;
 
@@ -46,8 +45,7 @@ static int cs89x0_send_packet(struct net_device *ndev, struct sock_buff *skb)
 	writew(VA(CS8900_IOBASE + CS_TxCMD), 0x00);
 	writew(VA(CS8900_IOBASE + CS_TxLen), skb->size);
 
-	while (1)
-	{
+	while (1) {
 		isq_stat = cs8900_inw(PP_BusST);
 		if (isq_stat & Rdy4TxNow)
 			break;
@@ -57,8 +55,7 @@ static int cs89x0_send_packet(struct net_device *ndev, struct sock_buff *skb)
 
 	buff = (const __u16 *)skb->data;
 
-	for (i = 0; i < skb->size; i += 2)
-	{
+	for (i = 0; i < skb->size; i += 2) {
 		writew(VA(CS8900_IOBASE + CS_DATA0), *buff);
 		buff++;
 	}
@@ -89,12 +86,10 @@ static int cs89x0_isr(__u32 irq, void *dev)
 	struct sock_buff *skb;
 	// struct net_device *ndev = dev;
 
-	while ((isq_stat = readw(VA(CS8900_IOBASE + CS_ISQ))))
-	{
+	while ((isq_stat = readw(VA(CS8900_IOBASE + CS_ISQ)))) {
 		int regn = isq_stat & 0x3F;
 
-		if (regn == 4)
-		{
+		if (regn == 4) {
 			rx_stat = readw(VA(CS8900_IOBASE + 0x00));
 			rx_size = readw(VA(CS8900_IOBASE + 0x00));
 
@@ -105,8 +100,7 @@ static int cs89x0_isr(__u32 irq, void *dev)
 			// if NULL
 			buff = (__u16 *)skb->data;
 
-			for (i = 0; i < rx_size; i += 2)
-			{
+			for (i = 0; i < rx_size; i += 2) {
 				*buff = readw(VA(CS8900_IOBASE + 0x00));
 				buff++;
 			}
@@ -143,8 +137,7 @@ static int cs89x0_poll(struct net_device *ndev)
 	// if NULL
 	buff = (__u16 *)skb->data;
 
-	for (i = 0; i < rx_size; i += 2)
-	{
+	for (i = 0; i < rx_size; i += 2) {
 		*buff = readw(VA(CS8900_IOBASE + 0x00));
 		buff++;
 	}
@@ -170,8 +163,7 @@ static int __INIT__ cs89x0_init(void)
 		ven_id, dev_id);
 
 	ret = cs8900_reset();
-	if (ret < 0)
-	{
+	if (ret < 0) {
 		printf("CS8900 reset failed!\n");
 		return ret;
 	}
@@ -205,8 +197,7 @@ static int __INIT__ cs89x0_init(void)
 
 	cs8900_outw(PP_INTN, 0x0);
 
-	while (1)
-	{
+	while (1) {
 		line_st = cs8900_inw(PP_LineST);
 		printf("line line_st = 0x%04x\n", line_st);
 		if (line_st & 0x80)

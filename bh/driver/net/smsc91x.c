@@ -38,18 +38,14 @@ static int smsc91x_recv_packet(struct net_device *ndev)
 
 	pack_num = smsc91x_read(0x4);
 	if (pack_num & 0x8000)
-	{
 		return 0;
-	}
 
 	smsc91x_write(0x6, 1 << 15 | 1 << 14 | 1 << 13);
 	status = smsc91x_read(0x8);
 	len    = smsc91x_read(0x8) & 0x7ff;
 
 	if (!len)
-	{
 		return 0;
-	}
 
 	//len is always even
 	skbuf =skb_alloc(0, len);
@@ -58,9 +54,7 @@ static int smsc91x_recv_packet(struct net_device *ndev)
 	data = (__u16 *)skbuf->data;
 
 	for (i = 0; i < (len >> 1); i++)
-	{
 		data[i] = smsc91x_read(0x8);
-	}
 
 	//release the rx buffer
 	while (smsc91x_read(0x0) & 0x1);
@@ -90,9 +84,7 @@ static int smsc91x_send_packet(struct net_device *ndev, struct sock_buff *skb)
 	//write size
 	smsc91x_writel(0x8, len << 16);
 	for (i = 0; i < (len >> 1); i++)
-	{
 		smsc91x_write(0x8, data[i]);
-	}
 
 	smsc91x_write(0x0, 0x6 << 5);
 	while (smsc91x_read(0x0) & 0x1);
@@ -109,9 +101,7 @@ static int smsc91x_set_mac(struct net_device *ndev, const __u8 mac[])
 	smsc91x_switch_bank(0x1);
 
 	for (i = 0; i < 6; i++)
-	{
 		smsc91x_write(0x4 + i, ndev->mac_addr[i]);
-	}
 
 	return 0;
 }
@@ -156,8 +146,7 @@ static int smsc91x_hw_init(void)
 
 	//Read the Link status
 	val = smsc91x_read(0x2);
-	if (!(val & 0x4000))
-	{
+	if (!(val & 0x4000)) {
 		printf("The link status is nok!\n");
 		return -1;
 	}
@@ -178,25 +167,21 @@ static int __INIT__ smsc91x_init(void)
 	smsc91x_switch_bank(0x3);
 	chip_id = smsc91x_read(0xa);
 
-	if (chip_id != SMSC91C111_ID)
-	{
+	if (chip_id != SMSC91C111_ID) {
 		printf("SMSC91X Ethernet not found!\n");
 		return -ENODEV;
 	}
 	printf("SMSC91X ID = 0x%x\n", chip_id);
 
 	ret = smsc91x_hw_init();
-	if (ret < 0)
-	{
+	if (ret < 0) {
 		printf("smsc hw init failed!\n");
 		return ret;
 	}
 
 	ndev = ndev_new(0);
 	if (!ndev)
-	{
 		return -ENOMEM;
-	}
 
 	ndev->chip_name    = "LAN91C111";
 	ndev->set_mac_addr = smsc91x_set_mac;

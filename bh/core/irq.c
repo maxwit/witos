@@ -26,9 +26,7 @@ int irq_register_isr(__u32 irq, IRQ_DEV_HANDLER isr, void *dev)
 
 	p = &pin->dev_list;
 	while (*p)
-	{
 		p = &(*p)->next;
-	}
 
 	*p = idev;
 
@@ -69,9 +67,7 @@ int irq_assoc_intctl(__u32 irq, struct int_ctrl *intctrl)
 	struct int_pin *pin = irq_pin_set + irq;
 
 	if (NULL == intctrl->mack)
-	{
 		intctrl->mack = default_mack;
-	}
 
 	pin->intctrl = intctrl;
 
@@ -146,17 +142,14 @@ void irq_set_handler(__u32 irq, IRQ_PIN_HANDLER irq_handle, int chain_flag)
 	pin->irq_handle = irq_handle;
 
 	if (chain_flag)
-	{
 		pin->intctrl->umask(irq);
-	}
 }
 
 static int handle_dev_irq_list(__u32 irq, struct irq_dev *idev)
 {
 	int retval = IRQ_NONE;
 
-	do
-	{
+	do {
 		int ret;
 
 		ret = idev->dev_isr(irq, idev->device);

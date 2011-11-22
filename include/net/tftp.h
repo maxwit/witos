@@ -26,8 +26,7 @@
 #define MAX_MODE_LEN 12
 #define MAX_PATH_LEN 12
 
-struct tftp_opt
-{
+struct tftp_opt {
 	bool  verbose;
 	__u32 server_ip;
 	char  file_name[MAX_FILE_NAME_LEN];

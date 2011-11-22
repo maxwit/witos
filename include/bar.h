@@ -7,8 +7,7 @@
 #define CountVal ((nLen - pBar->nMin + 1) * 100 / (pBar->nMax - pBar->nMin + 1))
 #define CountBarOff ((nLen - pBar->nMin + 1) * BARLEN / (pBar->nMax - pBar->nMin + 1))
 
-struct process_bar
-{
+struct process_bar {
 	__u32 nMin;
 	__u32 nMax;
 	__u32 nCurr;

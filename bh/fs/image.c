@@ -1,8 +1,7 @@
 #include <image.h>
 #include <flash/flash.h>
 
-typedef struct
-{
+typedef struct {
 	unsigned chunkId:20;
 	unsigned serialNumber:2;
 	unsigned byteCount:10;
@@ -11,8 +10,7 @@ typedef struct
 	unsigned unusedStuff:2;
 } YAFFS_TAGS;
 
-typedef union
-{
+typedef union {
 	YAFFS_TAGS asTags;
 	__u8 asBytes[8];
 } YAFFS_TAGS_UNION;
@@ -39,15 +37,11 @@ static void yaffs_calc_tags_ecc(YAFFS_TAGS * tags)
 
 	tags->ecc = 0;
 
-	for (i = 0; i < 8; i++)
-	{
-		for (j = 1; j & 0xff; j <<= 1)
-		{
+	for (i = 0; i < 8; i++) {
+		for (j = 1; j & 0xff; j <<= 1) {
 			bit++;
 			if (b[i] & j)
-			{
 				ecc ^= bit;
-			}
 		}
 	}
 
@@ -62,8 +56,7 @@ static int yaffs_check_ecc_ontags(YAFFS_TAGS * tags)
 
 	ecc ^= tags->ecc;
 
-	if (ecc && ecc <= 64)
-	{
+	if (ecc && ecc <= 64) {
 		unsigned char *b = ((YAFFS_TAGS_UNION *)tags)->asBytes;
 
 		ecc--;
@@ -71,11 +64,8 @@ static int yaffs_check_ecc_ontags(YAFFS_TAGS * tags)
 		yaffs_calc_tags_ecc(tags);
 
 		return 1;
-	}
-	else if (ecc)
-	{
+	} else if (ecc)
 		return -1;
-	}
 
 	return 0;
 }
@@ -91,8 +81,7 @@ static bool check_yaffs1_image(const void *imagebuf)
 
 	memset(free_oob_buff, 0, YAFFS_OOB_SIZE);
 
-	for(free = g_yaffs_oob.free_region; free->nOfLen; free++)
-	{
+	for(free = g_yaffs_oob.free_region; free->nOfLen; free++) {
 		bytes  = free->nOfLen;
 		offset = free->nOfOffset;
 
@@ -109,8 +98,7 @@ static bool check_yaffs1_image(const void *imagebuf)
 
 bool check_image_type(PART_TYPE type, const __u8 *image_data)
 {
-	switch (type)
-	{
+	switch (type) {
 	case PT_BL_GTH:
 		return GTH_MAGIC == *(__u32 *)(image_data + GTH_MAGIC_OFFSET);
 

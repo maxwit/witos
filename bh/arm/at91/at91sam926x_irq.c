@@ -71,8 +71,7 @@ static void __INIT__ at91_aic_init(void)
 {
 	int irq;
 
-	for(irq = 0; irq < 32; irq++)
-	{
+	for(irq = 0; irq < 32; irq++) {
 		at91_aic_writel(AIC_SVR(irq), irq);
 		at91_aic_writel(AIC_SMR(irq), (0 << 5) | 0);
 
@@ -97,12 +96,9 @@ static void at91sam926x_gpio_irqparse(struct int_pin *ipin, __u32 irq)
 	dwPioStat &= readl(VA(PIO_BASE(nPioIdx) + PIO_IMR));
 	//	printf("%s(): stat = 0x%08x\n", __func__, dwPioStat);
 
-	for (nPioPin = 0; nPioPin < 32; nPioPin++)
-	{
+	for (nPioPin = 0; nPioPin < 32; nPioPin++) {
 		if (dwPioStat & (1 << nPioPin))
-		{
 			irq_handle(32 + 32 * nPioIdx + nPioPin);
-		}
 	}
 }
 
@@ -113,10 +109,8 @@ int __INIT__ at91sam926x_interrupt_init(void)
 
 	at91_aic_init();
 
-	for (i = 0; i < 3; i++)
-	{
-		for (j = 0; j < 32; j++)
-		{
+	for (i = 0; i < 3; i++) {
+		for (j = 0; j < 32; j++) {
 			irq = 32 + ((i << 5) | j);
 
 			irq_assoc_intctl(irq, &at91sam926x_gpio_intctrl);

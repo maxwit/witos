@@ -3,8 +3,7 @@
 #include <list.h>
 #include <block.h>
 
-struct disk_drive
-{
+struct disk_drive {
 	struct block_device bdev;
 
 	size_t sect_size;
@@ -12,14 +11,12 @@ struct disk_drive
 	int (*get_block)(struct disk_drive *drive, int start, void *buff);
 	int (*put_block)(struct disk_drive *drive, int start, const void *buff);
 
-	union
-	{
+	union {
 		struct list_node master_node;
 		struct list_node slave_node;
 	};
 
-	union
-	{
+	union {
 		struct list_node slave_list;
 		struct disk_drive *master;
 	};

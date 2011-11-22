@@ -8,12 +8,9 @@ static inline __u32 get_bit_index(__u32 val)
 {
 	__u32 shift = 0;
 
-	while (shift < 32)
-	{
+	while (shift < 32) {
 		if ((0x1UL << shift) & val)
-		{
 			break;
-		}
 		shift++;
 	}
 
@@ -25,19 +22,15 @@ __u32 read_irq_num(void)
 	__u32 irq_num, val;
 
 	irq_num = readl(VA(VIC0_ADDRESS));
-	if (!irq_num)
-	{
+	if (!irq_num) {
 		irq_num = readl(VA(VIC1_ADDRESS));
 		if (!irq_num)
-		{
 			BUG();
-		}
 	}
 
 	irq_num--;
 
-	switch (irq_num)
-	{
+	switch (irq_num) {
 		case 0 ... 1:
 			val = readl(VA(EINT0PEND));
 			irq_num = get_bit_index(val) + MAX_INTERNAL_IRQ + 1;
@@ -60,8 +53,7 @@ static void s3c6410_irq_mask(__u32 irq)
 {
 	__u32 val;
 
-	switch (irq)
-	{
+	switch (irq) {
 		case 0 ... 31:
 			writel(VA(VIC0_INTENCLEAR), 0x1UL << irq);
 			break;
@@ -85,8 +77,7 @@ static void s3c6410_irq_umask(__u32 irq)
 {
 	__u32 val;
 
-	switch (irq)
-	{
+	switch (irq) {
 		case 0 ... 31:
 			writel(VA(VIC0_INTENABLE), 0x1UL << irq);
 			break;
@@ -117,36 +108,29 @@ static void s3c6410_irq_umask(__u32 irq)
 static void s3c6410_irq_ack(__u32 irq)
 {
 	//fixme, should deal with the INT_EINT12 ~ 19 and GROUP1 ~ GROUP9
-	if ((irq >= INT_EINT(0)) && (irq <= INT_EINT(11)))
-	{
+	if ((irq >= INT_EINT(0)) && (irq <= INT_EINT(11))) {
 		irq -= INT_EINT(0);
 		writel(VA(EINT0PEND), 0x1UL << irq);
 	}
 
 	if (irq < 32)
-	{
 		writel(VA(VIC0_ADDRESS), 0x0);
-	}
 	else
-	{
 		writel(VA(VIC1_ADDRESS), 0x0);
-	}
 }
 
 static void s3c6410_irq_mack(__u32 irq)
 {
 }
 
-struct int_ctrl s3c6410_intctl_level =
-{
+struct int_ctrl s3c6410_intctl_level = {
 	.ack   = s3c6410_irq_ack,
 	.mask  = s3c6410_irq_mask,
 	.mack  = s3c6410_irq_mack,
 	.umask = s3c6410_irq_umask,
 };
 
-struct int_ctrl s3c6410_intctl_edge =
-{
+struct int_ctrl s3c6410_intctl_edge = {
 	.ack   = s3c6410_irq_ack,
 	.mask  = s3c6410_irq_mask,
 	.mack  = s3c6410_irq_mack,
@@ -157,10 +141,8 @@ int __INIT__ s3c6410_interrupt_init(void)
 {
 	int irq_num;
 
-	for (irq_num = 0; irq_num <= MAX_IRQ_NUM; irq_num++)
-	{
-		switch (irq_num)
-		{
+	for (irq_num = 0; irq_num <= MAX_IRQ_NUM; irq_num++) {
+		switch (irq_num) {
 			case 0 ... 31:
 				writel(VA(VIC0_VECTADDR0 + 0x4 * irq_num), irq_num + 1);
 				irq_assoc_intctl(irq_num, &s3c6410_intctl_level);

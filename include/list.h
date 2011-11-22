@@ -1,7 +1,6 @@
 #pragma once
 
-struct list_node
-{
+struct list_node {
 	struct list_node *next, *prev;
 };
 

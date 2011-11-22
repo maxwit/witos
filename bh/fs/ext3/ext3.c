@@ -12,8 +12,7 @@
 
 #define MAX_MNT_LEN 256
 
-struct ext2_file_system
-{
+struct ext2_file_system {
 	struct ext2_super_block sb;
 	struct block_device *bdev;
 	struct ext2_dir_entry_2 *root;
@@ -34,8 +33,7 @@ static ssize_t ext2_read_block(struct ext2_file_system *fs, void *buff, int blk_
 	char blk_buf[buf_len];
 	int start_blk = blk_no << (sb->s_log_block_size + 1), cur_blk;
 
-	for (cur_blk = 0; cur_blk < buf_len / drive->sect_size; cur_blk++)
-	{
+	for (cur_blk = 0; cur_blk < buf_len / drive->sect_size; cur_blk++) {
 		// bdev->get_block(bdev, start_blk + cur_blk, blk_buf + cur_blk * drive->sect_size);
 		drive->get_block(drive, (start_blk + cur_blk) * drive->sect_size, blk_buf + cur_blk * drive->sect_size);
 	}
@@ -74,9 +72,7 @@ static size_t get_ind_block(struct ext2_file_system *fs,
 	ext2_read_block(fs, buff, inode->i_block[EXT2_IND_BLOCK], 0, block_size);
 
 	for(i = 0; i < len && i < index_per_block - start_block; i++)
-	{
 		block_indexs[i] = buff[i + start_block];
-	}
 
 	return i;
 }
@@ -99,14 +95,11 @@ static size_t get_dind_block(struct ext2_file_system *fs,
 
 	k = start_block % index_per_block;
 
-	for(j = start_block / index_per_block; j < index_per_block; j++)
-	{
+	for(j = start_block / index_per_block; j < index_per_block; j++) {
 		ext2_read_block(fs, dbuff, buff[j], 0, block_size);
 
 		for(; i < len && k < index_per_block; i++, k++)
-		{
 			block_indexs[i] = dbuff[k];
-		}
 
 		if(i >= len)
 			return i;
@@ -136,18 +129,14 @@ static size_t get_tind_block(struct ext2_file_system *fs,
 
 	h = start_block % index_per_block;
 
-	for(j = start_block / (index_per_block * index_per_block); j < index_per_block; j++)
-	{
+	for(j = start_block / (index_per_block * index_per_block); j < index_per_block; j++) {
 		ext2_read_block(fs, dbuff, buff[j], 0, block_size);
 
-		for(k = start_block / index_per_block; k < index_per_block; k++)
-		{
+		for(k = start_block / index_per_block; k < index_per_block; k++) {
 			ext2_read_block(fs, tbuff, dbuff[k], 0, block_size);
 
 			for(; i < len && h < index_per_block; i++, h++)
-			{
 				block_indexs[i] = tbuff[h];
-			}
 
 			if(i >= len)
 				return i;
@@ -174,34 +163,28 @@ static int get_block_indexs(struct ext2_file_system *fs,
 
 	start_layer = get_start_layer(start_block, index_per_block);
 
-	if (0 == start_layer)
-	{
+	if (0 == start_layer) {
 		for(i = 0; i < len && i < EXT2_IND_BLOCK - start_block; i++)
-		{
 			block_indexs[i] = inode->i_block[i + start_block];
-		}
 
 		start_layer = -1;
 	}
 
-	if(i < len && (start_layer == 1 || start_layer == -1))
-	{
+	if(i < len && (start_layer == 1 || start_layer == -1)) {
 		i += get_ind_block(fs, inode, start_block - EXT2_IND_BLOCK,
 							block_indexs + i, len - i);
 
 		start_layer = -1;
 	}
 
-	if(i < len && (start_layer == 2 || start_layer == -1))
-	{
+	if(i < len && (start_layer == 2 || start_layer == -1)) {
 		i += get_dind_block(fs, inode, start_block - EXT2_IND_BLOCK - index_per_block
 							, block_indexs + i, len - i);
 
 		start_layer = -1;
 	}
 
-	if(i < len && (start_layer == 3 || start_layer == -1))
-	{
+	if(i < len && (start_layer == 3 || start_layer == -1)) {
 		i += get_tind_block(fs, inode, start_block - EXT2_IND_BLOCK - index_per_block
 							- index_per_block * index_per_block, block_indexs + i, len - i);
 	}
@@ -259,16 +242,14 @@ static int ext2_mount(struct file_system_type *fs_type, unsigned long flags, str
 	char buff[drive->sect_size];
 
 	ret = drive->get_block(drive, 2 * drive->sect_size, buff);
-	if (ret < 0)
-	{
+	if (ret < 0) {
 		DPRINT("%s(): read dbr err\n", __func__);
 		return ret;
 	}
 
 	memcpy(sb, buff, sizeof(*sb));
 
-	if (sb->s_magic != 0xef53)
-	{
+	if (sb->s_magic != 0xef53) {
 		printf("magic = %x\n", sb->s_magic);
 		return -EINVAL;
 	}
@@ -286,9 +267,7 @@ static int ext2_mount(struct file_system_type *fs_type, unsigned long flags, str
 	gdt_num = (sb->s_blocks_count + sb->s_blocks_per_group - 1) / sb->s_blocks_per_group;;
 	gdt = malloc(gdt_num * sizeof(struct ext2_group_desc));
 	if (NULL == gdt)
-	{
 		return -ENOMEM;
-	}
 
 	ext2_read_block(fs, gdt, sb->s_first_data_block + 1, 0, gdt_num * sizeof(struct ext2_group_desc));
 
@@ -343,14 +322,12 @@ static struct ext2_dir_entry_2 *ext2_lookup(struct ext2_inode *parent, const cha
 
 	get_block_indexs(fs, parent, 0, block_indexs, blocks);
 
-	for (i = 0; i < blocks; i++)
-	{
+	for (i = 0; i < blocks; i++) {
 		ext2_read_block(fs, buff, block_indexs[i], 0, block_size);
 
 		dentry = (struct ext2_dir_entry_2 *)buff;
 
-		while (dentry->rec_len > 0 && len < parent->i_size && len < (i + 1) * block_size)
-		{
+		while (dentry->rec_len > 0 && len < parent->i_size && len < (i + 1) * block_size) {
 			dentry->name[dentry->name_len] = '\0';
 			printf("%s: inode = %d, dentry size = %d, name size = %d, block = %d\n",
 				dentry->name, dentry->inode, dentry->rec_len, dentry->name_len, i);
@@ -420,8 +397,7 @@ static int ext2_close(struct file *fp)
 // fixme: to support "where"
 ssize_t ext2_lseek(struct ext2_file *file, ssize_t off, int where)
 {
-	switch (where)
-	{
+	switch (where) {
 	default:
 		file->pos += off;
 		break;
@@ -460,12 +436,9 @@ static ssize_t ext2_read(struct file *fp, void *buff, size_t size)
 	offset = fp->pos % block_size;
 	len = block_size - offset;
 
-	for(i = 0; i < blocks; i++)
-	{
+	for(i = 0; i < blocks; i++) {
 		if(i == blocks - 1)
-		{
 			len = real_size % block_size == 0 ? block_size : (real_size % block_size);
-		}
 
 		ext2_read_block(fs, tmp_buff, block_indexs[i], offset, len);
 

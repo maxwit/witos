@@ -29,8 +29,7 @@ int puts(const char * str)
 {
 	int ret;
 
-	while (*str)
-	{
+	while (*str) {
 		ret = putchar(*str++);
 		if (-1 == ret)
 			return -1;
@@ -45,12 +44,10 @@ char *gets(char *s)
 
 	str = s;
 
-	while (1)
-	{
+	while (1) {
 		*str = uart_recv_byte();
 
-		if (*str == '\r' || *str == '\n')
-		{
+		if (*str == '\r' || *str == '\n') {
 			putchar('\r');
 			putchar('\n');
 
@@ -63,19 +60,15 @@ char *gets(char *s)
 		if (*str == (char)127)
 #endif
 		{
-			if (str > s)
-			{
+			if (str > s) {
 				putchar('\b');
 				putchar(' ');
 				putchar('\b');
 
 				str--;
 			}
-		}
-		else if (*str >= ' ' && *str < 127)
-		{
+		} else if (*str >= ' ' && *str < 127)
 			putchar(*str++);
-		}
 	}
 
 	*str = '\0';
@@ -115,19 +108,13 @@ static char *num_to_ascii(char *buf,
 	fill_char = (output_style & ZERO) ? '0' : ' ';//set ZERO attribute
 
 	//set SIGN and SPACE
-	if (output_style & SIGN && (10 == base))
-	{
-		if (num & 0x1 << 31)
-		{
+	if (output_style & SIGN && (10 == base)) {
+		if (num & 0x1 << 31) {
 			sign = '-';
 			num = -num;
-		}
-		else if (!(output_style & SIGNINT))
-		{
+		} else if (!(output_style & SIGNINT))
 			sign = '+';
-		}
-	}
-	else if (!((output_style & SIGN) || (num & 0x1 << 31)) && (10 == base) && (output_style & SPACE))
+	} else if (!((output_style & SIGN) || (num & 0x1 << 31)) && (10 == base) && (output_style & SPACE))
 		sign = ' ';
 
 	//if num == 0
@@ -135,15 +122,13 @@ static char *num_to_ascii(char *buf,
 		tmp_array[count++] = '0';
 
 	//convert number
-	while (num != 0)
-	{
+	while (num != 0) {
 		tmp_array[count++] = pdigit[num % base];
 		num = num / base;
 	}
 
 	//set PLUS
-	if (output_style & PLUS)
-	{
+	if (output_style & PLUS) {
 		if (base == 16)//handle hex
 			pre_fixnum = 2;
 		if (base == 8)//handle oct
@@ -153,14 +138,12 @@ static char *num_to_ascii(char *buf,
 	//ecc_generate number of fill_char
 	width = width - pre_fixnum - (sign ? 1 : 0) - count;
 
-	if (!(output_style & LEFT))
-	{
+	if (!(output_style & LEFT)) {
 		while (width-- > 0)
 			*buf++ = fill_char;
 	}
 
-	switch(pre_fixnum)
-	{
+	switch(pre_fixnum) {
 	case 2:
 		*buf++ = '0';
 		*buf++ = 'x';
@@ -194,17 +177,14 @@ static int vsprintf(char *buf, const char *fmt, int *para)
 	int count = 0;
 	char *buf_tmp = buf;
 
-	while (*fmt)
-	{
-		if ('%' != *fmt)
-		{
+	while (*fmt) {
+		if ('%' != *fmt) {
 			*buf_tmp++ = *fmt++;
 			continue;
 		}
 		fmt_roll = fmt++;
 
-		if ('%' == *fmt)//handle e.g "%%"
-		{
+		if ('%' == *fmt) {//handle e.g "%%"
 			*buf_tmp++ = *fmt++;
 			continue;
 		}
@@ -213,8 +193,7 @@ static int vsprintf(char *buf, const char *fmt, int *para)
 		output_style = 0;
 get_sign :
 		fmt++;//skip '%', handle next charactor, and record current position
-		switch(*fmt)
-		{
+		switch(*fmt) {
 		case '-' :
 			output_style |= LEFT;
 			output_style &= (~ZERO);
@@ -236,26 +215,20 @@ get_sign :
 
 		width = 0;
 
-		while (ISDIGIT(*fmt))
-		{
+		while (ISDIGIT(*fmt)) {
 			width = width * 10 + *fmt - '0';
 			fmt++;
 		}
 
 		//handle '*',replace '*'
-		if ('*' == *fmt)
-		{
+		if ('*' == *fmt) {
 			fmt++;
 
-			if (!ISDIGIT(*fmt))
-			{
+			if (!ISDIGIT(*fmt)) {
 				output_style &= ~LEFT;
 				width = *para++;
-			}
-			else
-			{
-				while (*para)
-				{
+			} else {
+				while (*para) {
 					tmp_array[count++] = *para%10 + '0';
 					*para /= 10;
 				}
@@ -274,8 +247,7 @@ get_sign :
 		if (('l' == *fmt) && ('l' == *++fmt))
 			fmt++;
 
-		switch(*fmt)
-		{
+		switch(*fmt) {
 		case 'u':
 			base = 10;
 			output_style &= ~(SIGN | PLUS);
@@ -303,15 +275,11 @@ get_sign :
 //			base = -1;//base = -1 indicates output string
 			str_tmp = (char *)*para;
 			str_len = strlen(str_tmp);
-			if (!(output_style & LEFT))
-			{
-				if (output_style & ZERO)
-				{
+			if (!(output_style & LEFT)) {
+				if (output_style & ZERO) {
 					while (width-- > str_len)
 						*buf_tmp++ = '0';
-				}
-				else
-				{
+				} else {
 					while (width-- > str_len)
 						*buf_tmp++ = ' ';
 				}
@@ -325,15 +293,11 @@ get_sign :
 			continue;
 		case 'c' :
 //			base = -2;//base = -2 indicates output charactor
-			if (!(output_style & LEFT))
-			{
-				if (output_style & ZERO)
-				{
+			if (!(output_style & LEFT)) {
+				if (output_style & ZERO) {
 					while (width-- > 1)
 						*buf_tmp++ = '0';
-				}
-				else
-				{
+				} else {
 					while (width-- > 1)
 						*buf_tmp++ = ' ';
 				}
@@ -402,17 +366,14 @@ static int vsnprintf(char *buf, int size, const char *fmt, int *para)
 	char ch_num[32] = {0};
 	char* ch_tmp_num = NULL;
 
-	while (*fmt)
-	{
-		if ('%' != *fmt)
-		{
+	while (*fmt) {
+		if ('%' != *fmt) {
 			IF_UNOVER(*fmt++)
 			continue;
 		}
 		fmt_roll = fmt++;
 
-		if ('%' == *fmt)//handle e.g "%%"
-		{
+		if ('%' == *fmt) {//handle e.g "%%"
 			IF_UNOVER(*fmt++)
 			continue;
 		}
@@ -421,8 +382,7 @@ static int vsnprintf(char *buf, int size, const char *fmt, int *para)
 		output_style = 0;
 get_sign :
 		fmt++;//skip '%', handle next charactor, and record current position
-		switch(*fmt)
-		{
+		switch(*fmt) {
 		case '-' :
 			output_style |= LEFT;
 			output_style &= (~ZERO);
@@ -444,26 +404,20 @@ get_sign :
 
 		width = 0;
 
-		while (ISDIGIT(*fmt))
-		{
+		while (ISDIGIT(*fmt)) {
 			width = width * 10 + *fmt - '0';
 			fmt++;
 		}
 
 		//handle '*',replace '*'
-		if ('*' == *fmt)
-		{
+		if ('*' == *fmt) {
 			fmt++;
 
-			if (!ISDIGIT(*fmt))
-			{
+			if (!ISDIGIT(*fmt)) {
 				output_style &= ~LEFT;
 				width = *para++;
-			}
-			else
-			{
-				while (*para)
-				{
+			} else {
+				while (*para) {
 					tmp_array[count++] = *para%10 + '0';
 					*para /= 10;
 				}
@@ -482,8 +436,7 @@ get_sign :
 		if (('l' == *fmt) && ('l' == *++fmt))
 			fmt ++;
 
-		switch(*fmt)
-		{
+		switch(*fmt) {
 		case 'u':
 			base = 10;
 			output_style &= (~SIGN) | (~PLUS);
@@ -507,15 +460,11 @@ get_sign :
 //			base = -1;//base = -1 indicates output string
 			str_tmp = (char *)*para;
 			str_len = strlen(str_tmp);
-			if (!(output_style & LEFT))
-			{
-				if (output_style & ZERO)
-				{
+			if (!(output_style & LEFT)) {
+				if (output_style & ZERO) {
 					while (width-- > str_len)
 						IF_UNOVER('0')
-				}
-				else
-				{
+				} else {
 					while (width-- > str_len)
 						IF_UNOVER(' ')
 				}
@@ -529,15 +478,11 @@ get_sign :
 			continue;
 		case 'c' :
 //			base = -2;//base = -2 indicates output charactor
-			if (!(output_style & LEFT))
-			{
-				if (output_style & ZERO)
-				{
+			if (!(output_style & LEFT)) {
+				if (output_style & ZERO) {
 					while (width-- > 1)
 						IF_UNOVER('0');
-				}
-				else
-				{
+				} else {
 					while (width-- > 1)
 						IF_UNOVER(' ');
 				}
@@ -556,9 +501,7 @@ get_sign :
 	ch_tmp_num = num_to_ascii(ch_num, *para, width, base, output_style);
 	nTrueWidth = ch_tmp_num - ch_num;
 	for (i = 0; i < nTrueWidth; ++i)
-	{
 		IF_UNOVER(ch_num[i])
-	}
 
 	para++;
 	fmt++;

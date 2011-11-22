@@ -89,8 +89,7 @@
 
 //#define CONFIG_DATAFLASH_WRITE_VERIFY
 
-struct DataFlashOptMsg
-{
+struct DataFlashOptMsg {
 	void	*pTxCmdBuf;
 	void	*pRxCmdBuf;
 	void	*pTxDataBuf;
@@ -104,8 +103,7 @@ struct DataFlashOptMsg
 	bool	hasData;
 };
 
-struct DataFlash
-{
+struct DataFlash {
 	struct flash_chip parent;
 
 	__u8	bCommand[8];

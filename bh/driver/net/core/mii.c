@@ -6,16 +6,13 @@ int mii_get_link_speed(struct mii_phy *phy)
 	int i;
 	struct net_device *ndev = phy->ndev;
 
-	for(i = 0; i < 40; i++)
-	{
-		if (ndev->mdio_read(ndev, phy->mii_id, MII_REG_BMS) & 0x4) // or 0x24
-		{
+	for(i = 0; i < 40; i++) {
+		if (ndev->mdio_read(ndev, phy->mii_id, MII_REG_BMS) & 0x4) { // or 0x24
 #warning
 #ifdef CONFIG_LAN9220
 			__u16 link = ndev->mdio_read(ndev, phy->mii_id, MII_REG_SPCS);
 
-			switch ((link >> 2) & 0x7)
-			{
+			switch ((link >> 2) & 0x7) {
 			case 1:
 				return ETHER_SPEED_10M_HD;
 
@@ -35,8 +32,7 @@ int mii_get_link_speed(struct mii_phy *phy)
 #else
 			__u16 link = ndev->mdio_read(ndev, phy->mii_id, MII_REG_STAT);
 
-			switch (link >> 12)
-			{
+			switch (link >> 12) {
 			case 1:
 				return ETHER_SPEED_10M_HD;
 
@@ -101,8 +97,7 @@ void mii_reset_phy(struct net_device *ndev, struct mii_phy *phy)
 
 	ndev->mdio_write(ndev, phy->mii_id, MII_REG_BMC, MII_PHY_RESET);
 
-	while (time_out > 0)
-	{
+	while (time_out > 0) {
 		val = ndev->mdio_read(ndev, phy->mii_id, MII_REG_BMC);
 		if (!(val & MII_PHY_RESET))
 			return;

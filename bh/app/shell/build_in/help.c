@@ -6,8 +6,7 @@ int help(int argc, char *argv[])
 	const struct command *exe;
 	extern const struct command g_exe_begin[], g_exe_end[];
 
-	switch (argc)
-	{
+	switch (argc) {
 	case 1:
 		printf("\ng-bios commands:\n");
 
@@ -18,17 +17,14 @@ int help(int argc, char *argv[])
 		break;
 
 	case 2:
-		for (exe = g_exe_begin; exe < g_exe_end; exe++)
-		{
-			if (!strcmp(exe->name, argv[1]))
-			{
+		for (exe = g_exe_begin; exe < g_exe_end; exe++) {
+			if (!strcmp(exe->name, argv[1])) {
 				ret = 0;
 				break;
 			}
 		}
 
-		if (g_exe_end == exe)
-		{
+		if (g_exe_end == exe) {
 			printf("help: %s: No such command\n", argv[1]);
 			ret = -ENOENT;
 		}

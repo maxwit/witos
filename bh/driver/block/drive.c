@@ -7,8 +7,7 @@
 #define MBR_PART_TAB_OFF 0x1BE
 #define MSDOS_MAX_PARTS 16
 
-struct msdos_part
-{
+struct msdos_part {
 	__u8  boot_flag;
 	__u8  chs_start[3];
 	__u8  type;
@@ -33,8 +32,7 @@ static int msdos_part_scan(struct disk_drive *drive, struct part_attr part_tab[]
 
 	memcpy(dos_pt, buff + MBR_PART_TAB_OFF, sizeof(dos_pt));
 
-	for (i = 0; i < 4; i++)
-	{
+	for (i = 0; i < 4; i++) {
 		if (dos_pt[i].lba_size == 0)
 			break;
 
@@ -85,8 +83,7 @@ int disk_drive_register(struct disk_drive *drive)
 	n = msdos_part_scan(drive, part_tab);
 	// if n < 0 ...
 
-	for (i = 0; i < n; i++)
-	{
+	for (i = 0; i < n; i++) {
 		slave = zalloc(sizeof(*slave));
 		if (NULL == slave)
 			return -ENOMEM;

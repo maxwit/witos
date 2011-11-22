@@ -3,8 +3,7 @@
 
 #define MAX_VAL_COUNT 100
 
-struct heap_region
-{
+struct heap_region {
 	__u32 pre_size;
 	__u32 curr_size;
 	struct list_node ln_mem_region;
@@ -80,8 +79,7 @@ static int mem_dump(int argc, char *argv[])
 				bp[k] = '.';
 		}
 
-		switch (format)
-		{
+		switch (format) {
 		case 'o':
 			chr_flag = 1;
 		case 'O':

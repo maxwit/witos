@@ -155,8 +155,7 @@
 
 struct net_device;
 
-struct mii_phy
-{
+struct mii_phy {
 	__u8  mii_id;
 	__u16 ven_id, dev_id;
 	struct net_device *ndev;

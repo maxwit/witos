@@ -28,8 +28,7 @@ static int get_root_dev(int *root_dev)
 
 	attr = "linux.root_dev";
 	if (0 == conf_get_attr(attr, buff)) {
-		if (str_to_val(buff, (__u32 *)root_dev) < 0)
-		{
+		if (str_to_val(buff, (__u32 *)root_dev) < 0) {
 			DPRINT_ATTR(attr, ATTR_FMT_ERR);
 			*root_dev = DEFAULT_ROOT_DEV;
 		}
@@ -58,47 +57,34 @@ static int __INIT__ flash_adjust_part_tab(struct flash_chip *host,
 	__u32 curr_base;
 
 	if (parts > MAX_FLASH_PARTS)
-	{
 		parts = MAX_FLASH_PARTS;
-	}
 
 	curr_base  = attr_tmpl[0].part_base;
 	curr_base -= curr_base % host->erase_size; // fixme: to use macro
 
-	while (index < parts)
-	{
+	while (index < parts) {
 		if (curr_base + host->erase_size > host->chip_size)
 			break;
 
 		new_attr->part_type = attr_tmpl->part_type;
 
-		if (0 == attr_tmpl->part_base)
-		{
-			if (PT_BL_GBH == new_attr->part_type)
-			{
+		if (0 == attr_tmpl->part_base) {
+			if (PT_BL_GBH == new_attr->part_type) {
 				new_attr->part_base = CONFIG_GBH_START_BLK * host->erase_size;
 
-				if (new_attr->part_base < curr_base)
-				{
+				if (new_attr->part_base < curr_base) {
 					printf("Invalid BH start block!\n");
 					return -EINVAL;
 				}
-			}
-			else
-			{
+			} else
 				new_attr->part_base = curr_base;
-			}
-		}
-		else
-		{
+		} else {
 			// fixme
 			if (PT_BL_GBH == new_attr->part_type && \
 				new_attr->part_base != CONFIG_GBH_START_BLK * host->erase_size)
 			{
 				printf("%s() line %d: fixme!\n", __func__, __LINE__);
-			}
-			else if (new_attr->part_type >= PT_FS_BEGIN && new_attr->part_type <= PT_FS_END)
-			{
+			} else if (new_attr->part_type >= PT_FS_BEGIN && new_attr->part_type <= PT_FS_END) {
 				set_root_dev(index);
 				break;
 			}
@@ -111,11 +97,8 @@ static int __INIT__ flash_adjust_part_tab(struct flash_chip *host,
 		}
 
 		if (0 == attr_tmpl->part_size)
-		{
 			new_attr->part_size = host->chip_size - curr_base;
-		}
-		else
-		{
+		else {
 			new_attr->part_size = attr_tmpl->part_size;
 
 			ALIGN_UP(new_attr->part_size, host->erase_size);
@@ -123,27 +106,20 @@ static int __INIT__ flash_adjust_part_tab(struct flash_chip *host,
 
 #if 0
 		if (PT_BL_GCONF == new_attr->part_type)
-		{
 			host->conf_attr = new_attr;
-		}
-		else if (PT_OS_LINUX == new_attr->part_type)
-		{
+		else if (PT_OS_LINUX == new_attr->part_type) {
 			__u32 end, gap;
 
 			end = new_attr->part_base + new_attr->part_size;
 			gap = end & (MB(1) - 1);
 
 			if (gap)
-			{
 				new_attr->part_size += MB(1) - gap;
-			}
 		}
 #endif
 
 		if (new_attr->part_base + new_attr->part_size > host->chip_size)
-		{
 			break;
-		}
 
 		curr_base += new_attr->part_size;
 
@@ -152,9 +128,7 @@ static int __INIT__ flash_adjust_part_tab(struct flash_chip *host,
 			// strncpy(new_attr->part_name, part_type2str(new_attr->part_type), sizeof(new_attr->part_name));
 		}
 		else
-		{
 			strncpy(new_attr->part_name, attr_tmpl->part_name, sizeof(new_attr->part_name));
-		}
 
 		new_attr++;
 		attr_tmpl++;
@@ -163,8 +137,7 @@ static int __INIT__ flash_adjust_part_tab(struct flash_chip *host,
 	}
 
 #if 1
-	if (curr_base + host->erase_size <= host->chip_size)
-	{
+	if (curr_base + host->erase_size <= host->chip_size) {
 		new_attr->part_type  = PT_FREE;
 		new_attr->part_base = curr_base;
 		new_attr->part_size = host->chip_size - curr_base;
@@ -256,8 +229,7 @@ int flash_register(struct flash_chip *flash)
 	n = flash_adjust_part_tab(flash,
 			part_tab, g_part_attr, g_part_num);
 
-	for (i = 0; i < n; i++)
-	{
+	for (i = 0; i < n; i++) {
 		slave = zalloc(sizeof(*slave));
 		if (NULL == slave)
 			return -ENOMEM;
@@ -297,8 +269,7 @@ int flash_register(struct flash_chip *flash)
 #if 0
 	part_show(flash);
 
-	if (PT_BL_GBH == part->attr->part_type)
-	{
+	if (PT_BL_GBH == part->attr->part_type) {
 		part_set_home(0);
 		part_change(0);
 	}

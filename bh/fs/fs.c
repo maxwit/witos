@@ -14,8 +14,7 @@ int file_system_type_register(struct file_system_type *fs_type)
 {
 	struct file_system_type **p;
 
-	for (p = &fs_type_list; *p; p = &(*p)->next)
-	{
+	for (p = &fs_type_list; *p; p = &(*p)->next) {
 		if (!strcmp((*p)->name, fs_type->name))
 			return -EBUSY;
 	}
@@ -30,8 +29,7 @@ struct file_system_type *file_system_type_get(const char *name)
 {
 	struct file_system_type *p;
 
-	for (p = fs_type_list; p; p = p->next)
-	{
+	for (p = fs_type_list; p; p = p->next) {
 		if (!strcmp(p->name, name))
 			return p;
 	}
@@ -51,29 +49,24 @@ int gb_mount(const char *type, unsigned long flags, const char *bdev_name, const
 	struct mount_point *mnt;
 
 	bdev = get_bdev_by_name(bdev_name);
-	if (NULL == bdev)
-	{
+	if (NULL == bdev) {
 		DPRINT("fail to open block device \"%s\"!\n", bdev_name);
 		return -ENODEV;
 	}
 
 	fs_type = file_system_type_get(type);
 	if (NULL == fs_type)
-	{
 		return -ENOENT;
-	}
 	printf("%s() line %d\n", __func__, __LINE__);
 
 	ret = fs_type->mount(fs_type, flags, bdev);
-	if (ret < 0)
-	{
+	if (ret < 0) {
 		DPRINT("fail to mount %s!\n", bdev_name);
 		goto L1;
 	}
 
 	mnt = malloc(sizeof(*mnt));
-	if (NULL == mnt)
-	{
+	if (NULL == mnt) {
 		ret = -ENOMEM;
 		goto L2;
 	}
@@ -121,21 +114,17 @@ int gb_open(const char *const name, int flags, ...)
 
 	for (fn = name; *fn != ':' && *fn != '\0'; fn++);
 
-	for (mnt = g_mnt_list; mnt; mnt = mnt->next)
-	{
+	for (mnt = g_mnt_list; mnt; mnt = mnt->next) {
 		if (!strncmp(mnt->path, name, fn - name))
 			break;
 	}
 
 	if (NULL == mnt)
-	{
 		return -ENOENT;
-	}
 
 	fops = mnt->fs_type->fops;
 
-	if (*fn == '\0')
-	{
+	if (*fn == '\0') {
 		DPRINT("%s(): Invalid file name \"%s\"!\n", __func__, name);
 		return -EINVAL;
 	}

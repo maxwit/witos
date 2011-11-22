@@ -9,8 +9,7 @@
 
 #define INADDR_ANY  0
 
-enum __socket_type
-{
+enum __socket_type {
 	SOCK_STREAM    = 1,
 	SOCK_DGRAM     = 2,
 	SOCK_RAW       = 3,
@@ -23,8 +22,7 @@ enum __socket_type
 };
 
 /* Bits in the FLAGS argument to `send', `recv', et al.  */
-enum __flags_type
-{
+enum __flags_type {
 	MSG_OOB          = 0x01,
 	MSG_PEEK         = 0x02,
 	MSG_DONTROUTE    = 0x04,
@@ -82,8 +80,7 @@ enum __flags_type
 
 #define MKIP(a, b, c, d) ((d << 24) | (c << 16) | (b << 8) | a)
 
-enum EtherSpeed
-{
+enum EtherSpeed {
 	ETHER_SPEED_UNKNOW,
 	ETHER_SPEED_10M_HD,
 	ETHER_SPEED_10M_FD,
@@ -97,8 +94,7 @@ struct socket;
 struct sockaddr;
 
 //
-struct ether_header
-{
+struct ether_header {
 	__u8 des_mac[MAC_ADR_LEN];
 	__u8 src_mac[MAC_ADR_LEN];
 	__u16 frame_type;
@@ -108,8 +104,7 @@ struct ether_header
 #define ARP_OP_REQ  CPU_TO_BE16(1)
 #define ARP_OP_REP  CPU_TO_BE16(2)
 
-struct arp_packet
-{
+struct arp_packet {
 	__u16  hard_type;
 	__u16  prot_type;
 	__u8   hard_size;
@@ -122,8 +117,7 @@ struct arp_packet
 } __PACKED__;
 
 //
-struct ip_header
-{
+struct ip_header {
 	__u8   ver_len;
 	__u8   tos;
 	__u16  total_len;
@@ -142,16 +136,14 @@ struct ip_header
 #define ICMP_TYPE_ECHO_REQUEST       8
 
 //
-struct icmp_packet
-{
+struct icmp_packet {
 	__u8  type;
 	__u8  code;
 	__u16 chksum;
 };
 
 //
-struct ping_packet
-{
+struct ping_packet {
 	__u8    type;
 	__u8    code;
 	__u16  chksum;
@@ -160,8 +152,7 @@ struct ping_packet
 };
 
 //
-struct udp_header
-{
+struct udp_header {
 	__u16 src_port;
 	__u16 dst_port;
 	__u16 udp_len;
@@ -175,8 +166,7 @@ struct udp_header
 #define FLG_ACK  (1 << 4)
 #define FLG_URG  (1 << 5)
 
-struct tcp_header
-{
+struct tcp_header {
 	__u16 src_port;
 	__u16 dst_port;
 	__u32 seq_num;
@@ -209,8 +199,7 @@ struct tcp_header
 
 #define MAX_TCP_OPT_LEN 64
 
-struct tcp_option
-{
+struct tcp_option {
 	__u8 opt[MAX_TCP_OPT_LEN];
 	__u16 len;
 };
@@ -222,19 +211,16 @@ typedef unsigned short sa_family_t;
 #define __SOCKADDR_COMMON(sa_prefix) \
 	sa_family_t sa_prefix##family
 
-struct sockaddr
-{
+struct sockaddr {
 	__SOCKADDR_COMMON(sa_);
 	char sa_data[14];
 };
 
-struct in_addr
-{
+struct in_addr {
 	__u32 s_addr;
 };
 
-struct sockaddr_in
-{
+struct sockaddr_in {
 	__SOCKADDR_COMMON(sin_);
 	unsigned short sin_port;
 	struct in_addr sin_addr;
@@ -250,8 +236,7 @@ enum {
 	SA_DST
 };
 
-enum tcp_state
-{
+enum tcp_state {
 	TCPS_CLOSED,
 	TCPS_LISTEN,
 	TCPS_SYN_SENT,
@@ -265,8 +250,7 @@ enum tcp_state
 	TCPS_TIME_WAIT,
 };
 
-struct socket
-{
+struct socket {
 	int type;
 	int protocol;
 	int obstruct_flags;
@@ -277,14 +261,12 @@ struct socket
 	__u32 seq_num, ack_num;
 };
 
-struct eth_addr
-{
+struct eth_addr {
 	__u8  ip[4];
 	__u8  mac[6];
 };
 
-struct sock_buff
-{
+struct sock_buff {
 	__u8  *head;
 	__u8  *data;
 	__u16  size;
@@ -294,16 +276,14 @@ struct sock_buff
 	// struct sockaddr_in remote_addr;
 };
 
-struct net_device_stat
-{
+struct net_device_stat {
 	__u32 rx_packets;
 	__u32 tx_packets;
 	__u32 tx_errors;
 	__u32 rx_errors;
 };
 
-struct link_status
-{
+struct link_status {
 	int connected;
 	enum EtherSpeed link_speed;
 };
@@ -311,8 +291,7 @@ struct link_status
 //
 #define NET_NAME_LEN 16
 
-struct net_device
-{
+struct net_device {
 	const char *chip_name;
 	char ifx_name[NET_NAME_LEN];
 	struct list_node ndev_node;

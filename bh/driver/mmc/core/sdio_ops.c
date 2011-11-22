@@ -37,9 +37,7 @@ int mmc_io_rw_direct(struct mmc_host *host, int write, unsigned fn,
 	ret = host->send_cmd(host, cmd.index, cmd.arg, cmd.resp);
 
 	if (NULL != out)
-	{
 		*out = host->resp[0];
-	}
 
 	return ret;
 }

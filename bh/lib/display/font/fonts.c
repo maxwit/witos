@@ -10,9 +10,7 @@ void add_font(struct font_descript *font)
 
 	f_node = (struct font_list_node *)malloc(sizeof(*f_node));
 	if (f_node == NULL)
-	{
 		return;
-	}
 
 	f_node->font = font;
 	list_add_tail(&f_node->node, &font_list);
@@ -43,9 +41,7 @@ struct font_descript *find_font(const char *name)
 		f_node = container_of(iter, struct font_list_node, node);
 		font = f_node->font;
 		if (strcmp(name, font->name) == 0)
-		{
 			return font;
-		}
 	}
 
 	return NULL;

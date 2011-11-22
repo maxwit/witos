@@ -49,16 +49,14 @@ static void s3c24x0_irq_umask(__u32 irq)
 	writel(VA(S3C2410_INTMSK), mask);
 }
 
-struct int_ctrl s3c24x0_intctl_level =
-{
+struct int_ctrl s3c24x0_intctl_level = {
 	.ack   = s3c24x0_irq_mack,
 	.mask  = s3c24x0_irq_mask,
 	.mack  = s3c24x0_irq_mack,
 	.umask = s3c24x0_irq_umask,
 };
 
-struct int_ctrl s3c24x0_intctl =
-{
+struct int_ctrl s3c24x0_intctl = {
 	.ack   = s3c24x0_irq_ack,
 	.mask  = s3c24x0_irq_mask,
 	.umask = s3c24x0_irq_umask,
@@ -88,17 +86,12 @@ static void s3c24x0_ext_ack(__u32 irq)
 	// writel(VA(S3C2410_EINTPEND), bit);
 
 	// fixme
-	if (irq <= IRQ_EINT7)
-	{
+	if (irq <= IRQ_EINT7) {
 		if ((req & 0xf0) != 0)
 			s3c24x0_irq_ack(IRQ_EINT_4TO7);
-	}
-	else
-	{
+	} else {
 		if ((req >> 8) != 0)
-		{
 			s3c24x0_irq_ack(IRQ_EINT_8TO23);
-		}
 	}
 }
 
@@ -119,29 +112,22 @@ int s3c24x0_ext_set_trigger(__u32 irq, unsigned int type)
 	__u32 gpcon_offset, extint_offset;
 	__u32 newvalue = 0, value;
 
-	if ((irq >= IRQ_EINT0) && (irq <= IRQ_EINT3))
-	{
+	if ((irq >= IRQ_EINT0) && (irq <= IRQ_EINT3)) {
 		gpcon_reg = GPIO_BASE + GPF_CON;
 		extint_reg = GPIO_BASE + EXTINT0;
 		gpcon_offset = (irq - IRQ_EINT0) * 2;
 		extint_offset = (irq - IRQ_EINT0) * 4;
-	}
-	else if ((irq >= IRQ_EINT4) && (irq <= IRQ_EINT7))
-	{
+	} else if ((irq >= IRQ_EINT4) && (irq <= IRQ_EINT7)) {
 		gpcon_reg = GPIO_BASE + GPF_CON;
 		extint_reg = GPIO_BASE + EXTINT0;
 		gpcon_offset = (irq - (EXTINT_OFF)) * 2;
 		extint_offset = (irq - (EXTINT_OFF)) * 4;
-	}
-	else if ((irq >= IRQ_EINT8) && (irq <= IRQ_EINT15))
-	{
+	} else if ((irq >= IRQ_EINT8) && (irq <= IRQ_EINT15)) {
 		gpcon_reg = GPIO_BASE + GPG_CON;
 		extint_reg = GPIO_BASE + EXTINT1;
 		gpcon_offset = (irq - IRQ_EINT8) * 2;
 		extint_offset = (irq - IRQ_EINT8) * 4;
-	}
-	else if ((irq >= IRQ_EINT16) && (irq <= IRQ_EINT23))
-	{
+	} else if ((irq >= IRQ_EINT16) && (irq <= IRQ_EINT23)) {
 		gpcon_reg = GPIO_BASE + GPG_CON;
 		extint_reg = GPIO_BASE + EXTINT2;
 		gpcon_offset = (irq - IRQ_EINT8) * 2;
@@ -153,8 +139,7 @@ int s3c24x0_ext_set_trigger(__u32 irq, unsigned int type)
 	value = (value & ~(3 << gpcon_offset)) | (0x02 << gpcon_offset);
 	writel(VA(gpcon_reg), value);
 
-	switch (type)
-	{
+	switch (type) {
 		case IRQ_TYPE_NONE:
 			printf("No edge setting!\n");
 			break;
@@ -217,9 +202,7 @@ static inline void s3c24x0_subic_mask(__u32 irq, unsigned int parentbit, int sub
 	submask |= (1UL << (irq - IRQ_UART0_RX));
 
 	if ((submask  & subcheck) == subcheck)
-	{
 		writel(VA(S3C2410_INTMSK), mask | parentbit);
-	}
 
 	writel(VA(S3C2410_INTSUBMSK), submask);
 }
@@ -292,22 +275,17 @@ static void s3c24x0_parse_adc_irq(struct int_pin *ipin, __u32 irq)
 	nSubPnd &= 3;
 
 	if (nSubPnd & 1)
-	{
 		irq_handle(IRQ_TC);
-	}
 
 	if (nSubPnd & 2)
-	{
 		irq_handle(IRQ_ADC);
-	}
 }
 
 static void s3c24x0_parse_ext_irq(struct int_pin *ipin, __u32 irq)
 {
 	__u32 ext_pnd = readl(VA(S3C2410_EINTPEND));
 
-	switch (irq)
-	{
+	switch (irq) {
 	case IRQ_EINT_4TO7:
 		ext_pnd &= 0xf0;
 		break;
@@ -320,8 +298,7 @@ static void s3c24x0_parse_ext_irq(struct int_pin *ipin, __u32 irq)
 		break;
 	}
 
-	while (ext_pnd)
-	{
+	while (ext_pnd) {
 		unsigned int ext_irq;
 
 		ext_irq = ffs(ext_pnd) - 1;
@@ -337,10 +314,8 @@ int __INIT__ s3c24x0_interrupt_init(void)
 {
 	int irq;
 
-	for (irq = IRQ_EINT0; irq < MAX_IRQ_NUM; irq++)
-	{
-		switch (irq)
-		{
+	for (irq = IRQ_EINT0; irq < MAX_IRQ_NUM; irq++) {
+		switch (irq) {
 		case IRQ_EINT0 ... IRQ_EINT3:
 			irq_assoc_intctl(irq, &s3c24x0_intctl_ext0to3);
 			irq_set_handler(irq, irq_handle_edge, 0);

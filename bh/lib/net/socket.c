@@ -34,8 +34,7 @@ static int tcp_wait_for_state(const struct socket *sock, enum tcp_state state)
 {
 	int to;
 
-	for (to = 0; to < 100; to++)
-	{
+	for (to = 0; to < 100; to++) {
 		ndev_recv_poll();
 		if (sock->state == state)
 			return 0;
@@ -122,8 +121,7 @@ int qu_is_empty(int fd)
 	ndev_recv_poll();
 
 	lock_irq_psr(psr);
-	if (!list_is_empty(&sock->rx_qu))
-	{
+	if (!list_is_empty(&sock->rx_qu)) {
 		unlock_irq_psr(psr);
 		return 0;
 	}
@@ -137,8 +135,7 @@ int socket(int domain, int type, int protocol)
 	int fd;
 	struct socket *sock;
 
-	for (fd = 1; fd < MAX_SOCK_NUM; fd++)
-	{
+	for (fd = 1; fd < MAX_SOCK_NUM; fd++) {
 		if (NULL == g_sock_fds[fd])
 			goto alloc_sock;
 	}
@@ -148,8 +145,7 @@ int socket(int domain, int type, int protocol)
 alloc_sock:
 	sock = malloc(sizeof(struct socket));
 
-	if (NULL == sock)
-	{
+	if (NULL == sock) {
 		DPRINT("%s: fail to alloc socket!\n", __func__);
 		return -ENOMEM;
 	}
@@ -173,8 +169,7 @@ static void free_skb_list(struct list_node *qu)
 	struct list_node *first;
 	struct sock_buff *skb;
 
-	while (!list_is_empty(qu))
-	{
+	while (!list_is_empty(qu)) {
 		first = qu->next;
 
 		list_del_node(first);
@@ -223,24 +218,20 @@ int sk_close(int fd)
 	}
 
 	// fixme
-	if (TCPS_TIME_WAIT == sock->state)
-	{
+	if (TCPS_TIME_WAIT == sock->state) {
 		ret = tcp_wait_for_state(sock, TCPS_CLOSED);
 		if (ret < 0)
 			sock->state = TCPS_CLOSED;
 	}
 
-	if (TCPS_CLOSED == sock->state)
-	{
+	if (TCPS_CLOSED == sock->state) {
 		lock_irq_psr(psr);
 		free_skb_list(&sock->rx_qu);
 		free_skb_list(&sock->tx_qu);
 		free(sock);
 		unlock_irq_psr(psr);
 		g_sock_fds[fd] = NULL;
-	}
-	else
-	{
+	} else {
 		printf("%s(): Warning! (state = %d)\n", __func__, sock->state);
 		return -EINVAL;
 	}
@@ -255,16 +246,13 @@ struct eth_addr *gethostaddr(const __u32 nip)
 
 	arp_send_packet((__u8 *)&nip, NULL, ARP_OP_REQ);
 
-	while (count < 100000)
-	{
+	while (count < 100000) {
 		int ret;
 		__u8  key;
 
 		ret = uart_read(CONFIG_DBGU_ID, &key, 1, WAIT_ASYNC);
 		if (ret > 0 && key == CHAR_CTRL_C)
-		{
 			return NULL;
-		}
 
 		ndev_recv_poll();
 
@@ -340,8 +328,7 @@ ssize_t sendto(int fd, const void *buff, __u32 buff_size, int flags,
 			memcpy(skb->data, buff, buff_size);
 			ip_send_packet(skb, PROT_ICMP);
 			break;
-		}
-		else if (PROT_ETH == sock->protocol) {
+		} else if (PROT_ETH == sock->protocol) {
 			arp_send_packet((__u8 *)&sock->saddr[SA_DST].sin_addr.s_addr, NULL, ARP_OP_REQ);
 			break;
 		}
@@ -366,9 +353,7 @@ long recvfrom(int fd, void *buf, __u32 n, int flags,
 
 	sock = get_sock(fd);
 	if (NULL == sock)
-	{
 		return -EINVAL;
-	}
 
 	skb = sock_recv_packet(sock);
 	if(NULL == skb)
@@ -391,8 +376,7 @@ static void tcp_make_option(__u8 *opt, __u16 size)
 {
 	__u32 tsv = htonl(3455994), tser = 0;
 
-	if (size > 0)
-	{
+	if (size > 0) {
 	memset(opt, 0, size);
 
 #if 1
@@ -442,8 +426,7 @@ int connect(int fd, const struct sockaddr *addr, socklen_t len)
 	struct sock_buff *skb;
 
 	sock = get_sock(fd);
-	if (NULL == sock)
-	{
+	if (NULL == sock) {
 		// DPRINT
 		return -ENOENT;
 	}
@@ -488,8 +471,7 @@ ssize_t send(int fd, const void *buf, size_t n, int flag)
 	tcp_send_packet(skb, FLG_PSH | FLG_ACK, NULL);
 
 #if 0
-	for (time_out = 0; time_out < 10; time_out++)
-	{
+	for (time_out = 0; time_out < 10; time_out++) {
 		ndev_recv_poll();
 		if (sock->state == 1)
 			break;
@@ -517,9 +499,7 @@ ssize_t recv(int fd, void *buf, size_t n, int flag)
 
 	skb = sock_recv_packet(sock);
 	if (skb == NULL)
-	{
 		return -EIO;
-	}
 
 	pkt_len = skb->size <= n ? skb->size : n;
 	memcpy(buf, skb->data, pkt_len);
@@ -535,8 +515,7 @@ struct socket *tcp_search_socket(const struct tcp_header *tcp_pkt, const struct 
 	struct socket *sock;
 	struct sockaddr_in *saddr;
 
-	for (fd = 1; fd < MAX_SOCK_NUM; fd++)
-	{
+	for (fd = 1; fd < MAX_SOCK_NUM; fd++) {
 		sock = g_sock_fds[fd];
 
 		if (NULL == sock)
@@ -548,8 +527,7 @@ struct socket *tcp_search_socket(const struct tcp_header *tcp_pkt, const struct 
 			continue;
 
 #if 0
-		if (memcmp(saddr->sin_addr, ip_pkt->src_ip, 4) != 0)
-		{
+		if (memcmp(saddr->sin_addr, ip_pkt->src_ip, 4) != 0) {
 			printf("sock = 0x%x, des ip is %d (NOT %d.%d.%d.%d, %02x.%02x.%02x.%02x.%02x.%02x)\n",
 				saddr,
 				ip_pkt->src_ip[3],
@@ -568,8 +546,7 @@ struct socket *tcp_search_socket(const struct tcp_header *tcp_pkt, const struct 
 		}
 #endif
 
-		if (saddr->sin_port != tcp_pkt->dst_port)
-		{
+		if (saddr->sin_port != tcp_pkt->dst_port) {
 #if 0
 			printf("from %d, src port: 0x%x != 0x%x\n", ip_pkt->src_ip[3], ntohs(saddr->src_port), BE16_TO_CPU(tcp_pkt->dst_port));
 #endif
@@ -577,8 +554,7 @@ struct socket *tcp_search_socket(const struct tcp_header *tcp_pkt, const struct 
 		}
 
 #if 0
-		if (memcmp(&src_ip, ip_pkt->des_ip, 4) != 0)
-		{
+		if (memcmp(&src_ip, ip_pkt->des_ip, 4) != 0) {
 			printf("src ip: %d.%d.%d.%d\n",
 				ip_pkt->des_ip[0],
 				ip_pkt->des_ip[1],
@@ -610,8 +586,7 @@ struct socket *udp_search_socket(const struct udp_header *udp_pkt, const struct 
 
 	ndev_ioctl(NULL, NIOC_GET_IP, &src_ip);
 
-	for (fd = 1; fd < MAX_SOCK_NUM; fd++)
-	{
+	for (fd = 1; fd < MAX_SOCK_NUM; fd++) {
 		sock = g_sock_fds[fd];
 
 		if (NULL == sock)
@@ -623,8 +598,7 @@ struct socket *udp_search_socket(const struct udp_header *udp_pkt, const struct 
 			continue;
 
 #if 0
-		if (memcmp(saddr->sin_addr, ip_pkt->src_ip, 4) != 0)
-		{
+		if (memcmp(saddr->sin_addr, ip_pkt->src_ip, 4) != 0) {
 			printf("sock = 0x%x, des ip is %d (NOT %d.%d.%d.%d, %02x.%02x.%02x.%02x.%02x.%02x)\n",
 				saddr,
 				ip_pkt->src_ip[3],
@@ -643,8 +617,7 @@ struct socket *udp_search_socket(const struct udp_header *udp_pkt, const struct 
 		}
 #endif
 
-		if (saddr->sin_port != udp_pkt->dst_port)
-		{
+		if (saddr->sin_port != udp_pkt->dst_port) {
 #if 0
 			printf("from %d, src port: 0x%x != 0x%x\n", ip_pkt->src_ip[3], ntohs(saddr->src_port), BE16_TO_CPU(udp_pkt->dst_port));
 #endif
@@ -652,8 +625,7 @@ struct socket *udp_search_socket(const struct udp_header *udp_pkt, const struct 
 		}
 
 #if 0
-		if (memcmp(&src_ip, ip_pkt->des_ip, 4) != 0)
-		{
+		if (memcmp(&src_ip, ip_pkt->des_ip, 4) != 0) {
 			printf("src ip: %d.%d.%d.%d\n",
 				ip_pkt->des_ip[0],
 				ip_pkt->des_ip[1],
@@ -680,8 +652,7 @@ struct socket *icmp_search_socket(const struct ping_packet *ping_pkt, const stru
 
 	ndev_ioctl(NULL, NIOC_GET_IP, &src_ip);
 
-	for (fd = 1; fd < MAX_SOCK_NUM; fd++)
-	{
+	for (fd = 1; fd < MAX_SOCK_NUM; fd++) {
 		sock = g_sock_fds[fd];
 
 		if (NULL == sock)
@@ -693,8 +664,7 @@ struct socket *icmp_search_socket(const struct ping_packet *ping_pkt, const stru
 		if (memcmp(&sock->saddr[SA_DST].sin_addr.s_addr, ip_pkt->src_ip, 4))
 			continue;
 #if 0
-		if (memcmp(&src_ip, ip_pkt->des_ip, 4) != 0)
-		{
+		if (memcmp(&src_ip, ip_pkt->des_ip, 4) != 0) {
 			printf("src ip: %d.%d.%d.%d\n",
 				ip_pkt->des_ip[0],
 				ip_pkt->des_ip[1],

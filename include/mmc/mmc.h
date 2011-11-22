@@ -82,16 +82,14 @@ typedef enum{
 	R7,
 } RESP;
 
-struct mmc_command
-{
+struct mmc_command {
 	__u32 index;
 	__u32 arg;
 //	__u32 val;
 	RESP resp;
 };
 
-struct sdio_cccr
-{
+struct sdio_cccr {
 	unsigned int  sdio_vsn;
 	unsigned int  sd_vsn;
 	unsigned int  multi_block:1,
@@ -102,16 +100,14 @@ struct sdio_cccr
 				  disable_cd:1;
 };
 
-struct sdio_cis
-{
+struct sdio_cis {
 	unsigned short		vendor;
 	unsigned short		device;
 	unsigned short		blksize;
 	unsigned int		max_dtr;
 };
 
-struct mmc_cid
-{
+struct mmc_cid {
 	__u8	alw1:1;
 	__u8	crc:7;
 	__u16 mdt:12;
@@ -123,8 +119,7 @@ struct mmc_cid
 	__u8	mid;
 }__PACKED__;
 
-struct mmc_card
-{
+struct mmc_card {
 	struct disk_drive drive;
 
 	__u16 rca;
@@ -139,8 +134,7 @@ struct mmc_card
 	struct mmc_host *host;
 };
 
-struct mmc_host
-{
+struct mmc_host {
 	__u32 resp[4];
 	struct mmc_card card;
 

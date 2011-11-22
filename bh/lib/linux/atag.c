@@ -38,8 +38,7 @@ struct tag *setup_mem_atag (struct tag *cur_tag)
 {
 	int i;
 
-	for (i = 0; i < CONFIG_RAM_BANK_NUM; i++)
-	{
+	for (i = 0; i < CONFIG_RAM_BANK_NUM; i++) {
 		cur_tag = tag_next(cur_tag);
 
 		cur_tag->hdr.tag  = ATAG_MEM;

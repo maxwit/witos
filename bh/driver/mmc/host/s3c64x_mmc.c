@@ -25,8 +25,7 @@ static void s3c6410_config_clk(__u8 clk_div)
 	__u16 hval;
 
 	writew(VA(MMC0_BASE + CLKCON), (clk_div << 8) | 1);
-	do
-	{
+	do {
 		hval = readw(VA(MMC0_BASE + CLKCON));
 	} while (!(hval & 0x2));
 
@@ -52,15 +51,13 @@ static int s3c6410_mmc_read_data(struct mmc_host *mmc, void *buf)
 	__u16 val;
 	int i;
 
-	do
-	{
+	do {
 		val = readw(VA(MMC0_BASE + NORINTSTS));
 		udelay(1000);
 		MMC_PRINT("line %d :NORINTSTS = 0x%x\n", __LINE__, val);
 		//MMC_PRINT("line %d :PRNSTS = 0x%x\n", __LINE__, readw(VA(MMC0_BASE + PRNSTS)));
 
-		if (val & (1 << 15))
-		{
+		if (val & (1 << 15)) {
 
 			writeb(VA(MMC0_BASE + SWRST), 1 << 2);
 			MMC_PRINT("Error, Reset Data line!\n");
@@ -71,16 +68,12 @@ static int s3c6410_mmc_read_data(struct mmc_host *mmc, void *buf)
 	writew(VA(MMC0_BASE + NORINTSTS), 1 << 5);
 
 	for (i = 0; i < 512 / 4 ; i++)
-	{
 		((__u32*)buf)[i] = readl(VA(MMC0_BASE + BDAT));
-	}
 
-	do
-	{
+	do {
 		val = readw(VA(MMC0_BASE + NORINTSTS));
 		MMC_PRINT("line %d :NORINTSTS = 0x%x\n", __LINE__, val);
-		if (val & (1 << 15))
-		{
+		if (val & (1 << 15)) {
 
 			writeb(VA(MMC0_BASE + SWRST), 1 << 2);
 			MMC_PRINT("Error, Reset Data line!\n");
@@ -99,13 +92,11 @@ static int s3c6410_mmc_write_data(struct mmc_host *mmc, const void *buf)
 	__u16 val;
 	int i;
 
-	do
-	{
+	do {
 		val = readw(VA(MMC0_BASE + NORINTSTS));
 		MMC_PRINT("line %d :NORINTSTS = 0x%x\n", __LINE__, val);
 		//MMC_PRINT("line %d :PRNSTS = 0x%x\n", __LINE__, readw(VA(MMC0_BASE + PRNSTS)));
-		if (val & (1 << 15))
-		{
+		if (val & (1 << 15)) {
 
 			writeb(VA(MMC0_BASE + SWRST), 1 << 2);
 			MMC_PRINT("Error, Reset Data line!\n");
@@ -117,17 +108,13 @@ static int s3c6410_mmc_write_data(struct mmc_host *mmc, const void *buf)
 	writew(VA(MMC0_BASE + NORINTSTS), 1 << 4);
 
 	for (i = 0; i < 512 / 4; i++)
-	{
 		writel(VA(MMC0_BASE + BDAT), ((__u32*)buf)[i]);
-	}
 
-	do
-	{
+	do {
 		val = readw(VA(MMC0_BASE + NORINTSTS));
 		MMC_PRINT("line %d :NORINTSTS = 0x%x\n", __LINE__, val);
 
-		if (val & (1 << 15))
-		{
+		if (val & (1 << 15)) {
 
 			writeb(VA(MMC0_BASE + SWRST), 1 << 2);
 			//MMC_PRINT("Error, Reset Data line!\n");
@@ -147,8 +134,7 @@ static int s3c6410_send_cmd(struct mmc_host *mmc, __u32 index, __u32 arg, RESP r
 
 	cval = index << 8 | 3 << 3;
 
-	switch (resp)
-	{
+	switch (resp) {
 	case R1:
 	case R3:
 	case R4:
@@ -169,21 +155,18 @@ static int s3c6410_send_cmd(struct mmc_host *mmc, __u32 index, __u32 arg, RESP r
 		break;
 	}
 
-	do
-	{
+	do {
 		val = readw(VA(MMC0_BASE + PRNSTS));
 		MMC_PRINT("line %d:PRNSTS = 0x%x\n", __LINE__, val);
 
 	} while ((val & 0x1));
 
-	if ((MMC_READ_SINGLE_BLOCK== index) || (MMC_WRITE_BLOCK == index))
-	{
+	if ((MMC_READ_SINGLE_BLOCK== index) || (MMC_WRITE_BLOCK == index)) {
 		cval |= 1 << 5;
 
 		writew(VA(MMC0_BASE + BLKSIZE), 0x200);
 
-		if (MMC_READ_SINGLE_BLOCK== index)
-		{
+		if (MMC_READ_SINGLE_BLOCK== index) {
 			writew(VA(MMC0_BASE + TRANSMOD), 1 << 4);
 
 		} else
@@ -194,16 +177,14 @@ static int s3c6410_send_cmd(struct mmc_host *mmc, __u32 index, __u32 arg, RESP r
 {
 		int timeout = 0;
 
-		do
-		{
+		do {
 			val = readw(VA(MMC0_BASE + PRNSTS));
 			timeout++;
 			udelay(100);
 			MMC_PRINT("line %d:PRNSTS = 0x%x\n", __LINE__, val);
 		} while ((val & 0x2) && timeout < 5);
 
-		if (timeout == 5)
-		{
+		if (timeout == 5) {
 			writeb(VA(MMC0_BASE + SWRST), 1 << 2);
 			MMC_PRINT("Command %d Timeout, Reset Data line!\n", index);
 			return -EBUSY;
@@ -215,8 +196,7 @@ static int s3c6410_send_cmd(struct mmc_host *mmc, __u32 index, __u32 arg, RESP r
 	writel(VA(MMC0_BASE + ARGUMENT), arg);
 	writew(VA(MMC0_BASE + CMDREG), cval);
 
-	do
-	{
+	do {
 		val = readw(VA(MMC0_BASE + NORINTSTS));
 		MMC_PRINT("cmd %d line %d :NORINTSTS = 0x%x\n", index, __LINE__, val);
 
@@ -237,8 +217,7 @@ static int s3c6410_send_cmd(struct mmc_host *mmc, __u32 index, __u32 arg, RESP r
 #else
 		udelay(8000);
 #endif
-	if ((MMC_ALL_SEND_CID== index) || (MMC_SEND_CID== index) || (MMC_SEND_CSD == index) || (MMC_READ_DAT_UNTIL_STOP == index))
-	{
+	if ((MMC_ALL_SEND_CID== index) || (MMC_SEND_CID== index) || (MMC_SEND_CSD == index) || (MMC_READ_DAT_UNTIL_STOP == index)) {
 
 		mmc->resp[3] = ((mmc->resp[3] << 8)&(~0xff)) | ((mmc->resp[2] >> 24)&0xff);
 		mmc->resp[2] = ((mmc->resp[2] << 8)&(~0xff)) | ((mmc->resp[1] >> 24)&0xff);

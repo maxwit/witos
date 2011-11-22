@@ -7,8 +7,7 @@ int main(int argc, char *argv[])
 	int ret;
 	const char *bdev, *type, *path;
 
-	if (argc != 5)
-	{
+	if (argc != 5) {
 		printf("Usage:\n\t%s -t type device path\n", argv[0]);
 		return -EINVAL;
 	}
@@ -19,9 +18,7 @@ int main(int argc, char *argv[])
 
 	ret = mount(type, 0, bdev, path);
 	if (ret < 0)
-	{
 		printf("fail to mount %s (ret = %d)\n", bdev, ret);
-	}
 
 	return ret;
 }

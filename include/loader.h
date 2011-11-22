@@ -17,8 +17,7 @@
 #define MAX_FILE_NAME_LEN   64
 #endif
 
-struct loader_opt
-{
+struct loader_opt {
 	void *load_addr;
 	int  load_flash;
 	int  load_size;

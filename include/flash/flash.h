@@ -19,8 +19,7 @@
 #define FLASH_UBIVOLUME		7
 #define FLASH_FLASH_PART   (1 << 6) // fixme
 
-enum
-{
+enum {
 	FLASH_IOCS_OOB_MODE,
 	FLASH_IOCG_OOB_MODE,
 	FLASH_IOCS_CALLBACK,
@@ -33,16 +32,14 @@ enum
 
 struct flash_chip;
 
-struct oob_free_region
-{
+struct oob_free_region {
 	__u32 nOfOffset;
 	__u32 nOfLen;
 };
 
 #define FLASH_MAX_OOBFREE_ENTRIES	8
 
-struct nand_oob_layout
-{
+struct nand_oob_layout {
 	__u32 ecc_code_len;
 	__u32 ecc_pos[64];
 
@@ -50,24 +47,21 @@ struct nand_oob_layout
 	struct oob_free_region free_region[FLASH_MAX_OOBFREE_ENTRIES];
 };
 
-struct ecc_stats
-{
+struct ecc_stats {
 	__u32 nEccCorrectCount;
 	__u32 nEccFailedCount;
 	__u32 badblocks;
 	__u32 bbtblocks;
 };
 
-typedef struct
-{
+typedef struct {
 	__u32 nPageIndex;
 	__u32 nBlockIndex;
 } FLASH_HOOK_PARAM;
 
 typedef int (*FLASH_HOOK_FUNC)(struct flash_chip *, FLASH_HOOK_PARAM *);
 
-typedef struct
-{
+typedef struct {
 	FLASH_HOOK_PARAM *args;
 	FLASH_HOOK_FUNC func;
 } FLASH_CALLBACK;
@@ -87,8 +81,7 @@ typedef struct
 #define EDF_JFFS2      (1 << 0)
 #define EDF_ALLOWBB    (1 << 1)
 
-struct erase_opt
-{
+struct erase_opt {
 	__u32 estart;
 	__u32 esize;
 	int for_jffs2;
@@ -97,15 +90,13 @@ struct erase_opt
 	__u8  estate;
 };
 
-typedef enum
-{
+typedef enum {
 	FLASH_OOB_PLACE,
 	FLASH_OOB_AUTO,
 	FLASH_OOB_RAW,
 } OOB_MODE;
 
-struct oob_opt
-{
+struct oob_opt {
 	__u8  *data_buff;
 	__u8	*oob_buff;
 	__u32	 data_len;
@@ -116,24 +107,20 @@ struct oob_opt
 	OOB_MODE  op_mode;
 };
 
-struct image_info
-{
+struct image_info {
 	char  image_name[MAX_FILE_NAME_LEN];
 	__u32   image_size;
 };
 
-struct flash_chip
-{
+struct flash_chip {
 	struct block_device bdev;
 
-	union
-	{
+	union {
 		struct list_node master_node;
 		struct list_node slave_node;
 	};
 
-	union
-	{
+	union {
 		struct list_node slave_list;
 		struct flash_chip *master;
 	};
@@ -193,8 +180,7 @@ void __INIT__ flash_add_part_tab(const struct part_attr *attr, int num);
 
 bool check_image_type(PART_TYPE type, const __u8 *data);
 
-typedef enum
-{
+typedef enum {
 	NAND_ECC_NONE,
 	NAND_ECC_SW,
 	NAND_ECC_HW,

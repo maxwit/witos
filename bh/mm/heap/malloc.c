@@ -6,8 +6,7 @@
 #define IS_FREE(size)             (((size) & (WORD_SIZE - 1)) == 0)
 #define GET_SIZE(region)          ((region)->curr_size & ~(WORD_SIZE - 1))
 
-struct mem_region
-{
+struct mem_region {
 	__u32   pre_size;
 	__u32   curr_size;
 	struct list_node ln_mem_region;
@@ -111,11 +110,8 @@ do_alloc:
 	reset_size = curr_region->curr_size - alloc_size;
 
 	if (reset_size < sizeof(struct mem_region))
-	{
 		region_set_size(curr_region, curr_region->curr_size | 1);
-	}
-	else
-	{
+	else {
 		region_set_size(curr_region, alloc_size | 1);
 
 		succ_region = get_successor(curr_region);
@@ -140,27 +136,19 @@ void free(void *p)
 	curr_region = (struct mem_region *)((__u32)p - DWORD_SIZE);
 	succ_region = get_successor(curr_region);
 
-	if (IS_FREE(succ_region->curr_size))
-	{
+	if (IS_FREE(succ_region->curr_size)) {
 		region_set_size(curr_region, GET_SIZE(curr_region) + succ_region->curr_size + DWORD_SIZE);
 		list_del_node(&succ_region->ln_mem_region);
-	}
-	else
-	{
+	} else
 		region_set_size(curr_region, GET_SIZE(curr_region));
-	}
 
-	if (IS_FREE(curr_region->pre_size))
-	{
+	if (IS_FREE(curr_region->pre_size)) {
 		struct mem_region *prev_region;
 
 		prev_region = get_predeccessor(curr_region);
 		region_set_size(prev_region, prev_region->curr_size + curr_region->curr_size + DWORD_SIZE);
-	}
-	else
-	{
+	} else
 		list_add_tail(&curr_region->ln_mem_region, &g_free_region_list);
-	}
 
 	unlock_irq_psr(psr);
 }

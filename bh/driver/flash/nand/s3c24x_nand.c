@@ -40,16 +40,14 @@ static int s3c24x_nand_is_ready(struct nand_chip *nand)
 
 static void  s3c24x_nand_read_buff(struct nand_ctrl *nfc, __u8 *buff, int size)
 {
-	while (size > 3)
-	{
+	while (size > 3) {
 		*(__u32 *)buff = readl(VA(NAND_CTRL_BASE + NF_DATA));
 
 		buff += 4;
 		size -= 4;
 	}
 
-	while (size > 0)
-	{
+	while (size > 0) {
 		*buff = readb(VA(NAND_CTRL_BASE + NF_DATA));
 
 		buff++;
@@ -59,16 +57,14 @@ static void  s3c24x_nand_read_buff(struct nand_ctrl *nfc, __u8 *buff, int size)
 
 static void  s3c24x_nand_write_buff(struct nand_ctrl *nfc, const __u8 *buff, int size)
 {
-	while (size > 3)
-	{
+	while (size > 3) {
 		writel(VA(NAND_CTRL_BASE + NF_DATA), *(__u32 *)buff);
 
 		buff += 4;
 		size -= 4;
 	}
 
-	while (size > 0)
-	{
+	while (size > 0) {
 		writeb(VA(NAND_CTRL_BASE + NF_DATA), *buff);
 
 		buff++;
@@ -126,9 +122,7 @@ static int s3c24x_nand_correct_data(struct nand_chip *nand,
 	diff2 = ecc_read[2] ^ ecc_calc[2];
 
 	if (diff0 == 0 && diff1 == 0 && diff2 == 0)
-	{
 		return 0;
-	}
 
 	// TODO:  add data correction code here
 
@@ -161,9 +155,7 @@ static int __INIT__ s3c24x_nand_probe(void)
 
 	nfc = nand_ctrl_new();
 	if (NULL == nfc)
-	{
 		return -ENOMEM;
-	}
 
 // fixme
 #ifdef CONFIG_S3C2410
@@ -188,19 +180,15 @@ static int __INIT__ s3c24x_nand_probe(void)
 
 	s3c24x_nand_init(nfc);
 
-	for (i = 0; i < nfc->max_slaves; i++) //
-	{
+	for (i = 0; i < nfc->max_slaves; i++) { //
 		nand = nand_probe(nfc, i);
 		if (NULL == nand)
 			break; //: or conitnue
 
-		if (NAND_TO_FLASH(nand)->write_size < KB(2))
-		{
+		if (NAND_TO_FLASH(nand)->write_size < KB(2)) {
 			nfc->hard_oob_layout = &g_s3c24x_oob16_layout;
 			nfc->ecc_data_len    = 512;
-		}
-		else
-		{
+		} else {
 			nfc->hard_oob_layout = &g_s3c24x_oob64_layout;
 			nfc->ecc_data_len    = 256;
 		}
@@ -208,9 +196,7 @@ static int __INIT__ s3c24x_nand_probe(void)
 
 		ret = nand_register(nand);
 		if (ret < 0)
-		{
 			goto L1;
-		}
 	}
 
 	return 0;

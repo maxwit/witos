@@ -13,8 +13,7 @@ static int s3c6410_set_vmode(struct display *disp, const struct lcd_vmode *vm)
 	__u32 dma = disp->video_mem_pa;
 
 	// fixme
-	switch (disp->pix_fmt)
-	{
+	switch (disp->pix_fmt) {
 	case PIX_RGB24:
 	case PIX_RGB32:
 		fmt = 0xB;
@@ -83,15 +82,13 @@ static int __INIT__ s3c6410_display_init(void)
 	// if NULL
 
 	vm = lcd_get_vmode_by_name(CONFIG_LCD_MODEL);
-	if (NULL == vm)
-	{
+	if (NULL == vm) {
 		printf("No LCD video mode found!\n");
 		return -ENOENT;
 	}
 
 	va = video_mem_alloc(&dma, vm, CONFIG_PIXEL_FORMAT);
-	if(va == NULL)
-	{
+	if(va == NULL) {
 		printf("Fail to dma alloc \n");
 		goto error;
 	}

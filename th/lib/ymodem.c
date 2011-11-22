@@ -54,8 +54,7 @@ int ymodem_load(struct loader_opt *opt)
 		__u8 data[1024];
 
 		curr_addr = data;
-	}
-	else
+	} else
 #endif
 	{
 		curr_addr = opt->load_addr;

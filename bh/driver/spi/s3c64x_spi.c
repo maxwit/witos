@@ -13,8 +13,7 @@ static void s3c6410_spi_reset(struct spi_master *master)
 	val = 1 << 5;
 	writel(VA(CH_CFG), val);
 
-	for (i = 0; i < 10; i++)
-	{
+	for (i = 0; i < 10; i++) {
 		val = readl(VA(SPI_STATUS));
 		printf("%s() line %d: status = 0x%08x (rx = 0x%x, tx = 0x%x)\n",
 			__func__, __LINE__, val, (val >> 13) & 0x7F, (val >> 6) & 0x7F);
@@ -79,16 +78,14 @@ static int s3c6410_spi_transfer(struct spi_slave *slave)
 
 	nor_chip_select();
 
-	for (msg_qu = msg_qu->next; msg_qu != msg_qu->next; msg_qu = msg_qu->next)
-	{
+	for (msg_qu = msg_qu->next; msg_qu != msg_qu->next; msg_qu = msg_qu->next) {
 		trans  = container_of(msg_qu, struct spi_trans_msg, msg_node);
 		tx_buf = trans->tx_buf;
 		rx_buf = trans->rx_buf;
 		len    = trans->len;
 
 		printf("tx_buf:%p, rx_buf:%p, %d\n", tx_buf, rx_buf, len);
-		if (NULL != tx_buf)
-		{
+		if (NULL != tx_buf) {
 			// write
 		#ifdef USE_PKG_CNT
 			// really work?
@@ -102,8 +99,7 @@ static int s3c6410_spi_transfer(struct spi_slave *slave)
 			writel(VA(CH_CFG), val);
 
 			// fixme
-			for (i = 0; i < 10; i++)
-			{
+			for (i = 0; i < 10; i++) {
 				val = readl(VA(SPI_STATUS));
 				printf("%s() line %d: status = 0x%08x (rx = 0x%x, tx = 0x%x)\n",
 					__func__, __LINE__, val, (val >> 13) & 0x7F, (val >> 6) & 0x7F);
@@ -116,11 +112,9 @@ static int s3c6410_spi_transfer(struct spi_slave *slave)
 			}
 		}
 
-		if (NULL != rx_buf)
-		{
+		if (NULL != rx_buf) {
 			// read
-			for (i = 0; i < len; i += STEP_LEN)
-			{
+			for (i = 0; i < len; i += STEP_LEN) {
 				__u32 irx;
 
 		#ifdef USE_PKG_CNT
@@ -140,15 +134,13 @@ static int s3c6410_spi_transfer(struct spi_slave *slave)
 				writel(VA(CH_CFG), val);
 
 				// fixme
-				for (j = 0; j < 10; j++)
-				{
+				for (j = 0; j < 10; j++) {
 					val = readl(VA(SPI_STATUS));
 					irx = (val >> 13) & 0x7F;
 					printf("%s() line %d: status = 0x%08x (irx = 0x%x, tx = 0x%x)\n",
 						__func__, __LINE__, val, (val >> 13) & 0x7F, (val >> 6) & 0x7F);
 
-					if (irx >= STEP_LEN)
-					{
+					if (irx >= STEP_LEN) {
 						// if irx > STEP_LEN ...
 						break;
 					}
@@ -156,8 +148,7 @@ static int s3c6410_spi_transfer(struct spi_slave *slave)
 					udelay(10);
 				}
 
-				for (j = 0; j < irx; j++, rx_buf++)
-				{
+				for (j = 0; j < irx; j++, rx_buf++) {
 					*rx_buf = readb(VA(SPI_RX_DATA));
 					printf(" %02x", *rx_buf);
 				}

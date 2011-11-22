@@ -127,12 +127,10 @@ int init_tag(__u8 *jpegbuf)
 	short  ccount;
 
 	lp = jpegbuf + 2;
-	while (!finish)
-	{
+	while (!finish) {
 		id = *(lp + 1);
 		lp += 2;
-		switch (id)
-		{
+		switch (id) {
 		case M_APP0:
 			llength = MAKEWORD(*(lp + 1), *lp);
 			lp += llength;
@@ -142,25 +140,16 @@ int init_tag(__u8 *jpegbuf)
 			llength = MAKEWORD(*(lp + 1), *lp);
 			qt_table_index = (*(lp + 2)) & 0x0f;
 			lptemp = lp + 3;
-			if (llength < 80)
-			{
+			if (llength < 80) {
 				for (i = 0; i < 64; i++)
-				{
 					qt_table[qt_table_index][i] = (short)*(lptemp++);
-				}
-			}
-			else
-			{
+			} else {
 				for ( i = 0; i < 64; i++)
-				{
 					qt_table[qt_table_index][i] = (short)*(lptemp++);
-				}
 
 	            qt_table_index = (*(lptemp++)) & 0x0f;
 				for(i = 0; i < 64; i++)
-				{
 					qt_table[qt_table_index][i] = (short)*(lptemp++);
-				}
 			}
 
 			lp += llength;
@@ -172,12 +161,9 @@ int init_tag(__u8 *jpegbuf)
 			img_w = MAKEWORD(*(lp + 6), *(lp + 5));
 	        comp_num = *(lp + 7);
 			if((comp_num != 1)&&(comp_num != 3))
-			{
 				return -1;
-			}
 
-			if(comp_num == 3)
-			{
+			if(comp_num == 3) {
 				comp_index[0] = *(lp + 8);
 				SampRate_Y_H = (*(lp + 9)) >> 4;
 				SampRate_Y_V = (*(lp + 9)) & 0x0f;
@@ -190,9 +176,7 @@ int init_tag(__u8 *jpegbuf)
 				SampRate_V_H = (*(lp + 15)) >>4;
 				SampRate_V_V = (*(lp + 15)) & 0x0f;
 				VQtTable = (short *)qt_table[*(lp + 16)];
-			}
-			else
-			{
+			} else {
 				comp_index[0] = *(lp + 8);
 				SampRate_Y_H = (*(lp + 9)) >>4;
 				SampRate_Y_V = (*(lp+9)) & 0x0f;
@@ -211,25 +195,19 @@ int init_tag(__u8 *jpegbuf)
 
 	    case M_DHT:
 			llength = MAKEWORD(*(lp + 1), *lp);
-			if (llength < 0xd0)
-			{
+			if (llength < 0xd0) {
 				huftab1 = (short)(*(lp + 2)) >> 4;
 				huftab2 = (short)(*(lp + 2)) & 0x0f;
 				huftabindex = huftab1*2 + huftab2;
 				lptemp = lp + 3;
 				for (i = 0; i < 16; i++)
-				{
 					code_len_table[huftabindex][i] = (short)(*(lptemp++));
-				}
 
 				j = 0;
-				for (i = 0; i < 16; i++)
-				{
-					if (code_len_table[huftabindex][i] != 0)
-					{
+				for (i = 0; i < 16; i++) {
+					if (code_len_table[huftabindex][i] != 0) {
 						k = 0;
-						while (k < code_len_table[huftabindex][i])
-						{
+						while (k < code_len_table[huftabindex][i]) {
 							code_value_table[huftabindex][k+j] = (short)(*(lptemp++));
 							k++;
 						}
@@ -241,8 +219,7 @@ int init_tag(__u8 *jpegbuf)
 				while (code_len_table[huftabindex][i] == 0)
 					i++;
 
-				for (j = 0; j < i; j++)
-				{
+				for (j = 0; j < i; j++) {
 					huf_min_value[huftabindex][j] = 0;
 					huf_max_value[huftabindex][j] = 0;
 				}
@@ -250,46 +227,36 @@ int init_tag(__u8 *jpegbuf)
 	            huf_min_value[huftabindex][i] = 0;
 	            huf_max_value[huftabindex][i] = code_len_table[huftabindex][i] - 1;
 
-				for (j = i + 1;j < 16; j++)
-				{
+				for (j = i + 1;j < 16; j++) {
 					huf_min_value[huftabindex][j] = (huf_max_value[huftabindex][j - 1] + 1) << 1;
 					huf_max_value[huftabindex][j] = huf_min_value[huftabindex][j] + code_len_table[huftabindex][j] - 1;
 				}
 
 				code_pos_table[huftabindex][0] = 0;
 				for (j = 1; j < 16; j++)
-				{
 					code_pos_table[huftabindex][j] = code_len_table[huftabindex][j - 1] + code_pos_table[huftabindex][j - 1];
-				}
 
 				lp += llength;
-			}
-			else
-			{
+			} else {
 				hf_table_index = *(lp + 2);
 				lp += 2;
-				while (hf_table_index != 0xff)
-				{
+				while (hf_table_index != 0xff) {
 					huftab1=(short)hf_table_index >> 4;
 					huftab2=(short)hf_table_index & 0x0f;
 					huftabindex = huftab1 * 2 + huftab2;
 					lptemp = lp + 1;
 					ccount = 0;
-					for (i = 0; i < 16; i++)
-					{
+					for (i = 0; i < 16; i++) {
 						code_len_table[huftabindex][i] = (short)(*(lptemp++));
 						ccount += code_len_table[huftabindex][i];
 					}
 
 					ccount += 17;
 	                j = 0;
-					for (i = 0; i < 16; i++)
-					{
-						if(code_len_table[huftabindex][i] != 0)
-						{
+					for (i = 0; i < 16; i++) {
+						if(code_len_table[huftabindex][i] != 0) {
 							k = 0;
-							while (k < code_len_table[huftabindex][i])
-							{
+							while (k < code_len_table[huftabindex][i]) {
 								code_value_table[huftabindex][k + j] = (short)(*(lptemp++));
 								k++;
 							}
@@ -301,8 +268,7 @@ int init_tag(__u8 *jpegbuf)
 					while (code_len_table[huftabindex][i] == 0)
 						i++;
 
-					for (j = 0; j < i; j++)
-					{
+					for (j = 0; j < i; j++) {
 						huf_min_value[huftabindex][j] = 0;
 						huf_max_value[huftabindex][j] = 0;
 					}
@@ -310,17 +276,14 @@ int init_tag(__u8 *jpegbuf)
 					huf_min_value[huftabindex][i] = 0;
 					huf_max_value[huftabindex][i] = code_len_table[huftabindex][i] - 1;
 
-					for (j = i + 1; j < 16; j++)
-					{
+					for (j = i + 1; j < 16; j++) {
 						huf_min_value[huftabindex][j] = (huf_max_value[huftabindex][j - 1] + 1) << 1;
 						huf_max_value[huftabindex][j] = huf_min_value[huftabindex][j] + code_len_table[huftabindex][j] - 1;
 					}
 
 					code_pos_table[huftabindex][0] = 0;
 					for ( j = 1; j < 16; j++)
-					{
 						code_pos_table[huftabindex][j] = code_len_table[huftabindex][j - 1] + code_pos_table[huftabindex][j - 1];
-					}
 
 					lp += ccount;
 					hf_table_index = *lp;
@@ -340,15 +303,11 @@ int init_tag(__u8 *jpegbuf)
 			if(comnum != comp_num)
 				return -1;
 			lptemp = lp + 3;
-			for (i = 0; i < comp_num; i++)
-			{
-				if(*lptemp == comp_index[0])
-				{
+			for (i = 0; i < comp_num; i++) {
+				if(*lptemp == comp_index[0]) {
 					YDcIndex = (*(lptemp+1)) >> 4;	//Y
 					YAcIndex = ((*(lptemp + 1)) & 0x0f) + 2;
-				}
-				else
-				{
+				} else {
 					UVDcIndex = (*(lptemp + 1)) >> 4;   //U,V
 					UVAcIndex = ((*(lptemp + 1)) & 0x0f) + 2;
 				}
@@ -362,15 +321,11 @@ int init_tag(__u8 *jpegbuf)
 			return -1;
 
 		default:
-			if ((id & 0xf0) != 0xd0)
-			{
+			if ((id & 0xf0) != 0xd0) {
 				llength = MAKEWORD(*(lp + 1), *lp);
 				lp += llength;
-			}
-			else
-			{
+			} else
 				lp += 2;
-			}
 			break;
 
 		}  //switch
@@ -387,9 +342,7 @@ void fast_idct_init()
 	iclp = iclip + 512;
 
 	for ( i= -512; i < 512; i++)
-	{
 		iclp[i] = (i < -256) ? -256 : ((i > 255) ? 255 : i);
-	}
 }
 
 __u8 read_u8()
@@ -411,14 +364,11 @@ int decode_element()
 	__u8 hufexu8, runsize, tempsize, sign;
 	__u8 newu8, lastu8;
 
-	if( bit_pos >= 1 )
-	{
+	if( bit_pos >= 1 ) {
 		bit_pos--;
 		thiscode = (__u8)cur_byte >> bit_pos;
 		cur_byte = cur_byte&And[bit_pos];
-	}
-	else
-	{
+	} else {
 		lastu8 = read_u8();
 		bit_pos--;
 		newu8 = cur_byte&And[bit_pos];
@@ -432,14 +382,11 @@ int decode_element()
 		(code_len_table[HufTabIndex][codelen - 1] == 0)||
 		(thiscode>huf_max_value[HufTabIndex][codelen-1]))
 	{
-		if(bit_pos >= 1)
-		{
+		if(bit_pos >= 1) {
 			bit_pos--;
 			tempcode = (__u8)cur_byte>>bit_pos;
 			cur_byte = cur_byte&And[bit_pos];
-		}
-		else
-		{
+		} else {
 			lastu8 = read_u8();
 			bit_pos--;
 			newu8 = cur_byte&And[bit_pos];
@@ -450,33 +397,26 @@ int decode_element()
 		thiscode = (thiscode << 1) + tempcode;
 		codelen++;
 		if (codelen > 16)
-		{
 			return -1;
-		}
 	}  //while
 
 	temp = thiscode-huf_min_value[HufTabIndex][codelen - 1] + code_pos_table[HufTabIndex][codelen - 1];
 	hufexu8 = (__u8)code_value_table[HufTabIndex][temp];
 	rrun = (short)(hufexu8 >> 4);
 	runsize = hufexu8 & 0x0f;
-	if (runsize == 0)
-	{
+	if (runsize == 0) {
 		vvalue = 0;
 		return 0;
 	}
 	tempsize = runsize;
-	if(bit_pos >= runsize)
-	{
+	if(bit_pos >= runsize) {
 		bit_pos -= runsize;
 		valueex = (__u8)cur_byte >> bit_pos;
 		cur_byte = cur_byte&And[bit_pos];
-	}
-	else
-	{
+	} else {
 		valueex = cur_byte;
 		tempsize -= bit_pos;
-		while (tempsize > 8)
-		{
+		while (tempsize > 8) {
 			lastu8 = read_u8();
 			valueex =(valueex << 8) + (__u8)lastu8;
 			tempsize -= 8;
@@ -490,11 +430,8 @@ int decode_element()
 
 	sign = valueex >> (runsize-1);
 	if (sign)
-	{
 		vvalue = valueex;
-	}
-	else
-	{
+	else {
 		valueex = valueex ^ 0xffff;
 		temp = 0xffff << runsize;
 		vvalue =- (short)(valueex ^ temp);
@@ -518,20 +455,16 @@ int HufBlock(__u8 dchufindex, __u8 achufindex)
 	BlockBuffer[count++] = vvalue;
 	//ac
 	HufTabIndex = achufindex;
-	while (count < 64)
-	{
+	while (count < 64) {
 		ret = decode_element();
 		if (ret != 0)
 			return ret;
 
-		if ((rrun == 0) && (vvalue == 0))
-		{
+		if ((rrun == 0) && (vvalue == 0)) {
 			for (i = count; i < 64; i++)
 				BlockBuffer[i] = 0;
 			count = 64;
-		}
-		else
-		{
+		} else {
 			for (i = 0;i < rrun; i++)
 				BlockBuffer[count++] = 0;
 			BlockBuffer[count++] = vvalue;
@@ -547,20 +480,17 @@ int dec_mcu_block()
 	short i, j;
 	int ret;
 
-	if (interval_flag)
-	{
+	if (interval_flag) {
 		lp += 2;
 		ycoef = ucoef = vcoef = 0;
 		bit_pos = 0;
 		cur_byte = 0;
 	}
 
-	switch(comp_num)
-	{
+	switch(comp_num) {
 	case 3:
 		lpMCUBuffer = MCUBuffer;
-		for ( i = 0; i < SampRate_Y_H * SampRate_Y_V; i++)  //Y
-		{
+		for ( i = 0; i < SampRate_Y_H * SampRate_Y_V; i++) {  //Y
 			ret = HufBlock(YDcIndex, YAcIndex);
 			if (ret != 0)
 				return ret;
@@ -570,8 +500,7 @@ int dec_mcu_block()
 				*lpMCUBuffer++ = BlockBuffer[j];
 		}
 
-		for (i = 0; i < SampRate_U_H * SampRate_U_V; i++)  //U
-		{
+		for (i = 0; i < SampRate_U_H * SampRate_U_V; i++) {  //U
 			ret = HufBlock(UVDcIndex, UVAcIndex);
 			if (ret != 0)
 				return ret;
@@ -581,8 +510,7 @@ int dec_mcu_block()
 				*lpMCUBuffer++ = BlockBuffer[j];
 		}
 
-		for ( i = 0; i < SampRate_V_H * SampRate_V_V; i++)  //V
-		{
+		for ( i = 0; i < SampRate_V_H * SampRate_V_V; i++) {  //V
 			ret = HufBlock(UVDcIndex, UVAcIndex);
 			if (ret != 0)
 				return ret;
@@ -727,8 +655,7 @@ void IQtIZzBlock(short *s, int *d, short flag)
 	int *buffer1;
 	short offset = 0;
 
-	switch(flag)
-	{
+	switch(flag) {
 	case 0:
 		pQt = YQtTable;
 		offset = 128;
@@ -745,10 +672,8 @@ void IQtIZzBlock(short *s, int *d, short flag)
 		break;
 	}
 
-	for ( i = 0; i < 8; i++)
-	{
-		for ( j = 0; j < 8; j++)
-		{
+	for ( i = 0; i < 8; i++) {
+		for ( j = 0; j < 8; j++) {
 			tag = Zig_Zag[i][j];
 			buffer2[i][j] = (int)s[tag] * (int)pQt[tag];
 		}
@@ -756,12 +681,9 @@ void IQtIZzBlock(short *s, int *d, short flag)
 
 	buffer1 = (int *)buffer2;
 	Fast_IDCT(buffer1);
-	for ( i = 0; i < 8; i++)
-	{
+	for ( i = 0; i < 8; i++) {
 		for ( j = 0; j < 8; j++)
-		{
 			d[i*8+j] = buffer2[i][j] + offset;
-		}
 	}
 }
 
@@ -772,8 +694,7 @@ void IQtIZzMCUComponent(short flag)
 	int *pQtZzMCUBuffer = NULL;
 	short  *pMCUBuffer;
 
-	switch(flag)
-	{
+	switch(flag) {
 	case 0:
 		H  = SampRate_Y_H;
 		VV = SampRate_Y_V;
@@ -797,12 +718,9 @@ void IQtIZzMCUComponent(short flag)
 
 	}
 
-	for ( i = 0; i < VV; i++)
-	{
+	for ( i = 0; i < VV; i++) {
 		for ( j = 0; j < H; j++)
-		{
 			IQtIZzBlock(pMCUBuffer + (i * H + j) * 64, pQtZzMCUBuffer + (i * H + j) * 64,flag);
-		}
 	}
 }
 
@@ -813,8 +731,7 @@ void  getyuv(short flag)
 	int		*buf = NULL;
 	int		*pQtZzMCU = NULL;
 
-	switch(flag)
-	{
+	switch(flag) {
 	case 0:
 		H = SampRate_Y_H;
 		VV = SampRate_Y_V;
@@ -855,16 +772,12 @@ void store_buf()
 
 	line_ubytes = (__u32)WIDTHBYTES(img_w * bi.biBitCount);
 
-	for (i = 0; i < SampRate_Y_V * 8; i++)
-	{
-		if ((size_i + i) < img_h)
-		{
+	for (i = 0; i < SampRate_Y_V * 8; i++) {
+		if ((size_i + i) < img_h) {
 			lpbmp = ((__u8*)lpPtr + (__u32)(img_h - size_i - i - 1) * line_ubytes + size_j * 3);
 
-			for (j = 0; j < SampRate_Y_H * 8; j++)
-			{
-				if ((size_j + j) < img_w)
-				{
+			for (j = 0; j < SampRate_Y_H * 8; j++) {
+				if ((size_j + j) < img_w) {
 				    y = Y[i * 8 * SampRate_Y_H + j];
 				    u = U[(i / V_YtoU) * 8 * SampRate_Y_H + j / H_YtoU];
 				    v = V[(i / V_YtoV) * 8 * SampRate_Y_H + j / H_YtoV];
@@ -880,17 +793,11 @@ void store_buf()
 				    *lpbmp++ = B;
 				    *lpbmp++ = G;
 				    *lpbmp++ = R;
-				}
-				else
-	            {
+				} else
 	                break;
-	            }
 			}
-		}
-		else
-	    {
+		} else
 	       break;
-	    }
 	}
 }
 
@@ -909,17 +816,12 @@ int decode(__u8* rgbbuf)
 	fast_idct_init();
 	lpPtr = (char *)rgbbuf;
 
-	while ((ret = dec_mcu_block()) == 0)
-	{
+	while ((ret = dec_mcu_block()) == 0) {
 		interval++;
 		if ((restart) && (interval % restart == 0))
-		{
 			interval_flag = true;
-		}
 		else
-		{
 			interval_flag = false;
-		}
 
 		IQtIZzMCUComponent(0);
 		IQtIZzMCUComponent(1);
@@ -933,8 +835,7 @@ int decode(__u8* rgbbuf)
 
 		size_j += SampRate_Y_H * 8;
 
-		if(size_j >= img_w)
-		{
+		if(size_j >= img_w) {
 			size_j = 0;
 			size_i += SampRate_Y_V * 8;
 		}
@@ -952,8 +853,7 @@ int jpeg2bmp_decode(struct djpeg_opts *djpeg2bmp)
 
 	init_table();
 
-	if(0 != init_tag(djpeg2bmp->jpegbuf))
-	{
+	if(0 != init_tag(djpeg2bmp->jpegbuf)) {
 	    printf("init_tag failed\n");
 		return -1;
 	}
@@ -969,16 +869,12 @@ int jpeg2bmp_decode(struct djpeg_opts *djpeg2bmp)
 
 	///////////////////////////////////////////////
 
-	if (0 == ret)
-	{
+	if (0 == ret) {
 	    printf("decode jpeg ok!\n");
 		memcpy(djpeg2bmp->bmpbuf, djpeg2bmp->imgbf, sizeof(BITMAPFILEHEADER));
 	    memcpy(djpeg2bmp->bmpbuf + sizeof(BITMAPFILEHEADER), djpeg2bmp->imgbi, djpeg2bmp->imgbi->biSize);
-	}
-	else
-	{
+	} else
 	    printf("decoder jpeg error!\n");
-	}
 
 	return 0;
 }

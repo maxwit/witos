@@ -2,8 +2,7 @@
 
 #define JEDEC_READ_ID   0x9F
 
-struct jedec_id
-{
+struct jedec_id {
 	__u8 vendor_id;
 	__u8 device_id;
 };
@@ -35,10 +34,8 @@ static int __INIT__ nor_flash_probe(void)
 	nor_flash = get_spi_slave("w25x_nor_flash");
 	read_jedec_id(nor_flash, jedec_id);
 
-	for (i = 0; i < ARRAY_ELEM_NUM(nor_ids); i++)
-	{
-		if (jedec_id[0] == nor_ids[i].vendor_id)
-		{
+	for (i = 0; i < ARRAY_ELEM_NUM(nor_ids); i++) {
+		if (jedec_id[0] == nor_ids[i].vendor_id) {
 			printf("SPI Nor flash detected! flash details:\n"
 				"\tmanufacturer ID = 0x%02x\n"
 				"\tdevice ID       = 0x%02x, 0x%02x\n",

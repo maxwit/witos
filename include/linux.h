@@ -134,12 +134,10 @@ struct tag_memclk {
 	__u32 fmemclk;
 };
 
-struct tag
-{
+struct tag {
 	struct tag_header hdr;
 
-	union
-	{
+	union {
 		struct tag_core		core;
 		struct tag_mem32	mem;
 		struct tag_videotext videotext;

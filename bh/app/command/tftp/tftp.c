@@ -79,8 +79,7 @@ static int explain_url(const char *buf, struct tftp_opt *dlopt)
 				printf("port length too long\n");
 				return -1;
 			}
-		}
-		else {
+		} else {
 			// fixme
 			printf("Error, the port must be num\n");
 			return -1;

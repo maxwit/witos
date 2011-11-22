@@ -26,18 +26,13 @@ int mmc_read_blk(struct mmc_host *host, __u8 *buf, int start)
 
 	int i;
 
-	for (i = 0; i < MMC_BLK_SIZE / 4; i++)
-	{
+	for (i = 0; i < MMC_BLK_SIZE / 4; i++) {
 		printf("%x", ((__u32*)buf)[i]);
 
 		if ((i + 1)% 8)
-		{
 			printf(" ");
-		}
 		else
-		{
 			printf("\n");
-		}
 	}
 
 
@@ -107,8 +102,7 @@ int mmc_sd_detect_card(struct mmc_host *host)
 	/*acmd41*/
 	// ret = mmc_send_app_op_cond(host, val, NULL);
 
-	for (i = 0; i < MMC_CMD_RETRIES; i++)
-	{
+	for (i = 0; i < MMC_CMD_RETRIES; i++) {
 		ret = host->send_cmd(host, MMC_APP_CMD, 0, R1);
 
 		ret = host->send_cmd(host, SD_APP_OP_COND, val, R3);
@@ -174,9 +168,7 @@ int mmc_register(struct mmc_host *host)
 	if (host->set_hclk)
 		host->set_hclk();
 	else
-	{
 		printf("Host not support to switch high frequency!\n");
-	}
 
 	printf("Init Sucess!\n");
 	return 0;
@@ -214,22 +206,16 @@ static int fat32_read(const char *bh_img, void *addr)
 	// get first DBR offset
 	ret = mmc_read_blk(g_mmc_host, buf, MBR_PART_TAB_OFF);
 	if (ret < 0)
-	{
 		goto mmc_read_error;
-	}
 	dbr_offset = *(__u32 *)(buf + LBA_START_OFFSET);
 
 	// fixme, if sizeof(dbr) > MMC_BLK_SIZE, it will be wrong
 	ret = mmc_read_blk(g_mmc_host, buf, dbr_offset * MMC_BLK_SIZE);
 	if (ret < 0)
-	{
 		goto mmc_read_error;
-	}
 	p = (__u8 *)&dbr;
 	for (i = 0; i < sizeof(dbr); i++)
-	{
 		p[i] = buf[i];
-	}
 
 	sec_size = dbr.sector_size[1] << 8 | dbr.sector_size[0];
 
@@ -244,28 +230,20 @@ static int fat32_read(const char *bh_img, void *addr)
 	printf("***dat_offset = %x\n", dat_offset);
 #endif
 	// fixme, the root's dir entry must in one cluster, otherwise it will be wrong
-	for (i = 0; i < dbr.sec_per_clus; i++)
-	{
+	for (i = 0; i < dbr.sec_per_clus; i++) {
 		ret = mmc_read_blk(g_mmc_host, buf, dat_offset + sec_size * i);
 		if (ret < 0)
-		{
 			goto mmc_read_error;
-		}
 
 		entry = (struct fat_dentry *)buf;
-		while (1)
-		{
+		while (1) {
 			if (0 == entry->name[0])
-			{
 				break;
-			}
 
 			// strcmp
 			for (j = 0; bh_img[j] == entry->name[j]; j++);
 			if (0x20 == entry->name[j])
-			{
 				goto load_bh_img;
-			}
 
 			entry++;
 		}
@@ -281,40 +259,29 @@ load_bh_img:
 	i = clu_index >> 7; // there're 128 fat record in a sector
 	ret = mmc_read_blk(g_mmc_host, buf, fat_offset + i * sec_size);
 	if (ret < 0)
-	{
 		goto mmc_read_error;
-	}
 	fat_cache = (__u32 *)buf;
 
-	while (1)
-	{
+	while (1) {
 		if (0x0fffffff == clu_index)
-		{
 			break;
-		}
 		printf("read cluster %x\n", clu_index);
 
 		offset = dat_offset + (clu_index - 2) * dbr.sec_per_clus * sec_size;
-		for (j = 0; j < dbr.sec_per_clus; j++)
-		{
+		for (j = 0; j < dbr.sec_per_clus; j++) {
 			ret = mmc_read_blk(g_mmc_host, addr, offset);
 			if (ret < 0)
-			{
 				goto mmc_read_error;
-			}
 			addr += sec_size;
 			offset += sec_size;
 		}
 
-		if ((clu_index >> 7) != i)
-		{
+		if ((clu_index >> 7) != i) {
 			i = clu_index >> 7;
 			// update the fat cache
 			ret = mmc_read_blk(g_mmc_host, buf, fat_offset + i * sec_size);
 			if (ret < 0)
-			{
 				goto mmc_read_error;
-			}
 		}
 		clu_index = fat_cache[(clu_index - (i << 7))];
 	}
@@ -345,18 +312,14 @@ static int mmc_loader(struct loader_opt *opt)
 
 	ALIGN_UP(load_size, MMC_BLK_SIZE);
 
-	for (i = 0; i < load_size / MMC_BLK_SIZE; i++, byte_offset += MMC_BLK_SIZE)
-	{
+	for (i = 0; i < load_size / MMC_BLK_SIZE; i++, byte_offset += MMC_BLK_SIZE) {
 		ret = mmc_read_blk(g_mmc_host, opt->load_addr + byte_offset, byte_offset);
 		if (ret < 0)
-		{
 			break;
-		}
 	}
 #endif
 
-	if (ret < 0)
-	{
+	if (ret < 0) {
 		printf("Load img %s failed!\n", GBIOS_BH_IMG);
 		while (1);
 	}

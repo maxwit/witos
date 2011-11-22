@@ -4,8 +4,7 @@
 #include <drive.h>
 #include <fs/fs.h>
 
-struct fat_boot_sector
-{
+struct fat_boot_sector {
 	__u8	ignored[3];
 	__u8	system_id[8];
 	__u8	sector_size[2];
@@ -37,8 +36,7 @@ struct fat_boot_sector
 	__u8    blk_sign[2];
 }__PACKED__;
 
-struct fat_dentry
-{
+struct fat_dentry {
 	char name[11];
 	__u8 attr;
 	__u8 resv1;
@@ -51,8 +49,7 @@ struct fat_dentry
 	__u32 size;
 };
 
-struct fat_fs
-{
+struct fat_fs {
 	// __u32  fat;
 	__u32 data;
 	__u32 root;
@@ -61,8 +58,7 @@ struct fat_fs
 	struct block_device *bdev;
 };
 
-struct fat_file
-{
+struct fat_file {
 	struct file f;
 
 	struct fat_dentry *dent;

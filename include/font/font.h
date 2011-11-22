@@ -14,15 +14,13 @@ typedef int (*font_init_t)(void);
 #define INSTALL_FONT(font_init) \
 	static const __USED__ __GBIOS_FONT__ font_init_t ___gbios_font_##font_init = font_init;
 
-struct font_descript
-{
+struct font_descript {
     const char *name;
     int width, height;
     const void *data;
 };
 
-struct font_list_node
-{
+struct font_list_node {
 	struct font_descript *font;
 	struct list_node node;
 };

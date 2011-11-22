@@ -24,26 +24,18 @@ unsigned long read_cpu_id(void)
 #if 0
 	arch_ver = (orig_id >> 16) & 0xf;
 
-	if (arch_ver == 0xf)
-	{
+	if (arch_ver == 0xf) {
 		// TODO: add code here
 		printf(fmt, "6+");
-	}
-	else if (arch_ver < ARRAY_ELEM_NUM(arch_name))
-	{
+	} else if (arch_ver < ARRAY_ELEM_NUM(arch_name))
 		printf(fmt, arch_name[arch_ver - 1]);
-	}
 	else
-	{
 		return -1;
-	}
 
 	arch_ver = (orig_id >> 4) & 0xfff;
-	for (i = 8; i >= 0; i -= 4)
-	{
+	for (i = 8; i >= 0; i -= 4) {
 		int val = (arch_ver >> i) & 0xf;
-		switch (val)
-		{
+		switch (val) {
 		case 0 ... 9:
 			*buff = val + '0';
 			break;

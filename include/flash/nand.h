@@ -37,8 +37,7 @@
 // fixme
 #ifdef CONFIG_GTH
 
-struct nand_chip
-{
+struct nand_chip {
 	__u32 cmmd_port;
 	__u32 addr_port;
 	__u32 data_port;
@@ -106,8 +105,7 @@ int nand_load(struct nand_chip *, __u32, void *);
 #define NAND_SKIP_BBTSCAN    0x00020000
 #define NAND_OWN_BUFFERS    0x00040000
 
-typedef enum
-{
+typedef enum {
 	FL_READY,
 	FL_READING,
 	FL_WRITING,
@@ -117,8 +115,7 @@ typedef enum
 	FL_PM_SUSPENDED,
 } NAND_STATE;
 
-struct nand_buffer
-{
+struct nand_buffer {
 	__u8 ecccalc[NAND_MAX_OOB_SIZE];
 	__u8 ecccode[NAND_MAX_OOB_SIZE];
 	__u8 data_buff[NAND_MAX_PAGESIZE + NAND_MAX_OOB_SIZE];
@@ -127,8 +124,7 @@ struct nand_buffer
 struct nand_chip;
 struct nand_ctrl;
 
-struct nand_bad_blk
-{
+struct nand_bad_blk {
 	int flags;
 	int pages[NAND_MAX_CHIPS];
 	int offs;
@@ -140,8 +136,7 @@ struct nand_bad_blk
 	__u8 *pattern;
 };
 
-struct nand_chip
-{
+struct nand_chip {
 	struct flash_chip parent;
 	struct nand_ctrl *master;
 
@@ -176,8 +171,7 @@ struct nand_chip
 	struct list_node nand_node;
 };
 
-struct nand_ctrl
-{
+struct nand_ctrl {
 	void  *cmmd_reg;
 	void  *addr_reg;
 	void  *data_reg;
@@ -240,8 +234,7 @@ struct nand_ctrl
 #define NAND_MFR_MICRON        0x2c
 #define NAND_MFR_AMD        0x01
 
-struct nand_device_desc
-{
+struct nand_device_desc {
 	const char *name;
 	int id;
 	__u32 write_size;
@@ -250,8 +243,7 @@ struct nand_device_desc
 	__u32 flags;
 };
 
-struct nand_vendor_name
-{
+struct nand_vendor_name {
 	int  id;
 	const char *name;
 };

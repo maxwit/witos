@@ -23,8 +23,7 @@ char *strcpy(char *pdst, const char *psrc)
 {
 	char *iter = pdst;
 
-	while ((*iter = *psrc) != '\0')
-	{
+	while ((*iter = *psrc) != '\0') {
 		iter++;
 		psrc++;
 	}
@@ -37,15 +36,13 @@ char *strncpy(char *pdst, const char *psrc, size_t count)
 	char *iter = pdst;
 	size_t n = 0;
 
-	while ((n < count) && (*iter = *psrc))
-	{
+	while ((n < count) && (*iter = *psrc)) {
 		iter++;
 		psrc++;
 		n++;
 	}
 
-	while (n < count)
-	{
+	while (n < count) {
 		*iter++ = '\0';
 		n++;
 	}
@@ -55,8 +52,7 @@ char *strncpy(char *pdst, const char *psrc, size_t count)
 
 int strcmp (const char *pstr1, const char *pstr2)
 {
-	while (*pstr1 == *pstr2)
-	{
+	while (*pstr1 == *pstr2) {
 		if ('\0' == *pstr1)
 			return 0;
 
@@ -71,8 +67,7 @@ int strncmp(const char *pstr1, const char *pstr2, size_t count)
 {
 	size_t n = 1;
 
-	while (*pstr1 == *pstr2)
-	{
+	while (*pstr1 == *pstr2) {
 		if (('\0' == *pstr1) || (n == count))
 			return 0;
 
@@ -87,8 +82,7 @@ int strncmp(const char *pstr1, const char *pstr2, size_t count)
 // fixme!!
 int strcasecmp (const char *pstr1, const char *pstr2)
 {
-	while (*pstr1 == *pstr2)
-	{
+	while (*pstr1 == *pstr2) {
 		if ('\0' == *pstr1)
 			return 0;
 
@@ -105,8 +99,7 @@ char *strcat(char *pdst, const char *psrc)
 
 	for (iter = pdst; *iter; iter++);
 
-	while ((*iter = *psrc) != '\0')
-	{
+	while ((*iter = *psrc) != '\0') {
 		iter++;
 		psrc++;
 	}
@@ -121,15 +114,13 @@ char *strncat(char *pdst, const char *psrc, size_t count)
 
 	for (iter = pdst; *iter; iter++);
 
-	while (n < count && (*iter = *psrc))
-	{
+	while (n < count && (*iter = *psrc)) {
 		iter++;
 		psrc++;
 		n++;
 	}
 
-	while (n < count)
-	{
+	while (n < count) {
 		*iter = '\0';
 		iter++;
 		n++;
@@ -142,8 +133,7 @@ char *strchr(const char *psrc, int c)
 {
 	const char *iter;
 
-	for (iter = psrc; *iter; iter++)
-	{
+	for (iter = psrc; *iter; iter++) {
 		if (*iter == c)
 			return (char *)iter;
 	}
@@ -157,8 +147,7 @@ char *strrchr(const char *psrc, size_t c)
 
 	for (iter = psrc; *iter; iter++);
 
-	while (iter > psrc)
-	{
+	while (iter > psrc) {
 		iter--;
 		if (*iter == c)
 			return (char *)iter;
@@ -175,8 +164,7 @@ void *memcpy(void *pdst, const void *psrc, size_t count)
 	pd = pdst;
 	ps = psrc;
 
-	while (count > 0)
-	{
+	while (count > 0) {
 		*pd++ = *ps++;
 		count--;
 	}
@@ -189,24 +177,19 @@ void *memmove(void *pdst, const void *psrc, size_t count)
 	__u8 *pd;
 	const __u8 *ps;
 
-	if (pdst < psrc)
-	{
+	if (pdst < psrc) {
 		pd = pdst;
 		ps = psrc;
 
-		while (count > 0)
-		{
+		while (count > 0) {
 			*pd++ = *ps++;
 			count--;
 		}
-	}
-	else
-	{
+	} else {
 		pd = pdst + count;
 		ps = psrc + count;
 
-		while (count > 0)
-		{
+		while (count > 0) {
 			*--pd = *--ps;
 			count--;
 		}
@@ -219,8 +202,7 @@ void *memset(void *psrc, int c, size_t count)
 {
 	char *ps = psrc;
 
-	while (count)
-	{
+	while (count) {
 		*ps = c;
 
 		ps++;
@@ -237,8 +219,7 @@ long memcmp(const void* pdst, const void* psrc, size_t count)
 	pd = pdst;
 	ps = psrc;
 
-	while (count > 0)
-	{
+	while (count > 0) {
 		if (*pd != *ps)
 			return *pd - *ps;
 

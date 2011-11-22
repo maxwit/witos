@@ -22,8 +22,7 @@ int main(int argc, char *argv[])
 	int fd_mmc, fd_img;
 	const char *fn_mmc, *fn_img;
 
-	if (argc != 3)
-	{
+	if (argc != 3) {
 		printf("usage: xxx\n");
 		return -EINVAL;
 	}
@@ -32,15 +31,13 @@ int main(int argc, char *argv[])
 	fn_img = argv[2];
 
 	fd_mmc = open(fn_mmc, O_RDWR);
-	if (fd_mmc < 0)
-	{
+	if (fd_mmc < 0) {
 		printf("fail to open %s!\n", fn_mmc);
 		return fd_mmc;
 	}
 
 	fd_img = open(fn_img, O_RDWR);
-	if (fd_img < 0)
-	{
+	if (fd_img < 0) {
 		printf("fail to open %s!\n", fn_img);
 		ret = -EIO;
 		goto L1;
@@ -63,8 +60,7 @@ int main(int argc, char *argv[])
 
 	size = lseek(fd_mmc, -(MAX_SIZE + SZ_KB(resv_kb)), SEEK_END);
 
-	for (i = 0; i < MAX_SIZE;)
-	{
+	for (i = 0; i < MAX_SIZE;) {
 		len = read(fd_img, buff, BUF_LEN);
 		ret = write(fd_mmc, buff, len);
 		i += BUF_LEN;

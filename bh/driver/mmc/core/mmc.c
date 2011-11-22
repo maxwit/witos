@@ -24,8 +24,7 @@ int mmc_erase_blk(struct mmc_host *host, int start)
 	if (ret < 0)
 		goto out;
 
-	while (1)
-	{
+	while (1) {
 		ret = host->send_cmd(host, MMC_SEND_STATUS,  host->card.rca << 16, R1);
 		if (host->resp[0] & 0x100)
 			break;
@@ -41,9 +40,7 @@ int mmc_read_blk(struct mmc_host *host, __u8 *buf, int start)
 	int ret = 0;
 
 	if (host->card.raw_csd[3] & 3 << 29)
-	{
 		start = start >> 9;
-	}
 
 	ret = host->send_cmd(host, MMC_READ_SINGLE_BLOCK, start, R1);
 	if (ret < 0)
@@ -64,9 +61,7 @@ int mmc_write_blk(struct mmc_host *host, const __u8 *buf, int start)
 	int ret = 0;
 
 	if (host->card.raw_csd[3] & 3 << 29)
-	{
 		start = start >> 9;
-	}
 
 	ret = host->send_cmd(host, MMC_WRITE_BLOCK, start, R1);
 	if (ret < 0)
@@ -191,9 +186,7 @@ int mmc_sd_detect_card(struct mmc_host *host)
 	if (host->set_hclk)
 		host->set_hclk();
 	else
-	{
 		printf("Host not support to switch high frequency!\n");
-	}
 
 	//mmc_app_set_bus_width(host,SD_BUS_WIDTH_4);
 
@@ -221,14 +214,12 @@ int mmc_register(struct mmc_host *host)
 	if (!host || !host->send_cmd)
 		return -EINVAL;
 
-	for (i = 0; i < MMC_HOST_NUM; i++)
-	{
+	for (i = 0; i < MMC_HOST_NUM; i++) {
 		if (NULL == g_mmc_host[i])
 			break;
 	}
 
-	if (MMC_HOST_NUM == i)
-	{
+	if (MMC_HOST_NUM == i) {
 		ret = -EBUSY;
 		goto L1;
 	}

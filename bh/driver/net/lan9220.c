@@ -5,8 +5,7 @@
 #include "lan9220.h"
 
 #if 0
-struct lan9220_chip
-{
+struct lan9220_chip {
 	int lan9220_32bits;
 	__u32 (*readl)(lan9220_chip *, int);
 	__u32 (*writel)(lan9220_chip *, int, __u32);

@@ -38,9 +38,7 @@ struct spi_master *spi_master_alloc()
 
 	master = (struct spi_master *)malloc(sizeof(*master));
 	if (NULL == master)
-	{
 		return NULL;
-	}
 
 	master->bus_num = -1;
 	list_head_init(&master->slave_list);
@@ -55,9 +53,7 @@ struct spi_slave  *spi_slave_alloc()
 
 	slave = (struct spi_slave *)malloc(sizeof(*slave));
 	if (NULL == slave)
-	{
 		return NULL;
-	}
 
 	slave->master = NULL;
 	list_head_init(&slave->msg_qu);
@@ -77,10 +73,8 @@ int spi_master_register(struct spi_master *master)
 {
 	int i;
 
-	for (i = 0; i < MAX_SPI; i++)
-	{
-		if (NULL == g_spi_masters[i])
-		{
+	for (i = 0; i < MAX_SPI; i++) {
+		if (NULL == g_spi_masters[i]) {
 			g_spi_masters[i] = master;
 			master->bus_num = i;
 
@@ -117,8 +111,7 @@ struct spi_master *get_spi_master(char *name)
 {
 	int i;
 
-	for (i = 0; i < g_spi_master_num; i++)
-	{
+	for (i = 0; i < g_spi_master_num; i++) {
 		if (!strcmp(g_spi_master[i].name, name))
 			return g_spi_master + i;
 	}
@@ -130,8 +123,7 @@ struct spi_slave *get_spi_slave(char *name)
 {
 	int i;
 
-	for (i = 0; i < g_spi_slave_num; i++)
-	{
+	for (i = 0; i < g_spi_slave_num; i++) {
 		if (!strcmp(g_spi_slave[i].name, name))
 			return g_spi_slave + i;
 	}
@@ -146,9 +138,7 @@ static int __INIT__ spi_init(void)
 	printf("%s:spi subsys init\n", __func__);
 
 	for (i = 0; i < MAX_SPI; i++)
-	{
 		g_spi_masters[i] = NULL;
-	}
 
 	return 0;
 }

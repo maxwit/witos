@@ -33,29 +33,25 @@ int s3c2440_write_data(struct mmc_host *mmc, const void *buf)
 	int i;
 	__u32 val;
 
-	for (i = 0; i < 512 / 4; )
-	{
+	for (i = 0; i < 512 / 4; ) {
 
 		val = readl(VA(S3C24X0_SDIBASE + SDIFSTA));
 		//printf("FIFO Status = 0x%x\n", val);
 
-		if (val & 1 << 13)
-		{
+		if (val & 1 << 13) {
 			writel(VA(S3C24X0_SDIBASE + 0x40), ((__u32 *)buf)[i]);
 			i++;
 		}
 	}
 
 #if 1
-	for (i = 0; i < 10; i++)
-	{
+	for (i = 0; i < 10; i++) {
 		val = readl(VA(S3C24X0_SDIBASE + SDIDATSTA));
 		//printf("Data Status = 0x%x count = 0x%x\n", val, readl(VA(S3C24X0_SDIBASE + SDIDATCNT)));
 		udelay(1000);
 	}
 #else
-	do
-	{
+	do {
 		val = readl(VA(S3C24X0_SDIBASE + SDIDATSTA));
 		printf("Data Status = 0x%x count = 0x%x\n", val, readl(VA(S3C24X0_SDIBASE + SDIDATCNT)));
 	}while (val & 0x2);
@@ -71,17 +67,14 @@ int s3c2440_read_data(struct mmc_host *mmc, void *buf)
 	int i = 0;
 	__u32 val;
 
-	while (1)
-	{
+	while (1) {
 		val = readl(VA(S3C24X0_SDIBASE + SDIFSTA));
 		//printf("FIFO Status = 0x%x\n", val);
 
-		if (val & 1 << 12)
-		{
+		if (val & 1 << 12) {
 			((__u32 *)buf)[i] = readl(VA(S3C24X0_SDIBASE + 0x40));
 			i++;
-		}
-		else
+		} else
 			break;
 	}
 
@@ -94,8 +87,7 @@ int s3c2440_send_cmd(struct mmc_host *mmc, __u32 index, __u32 arg, RESP resp)
 
 	cval   = index | CMDSTAR;
 
-	switch (resp)
-	{
+	switch (resp) {
 	case R1:
 	case R1b:
 	case R3:
@@ -114,12 +106,9 @@ int s3c2440_send_cmd(struct mmc_host *mmc, __u32 index, __u32 arg, RESP resp)
 	}
 
 	if (index == MMC_READ_SINGLE_BLOCK)
-	{
 		writel(VA(S3C24X0_SDIBASE + SDIDATCON), 2 << 22 | 7 << 18 | 3 << 16 | 1 << 14 | 2 << 12 | 0x100);
-	}
 
-	if (MMC_WRITE_BLOCK == index)
-	{
+	if (MMC_WRITE_BLOCK == index) {
 
 		val = readl(VA(S3C24X0_SDIBASE + SDIFSTA));
 		writel(VA(S3C24X0_SDIBASE + SDIDATCON),2 << 22 | 7 << 18 | 3 << 16 | 1 << 14 | 3 << 12 | 0x100);
@@ -129,38 +118,30 @@ int s3c2440_send_cmd(struct mmc_host *mmc, __u32 index, __u32 arg, RESP resp)
 	writel(VA(S3C24X0_SDIBASE + SDI_CMDARG), arg);
 	writel(VA(S3C24X0_SDIBASE + SDI_CMDCON), cval);
 
-	while (1)
-	{
+	while (1) {
 		val = readl(VA(S3C24X0_SDIBASE + SDI_CMDSTA));
 		udelay(1000);
 
-		if (NONE == resp)
-		{
+		if (NONE == resp) {
 			if (val & (1 << 11))
 				break;
-		}
-		else
-		{
+		} else {
 			if(val & (3 << 9))
 				break;
 		}
 	}
 
-	if (val & (1 << 10))
-	{
+	if (val & (1 << 10)) {
 	//	printf("cmd%d time out! status = 0x%x\n", index, val);
 		return -1;
 	}
 
-	if ((MMC_SEND_CID== index) || (MMC_SEND_CSD == index) || (MMC_READ_DAT_UNTIL_STOP == index))
-	{
+	if ((MMC_SEND_CID== index) || (MMC_SEND_CSD == index) || (MMC_READ_DAT_UNTIL_STOP == index)) {
 		mmc->resp[3] = readl(VA(S3C24X0_SDIBASE + SD_RESP0));
 		mmc->resp[2] = readl(VA(S3C24X0_SDIBASE + SD_RESP1));
 		mmc->resp[1] = readl(VA(S3C24X0_SDIBASE + SD_RESP2));
 		mmc->resp[0] = readl(VA(S3C24X0_SDIBASE + SD_RESP3));
-	}
-	else
-	{
+	} else {
 		mmc->resp[0] = readl(VA(S3C24X0_SDIBASE + SD_RESP0));
 		mmc->resp[1] = readl(VA(S3C24X0_SDIBASE + SD_RESP1));
 		mmc->resp[2] = readl(VA(S3C24X0_SDIBASE + SD_RESP2));

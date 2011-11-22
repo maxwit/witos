@@ -57,9 +57,7 @@ static int dm9000_set_mac(struct net_device *ndev, const __u8 *pMac)
 	int i;
 
 	for (i = 0; i < MAC_ADR_LEN; i++)
-	{
 		dm9000_writeb(DM9000_PAR + i, ndev->mac_addr[i]);
-	}
 
 	return 0;
 }
@@ -84,9 +82,7 @@ static int dm9000_reset(void)
 	dm9000_writeb(DM9000_GPR, 0x00); //
 
 	for (i = 0; i < 8; i++)
-	{
 		dm9000_writeb(DM9000_MAR + i, 0xff);
-	}
 
 	return 0;
 }
@@ -105,8 +101,7 @@ static int dm9000_send_packet(struct net_device *ndev, struct sock_buff *skb)
 	tx_data = (const __u16 *)skb->data;
 	tx_size = skb->size;
 
-	for (i = 0; i < tx_size; i += sizeof(*tx_data))
-	{
+	for (i = 0; i < tx_size; i += sizeof(*tx_data)) {
 		writew(VA(DM9000_DATA_PORT), *tx_data);
 		tx_data++;
 	}
@@ -133,13 +128,11 @@ static int dm9000_recv_packet(struct net_device *ndev)
 	__u16 rx_stat, rx_size;
 	struct sock_buff *skb;
 
-	while (1)
-	{
+	while (1) {
 		dm9000_readb(DM9000_MRCMDX);
 		val = readb(VA(DM9000_DATA_PORT));
 
-		if (val != 0x1)
-		{
+		if (val != 0x1) {
 			if (0 == val)
 				return 0;
 
@@ -160,22 +153,16 @@ static int dm9000_recv_packet(struct net_device *ndev)
 		// TODO: check the size
 		DPRINT("stat = 0x%04x, size = 0x%04x\n", rx_stat, rx_size);
 
-		if ((rx_stat & 0xbf00) || (skb = skb_alloc(0, (rx_size + 1) & ~1)) == NULL)
-		{
+		if ((rx_stat & 0xbf00) || (skb = skb_alloc(0, (rx_size + 1) & ~1)) == NULL) {
 			for (i = 0; i < rx_size; i += 2)
-			{
 				readw(VA(DM9000_DATA_PORT));
-			}
 
 			printf("\n%s(), line %d error: status = 0x%04x, size = %d\n",
 			 		__func__, __LINE__, rx_stat, rx_size);
-		}
-		else
-		{
+		} else {
 			rx_data  = (__u16 *)skb->data;  // or head;
 
-			for (i = 0; i < rx_size; i += 2)
-			{
+			for (i = 0; i < rx_size; i += 2) {
 				*rx_data = readw(VA(DM9000_DATA_PORT));
 				DPRINT("%04x", *rx_data);
 				rx_data++;
@@ -207,20 +194,16 @@ static int dm9000_isr(__u32 irq, void *dev)
 	DPRINT("%s() line %d: status = 0x%08x\n",
 		__func__, __LINE__, status);
 
-	if (status & 0x1)
-	{
+	if (status & 0x1) {
 		status = dm9000_readb(DM9000_RSR);
 		if (status & 0xBF)
-		{
 			printf("%s(): RX Status = 0x%02x\n", __func__, status);
-		}
 
 		dm9000_recv_packet(ndev);
 	}
 
 	//fixme: move to upper layer
-	if (status & 0x20)
-	{
+	if (status & 0x20) {
 		__u8 link = dm9000_readb(0x1) & 1 << 6;
 
 		printf("dm9000 link %s\n", link ? "up" : "down");
@@ -247,16 +230,14 @@ static int __INIT__ dm9000_init(void)
 	ven_id = (dm9000_readb(DM9000_VIDH) << 8) | dm9000_readb(DM9000_VIDL);
 	dev_id = (dm9000_readb(DM9000_PIDH) << 8) | dm9000_readb(DM9000_PIDL);
 
-	if (ven_id != VENDOR_ID_DAVICOM)
-	{
+	if (ven_id != VENDOR_ID_DAVICOM) {
 		printf("No DM9000X found! (ID = %04x:%04x)\n", ven_id, dev_id);
 		return -ENODEV;
 	}
 
 	rev = dm9000_readb(DM9000_REV);
 	// fixme: "DM9000B"
-	switch (rev)
-	{
+	switch (rev) {
 	case 0x18:
 	case 0x19:
 		chip_name = "DM9000A";

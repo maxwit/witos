@@ -24,10 +24,8 @@ int draw_char(struct display *disp, int x, int y, struct font_descript *font, __
 
 	buff = (__u16 *)disp->video_mem_va;
 
-	for (i = 0; i < font->height; i++)
-	{
-		for (j = 0; j < font->width; j++)
-		{
+	for (i = 0; i < font->height; i++) {
+		for (j = 0; j < font->width; j++) {
 			// fixme
 			if (is_dot(j, i, c, font))
 				buff[(i + y) * width + x + j] = color;
@@ -39,8 +37,7 @@ int draw_char(struct display *disp, int x, int y, struct font_descript *font, __
 
 int draw_string(struct display *disp, int x, int y, struct font_descript *font, __u32 color, const char * str)
 {
-	while (*str)
-	{
+	while (*str) {
 		draw_char(disp, x, y, font, color, *str);
 		str++;
 		x += font->width;
@@ -61,10 +58,8 @@ int set_screen(__u32 pixel)
 	height = disp->video_mode->height;
 	width  = disp->video_mode->width;
 
-	for (i = 0; i < height; i++)
-	{
-		for (j = 0; j < width; j++)
-		{
+	for (i = 0; i < height; i++) {
+		for (j = 0; j < width; j++) {
 			// fixme
 			buff[i * width + j] = pixel;
 		}

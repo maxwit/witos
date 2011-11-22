@@ -277,8 +277,7 @@ static int build_command_line(char *cmd_line, size_t max_len)
 	if (boot_mode & BM_NFS) {
 		str += sprintf(str, "root=/dev/nfs rw nfsroot=%s:%s",
 					server_ip, nfs_path);
-	}
-	else if (boot_mode & BM_FLASHDISK) {
+	} else if (boot_mode & BM_FLASHDISK) {
 		int root_type = attr_tab[root_idx].part_type;
 
 		switch (root_type) {
@@ -394,8 +393,7 @@ int main(int argc, char *argv[])
 			if (optarg == NULL) {
 				boot_mode = BM_FLASHDISK;
 				kernel_image[0] = '\0';
-			}
-			else {
+			} else {
 				boot_mode = BM_TFTP;
 				strcpy(kernel_image, optarg);
 			}

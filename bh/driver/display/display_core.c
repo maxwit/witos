@@ -40,16 +40,13 @@ static void draw_logo(void * const video_buff, __u32 width, __u32 height, pixel_
 
 	line_width = rgb_size / djpeg2bmp.imgbi->biHeight;
 
-	for (i = 0; i < height; i++)
-	{
-		for (j = 0; j < width * 3; j += 3)
-		{
+	for (i = 0; i < height; i++) {
+		for (j = 0; j < width * 3; j += 3) {
 			x = (djpeg2bmp.imgbi->biHeight - ((i * step_h) >> 10) - 1) * line_width;
 			y = (((j * step_w) >> 10) / 3) * 3;
 
 			// fixme
-			switch (pix_format)
-			{
+			switch (pix_format) {
 			case PIX_RGB24:
 			case PIX_RGB32:
 				*((__u8 *)vbuff + 0) = buff[x + y + 0];
@@ -90,8 +87,7 @@ static void draw_logo(void * const video_buff, __u32 width, __u32 height, pixel_
 #define MAKE_PIX(c) \
 	(((1 << rgb.c##_len) - 1) << rgb.c##_off)
 
-	switch (pix_format)
-	{
+	switch (pix_format) {
 	case PIX_RGB15:
 		rgb.r_len = 5;
 		rgb.r_off = 0;
@@ -126,22 +122,19 @@ static void draw_logo(void * const video_buff, __u32 width, __u32 height, pixel_
 
 	// fixme
 	pix = MAKE_PIX(r);
-	for (i = 0; i < width * (height / 3); i++)
-	{
+	for (i = 0; i < width * (height / 3); i++) {
 		memcpy(vbuff, &pix, rgb.bytes);
 		vbuff += rgb.bytes;
 	}
 
 	pix = MAKE_PIX(g);
-	for (i = 0; i < width * (height / 3); i++)
-	{
+	for (i = 0; i < width * (height / 3); i++) {
 		memcpy(vbuff, &pix, rgb.bytes);
 		vbuff += rgb.bytes;
 	}
 
 	pix = MAKE_PIX(b);
-	for (i = 0; i < width * (height / 3); i++)
-	{
+	for (i = 0; i < width * (height / 3); i++) {
 		memcpy(vbuff, &pix, rgb.bytes);
 		vbuff += rgb.bytes;
 	}
@@ -153,8 +146,7 @@ void *video_mem_alloc(__u32 *phy_addr, const struct lcd_vmode *vm, pixel_format_
 	void *buff;
 	__u32 size = vm->width * vm->height;
 
-	switch (pix_format)
-	{
+	switch (pix_format) {
 	case PIX_RGB15:
 	case PIX_RGB16:
 		size *= 2;
@@ -171,8 +163,7 @@ void *video_mem_alloc(__u32 *phy_addr, const struct lcd_vmode *vm, pixel_format_
 	}
 
 	buff = dma_malloc(size, phy_addr);
-	if (NULL == buff)
-	{
+	if (NULL == buff) {
 		DPRINT("%s() line %d: no free memory (size = %d)!\n", __func__, __LINE__, size);
 		return NULL;
 	}

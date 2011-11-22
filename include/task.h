@@ -10,8 +10,7 @@
 #define MAX_ARGC            64
 
 // command
-struct command
-{
+struct command {
 	const char *name;
 	int (*main)(int argc, char *argv[]);
 };
@@ -53,8 +52,7 @@ struct help_info {
 #define REGISTER_HELP_L2(n, d, v) REGISTER_HELP_INFO(n, d, 2, v)
 
 // run-time task
-struct task
-{
+struct task {
 	int argc;
 	char **argv;
 	const struct command *exe;

@@ -34,8 +34,7 @@ static int __INIT__ s3c24x0_lcdc_init(void)
 #endif
 
 	vm = lcd_get_vmode_by_name(CONFIG_LCD_MODEL);
-	if (NULL == vm)
-	{
+	if (NULL == vm) {
 		printf("No LCD video mode matched!\n");
 		return -ENOENT;
 	}
@@ -43,9 +42,7 @@ static int __INIT__ s3c24x0_lcdc_init(void)
 	// alloc and init the video buffer:
 	video_buff_cpu = video_mem_alloc(&video_buff_dma, vm, PIX_FMT);
 	if (NULL == video_buff_cpu)
-	{
 		return -ENOMEM;
-	}
 
 #if 0
 	val = readl(VA(0x4c00000c));

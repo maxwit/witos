@@ -31,8 +31,7 @@ int __INIT__ s3c24x0_timer_init(void)
 	writel(VA(PWM_BASE + TCON), (~(0x1 << 17)) & readl(VA(PWM_BASE + TCON)));
 
 	ret = irq_register_isr(13, s3c24x0_pwm_isr, NULL);
-	if (ret < 0)
-	{
+	if (ret < 0) {
 		printf("%s(): irq_register_isr() fail!\n", __func__);
 		return ret;
 	}

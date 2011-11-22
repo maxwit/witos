@@ -7,8 +7,7 @@
 
 #define BLK_LEN 512
 
-struct foo_drive
-{
+struct foo_drive {
 	struct disk_drive drive;
 	int fd;
 };
@@ -61,8 +60,7 @@ int foo_drv_init(const char *fn)
 	int fd;
 
 	fd = open(fn, O_RDWR);
-	if (fd < 0)
-	{
+	if (fd < 0) {
 		printf("fail to open \"%s\"! (errno = %d)\n", fn, fd);
 		return fd;
 	}

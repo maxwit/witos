@@ -5,14 +5,12 @@
 
 // TODO: split into several files
 
-struct host_addr
-{
+struct host_addr {
 	struct eth_addr in_addr;
 	struct list_node node;
 };
 
-struct pseudo_header
-{
+struct pseudo_header {
 	__u8  src_ip[IPV4_ADR_LEN];
 	__u8  des_ip[IPV4_ADR_LEN];
 	__u8  zero;
@@ -39,8 +37,7 @@ static int pseudo_calculate_checksum(struct sock_buff *skb, __u16 *checksum)
 	memcpy(pse_hdr->des_ip, &sock->saddr[SA_DST].sin_addr, IPV4_ADR_LEN);
 	pse_hdr->zero = 0;
 
-	switch (sock->type)
-	{
+	switch (sock->type) {
 	case SOCK_STREAM:
 		pse_hdr->prot = PROT_TCP;
 		break;
@@ -56,9 +53,7 @@ static int pseudo_calculate_checksum(struct sock_buff *skb, __u16 *checksum)
 	pse_hdr->size = htons(skb->size);
 
 	if (skb->size & 1)
-	{
 		skb->data[skb->size] = 0;
-	}
 
 	*checksum = ~net_calc_checksum(pse_hdr, sizeof(*pse_hdr) + skb->size);
 
@@ -79,9 +74,7 @@ static inline bool ip_is_bcast(__u32 ip)
 
 	ret = ndev_ioctl(NULL, NIOC_GET_MASK, &mask);
 	if (ret < 0)
-	{
 		return false;
-	}
 
 	if (~(mask | ip) == 0)
 		return true;
@@ -123,9 +116,7 @@ static void dump_sock_buff(const struct sock_buff *skb)
 	__u8 *data;
 
 	for (idx = 0, data = skb->head; idx < skb->size; idx++, data++)
-	{
 		printf("%02x", *data);
-	}
 
 	printf("\n");
 }
@@ -216,8 +207,7 @@ static int udp_layer_deliver(struct sock_buff *skb, const struct ip_header *ip_h
 	skb->size -= UDP_HDR_LEN;
 
 	sock = udp_search_socket(udp_hdr, ip_hdr);
-	if (NULL == sock)
-	{
+	if (NULL == sock) {
 		skb_free(skb);
 		return -ENOENT;
 	}
@@ -261,16 +251,14 @@ static int tcp_layer_deliver(struct sock_buff *skb, const struct ip_header *ip_h
 		__func__, tcp_hdr->src_port, tcp_hdr->dst_port, *(&tcp_hdr->ack_num + 1));
 
 	sock = tcp_search_socket(tcp_hdr, ip_hdr);
-	if (NULL == sock)
-	{
+	if (NULL == sock) {
 		skb_free(skb);
 		return -ENOENT;
 	}
 
 	skb->sock = sock;
 
-	switch (tcp_hdr->flags)
-	{
+	switch (tcp_hdr->flags) {
 	case FLG_SYN:
 	case FLG_SYN | FLG_ACK:
 		sock->ack_num = ntohl(tcp_hdr->seq_num) + 1;
@@ -287,23 +275,18 @@ static int tcp_layer_deliver(struct sock_buff *skb, const struct ip_header *ip_h
 	case FLG_FIN:
 	case FLG_FIN | FLG_ACK:
 	case FLG_FIN | FLG_ACK | FLG_PSH:
-		if (skb->size > 0)
-		{
+		if (skb->size > 0) {
 			sock->ack_num = ntohl(tcp_hdr->seq_num) + skb->size;
 			list_add_tail(&skb->node, &sock->rx_qu);
-		}
-		else
-		{
+		} else {
 			sock->ack_num = ntohl(tcp_hdr->seq_num) + 1;
 
-			if (TCPS_FIN_WAIT1 == sock->state)
-			{
+			if (TCPS_FIN_WAIT1 == sock->state) {
 				if (tcp_hdr->flags & FLG_ACK)
 					sock->state = TCPS_TIME_WAIT;
 				else
 					sock->state = TCPS_CLOSING;
-			}
-			else if (TCPS_FIN_WAIT2 == sock->state)
+			} else if (TCPS_FIN_WAIT2 == sock->state)
 				sock->state = TCPS_TIME_WAIT;
 			else if (TCPS_ESTABLISHED == sock->state)
 				sock->state = TCPS_CLOSE_WAIT;
@@ -318,8 +301,7 @@ static int tcp_layer_deliver(struct sock_buff *skb, const struct ip_header *ip_h
 		break;
 
 	case FLG_ACK:
-		if (skb->size == 0)
-		{
+		if (skb->size == 0) {
 			skb_free(skb);
 
 			if (TCPS_FIN_WAIT1 == sock->state)
@@ -390,8 +372,7 @@ int ping_send(struct sock_buff *rx_skb, const struct ip_header *ip_hdr, __u8 typ
 	ping_pkt = (struct ping_packet *)ping_buff;
 
 	tx_skb = skb_alloc(ETH_HDR_LEN + IP_HDR_LEN, PING_PACKET_LENGTH);
-	if (NULL == tx_skb)
-	{
+	if (NULL == tx_skb) {
 	    printf("%s(): skb_alloc return null\n", __func__);
 	    return -EBUSY;
 	}
@@ -420,8 +401,7 @@ static int icmp_deliver(struct sock_buff *skb, const struct ip_header *ip_hdr)
 	ping_hdr = (struct ping_packet *)(skb->data + ((ip_hdr->ver_len & 0xf) << 2));
 	eth_head = (struct ether_header *)(skb->data- ETH_HDR_LEN);
 
-	switch(ping_hdr->type)
-	{
+	switch(ping_hdr->type) {
 	case ICMP_TYPE_ECHO_REQUEST:
 		skb->data += ((ip_hdr->ver_len & 0xf) << 2);
 		skb->size -= ((ip_hdr->ver_len & 0xf) << 2);
@@ -430,8 +410,7 @@ static int icmp_deliver(struct sock_buff *skb, const struct ip_header *ip_hdr)
 
 	case ICMP_TYPE_ECHO_REPLY:
 		sock = icmp_search_socket(ping_hdr, ip_hdr);
-		if (NULL == sock)
-		{
+		if (NULL == sock) {
 			skb_free(skb);
 			return -ENOENT;
 		}
@@ -466,14 +445,12 @@ int ip_layer_deliver(struct sock_buff *skb)
 	skb->data += ip_hdr_len;
 	skb->size = ntohs(ip_hdr->total_len) - ip_hdr_len;
 
-	if (ip_hdr_len < IP_HDR_LEN)
-	{
+	if (ip_hdr_len < IP_HDR_LEN) {
 		printf("Warning: ip_hdr head len not match\n");
 		return -1;
 	}
 
-	switch(ip_hdr->up_prot)
-	{
+	switch(ip_hdr->up_prot) {
 	case PROT_UDP:
 		// printf("\tUDP received!\n");
 		udp_layer_deliver(skb, ip_hdr);
@@ -542,20 +519,15 @@ void ip_send_packet(struct sock_buff *skb, __u8 prot)
 
 	nip = sock->saddr[SA_DST].sin_addr.s_addr;
 
-	if (ip_is_bcast(ntohl(nip)))
-	{
+	if (ip_is_bcast(ntohl(nip))) {
 		mac_fill_bcast(mac);
 		pmac = mac;
-	}
-	else
-	{
+	} else {
 		remote_addr = getaddr(nip);
 
-		if (NULL == remote_addr)
-	    {
+		if (NULL == remote_addr) {
 			remote_addr = gethostaddr(sock->saddr[SA_DST].sin_addr.s_addr);
-			if (NULL == remote_addr)
-			{
+			if (NULL == remote_addr) {
 				DPRINT("%s(): addr error!\n", __func__);
 				return;
 			}
@@ -576,8 +548,7 @@ void arp_send_packet(const __u8 nip[], const __u8 *mac, __u16 op_code)
 	__u32 src_ip;
 
 	skb = skb_alloc(ETH_HDR_LEN, ARP_PKT_LEN);
-	if (NULL == skb)
-	{
+	if (NULL == skb) {
 		printf("%s: fail to alloc skb!\n", __func__);
 		return;
 	}
@@ -613,8 +584,7 @@ static int arp_recv_packet(struct sock_buff *skb)
 
 	arp_pkt = (struct arp_packet *)skb->data;
 
-	if (arp_pkt->prot_type != ETH_TYPE_IP)
-	{
+	if (arp_pkt->prot_type != ETH_TYPE_IP) {
 		printf("\tProt Error!\n");
 		return -1;
 	}
@@ -625,11 +595,9 @@ static int arp_recv_packet(struct sock_buff *skb)
 		g_arp_desc[ntohs(arp_pkt->op_code)],
 		arp_pkt->src_ip[0], arp_pkt->src_ip[1], arp_pkt->src_ip[2], arp_pkt->src_ip[3]);
 
-	switch (arp_pkt->op_code)
-	{
+	switch (arp_pkt->op_code) {
 	case ARP_OP_REP:
-		if (getaddr(ip) == NULL)
-		{
+		if (getaddr(ip) == NULL) {
 			struct host_addr *host;
 			struct socket *sock;
 
@@ -695,8 +663,7 @@ int netif_rx(struct sock_buff *skb)
 	skb->data += ETH_HDR_LEN;
 	skb->size -= ETH_HDR_LEN;
 
-	switch(eth_head->frame_type)
-	{
+	switch(eth_head->frame_type) {
 	case ETH_TYPE_ARP:
 		// printf("\tARP received.\n");
 		arp_recv_packet(skb);
@@ -730,8 +697,7 @@ void ether_send_packet(struct sock_buff *skb, const __u8 mac[], __u16 eth_type)
 	skb->data -= ETH_HDR_LEN;
 	skb->size += ETH_HDR_LEN;
 
-	if (skb->data != skb->head)
-	{
+	if (skb->data != skb->head) {
 		printf("%s(): skb len error! (data = 0x%p, head = 0x%p)\n",
 			__func__, skb->data, skb->head);
 		return;
@@ -781,8 +747,7 @@ struct sock_buff *skb_alloc(__u32 prot_len, __u32 data_len)
 		return NULL;
 
 	skb->head = malloc((prot_len + data_len + 1) & ~1);
-	if (NULL == skb->head)
-	{
+	if (NULL == skb->head) {
 		DPRINT("%s(): malloc failed (size = %d bytes)!\n",
 			__func__, prot_len + data_len);
 		return NULL;
@@ -851,8 +816,7 @@ struct eth_addr *getaddr(__u32 nip)
 		host = container_of(iter, struct host_addr, node);
 
 		dip = (__u32 *)host->in_addr.ip;
-		if (*dip == nip)
-		{
+		if (*dip == nip) {
 			addr = &host->in_addr;
 			break;
 		}
@@ -879,9 +843,7 @@ struct net_device *net_get_dev(const char *ifx)
 		ndev = container_of(iter, struct net_device, ndev_node);
 
 		if (!strcmp(ifx, ndev->ifx_name))
-		{
 			return ndev;
-		}
 	}
 
 	return NULL;
@@ -1043,13 +1005,9 @@ int ndev_check_link_status()
 			speed = mii_get_link_speed(phy);
 
 			if (speed < 0)
-			{
 				printf("NOT linked, please check the cable!\n");
-			}
-			else
-			{
-				switch(speed)
-				{
+			else {
+				switch(speed) {
 				case ETHER_SPEED_10M_HD:
 					printf("10M Half Duplex activated!\n");
 					break;
@@ -1093,8 +1051,7 @@ int ndev_ioctl(struct net_device *ndev, int cmd, void *arg)
 	if (NULL == ndev)
 		ndev = g_curr_ndev;
 
-	switch (cmd)
-	{
+	switch (cmd) {
 	case NIOC_GET_IP:
 		*(__u32 *)arg = ndev->ip;
 		break;
@@ -1131,15 +1088,13 @@ int ndev_ioctl(struct net_device *ndev, int cmd, void *arg)
 		status = (struct link_status *)arg;
 
 		status->connected = !!(ndev->mdio_read(ndev, phy->mii_id, MII_REG_BMS) & 0x20);
-		if (!status->connected)
-		{
+		if (!status->connected) {
 			status->link_speed = ETHER_SPEED_UNKNOW;
 			break;
 		}
 
 		speed = ndev->mdio_read(ndev, phy->mii_id, MII_REG_STAT);
-		switch (speed >> 12)
-		{
+		switch (speed >> 12) {
 		case 1:
 			status->link_speed = ETHER_SPEED_10M_HD;
 			break;

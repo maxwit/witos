@@ -97,8 +97,7 @@ static int __INIT__ at91_nand_probe(void)
 	at91_nand_init();
 
 	ret = nand_ctrl_register(nfc);
-	if (ret < 0)
-	{
+	if (ret < 0) {
 		ret = -ENODEV;
 		goto L1;
 	}

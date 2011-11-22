@@ -56,31 +56,25 @@ static int omap3_mmc_write_data(struct mmc_host *mmc, const void *buf)
 	__u32 val;
 	int i, timeout = 0;
 
-	do
-	{
+	do {
 		val = omap3_mmc_read(MMCHS_STAT);
 		MMC_PRINT("MMCHS_STAT = 0x%x %s(), line: 0x%x\n", val, __FUNCTION__, __LINE__);
 		udelay(1000);
 		timeout++;
 	} while (!(val & 1 << 4) && timeout < 5);
 
-	if (val & (1 << 4))
-	{
-		for (i = 0; i < 512 / 4; i++)
-		{
+	if (val & (1 << 4)) {
+		for (i = 0; i < 512 / 4; i++) {
 			val = ((__u32*)buf)[i];
 			omap3_mmc_write(MMCHS_DATA, val);
 		}
-	}
-	else
-	{
+	} else {
 		MMC_PRINT("Write Buff is not ready!\n");
 		return -EBUSY;
 	}
 
 	timeout = 0;
-	while (1)
-	{
+	while (1) {
 		val = omap3_mmc_read(MMCHS_STAT);
 		timeout++;
 		udelay(1000);
@@ -97,18 +91,15 @@ static int omap3_mmc_read_data(struct mmc_host *mmc, void *buf)
 	__u32 val;
 	int i, timeout = 0;
 
-	do
-	{
+	do {
 		val = omap3_mmc_read(MMCHS_STAT);
 		MMC_PRINT("MMCHS_STAT = 0x%x %s()\n", val, __FUNCTION__);
 		udelay(1000);
 		timeout++;
 	} while (!(val & 1 << 5) && timeout < 5);
 
-	if (val & (1 << 5))
-	{
-		for (i = 0; i < 512 / 4; i++)
-		{
+	if (val & (1 << 5)) {
+		for (i = 0; i < 512 / 4; i++) {
 			val = omap3_mmc_read(MMCHS_DATA);
 			((__u32*)buf)[i] = val;
 		}
@@ -119,8 +110,7 @@ static int omap3_mmc_read_data(struct mmc_host *mmc, void *buf)
 	}
 
 	timeout = 0;
-	while (1)
-	{
+	while (1) {
 		val = omap3_mmc_read(MMCHS_STAT);
 		timeout++;
 		udelay(1000);
@@ -140,8 +130,7 @@ static int omap3_send_cmd(struct mmc_host *mmc, __u32 index, __u32 arg, RESP typ
 
 	cval = index << 24;
 
-	switch (type)
-	{
+	switch (type) {
 	case R1:
 	case R4:
 	case R5:
@@ -170,26 +159,22 @@ static int omap3_send_cmd(struct mmc_host *mmc, __u32 index, __u32 arg, RESP typ
 	if (index == MMC_WRITE_BLOCK || index == MMC_WRITE_MULTIPLE_BLOCK)
 		cval |= 1 << 21;
 
-	while (1)
-	{
+	while (1) {
 		timeout = 0;
-		do
-		{
+		do {
 			val = omap3_mmc_read(MMCHS_PSTATE);
 			timeout++;
 			MMC_PRINT("MMCHS_PSTATE = 0x%x %s()\n", val,__FUNCTION__);
 		} while ((val & (1 << 1)) && (timeout < 10));
 
-		if (timeout == 10)
-		{
+		if (timeout == 10) {
 
 			MMC_PRINT("timeout, reset data line!\n");
 			val = omap3_mmc_read(MMCHS_SYSCTL);
 			val |= 1 << 26;
 			omap3_mmc_write(MMCHS_SYSCTL, val);
 
-			do
-			{
+			do {
 				val = omap3_mmc_read(MMCHS_SYSCTL);
 				MMC_PRINT("MMCHS_SYSCTL = %x, %s()\n", val, __func__);
 			} while (val & (1 << 26));
@@ -207,25 +192,21 @@ static int omap3_send_cmd(struct mmc_host *mmc, __u32 index, __u32 arg, RESP typ
 	omap3_mmc_write(MMCHS_CMD, cval);
 
 
-	while (1)
-	{
+	while (1) {
 
 		val =  omap3_mmc_read(MMCHS_STAT);
 
-		if (val & (1 << 16))
-		{
+		if (val & (1 << 16)) {
 
 			MMC_PRINT("Command %x arg = 0x%x timeout! MMCHS_STAT = 0x%x, reset command line!\n", index, arg, val);
 
-			if (1)
-			{
+			if (1) {
 
 				val = omap3_mmc_read(MMCHS_SYSCTL);
 				val |= 1 << 25;
 				omap3_mmc_write(MMCHS_SYSCTL, val);
 
-				do
-				{
+				do {
 					val = omap3_mmc_read(MMCHS_SYSCTL);
 					MMC_PRINT("MMCHS_SYSCTL = %x, %s()\n", val, __func__);
 				} while (val & (1 << 25));
@@ -283,8 +264,7 @@ static void mmc_clock_config(__u32 iclk, __u16 clk_div)
 	val |= cdiv << 6;
 	omap3_mmc_write(MMCHS_SYSCTL, val);
 
-	do
-	{
+	do {
 		val = omap3_mmc_read(MMCHS_SYSCTL);
 		MMC_PRINT("MMCHS_SYSCTL = %x\n", val);
 	} while (!(val & (1 << 1)));
@@ -302,8 +282,7 @@ static void omap3_soft_reset(void)
 	val |= 1 << 24;
 	omap3_mmc_write(MMCHS_SYSCTL, val);
 
-	do
-	{
+	do {
 		val = omap3_mmc_read(MMCHS_SYSCTL);
 		MMC_PRINT("MMCHS_SYSCTL = %x\n", val);
 	} while (val & (1 << 24));
@@ -332,8 +311,7 @@ int mmc_init(void)
 	val |= 1;
 	omap3_mmc_write(MMCHS_SYSCONFIG, val);
 
-	do
-	{
+	do {
 		val = omap3_mmc_read(MMCHS_SYSSTATUS);
 		MMC_PRINT("MMCHS_SYSSTATUS = %x, %s()\n", val, __FUNCTION__, __LINE__);
 	} while (!(val & 1) );
@@ -361,8 +339,7 @@ int mmc_init(void)
 	omap3_mmc_write(MMCHS_HCTL, val);
 
 	timeout = 0;
-	do
-	{
+	do {
 		val = omap3_mmc_read(MMCHS_HCTL);
 		timeout++;
 		MMC_PRINT("MMCHS_HCTL = %x\n", val);
@@ -378,8 +355,7 @@ int mmc_init(void)
 
 	//send dummy command
 	omap3_mmc_write(MMCHS_CMD, 0);
-	do
-	{
+	do {
 		val = omap3_mmc_read(MMCHS_STAT);
 		MMC_PRINT("MMCHS_STAT = 0x%x %s(), line:%d\n", val, __FUNCTION__, __LINE__);
 	} while (!(val & 1));
@@ -389,8 +365,7 @@ int mmc_init(void)
 	omap3_mmc_write(MMCHS_STAT, val);
 
 	omap3_mmc_write(MMCHS_CMD, 0);
-	do
-	{
+	do {
 		val = omap3_mmc_read(MMCHS_STAT);
 		MMC_PRINT("MMCHS_STAT = 0x%x %s()\n", val, __FUNCTION__);
 	} while (!(val & 1));

@@ -16,8 +16,7 @@ typedef unsigned int    __le32;
 /*
  * Structure of a blocks group descriptor
  */
-struct ext2_group_desc
-{
+struct ext2_group_desc {
 	__le32	bg_block_bitmap;		/* Blocks bitmap block */
 	__le32	bg_inode_bitmap;		/* Inodes bitmap block */
 	__le32	bg_inode_table;		/* Inodes table block */
@@ -214,8 +213,7 @@ enum {
 
 struct block_device;
 
-struct ext2_file
-{
+struct ext2_file {
 	struct file f;
 
 	struct ext2_dir_entry_2 *dentry;

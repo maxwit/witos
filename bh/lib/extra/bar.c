@@ -7,9 +7,7 @@ int create_progress_bar(struct process_bar **ppNew, __u32 nMin, __u32 nMax)
 	pTmp = (struct process_bar *)malloc(sizeof(struct process_bar) + BARLEN + 3);
 
 	if (NULL == pTmp)
-	{
 		return -1;
-	}
 
 	pTmp->nMin  = nMin;
 	pTmp->nMax  = nMax;
@@ -29,8 +27,7 @@ int create_progress_bar(struct process_bar **ppNew, __u32 nMin, __u32 nMax)
 
 void progress_bar_set_val(struct process_bar *pBar, __u32 nLen)
 {
-	while (pBar->nCurr <= CountBarOff)
-	{
+	while (pBar->nCurr <= CountBarOff) {
 		pBar->cBar[pBar->nCurr]          = '=';
 		pBar->cBar[1 + pBar->nCurr++] = '>';
 		pBar->cBar[BARLEN / 2 - 2]       = ' ';
@@ -41,8 +38,7 @@ void progress_bar_set_val(struct process_bar *pBar, __u32 nLen)
 	pBar->cBar[BARLEN / 2 -1] = CountVal / 10 + '0';
 	pBar->cBar[BARLEN / 2]     = CountVal % 10 + '0';
 
-	if (CountVal == 100)
-	{
+	if (CountVal == 100) {
 		pBar->cBar[BARLEN / 2 - 3] = ' ';
 		pBar->cBar[BARLEN / 2 - 2] = '1';
 		pBar->cBar[BARLEN / 2 - 1] = '0';
@@ -55,8 +51,7 @@ void progress_bar_set_val(struct process_bar *pBar, __u32 nLen)
 
 int delete_progress_bar(struct process_bar *pBar)
 {
-	if (NULL == pBar)
-	{
+	if (NULL == pBar) {
 		BUG();
 		return -1;
 	}

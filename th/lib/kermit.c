@@ -66,8 +66,7 @@ int kermit_load(struct loader_opt *opt)
 		__u8 data[KERM_BUF_LEN];
 		curr_addr = data;
 		printf("curr_addr = %p\n",data);
-	}
-	else
+	} else
 #endif
 	{
 		curr_addr = opt->load_addr;

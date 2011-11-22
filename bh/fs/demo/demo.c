@@ -33,8 +33,7 @@ int main(int argc, char *argv[])
 	const char *disk, *type;
 	char buff[BUF_LEN], part[BUF_LEN], path[BUF_LEN];
 
-	if (argc != 5)
-	{
+	if (argc != 5) {
 		printf("usage:\n\t%s disk partno type file\n", argv[0]);
 		return -EINVAL;
 	}
@@ -48,40 +47,31 @@ int main(int argc, char *argv[])
 	disk_drive_init();
 	ret = foo_drv_init(disk);
 	if (ret < 0)
-	{
 		return ret;
-	}
 
 	ret = ext2_fs_init();
 	if (ret < 0)
-	{
 		return ret;
-	}
 
 	ret = fat_fs_init();
 	if (ret < 0)
-	{
 		return ret;
-	}
 
 	ret = gb_mount(type, 0, part, MNTPT);
-	if (ret < 0)
-	{
+	if (ret < 0) {
 		printf("fail to mount %s with %s! (ret = %d)\n", part, type, ret);
 		return ret;
 	}
 
 	fd = gb_open(path, 0);
-	if (fd < 0)
-	{
+	if (fd < 0) {
 		printf("fail to open %s\n", path);
 		return fd;
 	}
 
 	len = gb_read(fd, buff, BUF_LEN);
 
-	if (len > 0)
-	{
+	if (len > 0) {
 		buff[len] = '\0';
 		printf("data:\n\t%s\n", buff);
 	}

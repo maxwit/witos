@@ -27,16 +27,13 @@ static int __INIT__ font_init(void)
 	font_init_t *font_scan = font_init_begin;
 	const char* func_name;
 
-	while (font_scan < font_init_end)
-	{
+	while (font_scan < font_init_end) {
 		int ret;
 
 		printf("%d. [0x%08x]", count, *font_scan);
 		func_name = get_func_name(*font_scan);
 		if(func_name)
-		{
 			printf(" %s()", func_name);
-		}
 		putchar('\n');
 
 		ret = (*font_scan)();

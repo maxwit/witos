@@ -7,14 +7,11 @@ int main(int argc, char *argv[])
 
 #if 1
 	for (count = 0; count < 10000; count++)
-	{
 		printf("%s(): %d\n", __func__, get_tick());
-	}
 #else
 	volatile __u32 m = get_tick() + 10;
 
-	do
-	{
+	do {
 		count = get_tick();
 		if (count & 1)
 			printf("%d, %d\n", count, m);

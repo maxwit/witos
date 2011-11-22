@@ -19,8 +19,7 @@ int main(void)
 #ifdef CONFIG_SDRAM_TESTING
 	volatile __u32 *p = (__u32 *)SDRAM_BASE;
 
-	while (p < (__u32 *)(SDRAM_BASE + SDRAM_SIZE))
-	{
+	while (p < (__u32 *)(SDRAM_BASE + SDRAM_SIZE)) {
 		__u32 val1 = *p, val2;
 
 		val2 = ~val1;
@@ -34,17 +33,14 @@ int main(void)
 	}
 #endif
 
-	for (i = 0; i < 0x100; i++)
-	{
+	for (i = 0; i < 0x100; i++) {
 		char key;
 
-		if (uart_rxbuf_count() > 0)
-		{
+		if (uart_rxbuf_count() > 0) {
 			key = uart_recv_byte();
 
 #ifdef CONFIG_LOADER_MENU
-			do
-			{
+			do {
 				char nkey;
 				struct loader_opt *loader;
 #endif
@@ -55,9 +51,7 @@ int main(void)
 				printf("\nGTH Menu:\n");
 
 				for (loader = g_loader_begin; loader < g_loader_end; loader++)
-				{
 					printf("  [%c] %s\n", loader->ckey[0], loader->prompt);
-				}
 				printf("  [q] Default\nEnter Your Choice\n");
 
 				while (key == (nkey = uart_recv_byte()));
@@ -91,14 +85,12 @@ int load_gbios_bh(char key)
 	if ('A' <= key && key <= 'Z')
 		key += 'a' - 'A';
 
-	for (loader = g_loader_begin; loader < g_loader_end; loader++)
-	{
+	for (loader = g_loader_begin; loader < g_loader_end; loader++) {
 #ifdef CONFIG_DEBUG
 		printf("%c: 0x%x\n", loader->ckey[0], loader->main);
 #endif
 
-		if (loader->ckey[0] == key)
-		{
+		if (loader->ckey[0] == key) {
 			// fixme: prompt for RAM/ROM
 			printf("Loading from %s ...\n", loader->prompt);
 

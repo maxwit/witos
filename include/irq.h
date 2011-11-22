@@ -18,8 +18,7 @@ struct irq_dev;
 typedef	void (*IRQ_PIN_HANDLER)(struct int_pin *, __u32);
 typedef int  (*IRQ_DEV_HANDLER)(__u32, void *);
 
-struct int_ctrl
-{
+struct int_ctrl {
 	void (*ack)(__u32);
 	void (*mask)(__u32);
 	void (*mack)(__u32);
@@ -27,15 +26,13 @@ struct int_ctrl
 	int	 (*set_trigger)(__u32, __u32);
 };
 
-struct int_pin
-{
+struct int_pin {
 	IRQ_PIN_HANDLER	 irq_handle;
 	struct int_ctrl	 *intctrl;
 	struct irq_dev	 *dev_list;
 };
 
-struct irq_dev
-{
+struct irq_dev {
 	void             *device;
 	IRQ_DEV_HANDLER  dev_isr;
 	struct irq_dev   *next;

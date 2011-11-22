@@ -11,8 +11,7 @@
 #define GB_SYSCFG_VER         7
 #define GB_SYSCFG_MAGIC       MKFOURCC('G', 's', 'y', 's')
 
-struct sys_config
-{
+struct sys_config {
 	__u32 magic;
 	__u32 size;
 	__u32 offset;

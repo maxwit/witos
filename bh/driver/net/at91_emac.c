@@ -21,14 +21,12 @@
 #define at91_emac_writel(reg, val) \
 	writel(VA(AT91SAM9263_PA_EMAC + (reg)), (val))
 
-struct emac_buff_desc
-{
+struct emac_buff_desc {
 	__u32 addr;
 	__u32 stat;
 };
 
-struct at91_emac
-{
+struct at91_emac {
 	struct emac_buff_desc *rx_queue, *rx_head;
 	struct emac_buff_desc *tx_queue, *tx_rear;
 };
@@ -76,8 +74,7 @@ static int at91_emac_send(struct net_device *ndev, struct sock_buff *skb)
 	tx_rear->addr = (__u32)skb->data;
 	tx_rear->stat = (1 << 15) | skb->size;
 
-	if (emac->tx_rear == emac->tx_queue + TX_BUFF_NUM)
-	{
+	if (emac->tx_rear == emac->tx_queue + TX_BUFF_NUM) {
 		tx_rear->stat |= 1 << 30;
 		emac->tx_rear = emac->tx_queue;
 	}
@@ -108,10 +105,8 @@ static int at91_emac_recv(struct net_device * ndev)
 
 	assert(rx_head->stat & EMAC_SOF); // fixme
 
-	while (rx_head != rx_rear)
-	{
-		if (rx_head->stat & EMAC_SOF)
-		{
+	while (rx_head != rx_rear) {
+		if (rx_head->stat & EMAC_SOF) {
 			skb = skb_alloc(0, MAX_ETH_LEN);
 			// if NULL
 			buf_ptr = skb->data;
@@ -126,8 +121,7 @@ static int at91_emac_recv(struct net_device * ndev)
 
 		rx_head->addr &= ~1;
 
-		if (rx_head->stat & EMAC_EOF)
-		{
+		if (rx_head->stat & EMAC_EOF) {
 			skb->size = rx_head->stat & 0xfff;
 			netif_rx(skb);
 			ndev->stat.rx_packets++;
@@ -182,8 +176,7 @@ static int __INIT__ at91_emac_init_ring(struct at91_emac *emac)
 	emac->rx_head = emac->rx_queue = (struct emac_buff_desc *)malloc(8 * RX_BUFF_NUM);
 	// if null
 
-	for (i = 0; i < RX_BUFF_NUM; i++)
-	{
+	for (i = 0; i < RX_BUFF_NUM; i++) {
 		emac->rx_queue[i].addr = dma_buff_base;
 		emac->rx_queue[i].stat = 0;
 
@@ -195,8 +188,7 @@ static int __INIT__ at91_emac_init_ring(struct at91_emac *emac)
 	// init TX ring buffer
 	emac->tx_rear = emac->tx_queue = (struct emac_buff_desc *)malloc(8 * TX_BUFF_NUM);
 
-	for (i = 0; i < TX_BUFF_NUM; i++)
-	{
+	for (i = 0; i < TX_BUFF_NUM; i++) {
 		emac->tx_queue[i].addr = 0;
 		emac->tx_queue[i].stat = 1 << 31;
 	}
@@ -271,8 +263,7 @@ static int __INIT__ at91_emac_probe(void)
 	at91_emac_init(emac);
 
 	ret = ndev_register(ndev);
-	if (ret < 0)
-	{
+	if (ret < 0) {
 		// DPRINT ...
 		goto L1;
 	}

@@ -15,8 +15,7 @@ static const char *int_to_hex_str(__u32 val, char str[])
 {
 	char *p = str + BUF_LEN;
 
-	do
-	{
+	do {
 		p--;
 
 		*p = val & 0xf;
@@ -42,8 +41,7 @@ static const char *int_to_oct_str(__u32 val, char str[])
 {
 	char *p = str + BUF_LEN;
 
-	while (val)
-	{
+	while (val) {
 		p--;
 
 		*p = val % 10;
@@ -66,14 +64,11 @@ int printf(const char *fmt, ...)
 	const char *p, *q;
 	const __u32 *arg = (const __u32 *)&fmt + 1;
 
-	for (p = fmt; *p != '\0'; p++)
-	{
-		if (*p == '%')
-		{
+	for (p = fmt; *p != '\0'; p++) {
+		if (*p == '%') {
 			p++;
 
-			switch (*p)
-			{
+			switch (*p) {
 			case 'c':
 				uart_send_byte((char)*arg);
 				break;
@@ -83,8 +78,7 @@ int printf(const char *fmt, ...)
 				uart_send_byte('x');
 			case 'x':
 				q = int_to_hex_str(*arg, buf);
-				while (q < buf + BUF_LEN)
-				{
+				while (q < buf + BUF_LEN) {
 					uart_send_byte(*q);
 					q++;
 				}
@@ -93,8 +87,7 @@ int printf(const char *fmt, ...)
 #if ARM_ARCH >= 6
 			case 'd':
 				q = int_to_oct_str(*arg, buf);
-				while (q < buf + BUF_LEN)
-				{
+				while (q < buf + BUF_LEN) {
 					uart_send_byte(*q);
 					q++;
 				}
@@ -103,8 +96,7 @@ int printf(const char *fmt, ...)
 
 			case 's':
 				q = (const char *)*arg;
-				while (*q)
-				{
+				while (*q) {
 					uart_send_byte(*q);
 					if ('\n' == *q)
 						uart_send_byte('\r');
@@ -119,9 +111,7 @@ int printf(const char *fmt, ...)
 			}
 
 			arg++;
-		}
-		else
-		{
+		} else {
 			uart_send_byte(*p);
 			if ('\n' == *p)
 				uart_send_byte('\r');

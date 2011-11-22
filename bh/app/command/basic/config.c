@@ -59,8 +59,7 @@ int main(int argc, char *argv[])
 		return -EINVAL;
 	}
 
-	while ((opt = getopt(argc, argv, "a:g:d:s:hl")) != -1)
-	{
+	while ((opt = getopt(argc, argv, "a:g:d:s:hl")) != -1) {
 		switch (opt) {
 		case 'l':
 		case 'd':

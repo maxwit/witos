@@ -39,8 +39,7 @@ static int DataFlashSpiEnable(__u32 ulCS)
 {
 	volatile struct AT9261_SPI *pSpi0 = (struct AT9261_SPI *)AT91SAM926X_PA_SPI0;
 
-	switch (ulCS)
-	{
+	switch (ulCS) {
 	case 0:
 		pSpi0->dwSPIMR &= 0xFFF0FFFF;
 		pSpi0->dwSPIMR |= ((AT91C_SPI_PCS0_SERIAL_DATAFLASH) & AT91C_SPI_PCS);
@@ -88,8 +87,7 @@ static int DataFlashSpiOps(struct flash_chip *flash)
 	pSpi0->dwSPIRCR = (__u16)pDataflash->stOprMsg.nRxCmdLen;
 	pSpi0->dwSPITCR = (__u16)pDataflash->stOprMsg.nTxCmdLen;
 
-	if (true == pDataflash->stOprMsg.hasData)
-	{
+	if (true == pDataflash->stOprMsg.hasData) {
 		pSpi0->dwSPIRNPR = (__u32)pDataflash->stOprMsg.pRxDataBuf;
 		pSpi0->dwSPITNPR = (__u32)pDataflash->stOprMsg.pTxDataBuf;
 
@@ -140,11 +138,9 @@ static int DataFlashWaitReady(struct flash_chip *flash)
 
 	DataFlashSpiEnable(pDataFlash->ulChipSelect);
 
-	for (;;)
-	{
+	for (;;) {
 		ret = DataFlashStatus(flash, &status);
-		if (ret < 0)
-		{
+		if (ret < 0) {
 			DPRINT("%s: status %d?\n", flash->name, status);
 			continue;
 		}
@@ -176,8 +172,7 @@ static int DataFlashErase(struct flash_chip *flash, struct erase_opt *pErsOp)
 
 	DataFlashWaitReady(flash);
 
-	while (pErsOp->len > 0)
-	{
+	while (pErsOp->len > 0) {
 		__u32	pageaddr;
 		int		status;
 		int		do_block;
@@ -202,26 +197,21 @@ static int DataFlashErase(struct flash_chip *flash, struct erase_opt *pErsOp)
 		status = DataFlashSpiOps(flash);
 		(void) DataFlashWaitReady(flash);
 
-		if (status < 0)
-		{
+		if (status < 0) {
 			DPRINT( "%s: erase %stOpMsg, err %d\n", flash->name, pageaddr, status);
 
 			continue;
 		}
 
-		if (NULL != flash->callback_func && NULL != flash->callback_args)
-		{
+		if (NULL != flash->callback_func && NULL != flash->callback_args) {
 			flash->callback_args->nPageIndex = pageaddr >> pDataFlash->nPageShift;
 			flash->callback_func(flash, flash->callback_args);
 		}
 
-		if (do_block)
-		{
+		if (do_block) {
 			pErsOp->addr += blocksize;
 			pErsOp->len  -= blocksize;
-		}
-		else
-		{
+		} else {
 			pErsOp->addr += pDataFlash->page_size;
 			pErsOp->len  -= pDataFlash->page_size;
 		}
@@ -255,8 +245,7 @@ static int DataFlashWrite(struct flash_chip *flash, __u32 to, __u32 len,
 		return -EINVAL;
 
 	pTmpBuf = malloc(pDataFlash->page_size);
-	if (NULL == pTmpBuf)
-	{
+	if (NULL == pTmpBuf) {
 		DPRINT("%s, %d\n", __func__, __LINE__);
 		return -ENOMEM;
 	}
@@ -270,14 +259,12 @@ static int DataFlashWrite(struct flash_chip *flash, __u32 to, __u32 len,
 
 	(void) DataFlashWaitReady(flash);
 
-	while (remaining > 0)
-	{
+	while (remaining > 0) {
 		DPRINT("write @ %x:%x len=%x\n", pageaddr, offset, writelen);
 
 		addr = pageaddr << pDataFlash->nPageShift;
 
-		if (writelen != pDataFlash->page_size)
-		{
+		if (writelen != pDataFlash->page_size) {
 			pDataFlash->stOprMsg.pTxCmdBuf = pDataFlash->stOprMsg.pRxCmdBuf = pbCmd = pDataFlash->bCommand;
 			pDataFlash->stOprMsg.nTxCmdLen = pDataFlash->stOprMsg.nRxCmdLen = 4;
 			pDataFlash->stOprMsg.hasData   = false;
@@ -317,8 +304,7 @@ static int DataFlashWrite(struct flash_chip *flash, __u32 to, __u32 len,
 
 		(void) DataFlashWaitReady(flash);
 
-		if (NULL != flash->callback_func && NULL != flash->callback_args)
-		{
+		if (NULL != flash->callback_func && NULL != flash->callback_args) {
 			flash->callback_args->nPageIndex = pageaddr;
 			flash->callback_func(flash, flash->callback_args);
 		}
@@ -342,17 +328,13 @@ static int DataFlashWrite(struct flash_chip *flash, __u32 to, __u32 len,
 
 		status = DataFlashWaitReady(flash);
 
-		if ((status & (1 << 6)) == 1)
-		{
+		if ((status & (1 << 6)) == 1) {
 			DPRINT("%s: compare page %u, err %d\n",	flash->name, pageaddr, status);
 			remaining = 0;
 			status = -EIO;
 			break;
-		}
-		else
-		{
+		} else
 			status = 0;
-		}
 #endif
 
 		remaining = remaining - writelen;
@@ -402,8 +384,7 @@ static int DataFlashRead(struct flash_chip *flash, __u32 from, __u32 len,
 	(void) DataFlashWaitReady(flash);
 
 	// spi tx/rx count is 16-bit registers,  so need to split the length, here choose pagesize as basic unit
-	while (nRemainLen > 0)
-	{
+	while (nRemainLen > 0) {
 #if 0
 		if (nRemainLen >= pDataFlash->block_size)
 			nReadLen = pDataFlash->block_size;
@@ -432,18 +413,13 @@ static int DataFlashRead(struct flash_chip *flash, __u32 from, __u32 len,
 		status = DataFlashSpiOps(flash);
 		(void) DataFlashWaitReady(flash);
 
-		if (status >= 0)
-		{
+		if (status >= 0) {
 			(*retlen) += nReadLen;
 			status = 0;
-		}
-		else
-		{
+		} else
 			DPRINT("%s: read %x..%x --> %d\n", flash->name, (unsigned)from, (unsigned)(from + len), status);
-		}
 
-		if (NULL != flash->callback_func && NULL != flash->callback_args)
-		{
+		if (NULL != flash->callback_func && NULL != flash->callback_args) {
 			flash->callback_args->nPageIndex = nPage;
 			flash->callback_func(flash, flash->callback_args);
 		}
@@ -548,8 +524,7 @@ static int DataFlashAdd(const char *pszName, __u32 nPages, __u32 page_size, __u3
 			  pDataFlash->nPageShift, pDataFlash->nBlockShift, flash->chip_size);
 
 	ulRet = flash_register(flash);
-	if (ulRet < 0)
-	{
+	if (ulRet < 0) {
 		DPRINT("%s(): fail to register deivce %S!\n", __func__, flash->name);
 		// fixme: destroy
 
@@ -574,11 +549,8 @@ static int DataFlashAdd(const char *pszName, __u32 nPages, __u32 page_size, __u3
 
 		// fixme: add partition checking
 		if (GB_MAGIC_MBR == pt_info->nMagic)
-		{
 			GuPartCreateAll(flash, pt_info->vParts, pt_info->nParts);
-		}
-		else
-		{
+		else {
 			printf("Partitions: set to default.\n");
 			GuPartCreateAll(flash, g_defDataFlashParts, ARRAY_ELEM_NUM(g_defDataFlashParts));
 		}
@@ -630,14 +602,12 @@ static int __INIT__ DataFlashProbe(void)
 	DataFlashSpiEnable(0);
 
 	ulRet = DataFlashStatus(&stTmpDataFlash.parent, &status);
-	if (ulRet < 0 || status == 0xff)
-	{
+	if (ulRet < 0 || status == 0xff) {
 		DPRINT("ERROR: status error %d\n", status);
 		return -ENODEV;
 	}
 
-	switch (status & 0x3c)
-	{
+	switch (status & 0x3c) {
 	case 0x0c:
 		ulRet = DataFlashAdd("AT45DB011B", 512, 264, 9);
 		break;

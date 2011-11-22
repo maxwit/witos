@@ -75,9 +75,7 @@ int mem_init(void)
 	int i;
 
 	for (i = 0; i < ARRAY_ELEM_NUM(g_mem_conf); i++)
-	{
 		s3c24x0_memcon_writel(4 * i, g_mem_conf[i]);
-	}
 
 	// for (i = 0; i < 256; i++);
 

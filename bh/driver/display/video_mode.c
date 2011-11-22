@@ -65,8 +65,7 @@ const struct lcd_vmode *lcd_get_vmode_by_name(const char *model)
 {
 	int lcd_id = 0;
 
-	while (lcd_id < ARRAY_ELEM_NUM(g_lcd_vm_tab))
-	{
+	while (lcd_id < ARRAY_ELEM_NUM(g_lcd_vm_tab)) {
 		if (!strcmp(g_lcd_vm_tab[lcd_id].model, model))
 			return g_lcd_vm_tab + lcd_id;
 

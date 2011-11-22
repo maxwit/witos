@@ -5,9 +5,7 @@ static int s3c6410_timer_isr(__u32 irq, void *dev)
 	__u32 val;
 
 	if (!(readl(VA(TIN_CSTAT)) & 1 << 6))
-	{
 		return IRQ_NONE;
-	}
 
 	inc_tick();
 
@@ -59,8 +57,7 @@ int __INIT__ s3c6410_timer_init(void)
 	writel(VA(TCON), val);
 
 	ret = irq_register_isr(INT_TIMER1, s3c6410_timer_isr, NULL);
-	if (ret < 0)
-	{
+	if (ret < 0) {
 		printf("%s %d irq_register_isr() failed!\n", __FILE__, __LINE__);
 		return ret;
 	}

@@ -2,16 +2,14 @@
 
 #include <types.h>
 
-typedef enum
-{
+typedef enum {
 	PIX_RGB15,
 	PIX_RGB16,
 	PIX_RGB24,
 	PIX_RGB32,
 } pixel_format_t;
 
-struct lcd_vmode
-{
+struct lcd_vmode {
 	const char *model;
 	int pix_clk;
 	int width, height;
@@ -20,8 +18,7 @@ struct lcd_vmode
 };
 
 #if 0
-struct plat_lcd_info
-{
+struct plat_lcd_info {
 	const char *model;
 	pixel_format_t pix_format;
 };
@@ -32,8 +29,7 @@ const struct lcd_vmode *lcd_get_vmode_by_name(const char *model);
 void *video_mem_alloc(__u32 *phy_addr, const struct lcd_vmode *vm, pixel_format_t pix_fmt);
 
 //
-struct display
-{
+struct display {
 	void *mmio;
 	void *video_mem_va;
 	__u32   video_mem_pa;

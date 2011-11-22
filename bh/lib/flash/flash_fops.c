@@ -57,8 +57,7 @@ static int flash_bdev_close(struct bdev_file *file)
 	blk_buff = &file->blk_buf;
 	rest = blk_buff->blk_off - blk_buff->blk_base;
 
-	if (file->cur_pos > 0 || rest > 0) // fixme: if mode=write
-	{
+	if (file->cur_pos > 0 || rest > 0) { // fixme: if mode=write
 		int type;
 		__u32 pos_adj;
 
@@ -67,8 +66,7 @@ static int flash_bdev_close(struct bdev_file *file)
 
 		type = get_image_type(file);
 
-		switch (type)
-		{
+		switch (type) {
 		case PT_FS_YAFFS:
 		case PT_FS_YAFFS2:
 			pos_adj = file->cur_pos / (flash->write_size + flash->oob_size) * flash->write_size;
@@ -90,18 +88,15 @@ static int flash_bdev_close(struct bdev_file *file)
 			break;
 		}
 
-		if (ret < 0)
-		{
+		if (ret < 0) {
 			DPRINT("%s(), line %d\n", __func__, __LINE__);
 			goto L1;
 		}
 
-		if (rest > 0)
-		{
+		if (rest > 0) {
 			memset(blk_buff->blk_off, 0xFF, blk_buff->blk_size - rest);
 
-			switch (type)
-			{
+			switch (type) {
 			case PT_FS_YAFFS:
 				ret = flash_ioctl(flash, FLASH_IOCS_OOB_MODE, (void *)FLASH_OOB_RAW);
 				ret = flash_write(flash, blk_buff->blk_base, rest, flash_pos);
@@ -118,8 +113,7 @@ static int flash_bdev_close(struct bdev_file *file)
 				break;
 			}
 
-			if (ret < 0)
-			{
+			if (ret < 0) {
 				DPRINT("%s(), line %d\n", __func__, __LINE__);
 				goto L1;
 			}
@@ -160,8 +154,7 @@ static ssize_t flash_bdev_write(struct bdev_file *file, const void *buff, __u32 
 
 	part_type = get_image_type(file);
 
-	if (size + file->cur_pos > bdev->bdev_size)
-	{
+	if (size + file->cur_pos > bdev->bdev_size) {
 		char tmp[32];
 
 		val_to_hr_str(bdev->bdev_size, tmp);
@@ -173,10 +166,8 @@ static ssize_t flash_bdev_write(struct bdev_file *file, const void *buff, __u32 
 	blk_buff  = &file->blk_buf;
 	buff_room = blk_buff->blk_size - (blk_buff->blk_off - blk_buff->blk_base);
 
-	while (size > 0)
-	{
-		if (size >= buff_room)
-		{
+	while (size > 0) {
+		if (size >= buff_room) {
 			__u32 size_adj;
 
 			memcpy(blk_buff->blk_off, buff, buff_room);
@@ -187,10 +178,8 @@ static ssize_t flash_bdev_write(struct bdev_file *file, const void *buff, __u32 
 			buff_room = blk_buff->blk_size;
 
 #ifdef CONFIG_IMAGE_CHECK
-			if (file->cur_pos < blk_buff->blk_size)
-			{
-				if (false == check_image_type(part_type, blk_buff->blk_base))
-				{
+			if (file->cur_pos < blk_buff->blk_size) {
+				if (false == check_image_type(part_type, blk_buff->blk_base)) {
 					printf("\nImage part_type mismatch!"
 						"Please check the image name and the target bdev_file!\n");
 
@@ -201,8 +190,7 @@ static ssize_t flash_bdev_write(struct bdev_file *file, const void *buff, __u32 
 
 			size_adj = blk_buff->blk_size;
 
-			switch (part_type)
-			{
+			switch (part_type) {
 			case PT_FS_YAFFS:
 				// fixme: use macro: RATIO_TO_PAGE(n)
 				size_adj = blk_buff->blk_size / (flash->write_size + flash->oob_size) << flash->write_shift;
@@ -227,14 +215,12 @@ static ssize_t flash_bdev_write(struct bdev_file *file, const void *buff, __u32 
 			}
 
 			ret = flash_erase(flash, flash_pos, size_adj, eflag);
-			if (ret < 0)
-			{
+			if (ret < 0) {
 				printf("%s(), line %d\n", __func__, __LINE__);
 				goto L1;
 			}
 
-			switch (part_type)
-			{
+			switch (part_type) {
 			case PT_FS_YAFFS:
 				ret = flash_ioctl(flash, FLASH_IOCS_OOB_MODE, (void *)FLASH_OOB_RAW);
 				ret = flash_write(flash, blk_buff->blk_base, blk_buff->blk_size, flash_pos);
@@ -251,17 +237,14 @@ static ssize_t flash_bdev_write(struct bdev_file *file, const void *buff, __u32 
 				break;
 			}
 
-			if (ret < 0)
-			{
+			if (ret < 0) {
 				DPRINT("%s(), line %d\n", __func__, __LINE__);
 				goto L1;
 			}
 
 			file->cur_pos += blk_buff->blk_size;
 			blk_buff->blk_off = blk_buff->blk_base;
-		}
-		else
-		{ // fixme: symi write
+		} else { // fixme: symi write
 			memcpy(blk_buff->blk_off, buff, size);
 
 			blk_buff->blk_off += size;
@@ -279,9 +262,7 @@ L1:
 static struct part_attr *PartGetAttr(struct part_info *pt_info, int nFreeIndex)
 {
 	if (nFreeIndex > pt_info->parts)
-	{
 		return NULL;
-	}
 
 	return pt_info->attr_tab + nFreeIndex;
 }
@@ -297,38 +278,28 @@ int GuPartCreate(struct part_info *pt_info, int nFreeIndex, __u32 size, PART_TYP
 
 	pFreeAttr = PartGetAttr(pt_info, nFreeIndex);
 	if (NULL == pFreeAttr)
-	{
 		return -ENODEV;
-	}
 
 	// (size & (host->erase_size - 1)) || // fixme
 	if (0 == size || size > pFreeAttr->part_size)
-	{
 		return -EINVAL;
-	}
 
 	if (PartProtected(part_type))  // reasonable ?
-	{
 		return -EPERM;
-	}
 
 	if (PT_FREE == part_type || PT_FREE != pFreeAttr->part_type)
-	{
 		return -EINVAL;
-	}
 
 	// move to AdjustXXX()?
 	if (pt_info->parts == MAX_FLASH_PARTS && size != pFreeAttr->part_size)
 		size = pFreeAttr->part_size;
 
-	if (size < pFreeAttr->part_size)
-	{
+	if (size < pFreeAttr->part_size) {
 		struct part_attr *pCurrAttr;
 
 		pCurrAttr = pt_info->attr_tab + pt_info->parts;
 
-		while (pCurrAttr > pFreeAttr)
-		{
+		while (pCurrAttr > pFreeAttr) {
 			*pCurrAttr = *(pCurrAttr - 1);
 
 			pCurrAttr--;
@@ -351,8 +322,7 @@ int GuPartCreate(struct part_info *pt_info, int nFreeIndex, __u32 size, PART_TYP
 #if 0
 const char *part_type2str(__u32 type)
 {
-	switch(type)
-	{
+	switch(type) {
 	case PT_FREE:
 		return PT_STR_FREE;
 
@@ -405,16 +375,14 @@ int part_show(const struct flash_chip *flash)
 	const char *pBar = "--------------------------------------------------------------------";
 	struct linux_config *pLinuxParam;
 
-	if (NULL == flash)
-	{
+	if (NULL == flash) {
 		printf("ERROR: fail to open a flash!\n");
 		return -ENODEV;
 	}
 
 	index = part_tab_read(flash, attr_tab, MAX_FLASH_PARTS);
 
-	if (index <= 0)
-	{
+	if (index <= 0) {
 		printf("fail to read bdev_file table! (errno = %d)\n", index);
 		return index;
 	}
@@ -428,8 +396,7 @@ int part_show(const struct flash_chip *flash)
 	printf(" Index     Start         End     Size       Type        Name\n");
 	printf("%s\n", pBar);
 
-	for (nIndex = 0; nIndex < index; nIndex++)
-	{
+	for (nIndex = 0; nIndex < index; nIndex++) {
 		char szPartIdx[8], szPartSize[16];
 
 		sprintf(szPartIdx, "%c%d",

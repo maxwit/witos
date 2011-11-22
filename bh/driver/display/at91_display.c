@@ -28,8 +28,7 @@ static int at91sam9261_lcdc_init(void)
 	const struct lcd_vmode *vm;
 
 	vm = lcd_get_vmode_by_id(CONFIG_LCD_ID);
-	if (NULL == vm)
-	{
+	if (NULL == vm) {
 		printf("No LCD video mode matched!\n");
 		return -ENOENT;
 	}
@@ -61,8 +60,7 @@ static int at91sam9261_lcdc_init(void)
 	at91_lcdc_writel(LCDFIFO, 501);
 
 	video_buff_cpu = video_mem_alloc(&video_buff_dma, vm, PIX_RGB15);
-	if (video_buff_cpu == NULL)
-	{
+	if (video_buff_cpu == NULL) {
 		printf("Fail to dma_alloc\n");
 		return -ENOMEM;
 	}

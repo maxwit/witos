@@ -10,8 +10,7 @@ static int sdio_read_cis(struct mmc_host *host)
 	unsigned int vendor, device;
 	struct sdio_func_tuple *this;
 
-	for (i = 0; i < 3; i++)
-	{
+	for (i = 0; i < 3; i++) {
 		unsigned char x, fn = 0;
 
 		ret = mmc_io_rw_direct(host, 0, 0, SDIO_FBR_BASE(fn) + SDIO_FBR_CIS + i, 0, &x);
@@ -23,8 +22,7 @@ static int sdio_read_cis(struct mmc_host *host)
 
 	DPRINT("ptr = 0x%x\n", ptr);
 
-	do
-	{
+	do {
 		unsigned char tpl_code, tpl_link;
 
 		ret = mmc_io_rw_direct(host, 0, 0, ptr++, 0, &tpl_code);
@@ -51,26 +49,22 @@ static int sdio_read_cis(struct mmc_host *host)
 		if (!this)
 			return -ENOMEM;
 
-		for (i = 0; i < tpl_link; i++)
-		{
+		for (i = 0; i < tpl_link; i++) {
 			ret = mmc_io_rw_direct(host, 0, 0, ptr + i, 0, &this->data[i]);
 			if (ret)
 				break;
 		}
 
-		if (ret)
-		{
+		if (ret) {
 			free(this);
 			break;
 		}
 
 		ptr += tpl_link;
 
-		if (tpl_code == 0x20)
-		{
+		if (tpl_code == 0x20) {
 
-			if (tpl_link < 4)
-			{
+			if (tpl_link < 4) {
 				printf("bad CIS tuple len = %d\n", tpl_link);
 				return  -EINVAL;
 			}
@@ -147,8 +141,7 @@ static int mmc_sdio_init_card(struct mmc_host *host)
 	__u32  rocr;
 
 	ret = mmc_io_rw_direct(host, 1, 0, 6, 8, NULL);
-	for (i = 0; i < 10; i++)
-	{
+	for (i = 0; i < 10; i++) {
 		ret = mmc_send_io_op_cond(host, 0, &rocr);
 		if (!(host->resp[0] & (7 << 28)))
 			return -1;

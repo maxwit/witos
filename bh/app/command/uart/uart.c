@@ -105,8 +105,7 @@ static int uart_setup(int argc ,char *argv[])
 		}
 	}
 
-	if (flag == 1)
-	{
+	if (flag == 1) {
 		// fixme
 	} else {
 		usage();

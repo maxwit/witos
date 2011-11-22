@@ -24,8 +24,7 @@ void mdelay(__u32 n)
 	volatile __u32 curr_tick = get_tick();
 
 	// yes, we'd write the loop in this way :P
-	while (1)
-	{
+	while (1) {
 		if (get_tick() >= curr_tick + n)
 			return;
 	}
@@ -39,8 +38,7 @@ void calibrate_delay(__u32 ticks_persecond)
 
 	printf("Default	loops for perjiffies is %d\n", loops_perjiffies);
 
-	while (1)
-	{
+	while (1) {
 		cur_ticks = g_tick_count;
 		while (cur_ticks == g_tick_count);
 
@@ -50,17 +48,14 @@ void calibrate_delay(__u32 ticks_persecond)
 
 		cur_ticks = g_tick_count - cur_ticks;
 		if (cur_ticks)
-		{
 			break;
-		}
 
 		loops_perjiffies <<= 1;
 	}
 
 	loops_perjiffies >>= 1;
 
-	while (1)
-	{
+	while (1) {
 		cur_ticks = g_tick_count;
 		while (cur_ticks == g_tick_count);
 
@@ -70,9 +65,7 @@ void calibrate_delay(__u32 ticks_persecond)
 
 		cur_ticks = g_tick_count - cur_ticks;
 		if (cur_ticks)
-		{
 			break;
-		}
 
 		loops_perjiffies += 1;
 	}

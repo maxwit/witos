@@ -7,8 +7,7 @@
 #define PART_NAME_LEN 32
 #define MAX_FILE_NAME_LEN   64
 
-typedef enum
-{
+typedef enum {
 	PT_NONE,
 	PT_BAD,
 	PT_FREE,
@@ -30,8 +29,7 @@ typedef enum
 
 struct block_device;
 
-struct part_attr
-{
+struct part_attr {
 	PART_TYPE part_type;
 	__u32   part_base;
 	__u32   part_size;

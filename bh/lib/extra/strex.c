@@ -12,27 +12,18 @@ int hex_str_to_val(const char *str, __u32 *val)
 	int iLen = 0;
 	__u32 tmp = 0;
 
-	while (*str != '\0')
-	{
-		if (*str >= '0' && *str <= '9')
-		{
+	while (*str != '\0') {
+		if (*str >= '0' && *str <= '9') {
 			tmp <<= 4;
 			tmp |= *str - '0';
-		}
-		else if (*str >= 'a' && *str <= 'f')
-		{
+		} else if (*str >= 'a' && *str <= 'f') {
 			tmp <<= 4;
 			tmp |= *str - 'a' + 10;
-		}
-		else if (*str >= 'A' && *str <= 'F')
-		{
+		} else if (*str >= 'A' && *str <= 'F') {
 			tmp <<= 4;
 			tmp |= *str - 'A' + 10;
-		}
-		else
-		{
+		} else
 			return	-EINVAL;
-		}
 
 		str++;
 		iLen++;
@@ -52,21 +43,18 @@ int val_to_dec_str(char *str, long val)
 	char buff[MAX_DEC_LEN];
 	int i = MAX_DEC_LEN - 1, j = 0;
 
-	if (val < 0)
-	{
+	if (val < 0) {
 		str[j++] = '-';
 		val = -val;
 	}
 
-	while (val)
-	{
+	while (val) {
 		buff[i] = val % 10 + '0';
 		val /= 10;
 		i--;
 	}
 
-	while (++i < MAX_DEC_LEN)
-	{
+	while (++i < MAX_DEC_LEN) {
 		str[j] = buff[i];
 		j++;
 	}
@@ -83,25 +71,19 @@ int val_to_hex_str(char *str, __u32 val)
 	char buff[MAX_HEX_LEN];
 	int i = MAX_HEX_LEN - 1, j = 0;
 
-	while (val)
-	{
+	while (val) {
 		__u32 num = val & 0xf;
 
 		if (num < 0xa)
-		{
 			buff[i] = (char)num + '0';
-		}
 		else
-		{
 			buff[i] = (char)(num - 0xa) + 'a';
-		}
 
 		val >>= 4;
 		i--;
 	}
 
-	while (++i < MAX_HEX_LEN)
-	{
+	while (++i < MAX_HEX_LEN) {
 		str[j] = buff[i];
 		j++;
 	}
@@ -117,32 +99,21 @@ int dec_str_to_val(const char *str, __u32 *val)
 	const char *num = str;
 
 	if ('-' == *num)
-	{
 		num++;
-	}
 
-	while (*num != '\0')
-	{
+	while (*num != '\0') {
 		if (ISDIGIT(*num))
-		{
 			tmp = 10 * tmp + *num - '0';
-		}
 		else
-		{
 			return -EINVAL;
-		}
 
 		num++;
 	}
 
 	if ('-' == *str)
-	{
 		*val = -tmp;
-	}
 	else
-	{
 		*val = tmp;
-	}
 
 	return num - str;
 }
@@ -160,10 +131,8 @@ int hr_str_to_val(const char *str, __u32 *val)
 	__u8  mark = 0;
 	__u32 num = 0, tmp = 0;
 
-	while (1)
-	{
-		switch (*str)
-		{
+	while (1) {
+		switch (*str) {
 		case '0' ... '9':
 			tmp = tmp * 10 + *str - '0';
 			break;
@@ -171,9 +140,7 @@ int hr_str_to_val(const char *str, __u32 *val)
 		case 'g':
 		case 'G':
 			if (mark & (G_MARK | M_MARK | K_MARK))
-			{
 				goto error;
-			}
 
 			num += tmp << 30;
 			tmp = 0;
@@ -185,9 +152,7 @@ int hr_str_to_val(const char *str, __u32 *val)
 		case 'm':
 		case 'M':
 			if (mark & (M_MARK | K_MARK))
-			{
 				goto error;
-			}
 
 			num += tmp << 20;
 			tmp = 0;
@@ -199,9 +164,7 @@ int hr_str_to_val(const char *str, __u32 *val)
 		case 'k':
 		case 'K':
 			if (mark & K_MARK)
-			{
 				goto error;
-			}
 
 			num += tmp << 10;
 			tmp = 0;
@@ -255,12 +218,10 @@ int val_to_hr_str(__u32 val, char str[])
 		char sign;
 	} soff[] = {{30, 'G'}, {20, 'M'}, {10, 'K'}, {0, 'B'}};
 
-	for (i = 0; i < ARRAY_ELEM_NUM(soff); i++)
-	{
+	for (i = 0; i < ARRAY_ELEM_NUM(soff); i++) {
 		sect = (val >> soff[i].shift) & KB_MASK;
 
-		if (sect)
-		{
+		if (sect) {
 			ch += val_to_dec_str(ch, sect);
 			*ch++ = soff[i].sign;
 		}
@@ -277,47 +238,34 @@ int str_to_ip(__u8 ip_val[], const char *ip_str)
 	unsigned int num = 0;
 
 #if 1
-	while (*ip_str)
-	{
+	while (*ip_str) {
 		if (ISDIGIT(*ip_str))
-		{
 			num = 10 * num + *ip_str - '0';
-		}
-		else if ('.' == *ip_str && num <= 255 && dot < 3)
-		{
+		else if ('.' == *ip_str && num <= 255 && dot < 3) {
 			ip_val[dot] = (__u8)num;
 			dot++;
 			num = 0;
-		}
-		else
-		{
+		} else
 			return -EINVAL;
-		}
 
 		ip_str++;
 	}
 
 	if (dot < 3 || num > 255)
-	{
 		return -EINVAL;
-	}
 
 	ip_val[dot] = num;
 
 #else
-	while (1)
-	{
-		switch (*ip_str)
-		{
+	while (1) {
+		switch (*ip_str) {
 		case '0' ... '9':
 			num = 10 * num + *ip_str - '0';
 			break;
 
 		case '.':
 			if (num > 255 || 3 == dot)
-			{
 				return -EINVAL;
-			}
 
 			ip_val[dot] = (__u8)num;
 			dot++;
@@ -326,9 +274,7 @@ int str_to_ip(__u8 ip_val[], const char *ip_str)
 
 		case '\0':
 			if (3 != dot)
-			{
 				return -EINVAL;
-			}
 
 			ip_val[dot] = num;
 			return 0;
@@ -364,15 +310,11 @@ int str_to_mac(__u8 mac[], const char *str)
 
 	strncpy((char*)buf, str, MAC_STR_LEN);
 
-	for (i = j = 0; i <= MAC_STR_LEN && j < MAC_ADR_LEN; i++)
-	{
-		if (':' == buf[i]|| '\0' == buf[i])
-		{
+	for (i = j = 0; i <= MAC_STR_LEN && j < MAC_ADR_LEN; i++) {
+		if (':' == buf[i]|| '\0' == buf[i]) {
 			buf[i] = '\0';
 			if (hex_str_to_val(p, &num) <= 0 || num > 255)
-			{
 				return -EINVAL;
-			}
 			mac[j++] = num;
 			p = buf + i + 1;
 		}

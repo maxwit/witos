@@ -11,8 +11,7 @@
 struct file_operations;
 
 /////////////////////////////////
-struct file_system_type
-{
+struct file_system_type {
 	const char *name;
 	const struct file_operations *fops;
 	struct file_system_type *next;
@@ -25,8 +24,7 @@ int file_system_type_register(struct file_system_type *);
 struct file_system_type *file_system_type_get(const char *);
 
 ////////////////////////////////
-struct mount_point
-{
+struct mount_point {
 	const char *path;
 	struct block_device *bdev;
 	struct file_system_type *fs_type;
@@ -42,16 +40,14 @@ int gb_umount(const char *mnt);
 #endif
 
 //////////////////////////////////
-struct file
-{
+struct file {
 	size_t pos;
 	int mode;
 
 	const struct file_operations *fops;
 };
 
-struct file_operations
-{
+struct file_operations {
 	struct file *(*open)(void *, const char *, int, int);
 	int (*close)(struct file *);
 	int (*read)(struct file *, void *, size_t);

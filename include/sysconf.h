@@ -20,8 +20,7 @@
 #define BM_TFTP        (16 << 8)
 
 /////////////////////////////
-struct sys_config
-{
+struct sys_config {
 	__u32 magic;
 	__u32 size;
 	__u32 offset;

@@ -99,8 +99,7 @@ int getopt(int argc, char *argv[], const char *opt_str)
 			optarg = argv[optind++];
 
 		opt_pos = 1;
-	}
-	else {
+	} else {
 		if ('\0' == argv[optind][++opt_pos]) {
 			opt_pos = 1;
 			optind++;

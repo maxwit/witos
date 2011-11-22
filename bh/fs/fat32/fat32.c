@@ -16,9 +16,7 @@ static ssize_t fat_read_block(struct fat_fs *fs, void *buff, int blk_no, size_t 
 	start_blk = blk_no * fs->clus_size / drive->sect_size;
 
 	for (cur_blk = 0; cur_blk < buf_len / drive->sect_size; cur_blk++)
-	{
 		drive->get_block(drive, (start_blk + cur_blk) * drive->sect_size, blk_buf + cur_blk * drive->sect_size);
-	}
 
 	memcpy(buff, blk_buf + off, size);
 
@@ -31,8 +29,7 @@ static __u32 fat_get_fat_table(struct fat_fs *fs, __u32 fat_num)
 	static __u32 old_fat = ~0;
 	static __u32 fat_catch[2048];
 
-	if (old_fat == ~0 || fat_num < old_fat || fat_num > (fs->clus_size / sizeof(fat_num) + old_fat - 1))
-	{
+	if (old_fat == ~0 || fat_num < old_fat || fat_num > (fs->clus_size / sizeof(fat_num) + old_fat - 1)) {
 		ret = fat_read_block(fs, fat_catch, fs->dbr.resv_size / fs->dbr.sec_per_clus + fat_num * sizeof(fat_num) / (fs->clus_size),
 			0, fs->clus_size);
 
@@ -59,8 +56,7 @@ static int fat_mount(struct file_system_type *fs_type, unsigned long flags, stru
 
 	fs = malloc(sizeof(*fs));
 
-	if (fs == NULL)
-	{
+	if (fs == NULL) {
 		DPRINT("%s(): no mem\n", __func__);
 		return -ENOMEM;
 	}
@@ -68,16 +64,14 @@ static int fat_mount(struct file_system_type *fs_type, unsigned long flags, stru
 	dbr = &fs->dbr;
 
 	ret = drive->get_block(drive, 0, dbr);
-	if (ret < 0)
-	{
+	if (ret < 0) {
 		DPRINT("%s(): read dbr err\n", __func__);
 		return ret;
 	}
 
 	blk_size = dbr->sector_size[1] << 8 | dbr->sector_size[0];
 
-	if (blk_size < 512 || blk_size > 4096 || (blk_size & (blk_size - 1)))
-	{
+	if (blk_size < 512 || blk_size > 4096 || (blk_size & (blk_size - 1))) {
 		DPRINT("%s %s() line %d\n", __FILE__, __func__, __LINE__);
 		return -EINVAL;
 	}
@@ -113,15 +107,11 @@ static int strxcpy(char *dst, const char *src, __u32 n)
 {
 	int i, j;
 
-	for (i = 0, j = 0; i < n; i += 2)
-	{
-		if (*(src + i) != '\0')
-		{
+	for (i = 0, j = 0; i < n; i += 2) {
+		if (*(src + i) != '\0') {
 			*(dst + j) = *(src + i);
 			j++;
-		}
-		else if (*(src + i) == '\0' && *(src + i + 1) == '\0')
-		{
+		} else if (*(src + i) == '\0' && *(src + i + 1) == '\0') {
 			*(dst + j) = '\0';
 			j++;
 		}
@@ -139,25 +129,19 @@ static int fat_find_next_file(struct fat_fs *fs,
 
 	name[0] = '\0';
 
-	do
-	{
+	do {
 		if (*block_num != old_block_num
 			|| dir_pos - (struct fat_dentry *)buf == fs->clus_size / sizeof(*dir_pos)) // find next cluster
 		{
 			old_block_num = *block_num;
 
 			if (*block_num > 0x0ffffff8 || *block_num == 0)
-			{
 				return -1;
-			}
 
-			if (dir_pos - (struct fat_dentry *)buf == fs->clus_size / sizeof(*dir_pos))
-			{
+			if (dir_pos - (struct fat_dentry *)buf == fs->clus_size / sizeof(*dir_pos)) {
 				*block_num = fat_get_fat_table(fs, *block_num);
 				if (*block_num < 0)
-				{
 					goto L1;
-				}
 				old_block_num = *block_num;
 			}
 
@@ -168,8 +152,7 @@ static int fat_find_next_file(struct fat_fs *fs,
 
 		DPRINT("name = %s, attribute = %d\n", dir_pos->name, dir_pos->attr);
 
-		switch ((__u8)dir_pos->name[0])
-		{
+		switch ((__u8)dir_pos->name[0]) {
 		case 0xe5:
 			break;
 
@@ -177,12 +160,10 @@ static int fat_find_next_file(struct fat_fs *fs,
 			goto L1;
 
 		default:
-			switch (dir_pos->attr)
-			{
+			switch (dir_pos->attr) {
 			case 0x10:
 			case 0x20:
-				if (!name[0])
-				{
+				if (!name[0]) {
 					int i, j;
 
 					for (i = 0; i < 8 && dir_pos->name[i] != ' '; i++)
@@ -225,38 +206,29 @@ static struct fat_dentry *fat_lookup(struct fat_fs *fs, __u32 parent, const char
 	char sname[MAX_FILE_NAME_LEN];
 
 	dir = (struct fat_dentry *)malloc(sizeof(*dir));
-	if (dir == NULL)
-	{
+	if (dir == NULL) {
 		DPRINT("%s(): malloc err\n", __func__);
 		return NULL;
 	}
 
-	while (1)
-	{
+	while (1) {
 		// fixme
 		ret = fat_find_next_file(fs, &parent, sname, dir);
 		printf("%s(): ret = %d, sname = %s\n",
 			__func__, ret, sname);
-		if (ret < 0)
-		{
+		if (ret < 0) {
 			DPRINT("can't find file\n");
 			goto err;
 		}
 
-		if (strcmp(sname, name) == 0)
-		{
+		if (strcmp(sname, name) == 0) {
 			name = strchr(name, '/');
-			if (name != NULL)	// last file
-			{
-				if (dir->attr == 0x10)
-				{
+			if (name != NULL) {	// last file
+				if (dir->attr == 0x10) {
 					parent = dir->clus_hi << 16 | dir->clus_lo;
 					continue;
-				}
-				else
-				{
+				} else
 					goto err;
-				}
 			}
 			return dir;
 		}
@@ -315,12 +287,9 @@ static int fat_read(struct file *fp, void *buff, size_t size)
 	pos = fp->pos;
 
 	if (size + pos > fat_fp->dent->size)
-	{
 		size = fat_fp->dent->size - pos;
-	}
 
-	while (pos >= clus_size)
-	{
+	while (pos >= clus_size) {
 		clus_num = fat_get_fat_table(fs, clus_num);
 
 #if 0
@@ -331,29 +300,20 @@ static int fat_read(struct file *fp, void *buff, size_t size)
 		pos -= clus_size;
 	}
 
-	while (size > count)
-	{
+	while (size > count) {
 		if (size + pos - count > clus_size)
-		{
 			tmp_size = clus_size - pos;
-		}
 		else
-		{
 			tmp_size = size - count;
-		}
 
 		tmp_size = fat_read_block(fs, buff + count, fs->data + clus_num, pos, tmp_size);
 		if (tmp_size < 0)
-		{
 			break;
-		}
 		count += tmp_size;
 
 		clus_num = fat_get_fat_table(fs, clus_num);
 		if (clus_num < 0)
-		{
 			break;
-		}
 
 		pos = 0;
 	}
