@@ -134,6 +134,8 @@ static int __INIT__ omap3530_init(void)
 	return 0;
 }
 
+PLAT_INIT(omap3530_init);
+
 static void omap3530_reset(void)
 {
 	__u32 val;
@@ -143,4 +145,4 @@ static void omap3530_reset(void)
 	writel(VA(PRM_BASE + PRM_RSTCTRL), val);
 }
 
-PLAT_INIT(omap3530_init);
+DECL_RESET(omap3530_reset);

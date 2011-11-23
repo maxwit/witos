@@ -1,7 +1,7 @@
 #include <font/font.h>
 #include <graphic/display.h>
 
-static int is_dot(int x, int y, char c, struct font_descript *font)
+static int is_dot(int x, int y, char c, struct font_desc *font)
 {
 	int w, h;
 	__u8 *data;
@@ -16,7 +16,7 @@ static int is_dot(int x, int y, char c, struct font_descript *font)
 	return (*data >> (7 - x)) & 0x01;
 }
 
-int draw_char(struct display *disp, int x, int y, struct font_descript *font, __u32 color, char c)
+int draw_char(struct display *disp, int x, int y, struct font_desc *font, __u32 color, char c)
 {
 	int width  = disp->video_mode->width;
 	__u16 *buff;
@@ -35,7 +35,7 @@ int draw_char(struct display *disp, int x, int y, struct font_descript *font, __
 	return 0;
 }
 
-int draw_string(struct display *disp, int x, int y, struct font_descript *font, __u32 color, const char * str)
+int draw_string(struct display *disp, int x, int y, struct font_desc *font, __u32 color, const char * str)
 {
 	while (*str) {
 		draw_char(disp, x, y, font, color, *str);

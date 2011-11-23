@@ -60,6 +60,7 @@ build/generate/sys_img_creat: build/generate/sys_img_creat.c
 # fixme
 build/g-bios-sys.bin: build/generate/sys_img_creat
 	@$< .sysconfig $@
+	@echo
 
 install:
 	@mkdir -p $(IMG_DIR)
@@ -74,8 +75,10 @@ clean:
 		rm -vf $$dir/g-bios-$$dir.*; \
 	 done
 	@rm -vf build/g-bios-sys.bin
+	@echo
 
 distclean: clean
 	@rm -vf .config include/autoconf.h
+	@echo
 
 .PHONY: $(dir-y)

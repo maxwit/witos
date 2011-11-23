@@ -337,11 +337,11 @@ int tftp_upload(struct tftp_opt *opt)
 
 				pkt_len += TFTP_HDR_LEN;
 #endif
-				if (NULL != buff_ptr) {
+				if (NULL != buff_ptr)
 					pkt_len = tftp_make_data((__u8 *)tftp_pkt, ++blk_num, buff_ptr, dat_len);
-				}
+
 				sendto(sockfd, tftp_pkt, pkt_len, 0,
-						(struct sockaddr *)remote_addr, sizeof(*remote_addr));
+					(struct sockaddr *)remote_addr, sizeof(*remote_addr));
 
 				send_len	+= dat_len;
 				file_size	-= dat_len;
@@ -361,7 +361,7 @@ int tftp_upload(struct tftp_opt *opt)
 					__func__, blk_num, ntohs(tftp_pkt->block));
 #endif
 				pkt_len = recvfrom(sockfd, tftp_pkt, TFTP_BUF_LEN, 0,
-									(struct sockaddr *)remote_addr, &addrlen);
+								(struct sockaddr *)remote_addr, &addrlen);
 			}
 
 			break;

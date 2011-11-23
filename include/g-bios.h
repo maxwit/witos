@@ -36,7 +36,6 @@ void hang(char err);
 #else  // !CONFIG_GTH
 
 #ifndef __ASSEMBLY__
-
 #include <bitops.h>
 #include <task.h>
 #include <string.h>
@@ -44,9 +43,5 @@ void hang(char err);
 #include <malloc.h>
 #include <list.h>
 #include <font/font.h>
-
-extern init_func_t init_call_begin[], init_call_end[];
-extern font_init_t font_init_begin[], font_init_end[];
-
 #endif
 #endif

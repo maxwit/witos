@@ -20,21 +20,6 @@ SECTIONS
 		g_exe_end = .;
 	}
 
-	.gbios_font ALIGN(4):
-	{
-		font_init_begin = .;
-		*(.Level0.gbios_font)
-		*(.Level1.gbios_font)
-		font_init_end = .;
-	}
-
-	.gsect_help ALIGN(4):
-	{
-		g_help_begin = .;
-		*(.gsect_help)
-		g_help_end = .;
-	}
-
 	.gbios_init ALIGN(4):
 	{
 		*(.code.init)
@@ -47,6 +32,20 @@ SECTIONS
 		*(.Level4.gbios_init)
 		*(.Level5.gbios_init)
 		init_call_end = .;
+	}
+
+	.gbios_font ALIGN(4):
+	{
+		font_list_begin = .;
+		*(.gbios_font)
+		font_list_end = .;
+	}
+
+	.gsect_help ALIGN(4):
+	{
+		g_help_begin = .;
+		*(.gsect_help)
+		g_help_end = .;
 	}
 
 	.bss ALIGN(4):

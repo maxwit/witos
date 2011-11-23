@@ -83,6 +83,7 @@ int conf_del_attr(const char *attr)
 	memmove(p, q, mov_len);
 
 	g_sysconf->size -= q - p;
+	g_conf_dirty = true;
 
 	return 0;
 }
@@ -106,6 +107,7 @@ int conf_add_attr(const char *attr, const char *val)
 	len = sprintf(p, "%s = %s\n", attr, val);
 
 	g_sysconf->size = g_sysconf->size + len;
+	g_conf_dirty = true;
 
 	return 0;
 }
@@ -140,6 +142,7 @@ int conf_set_attr(const char *attr, const char *val)
 	}
 
 	memcpy(p, val, new_len);
+	g_conf_dirty = true;
 
 	return 0;
 }
@@ -180,7 +183,6 @@ int conf_load()
 		return -EINVAL;
 
 	old_sum = conf_checksum(&new_sum);
-
 	if (old_sum != new_sum)	{
 		DPRINT("checksum error! (0x%08x != 0x%08x)\n", new_sum, old_sum);
 		return -EIO;
@@ -196,6 +198,9 @@ int conf_store()
 	__u32 conf_base, conf_size;
 	struct flash_chip *flash;
 
+	if (!g_conf_dirty)
+		return 0;
+
 	flash = flash_open("mtdblock0");
 	if (NULL == flash) {
 		printf("open flash error\n");
@@ -206,18 +211,18 @@ int conf_store()
 	conf_size = g_sysconf->size + g_sysconf->offset;
 
 	ret = flash_erase(flash, conf_base, conf_size, EDF_ALLOWBB);
-
-	if (ret < 0) {
+	if (ret < 0)
 		goto L1;
-	}
 
 	conf_checksum(NULL);
 
 	ret = flash_write(flash, g_sysconf, conf_size, conf_base);
+	// if ret < 0 ...
+
+	g_conf_dirty = false;
 
 L1:
 	flash_close(flash);
-
 	return ret;
 }
 

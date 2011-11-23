@@ -4613,18 +4613,9 @@ static const __u8 fontdata_8x16[FONTDATAMAX] = {
 	0x00, /* 00000000 */
 };
 
-struct font_descript font_vga_8x16 = {
+static const __GBIOS_FONT__ struct font_desc font_vga_8x16 = {
 	.name	= "VGA8x16",
 	.width	= 8,
 	.height	= 16,
 	.data	= fontdata_8x16,
 };
-
-static int font_vga_8x16_init(void)
-{
-	add_font(&font_vga_8x16);
-
-	return 0;
-}
-
-INSTALL_FONT(font_vga_8x16_init);

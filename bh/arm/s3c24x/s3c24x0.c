@@ -11,4 +11,4 @@ static void s3c24x_reset(void)
 	while(1);
 }
 
-DECLARE_REBOOT(s3c24x_reset);
+DECL_RESET(s3c24x_reset);

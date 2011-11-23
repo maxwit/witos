@@ -47,17 +47,17 @@ static void lan9220_mac_csr_write(__u32 csr_reg, __u32 val)
 	while (lan9220_readl(MAC_CSR_CMD) & 1 << 31);
 }
 
-static __u16 lan9220_mdio_read(struct net_device *ndev, __u8 mii_id, __u8 reg)
+static __u16 lan9220_mdio_read(struct net_device *ndev, __u8 addr, __u8 reg)
 {
-	lan9220_mac_csr_write(MII_ACC, mii_id << 11 | reg << 6 | 1);
+	lan9220_mac_csr_write(MII_ACC, addr << 11 | reg << 6 | 1);
 	while (lan9220_mac_csr_read(MII_ACC) & 0x1);
 	return lan9220_mac_csr_read(MII_DATA) & 0xffff;
 }
 
-static void lan9220_mdio_write(struct net_device *ndev, __u8 mii_id, __u8 reg, __u16 val)
+static void lan9220_mdio_write(struct net_device *ndev, __u8 addr, __u8 reg, __u16 val)
 {
 	lan9220_mac_csr_write(MII_DATA, val & 0xffff);
-	lan9220_mac_csr_write(MII_ACC, mii_id << 11 | reg << 6 | 1 << 1 | 1);
+	lan9220_mac_csr_write(MII_ACC, addr << 11 | reg << 6 | 1 << 1 | 1);
 	while (lan9220_mac_csr_read(MII_ACC) & 0x1);
 }
 

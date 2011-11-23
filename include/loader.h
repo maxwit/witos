@@ -18,7 +18,7 @@
 #endif
 
 struct loader_opt {
-	void *load_addr;
+	void *load_addr; // fixme: void *load_addr[2];
 	int  load_flash;
 	int  load_size;
 	const char *prompt;

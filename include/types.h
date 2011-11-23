@@ -12,9 +12,15 @@
 #define __PACKED__        __attribute__((packed))
 #define __WEAK__          __attribute__((weak))
 
+#if __GNUC__ == 3 && __GNUC_MINOR__ >= 3 || __GNUC__ >= 4
+#define __USED__    __attribute__((__used__))
+#else
+#define __USED__    __attribute__((__unused__))
+#endif
+
 // #define PRINT_ARG_FORMAT __attribute__((format (printf, 1, 2)))
 
-#define DECLARE_REBOOT(func) \
+#define DECL_RESET(func) \
 	void reset(void) __attribute__((alias(#func)))
 
 #define NULL  ((void *)0)

@@ -1,10 +1,16 @@
-// fix the wolrd!
 #include <sysconf.h>
 #include <getopt.h>
 
 #define LEN 128
+// fixme
+#define MAX_OPT 5
 
-static int exec_conf(int option, char *arg, char *val)
+struct conf_opt {
+	int opt;
+	const char *attr, *val;
+};
+
+static int do_config(int option, const char *arg, const char *val)
 {
 	char buff[LEN];
 	int ret;
@@ -14,33 +20,33 @@ static int exec_conf(int option, char *arg, char *val)
 		ret = conf_add_attr(arg, val);
 		if (ret >= 0)
 			printf("add %s successfully\n", arg);
-
 		break;
 
 	case 'd':
 		ret = conf_del_attr(arg);
 		if (ret >= 0)
 			printf("delete %s successfully\n", arg);
-
 		break;
 
 	case 'g':
 		ret = conf_get_attr(arg, buff);
 		if (!ret)
 			printf("%s = %s\n", arg, buff);
-
 		break;
 
 	case 'l':
 		ret = conf_list_attr();
-
 		break;
 
 	case 's':
 		ret = conf_set_attr(arg, val);
 		if (ret >= 0)
 			printf("set %s successfully\n", arg);
+		break;
 
+	default:
+		printf("Invalid option '%c'\n", option);
+		ret = -EINVAL;
 		break;
 	}
 
@@ -49,63 +55,57 @@ static int exec_conf(int option, char *arg, char *val)
 
 int main(int argc, char *argv[])
 {
-	int opt, option = 0;
-	int ret = 0;
-	char *val = NULL;
-	char *arg = NULL;
+	int i, j, opt, ret;
+	struct conf_opt opt_list[MAX_OPT];
 
 	if (argc == 1) {
 		usage();
 		return -EINVAL;
 	}
 
-	while ((opt = getopt(argc, argv, "a:g:d:s:hl")) != -1) {
+	i = 0;
+	while ((opt = getopt(argc, argv, "a:g:d:s:lh")) != -1) {
 		switch (opt) {
-		case 'l':
 		case 'd':
 		case 'g':
-			if (optind < argc) {
-				usage();
-				return -EINVAL;
-			}
-
+			opt_list[i].attr = optarg;
+		case 'l':
+			opt_list[i].opt = opt;
 			break;
 
 		case 'a':
 		case 's':
-			if (optind < argc - 1) {
+			if (optind == argc || '-' == argv[optind][0]) {
 				usage();
 				return -EINVAL;
 			}
-
+			opt_list[i].opt  = opt;
+			opt_list[i].attr = optarg;
+			opt_list[i].val  = argv[optind];
+			optind++;
 			break;
 
 		case 'h':
 			usage();
-			return ret;
+			return 0;
 
 		default:
 			usage();
 			return -EINVAL;
 		}
 
-		option = opt;
-		arg = optarg;
+		i++;
 	}
 
-	if (!option)
-		return -EINVAL;
-
-	val = argv[optind];
-	ret = exec_conf(option, arg, val);
-	if (ret < 0)
-		return -EINVAL;
-
-	if (option != 'l' && option != 'g' && option != 'h') {
-		ret = conf_store();
+	for (j = 0; j < i; j++) {
+		ret = do_config(opt_list[j].opt, opt_list[j].attr, opt_list[j].val);
 		if (ret < 0)
-			printf("\nconfig_store faild\n");
+			return -EINVAL;
 	}
+
+	ret = conf_store();
+	if (ret < 0)
+		printf("\nconfig_store faild\n");
 
 	return ret;
 }

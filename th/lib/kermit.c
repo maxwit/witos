@@ -151,7 +151,7 @@ int kermit_load(struct loader_opt *opt)
 		/* terminator */
 		curr_char = buff[index++];
 		if (curr_char != KERM_KEY_TERM)
-			goto Error;
+			goto error;
 
 #ifndef CONFIG_GTH
 		part_write(opt->part, curr_addr, count);
@@ -170,20 +170,8 @@ int kermit_load(struct loader_opt *opt)
 
 	return opt->load_size;
 
-Error:
+error:
 	return -EFAULT;
 }
 
-// fixme
-static int kermit_loader(struct loader_opt *opt)
-{
-	opt->load_addr = CONFIG_GBH_START_MEM;
-	kermit_load(&opt);
-
-	opt->load_addr = CONFIG_SYS_START_MEM;
-	kermit_load(&opt);
-
-	return 0;
-}
-
-REGISTER_LOADER(k, kermit_loader, "Kermit");
+REGISTER_LOADER(k, kermit_load, "Kermit");

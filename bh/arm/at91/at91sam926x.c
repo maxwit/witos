@@ -49,5 +49,4 @@ static void at91_reset(void)
 	writel(VA(AT91SAM926X_PA_RSTC), 0xa5 << 24 | 0xd);
 }
 
-DECLARE_REBOOT(at91_reset);
-
+DECL_RESET(at91_reset);

@@ -3,7 +3,6 @@
 #define FONTDATAMAX 11264
 
 static const unsigned char fontdata_sun12x22[FONTDATAMAX] = {
-
 	/* 0 0x00 '^@' */
 	0x00, 0x00, /* 000000000000 */
 	0x00, 0x00, /* 000000000000 */
@@ -6149,19 +6148,9 @@ static const unsigned char fontdata_sun12x22[FONTDATAMAX] = {
 	0x00, 0x00, /* 000000000000 */
 };
 
-
-struct font_descript font_sun_12x22 = {
+static const __GBIOS_FONT__ struct font_desc font_sun_12x22 = {
 	.name	= "SUN12x22",
 	.width	= 12,
 	.height	= 22,
 	.data	= fontdata_sun12x22,
 };
-
-static int font_sun_12x22_init(void)
-{
-	add_font(&font_sun_12x22);
-
-	return 0;
-}
-
-INSTALL_FONT(font_sun_12x22_init);
