@@ -2,7 +2,7 @@
 #include <errno.h>
 #include <string.h>
 #include <fs/fs.h>
-#include "fat32.h"
+#include <fs/fat32.h>
 
 static ssize_t fat_read_block(struct fat_fs *fs, void *buff, int blk_no, size_t off, size_t size)
 {
@@ -183,8 +183,8 @@ static int fat_find_next_file(struct fat_fs *fs,
 
 			case 0x0f:
 				strxcpy(name + ((dir_pos->name[0] & 0x0f) - 1) * 13, dir_pos->name + 1, 10);
-				strxcpy(name + ((dir_pos->name[0] & 0x0f) - 1) * 13 + 5, dir_pos->name + 14, 12);
-				strxcpy(name + ((dir_pos->name[0] & 0x0f) - 1) * 13 + 11, dir_pos->name + 28, 4);
+				strxcpy(name + ((dir_pos->name[0] & 0x0f) - 1) * 13 + 5, &dir_pos->name[0] + 14, 12);
+				strxcpy(name + ((dir_pos->name[0] & 0x0f) - 1) * 13 + 11, &dir_pos->name[0] + 28, 4);
 				break;
 
 			default:

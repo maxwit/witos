@@ -359,16 +359,14 @@ static int init_ping_packet(struct ping_packet *ping_pkt,
 int ping_send(struct sock_buff *rx_skb, const struct ip_header *ip_hdr, __u8 type)
 {
 	__u8 ping_buff[PING_PACKET_LENGTH];
-	size_t hdr_len = sizeof(struct ping_packet);
 	struct socket sock;
 	struct sock_buff *tx_skb;
-	struct ether_header *eth_head;
+	// struct ether_header *eth_head;
 	struct ping_packet *ping_pkt, *rx_ping_head;
 
-	eth_head = (struct ether_header *)(rx_skb->data - IP_HDR_LEN - ETH_HDR_LEN);
+	// eth_head = (struct ether_header *)(rx_skb->data - IP_HDR_LEN - ETH_HDR_LEN);
 
 	rx_ping_head = (struct ping_packet *)rx_skb->data;
-
 	ping_pkt = (struct ping_packet *)ping_buff;
 
 	tx_skb = skb_alloc(ETH_HDR_LEN + IP_HDR_LEN, PING_PACKET_LENGTH);
@@ -383,7 +381,8 @@ int ping_send(struct sock_buff *rx_skb, const struct ip_header *ip_hdr, __u8 typ
 
 	tx_skb->sock = &sock;
 
-	init_ping_packet(ping_pkt, (__u8 *)rx_ping_head + hdr_len, type, PING_PACKET_LENGTH, rx_ping_head->id, rx_ping_head->seqno);
+	init_ping_packet(ping_pkt, (__u8 *)rx_ping_head + sizeof(struct ping_packet),
+		type, PING_PACKET_LENGTH, rx_ping_head->id, rx_ping_head->seqno);
 
 	memcpy(tx_skb->data, ping_pkt, PING_PACKET_LENGTH);
 
@@ -395,11 +394,11 @@ int ping_send(struct sock_buff *rx_skb, const struct ip_header *ip_hdr, __u8 typ
 static int icmp_deliver(struct sock_buff *skb, const struct ip_header *ip_hdr)
 {
 	struct ping_packet *ping_hdr;
-	struct ether_header *eth_head;
+	// struct ether_header *eth_head;
 	struct socket *sock;
 
 	ping_hdr = (struct ping_packet *)(skb->data + ((ip_hdr->ver_len & 0xf) << 2));
-	eth_head = (struct ether_header *)(skb->data- ETH_HDR_LEN);
+	// eth_head = (struct ether_header *)(skb->data- ETH_HDR_LEN);
 
 	switch(ping_hdr->type) {
 	case ICMP_TYPE_ECHO_REQUEST:
@@ -892,8 +891,10 @@ int ndev_register(struct net_device *ndev)
 		DPRINT_ATTR(attr, ATTR_NOT_FOUND);
 		str_to_ip((__u8 *)&net_mask, DEFAULT_NETMASK);
 	}
+
 	ret = ndev_ioctl(ndev, NIOC_SET_MASK, (void *)net_mask);
-	//
+	if (ret < 0)
+		return ret;
 
 	// set mac address
 	sprintf(attr, "net.%s.mac", ndev->ifx_name);
@@ -906,8 +907,10 @@ int ndev_register(struct net_device *ndev)
 		DPRINT_ATTR(attr, ATTR_NOT_FOUND);
 		str_to_mac(mac_addr, DEFAULT_MAC_ADDR);
 	}
+
 	ret = ndev_ioctl(ndev, NIOC_SET_MAC, mac_addr);
-	//
+	if (ret < 0)
+		return ret;
 
 	list_add_tail(&ndev->ndev_node, &g_ndev_list);
 

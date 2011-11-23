@@ -25,8 +25,7 @@
 
 #ifdef CONFIG_IRQ_SUPPORT
 #define irq_enable() \
-	do \
-	{ \
+	do { \
 		__u32 cpsr; \
 		asm volatile ("mrs %0, cpsr\n" \
 			"bic %0, %0, %1\n" \
@@ -37,8 +36,7 @@
 	} while (0)
 
 #define irq_disable() \
-	do \
-	{ \
+	do { \
 		__u32 cpsr; \
 		asm volatile ("mrs %0, cpsr\n" \
 			"orr %0, %0, %1\n" \
@@ -49,8 +47,7 @@
 	} while (0)
 
 #define lock_irq_psr(cpsr) \
-	do \
-	{   \
+	do { \
 		__u32 tmp; \
 		asm volatile ("mrs %0, cpsr\n" \
 			"orr %1, %0, %2\n" \
@@ -61,8 +58,7 @@
 	} while (0)
 
 #define unlock_irq_psr(cpsr) \
-	do \
-	{ \
+	do { \
 		asm volatile ("msr cpsr_c, %0\n" \
 			: \
 			: "r" (cpsr) \
@@ -70,8 +66,7 @@
 	} while (0)
 
 #define fiq_enable() \
-	do \
-	{ \
+	do { \
 		__u32 cpsr; \
 		asm volatile ("mrs %0, cpsr\n" \
 			"bic %0, %0, %1\n" \

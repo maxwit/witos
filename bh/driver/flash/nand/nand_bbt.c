@@ -341,7 +341,7 @@ static int search_bbt(struct nand_chip *nand, __u8 *buf, struct nand_bad_blk *td
 	struct flash_chip *flash = NAND_TO_FLASH(nand);
 	struct nand_ctrl *nfc = nand->master;
 	int i, chips;
-	int bits, startblock, block, dir;
+	int startblock, block, dir;
 	int scanlen = flash->write_size + flash->oob_size;
 	int bbtblocks;
 	int blocktopage = nand->bbt_erase_shift - flash->write_shift;
@@ -363,7 +363,7 @@ static int search_bbt(struct nand_chip *nand, __u8 *buf, struct nand_bad_blk *td
 		bbtblocks = flash->chip_size >> nand->bbt_erase_shift;
 	}
 
-	bits = td->flags & NAND_BBT_NRBITS_MSK;
+	// bits = td->flags & NAND_BBT_NRBITS_MSK;
 
 	for (i = 0; i < chips; i++) {
 

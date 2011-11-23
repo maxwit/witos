@@ -48,15 +48,15 @@ struct nand_oob_layout {
 };
 
 struct ecc_stats {
-	__u32 nEccCorrectCount;
-	__u32 nEccFailedCount;
+	__u32 ecc_correct_count;
+	__u32 ecc_failed_count;
 	__u32 badblocks;
 	__u32 bbtblocks;
 };
 
 typedef struct {
-	__u32 nPageIndex;
-	__u32 nBlockIndex;
+	__u32 page_index;
+	__u32 block_index;
 } FLASH_HOOK_PARAM;
 
 typedef int (*FLASH_HOOK_FUNC)(struct flash_chip *, FLASH_HOOK_PARAM *);

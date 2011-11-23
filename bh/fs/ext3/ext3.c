@@ -8,7 +8,7 @@
 #include <errno.h>
 #include <drive.h>
 #include <fs/fs.h>
-#include "ext3.h"
+#include <fs/ext3.h>
 
 #define MAX_MNT_LEN 256
 

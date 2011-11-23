@@ -22,7 +22,6 @@ static const char banner[] = "\n\n" // CLRSCREEN
 static int __INIT__ system_init(void)
 {
 	int count;
-	const char* func_name;
 	init_func_t *init_call;
 	extern init_func_t init_call_begin[], init_call_end[];
 
@@ -31,6 +30,7 @@ static int __INIT__ system_init(void)
 
 	while (init_call < init_call_end) {
 		int ret;
+		const char *func_name;
 
 		printf("%d. [0x%08x]", count, *init_call);
 		func_name = get_func_name(*init_call);
@@ -61,6 +61,8 @@ static int __INIT__ system_init(void)
 	return 0;
 }
 
+// fixme: by sysconfig
+#ifdef CONFIG_AUTO_BOOT
 static void __INIT__ auto_boot(void)
 {
 	int time_out = 3;
@@ -91,6 +93,7 @@ static void __INIT__ auto_boot(void)
 
 	exec(ARRAY_ELEM_NUM(argv), argv);
 }
+#endif
 
 int main(void)
 {
@@ -108,7 +111,9 @@ int main(void)
 
 	// TODO: check if sysconfig is dirty. if yes, save sysconf.
 
+#ifdef CONFIG_AUTO_BOOT
 	auto_boot();
+#endif
 
 	shell();
 

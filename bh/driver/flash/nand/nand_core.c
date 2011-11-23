@@ -12,25 +12,21 @@ struct jffs2_clean_mark {
 extern const struct nand_device_desc g_nand_device_id[];
 extern const struct nand_vendor_name g_nand_vendor_id[];
 
-static struct nand_oob_layout g_oob8_layout =
-{
+static struct nand_oob_layout g_oob8_layout = {
 	.ecc_code_len = 3,
-	.ecc_pos    = {0, 1, 2},
+	.ecc_pos = {0, 1, 2},
 	.free_region = {{3, 2}, {6, 2}}
 };
 
-static struct nand_oob_layout g_oob16_layout =
-{
+static struct nand_oob_layout g_oob16_layout = {
 	.ecc_code_len = 6,
-	.ecc_pos    = {0, 1, 2, 3, 6, 7},
+	.ecc_pos = {0, 1, 2, 3, 6, 7},
 	.free_region = {{8, 8}}
 };
 
-static struct nand_oob_layout g_oob64_layout =
-{
+static struct nand_oob_layout g_oob64_layout = {
 	.ecc_code_len = 24,
-	.ecc_pos =
-	{
+	.ecc_pos = {
 	   40, 41, 42, 43, 44, 45, 46, 47,
 	   48, 49, 50, 51, 52, 53, 54, 55,
 	   56, 57, 58, 59, 60, 61, 62, 63
@@ -67,11 +63,11 @@ static __u16 nand_read_u16ex(struct nand_ctrl *nfc)
 	return readw(nfc->data_reg);
 }
 
-static void nand_chipsel(struct nand_chip *nand, bool isCE)
+static void nand_chipsel(struct nand_chip *nand, bool chip_select)
 {
 	struct nand_ctrl *nfc = nand->master;
 
-	if (false == isCE)
+	if (false == chip_select)
 		nfc->cmd_ctrl(nand, NAND_CMMD_NONE, 0 | NAND_CTRL_CHANGE);
 }
 
@@ -140,17 +136,15 @@ static int nand_verify_buff16(struct nand_ctrl *nfc, const __u8 *buff, int len)
 
 static int nand_blk_bad(struct nand_chip *nand, __u32 ofs, int getchip)
 {
-	int page, chipnr, res = 0;
+	__u16 bad;
+	int page, res = 0;
 	struct flash_chip *flash = NAND_TO_FLASH(nand);
 	struct nand_ctrl *nfc = nand->master;
-
-	__u16 bad;
 
 	page = (int)(ofs >> flash->write_shift) & nand->page_num_mask;
 
 	if (getchip) {
-		chipnr = (int)(ofs >> flash->chip_shift);
-
+		// chipnr = (int)(ofs >> flash->chip_shift);
 		nfc->select_chip(nand, true);
 	}
 
@@ -487,9 +481,9 @@ static int nand_read_page_swecc(struct nand_chip *nand, __u8 *buff)
 		stat = nand_correct_data(nand, p, &pEccCodesSaved[i], pEccCopDescurr + i);
 
 		if (stat < 0)
-			flash->eccstat.nEccFailedCount++;
+			flash->eccstat.ecc_failed_count++;
 		else
-			flash->eccstat.nEccCorrectCount += stat;
+			flash->eccstat.ecc_correct_count += stat;
 
 		i += SOFT_ECC_CODE_NUM;
 		p += SOFT_ECC_DATA_LEN;
@@ -596,9 +590,9 @@ static int nand_read_page_hwecc(struct nand_chip *nand, __u8 *buff)
 		stat = nfc->ecc_correct(nand, p, &pEccCodesSaved[i], pEccCopDescurr + i);
 
 		if (stat < 0)
-			flash->eccstat.nEccFailedCount++;
+			flash->eccstat.ecc_failed_count++;
 		else
-			flash->eccstat.nEccCorrectCount += stat;
+			flash->eccstat.ecc_correct_count += stat;
 
 		i += ecc_code_len;
 		p += ecc_data_len;
@@ -654,7 +648,7 @@ static __u8 *nand_copy_oob(struct nand_chip *nand,
 
 static int nand_read_by_opt(struct nand_chip *nand, __u32 from, struct oob_opt *ops)
 {
-	int chipnr, page, realpage;
+	int page, realpage;
 	struct flash_chip *flash = NAND_TO_FLASH(nand);
 	struct nand_ctrl *nfc = nand->master;
 	struct ecc_stats stats;
@@ -665,7 +659,7 @@ static int nand_read_by_opt(struct nand_chip *nand, __u32 from, struct oob_opt *
 
 	stats = flash->eccstat;
 
-	chipnr = from >> flash->chip_shift;
+	// chipnr = from >> flash->chip_shift;
 	nfc->select_chip(nand, true);
 
 	realpage = from >> flash->write_shift;
@@ -714,8 +708,8 @@ static int nand_read_by_opt(struct nand_chip *nand, __u32 from, struct oob_opt *
 		}
 
 		if (flash->callback_func && flash->callback_args) {
-			flash->callback_args->nPageIndex  = page;
-			flash->callback_args->nBlockIndex = page >> (flash->erase_shift - flash->write_shift);
+			flash->callback_args->page_index  = page;
+			flash->callback_args->block_index = page >> (flash->erase_shift - flash->write_shift);
 
 			flash->callback_func(flash, flash->callback_args);
 		}
@@ -739,10 +733,10 @@ L1:
 	if (ret)
 		return ret;
 
-	if (flash->eccstat.nEccFailedCount - stats.nEccFailedCount)
+	if (flash->eccstat.ecc_failed_count - stats.ecc_failed_count)
 		return -EBADMSG;
 
-	return  flash->eccstat.nEccCorrectCount - stats.nEccCorrectCount ? -EUCLEAN : 0;
+	return  flash->eccstat.ecc_correct_count - stats.ecc_correct_count ? -EUCLEAN : 0;
 }
 
 static int nand_read(struct nand_chip *nand,
@@ -859,8 +853,8 @@ static int nand_do_read_oob(struct nand_chip *nand, __u32 from, struct oob_opt *
 			break;
 
 		if (flash->callback_func && flash->callback_args) {
-			flash->callback_args->nPageIndex  = page;
-			flash->callback_args->nBlockIndex = page >> (flash->erase_shift - flash->write_shift);
+			flash->callback_args->page_index  = page;
+			flash->callback_args->block_index = page >> (flash->erase_shift - flash->write_shift);
 
 			flash->callback_func(flash, flash->callback_args);
 		}
@@ -972,28 +966,29 @@ static __u8 *nand_fill_oob(struct nand_chip *nand, __u8 *oob_buf, struct oob_opt
 	return NULL;
 }
 
-static bool NandWriteNotAlligned(struct nand_chip *nand, __u32 size)
+static bool nand_write_alligned(struct nand_chip *nand, __u32 size)
 {
 	return (size & (nand->parent.write_size - 1)) != 0;
 }
 
 static int nand_write_by_opt(struct nand_chip *nand, long to, struct oob_opt *ops)
 {
-	int realpage, page, blockmask;
+	int status;
+	int realpage, page;
+	__u32 write_len;
+	__u8 *buff, *oob_buf;
+	__u32 page_buff_offset;
 	struct flash_chip *flash = NAND_TO_FLASH(nand);
 	struct nand_ctrl *nfc = nand->master;
 
-	__u32 nWriteLen;
-	__u8 *oob_buf = ops->oob_buff;
-	__u8 *buff = ops->data_buff;
-	int status;
-	__u32 ulPageBuffOff;
+	buff = ops->data_buff;
+	oob_buf = ops->oob_buff;
 
 	ops->ret_len = 0;
 	if (!ops->data_len)
 		return 0;
 
-	if (NandWriteNotAlligned(nand, to)) {
+	if (!nand_write_alligned(nand, to)) {
 		printf("%s(): page not aligned!\n", __func__);
 		return -EINVAL;
 	}
@@ -1001,7 +996,7 @@ static int nand_write_by_opt(struct nand_chip *nand, long to, struct oob_opt *op
 	// TODO: check ops->data_len align
 #if 0
 	if (FLASH_OOB_RAW != ops->op_mode) {
-		if (NandWriteNotAlligned(nand, ops->data_len)) {
+		if (!nand_write_alligned(nand, ops->data_len)) {
 			printf("%s(): page not aligned!\n", __func__);
 			return -EINVAL;
 		}
@@ -1022,31 +1017,31 @@ static int nand_write_by_opt(struct nand_chip *nand, long to, struct oob_opt *op
 
 	realpage = to >> flash->write_shift;
 	page = realpage & nand->page_num_mask;
-	blockmask = (1 << (nand->phy_erase_shift - flash->write_shift)) - 1;
+	// blockmask = (1 << (nand->phy_erase_shift - flash->write_shift)) - 1;
 
-	ulPageBuffOff = nand->page_in_buff << flash->write_shift;
-	if (to <= ulPageBuffOff && ulPageBuffOff < to + ops->data_len)
+	page_buff_offset = nand->page_in_buff << flash->write_shift;
+	if (to <= page_buff_offset && page_buff_offset < to + ops->data_len)
 		nand->page_in_buff = -1;
 
 	if (!oob_buf)
 		memset(nand->oob_buf, 0xff, flash->oob_size);
 
-	nWriteLen = 0;
+	write_len = 0;
 
-	while (nWriteLen < ops->data_len) {
-		__u8 *pCurBuf = buff;
+	while (write_len < ops->data_len) {
+		__u8 *curr_buff = buff;
 
-		buff   += flash->write_size;
-		nWriteLen += flash->write_size;
+		buff += flash->write_size;
+		write_len += flash->write_size;
 
 		nfc->command(nand, NAND_CMMD_SEQIN, 0x00, page);
 
 		switch (ops->op_mode) {
 		case FLASH_OOB_RAW:
 			buff = nand_fill_oob(nand, buff, ops);
-			nWriteLen += flash->oob_size; // or ops.oob_len;
+			write_len += flash->oob_size; // or ops.oob_len;
 
-			nfc->write_page_raw(nand, pCurBuf);
+			nfc->write_page_raw(nand, curr_buff);
 
 			break;
 
@@ -1055,7 +1050,7 @@ static int nand_write_by_opt(struct nand_chip *nand, long to, struct oob_opt *op
 			if (oob_buf)
 				oob_buf = nand_fill_oob(nand, oob_buf, ops);
 
-			nfc->write_page(nand, pCurBuf);
+			nfc->write_page(nand, curr_buff);
 
 			break;
 
@@ -1073,8 +1068,8 @@ static int nand_write_by_opt(struct nand_chip *nand, long to, struct oob_opt *op
 		}
 
 		if (flash->callback_func && flash->callback_args) {
-			flash->callback_args->nPageIndex  = page;
-			flash->callback_args->nBlockIndex = page >> (flash->erase_shift - flash->write_shift);
+			flash->callback_args->page_index = page;
+			flash->callback_args->block_index = page >> (flash->erase_shift - flash->write_shift);
 
 			flash->callback_func(flash, flash->callback_args);
 		}
@@ -1083,7 +1078,7 @@ static int nand_write_by_opt(struct nand_chip *nand, long to, struct oob_opt *op
 		page = realpage & nand->page_num_mask;
 	}
 
-	ops->ret_len = nWriteLen;
+	ops->ret_len = write_len;
 
 	if (oob_buf)
 		ops->oob_ret_len = ops->oob_len;
@@ -1094,8 +1089,8 @@ static int nand_write_by_opt(struct nand_chip *nand, long to, struct oob_opt *op
 static int nand_write(struct nand_chip *nand,
 				__u32 to, __u32 len, __u32 *retlen, const __u8 *buff)
 {
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
 	int ret;
+	struct flash_chip *flash = NAND_TO_FLASH(nand);
 
 	if ((to + len) > flash->chip_size) {
 		printf("%s(): error @ line %d. range error!\n", __func__, __LINE__);
@@ -1120,7 +1115,7 @@ static int nand_write(struct nand_chip *nand,
 
 static int nand_do_write_oob(struct nand_chip *nand, __u32 to, struct oob_opt *ops)
 {
-	int chipnr, page, status, len;
+	int page, status, len;
 	struct flash_chip *flash = NAND_TO_FLASH(nand);
 	struct nand_ctrl *nfc = nand->master;
 
@@ -1152,7 +1147,7 @@ static int nand_do_write_oob(struct nand_chip *nand, __u32 to, struct oob_opt *o
 		return -EINVAL;
 	}
 
-	chipnr = (int)(to >> flash->chip_shift);
+	// chipnr = (int)(to >> flash->chip_shift);
 	nfc->select_chip(nand, true);
 
 	page = (int)(to >> flash->write_shift);
@@ -1224,7 +1219,7 @@ static void erase_block_ex(struct nand_chip *nand, int page)
 // fixme: static
 int nand_erase(struct nand_chip *nand, struct erase_opt *opt)
 {
-	int nPageIndex, nEraseCount;
+	int page_index, erase_count;
 	int status, nPagesPerBlock, ret, chipnr = nand->bus_idx; // fixme!
 	struct flash_chip *flash = NAND_TO_FLASH(nand);
 	struct nand_ctrl *nfc = nand->master;
@@ -1232,7 +1227,7 @@ int nand_erase(struct nand_chip *nand, struct erase_opt *opt)
 	int rewrite_bbt[NAND_MAX_CHIPS]={0};
 	unsigned int bbt_masked_page = 0xffffffff;
 
-	DPRINT("%s(): start = 0x%08x, nEraseCount = 0x%08x\n",
+	DPRINT("%s(): start = 0x%08x, erase_count = 0x%08x\n",
 			__func__, opt->estart, opt->esize);
 
 	// fixme
@@ -1258,7 +1253,7 @@ int nand_erase(struct nand_chip *nand, struct erase_opt *opt)
 
 	opt->fail_addr = 0xffffffff;
 
-	nPageIndex     = opt->estart >> flash->write_shift;
+	page_index     = opt->estart >> flash->write_shift;
 	nPagesPerBlock = flash->erase_size >> flash->write_shift;
 
 	nfc->select_chip(nand, true);
@@ -1272,39 +1267,39 @@ int nand_erase(struct nand_chip *nand, struct erase_opt *opt)
 	if (nand->flags & BBT_AUTO_REFRESH && !flash->bad_allow)
 		bbt_masked_page = nand->bbt_td->pages[chipnr] & BBT_PAGE_MASK;
 
-	nEraseCount = opt->esize;
+	erase_count = opt->esize;
 
 	opt->estate = FLASH_ERASING;
 
-	while (nEraseCount) {
+	while (erase_count) {
 		if (!opt->bad_allow) {	// fixme!
-			if (nand_check_blk_bad(nand, nPageIndex << flash->write_shift, false)) {
+			if (nand_check_blk_bad(nand, page_index << flash->write_shift, false)) {
 				printf("\n%s(): try to erase a bad block at 0x%08x!\n",
-					__func__, nPageIndex << flash->write_shift);
+					__func__, page_index << flash->write_shift);
 
 				opt->estate = FLASH_ERASE_FAILED;
 				goto erase_exit;
 			}
 		}
 
-		if (nPageIndex <= nand->page_in_buff && nand->page_in_buff < nPageIndex + nPagesPerBlock)
+		if (page_index <= nand->page_in_buff && nand->page_in_buff < page_index + nPagesPerBlock)
 			nand->page_in_buff = -1;
 
-		nfc->erase_block(nand, nPageIndex & nand->page_num_mask);
+		nfc->erase_block(nand, page_index & nand->page_num_mask);
 
 		status = nfc->wait_func(nand);
 
 		if (status & NAND_STATUS_FAIL) {
 			opt->estate = FLASH_ERASE_FAILED;
-			opt->fail_addr = nPageIndex << flash->write_shift;
+			opt->fail_addr = page_index << flash->write_shift;
 
-			printf("\n%s(): Failed @ page 0x%08x\n", __func__, nPageIndex);
+			printf("\n%s(): Failed @ page 0x%08x\n", __func__, page_index);
 			// fixme!!
 			goto erase_exit;
 		}
 
-		if (bbt_masked_page != 0xffffffff && (nPageIndex & BBT_PAGE_MASK) == bbt_masked_page)
-			rewrite_bbt[chipnr] = nPageIndex << flash->write_shift;
+		if (bbt_masked_page != 0xffffffff && (page_index & BBT_PAGE_MASK) == bbt_masked_page)
+			rewrite_bbt[chipnr] = page_index << flash->write_shift;
 
 		if (opt->for_jffs2) {
 			// fixme
@@ -1324,7 +1319,7 @@ int nand_erase(struct nand_chip *nand, struct erase_opt *opt)
 				break;
 			};
 
-			nfc->command(nand, NAND_CMMD_SEQIN, nand->parent.write_size + 8, nPageIndex);
+			nfc->command(nand, NAND_CMMD_SEQIN, nand->parent.write_size + 8, page_index);
 
 			nfc->write_buff(nfc, (__u8 *)&cleanmark, 8); // cleanmark.total_len
 
@@ -1334,14 +1329,14 @@ int nand_erase(struct nand_chip *nand, struct erase_opt *opt)
 		}
 
 		if (flash->callback_func && flash->callback_args) {
-			flash->callback_args->nPageIndex  = nPageIndex;
-			flash->callback_args->nBlockIndex = nPageIndex >> (flash->erase_shift - flash->write_shift);
+			flash->callback_args->page_index  = page_index;
+			flash->callback_args->block_index = page_index >> (flash->erase_shift - flash->write_shift);
 
 			flash->callback_func(flash, flash->callback_args);
 		}
 
-		nEraseCount -= flash->erase_size;
-		nPageIndex	+= nPagesPerBlock;
+		erase_count -= flash->erase_size;
+		page_index	+= nPagesPerBlock;
 	}
 
 	opt->estate = FLASH_ERASE_DONE;
@@ -1631,17 +1626,15 @@ static struct nand_chip *new_nand_chip(struct nand_ctrl *master, int bus_id)
 
 static void delete_nand_chip(struct nand_chip *nand)
 {
-	struct flash_chip *flash;
+	// struct flash_chip *flash;
 
 	list_del_node(&nand->nand_node);
 
-	flash = NAND_TO_FLASH(nand);
-
+	// flash = NAND_TO_FLASH(nand);
 	// fixme: free all buffer.
-
 	// free(flash->part_tab);
-	free(nand);
 
+	free(nand);
 }
 
 ECC_MODE nand_set_ecc_mode(struct nand_ctrl *nfc, ECC_MODE new_mode)
@@ -1872,7 +1865,7 @@ int nand_register(struct nand_chip *nand)
 	if (0 == ret)
 		printf("done!\n");
 	else
-		printf("nEccFailedCount!\n");
+		printf("ecc_failed_count > 0!\n");
 
 	nfc->slaves++;
 

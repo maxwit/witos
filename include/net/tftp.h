@@ -33,6 +33,7 @@ struct tftp_opt {
 	char  path[MAX_PATH_LEN];
 	char  mode[MAX_MODE_LEN];
 	void  *load_addr;
+	size_t xmit_size;
 	const char *type; // only for image
 	struct bdev_file *file;
 };

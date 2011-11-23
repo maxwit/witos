@@ -3,6 +3,8 @@
 #include <sysconf.h>
 
 #define TFTP_DEBUG
+// fixme: to be removed
+// #define FILE_READ_SUPPORT
 
 struct tftp_packet {
 	__u16 op_code;
@@ -18,11 +20,11 @@ struct str_part_type {
 	PART_TYPE type;
 };
 
-static int tftp_make_rrq(__u8 *buff, const char *file_name, const char *mode)
+static int tftp_make_req(__u8 *buff, __u16 req, const char *file_name, const char *mode)
 {
 	int len;
 
-	*(__u16 *)buff = TFTP_RRQ;
+	*(__u16 *)buff = req; // TFTP_RRQ or TFTP_WRQ
 	len = 2;
 
 	strcpy((char *)buff + len, file_name);
@@ -36,44 +38,6 @@ static int tftp_make_rrq(__u8 *buff, const char *file_name, const char *mode)
 
 	buff[len] = '\0';
 	len += 1;
-
-	return len;
-}
-
-static int tftp_make_wrq(__u8 *buff, const char *file_name, const char *mode)
-{
-	int len;
-
-	*(__u16 *)buff = TFTP_WRQ;
-	len = 2;
-
-	strcpy((char *)buff + len, file_name);
-	len += strlen(file_name);
-
-	buff[len] = '\0';
-	len += 1;
-
-	strcpy((char *)buff + len, mode);
-	len += strlen(mode);
-
-	buff[len] = '\0';
-	len += 1;
-
-	return len;
-}
-
-static int tftp_make_data(void *buff, __u16 blk_num, const void *data, __u16 pkt_len)
-{
-	int len;
-
-	*(__u16 *)buff = TFTP_DAT;
-	len = 2;
-
-	*(__u16 *)(buff + len) = htons(blk_num);
-	len += 2;
-
-	memcpy((char *)buff + len, data, pkt_len);
-	len += pkt_len;
 
 	return len;
 }
@@ -86,7 +50,7 @@ static int tftp_send_ack(const int fd, const __u16 blk, struct sockaddr_in *remo
 	tftp_pkt.op_code = TFTP_ACK;
 	tftp_pkt.block = htons(blk);
 	ret = sendto(fd, &tftp_pkt, TFTP_HDR_LEN, 0,
-			(struct sockaddr*)remote_addr, sizeof(*remote_addr));
+			(struct sockaddr *)remote_addr, sizeof(*remote_addr));
 
 	return ret;
 }
@@ -94,16 +58,16 @@ static int tftp_send_ack(const int fd, const __u16 blk, struct sockaddr_in *remo
 // fixme
 int tftp_download(struct tftp_opt *opt)
 {
-	int  ret;
-	int  sockfd;
-	__u16  blk_num;
-	__u8  *buff_ptr;
-	__u32  client_ip;
+	int ret;
+	int sockfd;
+	__u16 blk_num;
+	__u8 *buff_ptr;
+	__u32 client_ip;
 	socklen_t addrlen;
-	__u8   buf[TFTP_BUF_LEN];
-	__u32  pkt_len, load_len;
+	__u8 buf[TFTP_BUF_LEN];
+	size_t  pkt_len, load_len;
 	struct bdev_file *file;
-	struct tftp_packet *tftp_pkt;
+	struct tftp_packet *tftp_pkt = (struct tftp_packet *)buf;
 	struct sockaddr_in local_addr, remote_addr;
 	char server_ip[IPV4_STR_LEN], local_ip[IPV4_STR_LEN];
 
@@ -121,10 +85,7 @@ int tftp_download(struct tftp_opt *opt)
 
 	printf(" \"%s\": %s => %s\n", opt->file_name, server_ip, local_ip);
 
-	tftp_pkt = (struct tftp_packet *)buf;
-
 	sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-
 	if (sockfd <= 0) {
 		printf("%s(): error @ line %d!\n", __func__, __LINE__);
 		return -EIO;
@@ -133,8 +94,10 @@ int tftp_download(struct tftp_opt *opt)
 	memset(&local_addr, 0, sizeof(local_addr));
 	local_addr.sin_addr.s_addr = client_ip;
 	ret = bind(sockfd, (struct sockaddr *)&local_addr, sizeof(struct sockaddr));
+	if (ret < 0)
+		goto L1;
 
-	pkt_len = tftp_make_rrq((__u8 *)tftp_pkt, opt->file_name,
+	pkt_len = tftp_make_req((__u8 *)tftp_pkt, TFTP_RRQ, opt->file_name,
 				opt->mode[0] ? opt->mode : TFTP_MODE_OCTET);
 
 	memset(&remote_addr, 0, sizeof(remote_addr));
@@ -221,6 +184,7 @@ int tftp_download(struct tftp_opt *opt)
 		}
 	} while (TFTP_PKT_LEN == pkt_len);
 
+	opt->xmit_size = load_len;
 L1:
 #ifdef TFTP_VERBOSE
 	printf("\n");
@@ -228,23 +192,24 @@ L1:
 
 	if (file)
 		file->close(file);
+
 	sk_close(sockfd);
 
-	return load_len;
+	return ret;
 }
 
 int tftp_upload(struct tftp_opt *opt)
 {
-	int  ret;
-	int  sockfd;
-	__u16  blk_num;
-	char  *buff_ptr;
-	__u32  client_ip;
+	int ret;
+	int sockfd;
+	__u16 blk_num;
+	char *buff_ptr;
+	__u32 client_ip;
 	socklen_t addrlen;
-	__u8   buf[TFTP_BUF_LEN];
-	__u32  pkt_len, send_len, dat_len;
-	struct tftp_packet *tftp_pkt;
-	struct sockaddr_in *local_addr, *remote_addr;
+	__u8 buf[TFTP_BUF_LEN];
+	size_t pkt_len, send_len, dat_len;
+	struct tftp_packet *tftp_pkt = (struct tftp_packet *)buf;
+	struct sockaddr_in local_addr, remote_addr;
 	char server_ip[IPV4_STR_LEN], local_ip[IPV4_STR_LEN];
 
 	ndev_ioctl(NULL, NIOC_GET_IP, &client_ip);
@@ -259,56 +224,38 @@ int tftp_upload(struct tftp_opt *opt)
 		return -EINVAL;
 	}
 
-	tftp_pkt = (struct tftp_packet *)buf;
-
 	sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-
 	if (sockfd <= 0) {
 		printf("%s(): error @ line %d!\n", __func__, __LINE__);
 		return -EIO;
 	}
 
-	local_addr = malloc(sizeof(*local_addr));
-	if (local_addr == NULL) {
-		printf("%s(): error @ line %d!\n", __func__, __LINE__);
-		return -ENOMEM;
-	}
-
-	memset(local_addr, 0, sizeof(*local_addr));
-	// local_addr->sin_port = port_alloc(SOCK_DGRAM);
-	local_addr->sin_addr.s_addr = client_ip;
-	ret = bind(sockfd, (struct sockaddr *)local_addr, sizeof(struct sockaddr));
+	memset(&local_addr, 0, sizeof(local_addr));
+	local_addr.sin_addr.s_addr = client_ip;
+	ret = bind(sockfd, (struct sockaddr *)&local_addr, sizeof(struct sockaddr));
+	if (ret < 0)
+		goto L1;
 
 	printf(" \"%s\": %s => %s\n", opt->file_name, local_ip, server_ip);
 
-	if (!opt->mode[0]) {
-		pkt_len = tftp_make_wrq((__u8 *)tftp_pkt, opt->file_name, TFTP_MODE_OCTET);
-	} else {
-		pkt_len = tftp_make_wrq((__u8 *)tftp_pkt, opt->file_name, opt->mode);
-	}
+	pkt_len = tftp_make_req((__u8 *)tftp_pkt, TFTP_WRQ, opt->file_name,
+				opt->mode[0] ? opt->mode : TFTP_MODE_OCTET);
 
-	remote_addr = malloc(sizeof(*remote_addr));
-	if (remote_addr == NULL) {
-		printf("%s(): error @ line %d!\n", __func__, __LINE__);
-		return -ENOMEM;
-	}
-
-	memset(remote_addr, 0, sizeof(*remote_addr));
-	remote_addr->sin_addr.s_addr = opt->server_ip; // bigendian
-	remote_addr->sin_port = htons(STD_PORT_TFTP);
+	memset(&remote_addr, 0, sizeof(remote_addr));
+	remote_addr.sin_addr.s_addr = opt->server_ip; // bigendian
+	remote_addr.sin_port = htons(STD_PORT_TFTP);
 
 	sendto(sockfd, tftp_pkt, pkt_len, 0,
-		(struct sockaddr *)remote_addr, sizeof(*remote_addr));
-#if 0
-	file     = opt->file;
+		(struct sockaddr *)&remote_addr, sizeof(remote_addr));
+#ifdef FILE_READ_SUPPORT
+	file = opt->file;
 #endif
-
 	buff_ptr = opt->load_addr;
 	send_len = 0;
 	blk_num  = 0;
 	int file_size = 10230; //fixme!! ?
 
-#if 0
+#ifdef FILE_READ_SUPPORT
 	if (file) {
 		ret = file->open(file, opt->type);
 		if (ret < 0) {
@@ -320,7 +267,7 @@ int tftp_upload(struct tftp_opt *opt)
 
 	do {
 		pkt_len = recvfrom(sockfd, tftp_pkt, TFTP_BUF_LEN, 0,
-						(struct sockaddr *)remote_addr, &addrlen);
+						(struct sockaddr *)&remote_addr, &addrlen);
 		if(0 == pkt_len)
 			goto L1;
 
@@ -328,7 +275,7 @@ int tftp_upload(struct tftp_opt *opt)
 		case TFTP_ACK:
 			if (ntohs(tftp_pkt->block) == blk_num) {
 				dat_len = file_size > TFTP_PKT_LEN ? TFTP_PKT_LEN : file_size;
-#if 0
+#ifdef FILE_READ_SUPPORT
 				ret = file->read(file, tftp_pkt->data, dat_len);
 				blk_num++;
 
@@ -337,15 +284,22 @@ int tftp_upload(struct tftp_opt *opt)
 
 				pkt_len += TFTP_HDR_LEN;
 #endif
-				if (NULL != buff_ptr)
-					pkt_len = tftp_make_data((__u8 *)tftp_pkt, ++blk_num, buff_ptr, dat_len);
+				if (NULL != buff_ptr) {
+					blk_num++;
 
-				sendto(sockfd, tftp_pkt, pkt_len, 0,
-					(struct sockaddr *)remote_addr, sizeof(*remote_addr));
+					// make TFTP data packet
+					tftp_pkt->op_code = TFTP_DAT;
+					tftp_pkt->block   = htons(blk_num);
+					memcpy(tftp_pkt->data, buff_ptr, dat_len);
+				}
 
-				send_len	+= dat_len;
-				file_size	-= dat_len;
-				buff_ptr	+= dat_len;
+				ret = sendto(sockfd, tftp_pkt, pkt_len, 0,
+					(struct sockaddr *)&remote_addr, sizeof(remote_addr));
+				// if ret < 0
+
+				send_len  += dat_len;
+				file_size -= dat_len;
+				buff_ptr  += dat_len;
 
 #ifdef TFTP_VERBOSE
 				if ((send_len & 0x3fff) == 0 || TFTP_PKT_LEN != pkt_len) {
@@ -361,7 +315,7 @@ int tftp_upload(struct tftp_opt *opt)
 					__func__, blk_num, ntohs(tftp_pkt->block));
 #endif
 				pkt_len = recvfrom(sockfd, tftp_pkt, TFTP_BUF_LEN, 0,
-								(struct sockaddr *)remote_addr, &addrlen);
+								(struct sockaddr *)&remote_addr, &addrlen);
 			}
 
 			break;
@@ -381,18 +335,17 @@ int tftp_upload(struct tftp_opt *opt)
 			goto L1;
 		}
 	} while (file_size > 0);
-
+	
+	opt->xmit_size = send_len;
 L1:
 #ifdef TFTP_VERBOSE
 	printf("\n");
 #endif
-#if 0
+#ifdef FILE_READ_SUPPORT
 	if (file)
 		file->close(file);
 #endif
 	sk_close(sockfd);
-	free(remote_addr);
-	free(local_addr);
 
-	return send_len;
+	return ret;
 }

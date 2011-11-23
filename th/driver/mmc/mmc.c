@@ -185,7 +185,7 @@ out:
 
 #ifdef CONFIG_FS
 
-#include "fat.h"
+#include <fs/fat32.h>
 #define MBR_PART_TAB_OFF 0x1BE
 #define LBA_START_OFFSET 8
 
