@@ -23,6 +23,7 @@
 #define ALLOC_STACK_SIZE \
 	(SVC_STACK_SIZE + UND_STACK_SIZE + ABT_STACK_SIZE + IRQ_STACK_SIZE + FIQ_STACK_SIZE)
 
+#ifndef __ASSEMBLY__
 #ifdef CONFIG_IRQ_SUPPORT
 #define irq_enable() \
 	do { \
@@ -78,7 +79,8 @@
 #else // fixme
 #define irq_enable()
 #define irq_disable()
-#define lock_irq_psr(cpsr) do {cpsr = 0;} while (0)
-#define unlock_irq_psr(cpsr) do {cpsr = 0;} while (0)
+#define lock_irq_psr(cpsr)
+#define unlock_irq_psr(cpsr)
 #define fiq_enable()
+#endif
 #endif

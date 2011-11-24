@@ -16,7 +16,7 @@ int usage(void)
 	int i;
 	int argc;
 	char **argv;
-	const struct option *opt;
+	// const struct option *opt;
 	const struct task *current;
 	const struct help_info *help, *subcmd;
 
@@ -32,7 +32,7 @@ int usage(void)
 	}
 
 	if (1 == help->level) {
-		opt = help->u.optv;
+		// opt = help->u.optv;
 
 		printf("Usage: %s [options]\n", argv[0]);
 		if (help->desc)
@@ -46,7 +46,7 @@ int usage(void)
 		if (argc >= 2) {
 			for (i = 0; i < help->count; i++) {
 				if (!strcmp(subcmd[i].name, argv[1])) {
-					opt = subcmd[i].u.optv;
+					// opt = subcmd[i].u.optv;
 
 					printf("specific %s options:\n", subcmd[i].name);
 					list_option(&subcmd[i]);

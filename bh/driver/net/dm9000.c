@@ -92,7 +92,7 @@ static int dm9000_send_packet(struct net_device *ndev, struct sock_buff *skb)
 	int i;
 	const __u16 *tx_data;
 	__u16 tx_size;
-	__u32 flag;
+	__UNUSED__ __u32 flag;
 
 	lock_irq_psr(flag);
 
@@ -185,7 +185,6 @@ static int dm9000_isr(__u32 irq, void *dev)
 	struct net_device* ndev = dev;
 
 	status = dm9000_readb(DM9000_ISR);
-
 	if (0 == status)
 		return 0;
 
@@ -202,10 +201,11 @@ static int dm9000_isr(__u32 irq, void *dev)
 		dm9000_recv_packet(ndev);
 	}
 
-	//fixme: move to upper layer
+	// fixme: move to upper layer
 	if (status & 0x20) {
-		__u8 link = dm9000_readb(0x1) & 1 << 6;
+		__u8 link;
 
+		link = dm9000_readb(0x1) & 1 << 6;
 		printf("dm9000 link %s\n", link ? "up" : "down");
 	}
 

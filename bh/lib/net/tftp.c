@@ -104,8 +104,10 @@ int tftp_download(struct tftp_opt *opt)
 	remote_addr.sin_addr.s_addr = opt->server_ip; // bigendian
 	remote_addr.sin_port = htons(STD_PORT_TFTP);
 
-	sendto(sockfd, tftp_pkt, pkt_len, 0,
+	ret = sendto(sockfd, tftp_pkt, pkt_len, 0,
 		(struct sockaddr *)&remote_addr, sizeof(remote_addr));
+	if (ret < 0)
+		goto L1;
 
 	file     = opt->file;
 	buff_ptr = opt->load_addr;
@@ -124,7 +126,7 @@ int tftp_download(struct tftp_opt *opt)
 		pkt_len = recvfrom(sockfd, tftp_pkt, TFTP_BUF_LEN, 0,
 						(struct sockaddr *)&remote_addr, &addrlen);
 		if(0 == pkt_len)
-			goto L1;
+			goto L2;
 
 		pkt_len -= TFTP_HDR_LEN;
 
@@ -156,7 +158,7 @@ int tftp_download(struct tftp_opt *opt)
 				if (file) {
 					ret = file->write(file, tftp_pkt->data, pkt_len);
 					if (ret < 0)
-						goto L1;
+						goto L2;
 				}
 			} else {
 #ifdef TFTP_DEBUG
@@ -173,28 +175,27 @@ int tftp_download(struct tftp_opt *opt)
 				__func__, tftp_pkt->data, ntohs(tftp_pkt->error));
 
 			ret = -EIO;
-			goto L1;
+			goto L2;
 
 		default:
 			printf("\n%s(): Unsupported opcode 0x%02x! (CurBlkNum = %d)\n",
 				__func__, ntohs(tftp_pkt->op_code), blk_num);
 
 			ret = -EIO;
-			goto L1;
+			goto L2;
 		}
 	} while (TFTP_PKT_LEN == pkt_len);
 
 	opt->xmit_size = load_len;
-L1:
+L2:
 #ifdef TFTP_VERBOSE
 	printf("\n");
 #endif
 
 	if (file)
 		file->close(file);
-
+L1:
 	sk_close(sockfd);
-
 	return ret;
 }
 
@@ -245,8 +246,11 @@ int tftp_upload(struct tftp_opt *opt)
 	remote_addr.sin_addr.s_addr = opt->server_ip; // bigendian
 	remote_addr.sin_port = htons(STD_PORT_TFTP);
 
-	sendto(sockfd, tftp_pkt, pkt_len, 0,
+	ret = sendto(sockfd, tftp_pkt, pkt_len, 0,
 		(struct sockaddr *)&remote_addr, sizeof(remote_addr));
+	if (ret < 0)
+		goto L1;
+
 #ifdef FILE_READ_SUPPORT
 	file = opt->file;
 #endif
@@ -269,7 +273,7 @@ int tftp_upload(struct tftp_opt *opt)
 		pkt_len = recvfrom(sockfd, tftp_pkt, TFTP_BUF_LEN, 0,
 						(struct sockaddr *)&remote_addr, &addrlen);
 		if(0 == pkt_len)
-			goto L1;
+			goto L2;
 
 		switch (tftp_pkt->op_code) {
 		case TFTP_ACK:
@@ -325,27 +329,29 @@ int tftp_upload(struct tftp_opt *opt)
 				__func__, tftp_pkt->data, ntohs(tftp_pkt->error));
 
 			ret = -EIO;
-			goto L1;
+			goto L2;
 
 		default:
 			printf("\n%s(): Unsupported opcode 0x%02x! (CurBlkNum = %d)\n",
 				__func__, ntohs(tftp_pkt->op_code), blk_num);
 
 			ret = -EIO;
-			goto L1;
+			goto L2;
 		}
 	} while (file_size > 0);
 	
 	opt->xmit_size = send_len;
-L1:
+L2:
 #ifdef TFTP_VERBOSE
 	printf("\n");
 #endif
+
 #ifdef FILE_READ_SUPPORT
 	if (file)
 		file->close(file);
 #endif
-	sk_close(sockfd);
 
+L1:
+	sk_close(sockfd);
 	return ret;
 }

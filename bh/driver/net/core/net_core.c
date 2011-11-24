@@ -804,7 +804,7 @@ struct eth_addr *getaddr(__u32 nip)
 {
 	struct list_node *iter;
 	struct host_addr *host;
-	__u32 psr;
+	__UNUSED__ __u32 psr;
 	__u32 *dip;
 	struct eth_addr *addr = NULL;
 

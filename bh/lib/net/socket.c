@@ -66,7 +66,7 @@ int socket_ioctl(int fd, int cmd, int flags)
 }
 static struct sock_buff *sock_recv_packet(struct socket *sock)
 {
-	__u32 psr;
+	__UNUSED__ __u32 psr;
 	struct sock_buff *skb;
 	struct list_node *first;
 	int to = 10000; // timeout
@@ -111,7 +111,7 @@ static struct sock_buff *sock_recv_packet(struct socket *sock)
 
 int qu_is_empty(int fd)
 {
-	__u32 psr;
+	__UNUSED__ __u32 psr;
 	struct socket *sock;
 
 	sock = get_sock(fd);
@@ -181,7 +181,7 @@ static void free_skb_list(struct list_node *qu)
 int sk_close(int fd)
 {
 	int ret;
-	__u32 psr;
+	__UNUSED__ __u32 psr;
 	struct socket *sock;
 	struct sock_buff *skb;
 
@@ -421,7 +421,7 @@ static void tcp_make_option(__u8 *opt, __u16 size)
 int connect(int fd, const struct sockaddr *addr, socklen_t len)
 {
 	int ret;
-	__u32 psr;
+	__UNUSED__ __u32 psr;
 	struct socket *sock;
 	struct sock_buff *skb;
 

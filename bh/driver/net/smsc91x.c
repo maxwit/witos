@@ -30,9 +30,9 @@ static inline void smsc91x_writel(__u16 reg, __u32 val)
 
 static int smsc91x_recv_packet(struct net_device *ndev)
 {
-	__u16 pack_num, status, len, *data;
-	__u32  i;
-	struct sock_buff *skbuf;
+	int i;
+	__u16 pack_num, status, size, *data;
+	struct sock_buff *skb;
 
 	smsc91x_switch_bank(0x2);
 
@@ -42,48 +42,51 @@ static int smsc91x_recv_packet(struct net_device *ndev)
 
 	smsc91x_write(0x6, 1 << 15 | 1 << 14 | 1 << 13);
 	status = smsc91x_read(0x8);
-	len    = smsc91x_read(0x8) & 0x7ff;
+	size   = smsc91x_read(0x8) & 0x7ff;
 
-	if (!len)
+	if (!size)
 		return 0;
 
-	//len is always even
-	skbuf =skb_alloc(0, len);
-	skbuf->size = len;
+	skb = skb_alloc(0, size);
+	if (!skb)
+		return -ENOMEM;
 
-	data = (__u16 *)skbuf->data;
-
-	for (i = 0; i < (len >> 1); i++)
+	data = (__u16 *)skb->data;
+	for (i = 0; i < (size >> 1); i++)
 		data[i] = smsc91x_read(0x8);
 
-	//release the rx buffer
+	// release the rx buffer
 	while (smsc91x_read(0x0) & 0x1);
 	smsc91x_write(0x0, 0x4 << 5);
 	while (smsc91x_read(0x0) & 0x1);
 
 	ndev->stat.rx_packets++;
 
-	netif_rx(skbuf);
+	netif_rx(skb);
 
-	return 1;
+	return 0;
 }
 
 static int smsc91x_send_packet(struct net_device *ndev, struct sock_buff *skb)
 {
-	__u32 len, i;
+	int i;
+	__u32 size;
 	__u16 *data;
+	__UNUSED__ __u32 psr;
+
+	lock_irq_psr(psr);
 
 	// 4 CRC bytes and 2 bytes control bytes
-	len  = skb->size + 6;
+	size = skb->size + 6;
 	data = (__u16 *)(skb->data);
 
 	smsc91x_switch_bank(0x2);
 
 	smsc91x_write(0x6, 0x1 << 14);
 
-	//write size
-	smsc91x_writel(0x8, len << 16);
-	for (i = 0; i < (len >> 1); i++)
+	// write size
+	smsc91x_writel(0x8, size << 16);
+	for (i = 0; i < (size >> 1); i++)
 		smsc91x_write(0x8, data[i]);
 
 	smsc91x_write(0x0, 0x6 << 5);
@@ -91,7 +94,9 @@ static int smsc91x_send_packet(struct net_device *ndev, struct sock_buff *skb)
 
 	ndev->stat.tx_packets++;
 
-	return len;
+	lock_irq_psr(psr);
+
+	return size;
 }
 
 static int smsc91x_set_mac(struct net_device *ndev, const __u8 mac[])
@@ -146,12 +151,10 @@ static int smsc91x_hw_init(void)
 
 	//Read the Link status
 	val = smsc91x_read(0x2);
-	if (!(val & 0x4000)) {
-		printf("The link status is nok!\n");
-		return -1;
-	}
-
-	printf("The link status is ok!\n", val);
+	if (!(val & 0x4000))
+		printf("The link status down!\n");
+	else
+		printf("The link status up!\n");
 
 	return 0;
 
@@ -165,12 +168,13 @@ static int __INIT__ smsc91x_init(void)
 
 	// probe chip
 	smsc91x_switch_bank(0x3);
-	chip_id = smsc91x_read(0xa);
 
+	chip_id = smsc91x_read(0xa);
 	if (chip_id != SMSC91C111_ID) {
 		printf("SMSC91X Ethernet not found!\n");
 		return -ENODEV;
 	}
+
 	printf("SMSC91X ID = 0x%x\n", chip_id);
 
 	ret = smsc91x_hw_init();

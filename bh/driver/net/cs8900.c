@@ -38,7 +38,7 @@ static int cs89x0_send_packet(struct net_device *ndev, struct sock_buff *skb)
 	int i;
 	__u16 isq_stat;
 	const __u16 *buff;
-	__u32 psr;
+	__UNUSED__ __u32 psr;
 
 	lock_irq_psr(psr);
 

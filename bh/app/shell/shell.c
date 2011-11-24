@@ -378,7 +378,8 @@ static int cmd_update_history(const char *buf)
 
 	strcpy(g_cmd_stack->cmd_stack[g_cmd_stack->cmd_hist], buf);
 
-	g_cmd_stack->cmd_hist = APP_ADJUST_INDEX(++g_cmd_stack->cmd_hist);
+	++g_cmd_stack->cmd_hist;
+	g_cmd_stack->cmd_hist = APP_ADJUST_INDEX(g_cmd_stack->cmd_hist);
 
 	return 0;
 }
@@ -408,7 +409,6 @@ static int command_read_line(char buf[])
 	int esc_sequence = 0;
 	int spec_key = 0;
 	int ret;
-	int pre_space_count;
 
 	memset(buf, 0, MAX_ARG_LEN);
 
@@ -436,8 +436,8 @@ static int command_read_line(char buf[])
 
 			switch (input_c) {
 			case '\t':
-				pre_space_count = get_pre_space_count(buf);
 #if 0
+				pre_space_count = get_pre_space_count(buf);
 				for (exe = g_exe_begin; exe < g_exe_end; exe++) {
 					if (!cur_pos || strncmp(exe->name, buf + pre_space_count, strlen(exe->name)) == 0) {
 						if (exe->usr_cmd_match && (cmd_line_status(buf, &cur_pos) == IS_CMD_MATCH)) {
@@ -455,8 +455,6 @@ static int command_read_line(char buf[])
 #endif
 				if (IS_CMD_MATCH == cmd_line_status(buf, &cur_pos))
 					cmd_match(buf, &cur_pos, &cur_max);
-				else {
-				}
 				break;
 
 			case '\r':
@@ -485,6 +483,10 @@ static int command_read_line(char buf[])
 						ret = cmd_up_key(buf, &cur_pos, &hst_pos, &cur_max);
 					else
 						ret = cmd_down_key(buf, &cur_pos, &hst_pos, &cur_max);
+
+					if (ret < 0)
+						// fixme: do something
+						;
 				} else // not a up/down key, treat it as a normal input
 					print_input(input_c, buf, &cur_pos, &cur_max);
 

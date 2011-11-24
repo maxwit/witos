@@ -33,32 +33,32 @@ static inline void lan9220_writel(__u8 reg, __u32 val)
 	}
 }
 
-static __u32 lan9220_mac_csr_read(__u32 csr_reg)
+static __u32 lan9220_csr_readl(__u32 csr)
 {
-	lan9220_writel(MAC_CSR_CMD, 1 << 31 | 1 << 30 | csr_reg);
+	lan9220_writel(MAC_CSR_CMD, 1 << 31 | 1 << 30 | csr);
 	while (lan9220_readl(MAC_CSR_CMD) & 1 << 31);
 	return lan9220_readl(MAC_CSR_DATA);
 }
 
-static void lan9220_mac_csr_write(__u32 csr_reg, __u32 val)
+static void lan9220_csr_writel(__u32 csr, __u32 val)
 {
 	lan9220_writel(MAC_CSR_DATA, val);
-	lan9220_writel(MAC_CSR_CMD, 1 << 31 | csr_reg);
+	lan9220_writel(MAC_CSR_CMD, 1 << 31 | csr);
 	while (lan9220_readl(MAC_CSR_CMD) & 1 << 31);
 }
 
 static __u16 lan9220_mdio_read(struct net_device *ndev, __u8 addr, __u8 reg)
 {
-	lan9220_mac_csr_write(MII_ACC, addr << 11 | reg << 6 | 1);
-	while (lan9220_mac_csr_read(MII_ACC) & 0x1);
-	return lan9220_mac_csr_read(MII_DATA) & 0xffff;
+	lan9220_csr_writel(MII_ACC, addr << 11 | reg << 6 | 1);
+	while (lan9220_csr_readl(MII_ACC) & 0x1);
+	return lan9220_csr_readl(MII_DATA) & 0xffff;
 }
 
 static void lan9220_mdio_write(struct net_device *ndev, __u8 addr, __u8 reg, __u16 val)
 {
-	lan9220_mac_csr_write(MII_DATA, val & 0xffff);
-	lan9220_mac_csr_write(MII_ACC, addr << 11 | reg << 6 | 1 << 1 | 1);
-	while (lan9220_mac_csr_read(MII_ACC) & 0x1);
+	lan9220_csr_writel(MII_DATA, val & 0xffff);
+	lan9220_csr_writel(MII_ACC, addr << 11 | reg << 6 | 1 << 1 | 1);
+	while (lan9220_csr_readl(MII_ACC) & 0x1);
 }
 
 static int lan9220_hw_init(void)
@@ -85,17 +85,20 @@ static int lan9220_hw_init(void)
 #endif
 
 	// enable rx and tx
-	val = lan9220_mac_csr_read(MAC_CR);
-	lan9220_mac_csr_write(MAC_CR, val | 0x3 << 2);
+	val = lan9220_csr_readl(MAC_CR);
+	lan9220_csr_writel(MAC_CR, val | 0x3 << 2);
 
 	return 0;
 }
 
 static int lan9220_send_packet(struct net_device *ndev, struct sock_buff *skb)
 {
+	int i;
 	__u32 cmd_A, cmd_B, status;
 	__u32 *data;
-	int i;
+	__UNUSED__ __u32 psr;
+
+	lock_irq_psr(psr);
 
 	cmd_A = (1 << 13) | (1 << 12) | (skb->size & 0x3ff);
 	cmd_B = skb->size & 0x3ff;
@@ -116,21 +119,21 @@ static int lan9220_send_packet(struct net_device *ndev, struct sock_buff *skb)
 
 	ndev->stat.tx_packets++;
 
+	unlock_irq_psr(psr);
+
 	return 0;
 }
 
 static int lan9220_recv_packet(struct net_device *ndev)
 {
+	int i;
 	__u32 info_status, packet_status;
 	__u32 packet_count, packet_length, packet_length_pad;
 	__u32 *data;
 	struct sock_buff *skb;
-	int i;
 
 	info_status = lan9220_readl(RX_FIFO_INF);
 	packet_count = info_status >> 16 & 0xff;
-	if (0 == packet_count)
-		return 0;
 
 	while (packet_count--) {
 		packet_status = lan9220_readl(RX_STATUS_PORT);
@@ -161,40 +164,37 @@ static int lan9220_recv_packet(struct net_device *ndev)
 	return 0;
 }
 
+#ifdef CONFIG_IRQ_SUPPORT
+#warning "to add link status detection"
 static int lan9220_isr(__u32 irq, void *dev)
 {
 	struct net_device *ndev = (struct net_device *)dev;
-#ifdef CONFIG_IRQ_SUPPORT
 	__u32 status;
 
 	status = lan9220_readl(INT_STS);
-	lan9220_writel(INT_STS, status);
-
 	if (0 == status)
 		return IRQ_NONE;
-	// printf("%s(): status = 0x%08x\n", __func__, status);
+
+	lan9220_writel(INT_STS, status);
 
 	// fixme
-	if (status & 1 << 20 | 1 << 3)
+	if ((status & 1 << 20) | 1 << 3)
 		lan9220_recv_packet(ndev);
 
 	return IRQ_HANDLED;
-#else
-
-	return lan9220_recv_packet(ndev);
-#endif
 }
+#else
+static int lan9220_poll(struct net_device *ndev)
+{
+	return lan9220_recv_packet(ndev);
+}
+#endif
 
 static int lan9220_set_mac(struct net_device *ndev, const __u8 *mac)
 {
-	lan9220_mac_csr_write(ADDRL, *(__u32 *)mac);
-	lan9220_mac_csr_write(ADDRH, *(__u16 *)(mac + 4));
+	lan9220_csr_writel(ADDRL, *(__u32 *)mac);
+	lan9220_csr_writel(ADDRH, *(__u16 *)(mac + 4));
 	return 0;
-}
-
-static int lan9220_poll(struct net_device *ndev)
-{
-	return lan9220_isr(LAN9220_IRQ_NUM, ndev);
 }
 
 static __INIT__ int lan9220_probe(void)
@@ -202,8 +202,9 @@ static __INIT__ int lan9220_probe(void)
 	int ret;
 	__u32 mac_id;
 	struct net_device *ndev;
-	const char *chip_name = NULL;;
+	const char *chip_name;
 
+#warning "add vendor id checking"
 	mac_id = lan9220_readl(ID_REV);
 	printf("ID = 0x%08x\n", mac_id);
 
@@ -241,7 +242,7 @@ static __INIT__ int lan9220_probe(void)
 		goto error;
 
 #ifdef CONFIG_IRQ_SUPPORT
-	writel(GPIO1_BASE + LEVELDETECT1, 1 << 19); // fixme
+	writel(VA(GPIO1_BASE + LEVELDETECT1), 1 << 19); // fixme
 	ret = irq_register_isr(LAN9220_IRQ_NUM, lan9220_isr, ndev);
 	if (ret < 0)
 		goto error;

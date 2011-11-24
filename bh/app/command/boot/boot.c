@@ -364,7 +364,7 @@ static int show_boot_args(void *tag_base)
 // fixme!!
 int main(int argc, char *argv[])
 {
-	int  ret = 0, auto_gen = 1;
+	int ret = 0, auto_gen = true;
 	__u32  dev_num;
 	bool show_args = false;
 	__u8 *kernel_image_addr = NULL, *ramdisk_image_addr = NULL;
@@ -373,17 +373,15 @@ int main(int argc, char *argv[])
 	LINUX_KERNEL_ENTRY exec_linux = NULL;
 	char *p;
 	int opt;
-
 	// linux
 	int boot_mode = BM_FLASHDISK;
 	char kernel_image[IMAGE_NAME_LEN];
 	char ramdisk_image[IMAGE_NAME_LEN];
-	__u32 root_dev;
+	// __u32 root_dev;
 	char nfs_path[NFS_PATH_LEN];
 	__u32 mach_id;
 	char console_device[CONSOLE_DEV_NAME_LEN];
 	char cmd_line[DEFAULT_KCMDLINE_LEN];
-
 	// net
 	__u32 server_ip;
 
@@ -428,9 +426,9 @@ int main(int argc, char *argv[])
 
 			if (str_to_val(optarg, &dev_num) < 0)
 				printf("Invalid partition number (%s)!\n", optarg);
-			else
+			// else
 				// fixme: if num > nParts
-				root_dev = dev_num;
+				// root_dev = dev_num;
 
 			break;
 
@@ -475,7 +473,7 @@ int main(int argc, char *argv[])
 			break;
 
 		case 'l':
-			auto_gen = 0;
+			auto_gen = false;
 			strncpy(cmd_line, optarg, DEFAULT_KCMDLINE_LEN);
 			break;
 

@@ -182,9 +182,9 @@ static int fat_find_next_file(struct fat_fs *fs,
 				return 1;
 
 			case 0x0f:
-				strxcpy(name + ((dir_pos->name[0] & 0x0f) - 1) * 13, dir_pos->name + 1, 10);
-				strxcpy(name + ((dir_pos->name[0] & 0x0f) - 1) * 13 + 5, &dir_pos->name[0] + 14, 12);
-				strxcpy(name + ((dir_pos->name[0] & 0x0f) - 1) * 13 + 11, &dir_pos->name[0] + 28, 4);
+				strxcpy(name + ((dir_pos->name[0] & 0x0f) - 1) * 13, (char *)dir_pos + 1, 10);
+				strxcpy(name + ((dir_pos->name[0] & 0x0f) - 1) * 13 + 5, (char *)dir_pos + 14, 12);
+				strxcpy(name + ((dir_pos->name[0] & 0x0f) - 1) * 13 + 11, (char *)dir_pos + 28, 4);
 				break;
 
 			default:

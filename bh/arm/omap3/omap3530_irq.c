@@ -50,12 +50,12 @@ static void omap3530_irq_mask(__u32 irq)
 	writel(VA(INTCPS_BASE + INTCPS_MIRN_SETN(irq >> 5)), 1 << (irq & 0x1f));
 }
 
-static void omap3530_set_trigger(__u32 irq_num, __u32 irq_type)
+static void omap3530_set_trigger(__u32 nr, __u32 type)
 {
-	if (irq_num < INTC_PINS)
+	if (nr < INTC_PINS)
 		return;
 
-	switch (irq_type) {
+	switch (type) {
 	case IRQ_TYPE_LOW:
 		break;
 	case IRQ_TYPE_HIGH:

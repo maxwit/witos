@@ -87,7 +87,7 @@ void *malloc(size_t size)
 	struct list_node *iter;
 	__u32 alloc_size, reset_size;
 	struct mem_region *curr_region, *succ_region;
-	__u32 psr;
+	__UNUSED__ __u32 psr;
 
 	lock_irq_psr(psr);
 
@@ -129,7 +129,7 @@ do_alloc:
 void free(void *p)
 {
 	struct mem_region *curr_region, *succ_region;
-	__u32 psr;
+	__UNUSED__ __u32 psr;
 
 	lock_irq_psr(psr);
 
