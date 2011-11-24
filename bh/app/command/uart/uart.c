@@ -10,6 +10,7 @@ static int uart_load(int argc, char *argv[])
 {
 	int size, ret;
 	struct loader_opt ld_opt;
+	struct block_device *bdev;
 	char *pro = NULL;
 	int opt;
 
@@ -17,7 +18,10 @@ static int uart_load(int argc, char *argv[])
 
 	memset(&ld_opt, 0x0, sizeof(ld_opt));
 
-	ld_opt.file = get_bdev_by_volume(get_curr_volume())->file;
+	bdev = get_bdev_by_volume(get_curr_volume());
+	ld_opt.file = bdev->file;
+	// fixme
+	bdev->file->open(bdev->file, "jffs2");
 
 	while ((opt = getopt(argc, argv, "m::p:f:i:vh")) != -1) {
 		switch (opt) {
