@@ -118,6 +118,15 @@ static void draw_logo(void * const video_buff, __u32 width, __u32 height, pixel_
 		rgb.b_off = 16;
 		rgb.bytes = 4;
 		break;
+	default:
+		rgb.r_len = 0;
+		rgb.r_off = 0;
+		rgb.g_len = 0;
+		rgb.g_off = 0;
+		rgb.b_len = 0;
+		rgb.b_off = 0;
+		rgb.bytes = 0;
+		break;
 	}
 
 	// fixme

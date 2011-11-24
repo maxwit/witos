@@ -31,7 +31,8 @@ static inline void smsc91x_writel(__u16 reg, __u32 val)
 static int smsc91x_recv_packet(struct net_device *ndev)
 {
 	int i;
-	__u16 pack_num, status, size, *data;
+	__u16 pack_num, size, *data;
+	// __u16 status;
 	struct sock_buff *skb;
 
 	smsc91x_switch_bank(0x2);
@@ -41,7 +42,7 @@ static int smsc91x_recv_packet(struct net_device *ndev)
 		return 0;
 
 	smsc91x_write(0x6, 1 << 15 | 1 << 14 | 1 << 13);
-	status = smsc91x_read(0x8);
+	// status = smsc91x_read(0x8);
 	size   = smsc91x_read(0x8) & 0x7ff;
 
 	if (!size)

@@ -9,14 +9,15 @@
 
 static int omap3530_set_vmode(struct display *disp, const struct lcd_vmode *vm)
 {
-	__u32 fmt, bpp;
+	__u32 fmt;
+	// __u32 bpp;
 	__u32 dma = disp->video_mem_pa;
 
 	// fixme
 	switch (disp->pix_fmt) {
 	case PIX_RGB16:
 		fmt = 0x6;
-		bpp = 2;
+		// bpp = 2;
 		break;
 
 	default:
