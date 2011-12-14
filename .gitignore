@@ -15,3 +15,4 @@ doc/vol1/developer_manual_vol1.pdf
 doc/vol3/developer_manual_vol3.pdf
 *.img
 sys_img_creat
+sdrecord

@@ -92,7 +92,9 @@ static int __INIT__ mw61_init(void)
 #ifdef CONFIG_IRQ_SUPPORT
 	s3c6410_interrupt_init();
 
+#ifdef CONFIG_TIMER_SUPPORT
 	s3c6410_timer_init();
+#endif
 #endif
 	// MMC0 GPIO setting
 	writel(VA(GPG_BASE + GPCON), 0x2222222);

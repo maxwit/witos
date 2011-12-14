@@ -1,12 +1,9 @@
-#if 0
-// #ifdef CONFIG_IRQ_SUPPORT
+#ifdef CONFIG_TIMER_SUPPORT
 
-#define DEFAULT_LOOPS_PERJIFFIES 1 << 8
+#define DEFAULT_LOOPS_PERJIFFIES (1 << 8)
 
 static volatile __u32 g_tick_count = 1;
-
 static volatile __u32 loops_perjiffies = DEFAULT_LOOPS_PERJIFFIES;
-
 static volatile __u32 loops_perusec = DEFAULT_LOOPS_PERJIFFIES; //fixme
 
 void inc_tick(void)

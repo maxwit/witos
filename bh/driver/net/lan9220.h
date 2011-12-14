@@ -2,7 +2,7 @@
 
 // CONFIG_LAN9220_BASE ...
 #if defined(CONFIG_BOARD_EVM3530)
-#define LAN9220_BASE 0x2c000000
+#define LAN9220_BASE 0x28000000
 // fixme
 #define LAN9220_IRQ_NUM GPIO_IRQ(19)
 #endif

@@ -52,7 +52,7 @@ static void dm9000_mdio_write(struct net_device *ndev, __u8 mii_id, __u8 reg, __
 	dm9000_writeb(DM9000_EPCR, 0x0);
 }
 
-static int dm9000_set_mac(struct net_device *ndev, const __u8 *pMac)
+static int dm9000_set_mac(struct net_device *ndev, const __u8 *mac)
 {
 	int i;
 

@@ -54,9 +54,8 @@ static char *search_attr(const char *data, int size, const char *str)
 			}
 		}
 
-		if (data[i] == '\n') {
-				is_attr = 1;
-		}
+		if (data[i] == '\n')
+			is_attr = 1;
 	}
 
 	return NULL;
