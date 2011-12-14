@@ -25,6 +25,7 @@ static struct net_device *g_curr_ndev; // fixme
 static const char *g_arp_desc[] = {"N/A", "Request", "Reply"};
 #endif
 static int ndev_count = 0;
+const static g_def_mac[] = CONFIG_MAC_ADDR;
 
 static int pseudo_calculate_checksum(struct sock_buff *skb, __u16 *checksum)
 {
@@ -771,16 +772,10 @@ void skb_free(struct sock_buff *skb)
 int net_get_server_ip(__u32 *ip)
 {
 	char buff[CONF_VAL_LEN];
-	const char *attr = "net.server";
 
-	if (0 == conf_get_attr(attr, buff)) {
-		if (str_to_ip((__u8 *)ip, buff) < 0) {
-			DPRINT_ATTR(attr, ATTR_FMT_ERR);
-			str_to_ip((__u8 *)ip, DEFAULT_SERVER_IP);
-		}
-	} else {
-		DPRINT_ATTR(attr, ATTR_NOT_FOUND);
-		str_to_ip((__u8 *)ip, DEFAULT_SERVER_IP);
+	if (conf_get_attr("net.server", buff) < 0 || \
+		str_to_ip((__u8 *)ip, buff) < 0) {
+		*ip = CONFIG_SERVER_IP;
 	}
 
 	return 0;
@@ -788,14 +783,13 @@ int net_get_server_ip(__u32 *ip)
 
 int net_set_server_ip(__u32 ip)
 {
-	char buff[IPV4_STR_LEN];
+	char ip_str[IPV4_STR_LEN];
 	const char *attr = "net.server";
 
-	ip_to_str(buff, ip);
+	ip_to_str(ip_str, ip);
 
-	if (conf_set_attr(attr, buff) < 0) {
-		conf_add_attr(attr, buff);
-	}
+	if (conf_set_attr(attr, ip_str) < 0)
+		conf_add_attr(attr, ip_str);
 
 	return 0;
 }
@@ -804,7 +798,7 @@ struct eth_addr *getaddr(__u32 nip)
 {
 	struct list_node *iter;
 	struct host_addr *host;
-	__UNUSED__ __u32 psr;
+	__u32 __UNUSED__ psr;
 	__u32 *dip;
 	struct eth_addr *addr = NULL;
 
@@ -866,30 +860,22 @@ int ndev_register(struct net_device *ndev)
 	if (!ndev->chip_name)
 		printf("Warning: chip_name is NOT set!\n");
 
-	// set ip address
+	// set IP address
 	sprintf(attr, "net.%s.address", ndev->ifx_name);
-	if (0 == conf_get_attr(attr, buff)) {
-		if (str_to_ip((__u8 *)&ip, buff) < 0) {
-			DPRINT_ATTR(attr, ATTR_FMT_ERR);
-			str_to_ip((__u8 *)&ip, DEFAULT_LOCAL_IP);
-		}
-	} else {
-		DPRINT_ATTR(attr, ATTR_NOT_FOUND);
-		str_to_ip((__u8 *)&ip, DEFAULT_LOCAL_IP);
+	if (conf_get_attr(attr, buff) < 0 || str_to_ip((__u8 *)&ip, buff) < 0) {
+#warning
+		ip = CONFIG_LOCAL_IP;
 	}
+
 	ret = ndev_ioctl(ndev, NIOC_SET_IP, (void *)ip);
 	//
 
 	// set net mask
 	sprintf(attr, "net.%s.netmask", ndev->ifx_name);
-	if (0 == conf_get_attr(attr, buff)) {
-		if (str_to_ip((__u8 *)&net_mask, buff) < 0) {
-			DPRINT_ATTR(attr, ATTR_FMT_ERR);
-			str_to_ip((__u8 *)&net_mask, DEFAULT_NETMASK);
-		}
-	} else {
-		DPRINT_ATTR(attr, ATTR_NOT_FOUND);
-		str_to_ip((__u8 *)&net_mask, DEFAULT_NETMASK);
+	if (conf_get_attr(attr, buff) < 0 || \
+		str_to_ip((__u8 *)&net_mask, buff) < 0) {
+#warning
+		net_mask = CONFIG_NET_MASK;
 	}
 
 	ret = ndev_ioctl(ndev, NIOC_SET_MASK, (void *)net_mask);
@@ -898,14 +884,9 @@ int ndev_register(struct net_device *ndev)
 
 	// set mac address
 	sprintf(attr, "net.%s.mac", ndev->ifx_name);
-	if (0 == conf_get_attr(attr, buff)) {
-		if (str_to_mac(mac_addr, buff) < 0) {
-			DPRINT_ATTR(attr, ATTR_FMT_ERR);
-			str_to_mac(mac_addr, DEFAULT_MAC_ADDR);
-		}
-	} else {
-		DPRINT_ATTR(attr, ATTR_NOT_FOUND);
-		str_to_mac(mac_addr, DEFAULT_MAC_ADDR);
+	if (conf_get_attr(attr, buff) < 0 || str_to_mac(mac_addr, buff) < 0) {
+#warning
+		memcpy(mac_addr, g_def_mac, MAC_ADR_LEN);
 	}
 
 	ret = ndev_ioctl(ndev, NIOC_SET_MAC, mac_addr);

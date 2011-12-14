@@ -31,11 +31,7 @@ struct sys_config {
 #define CONF_ATTR_LEN 128
 
 // default net config attribute value
-#define DEFAULT_NETMASK       "255.255.255.0"
-#define DEFAULT_SERVER_IP     "10.0.0.1"
-#define DEFAULT_LOCAL_IP      "10.0.0.2"
 #define DEFAULT_NAME_IFX(n)   "eth"#n
-#define DEFAULT_MAC_ADDR      "10:20:30:40:50:60"
 
 // default linux config attribute value
 #define DEFAULT_BOOT_MODE     0x1234
@@ -46,22 +42,6 @@ struct sys_config {
 #define DEFAULT_MACH_ID       0x5000
 #define DEFAULT_NFS_PATH      "/maxwit/image/boot"
 #define DEFAULT_ROOT_DEV      2
-
-#ifdef CONFIG_DEBUG
-#define DPRINT_ATTR(attr, dstr) \
-							do {\
-								printf("%s(), line %d\n", __func__, __LINE__);\
-								printf("%s %s\n", attr, dstr);\
-							} while (0)
-#else
-
-#define DPRINT_ATTR(attr, dstr) do {} while (0)
-
-#endif
-
-#define ATTR_NOT_FOUND "attribute is not found, it will be use default value!"
-
-#define ATTR_FMT_ERR "string format error, it will be use default value!"
 
 void set_load_mem_addr(__u32 *addr);
 __u32 get_load_mem_addr();
