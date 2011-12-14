@@ -153,7 +153,7 @@ struct nand_chip {
 
 	int  bad_blk_oob_pos;
 
-	struct oob_opt ops;
+	struct oob_opt opt;
 
 	__u8    *bbt;
 

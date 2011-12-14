@@ -934,7 +934,7 @@ int ndev_register(struct net_device *ndev)
 			mii_reset_phy(ndev, phy);
 
 			// fixme
-			printf("PHY found @ MII[%d]: ID1 = 0x%04x, ID2 = 0x%04x\n",
+			printf("PHY @ MII[%d]: Vendor ID = 0x%04x, Device ID = 0x%04x\n",
 				index, phy->ven_id, phy->dev_id);
 		}
 	}
@@ -1003,7 +1003,7 @@ int ndev_check_link_status()
 		{
 			phy = container_of(phy_ln, struct mii_phy, phy_node);
 
-			printf("\n\tPHY%d -> ", phy->mii_id);
+			printf("\n\tPHY @ MII[%d]: ", phy->mii_id);
 
 			speed = mii_get_link_speed(phy);
 
