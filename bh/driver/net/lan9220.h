@@ -7,6 +7,9 @@
 #define LAN9220_IRQ_NUM GPIO_IRQ(19)
 #endif
 
+#define PID_LAN9118     0x0118
+#define PID_LAN9220     0x9220
+
 #define MAC_CR          0x1
 #define ADDRH           0x2
 #define ADDRL           0x3
@@ -22,8 +25,14 @@
 
 #define ID_REV			0x50
 #define IRQ_CFG			0x54
+
 #define INT_STS			0x58
 #define INT_EN			0x5c
+// IRQ bits:
+#define INT_RSFL        (1 << 3)
+#define INT_TSFL        (1 << 7)
+#define INT_PHY         (1 << 18)
+#define INT_RXD         (1 << 20)
 
 #define BYTE_TEST		0x64
 #define FIFO_INT		0x68
@@ -46,3 +55,10 @@
 #define AFC_CFG			0xAC
 #define E2P_CMD			0xB0
 #define E2P_DATA		0xB4
+
+// MII registers
+#define MII_REG_INT_SRC   29
+#define MII_REG_INT_MASK  30
+// PHY IRQ
+#define PHY_INT_LINK      (1 << 4)
+#define PHY_INT_AN        (1 << 6)

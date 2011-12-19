@@ -1032,8 +1032,10 @@ int ndev_ioctl(struct net_device *ndev, int cmd, void *arg)
 	__u16 speed;
 
 	// fixme!!!
-	if (NULL == ndev)
+	if (NULL == ndev) {
+		// printf("%s() line %d: fixme!\n", __func__, __LINE__);
 		ndev = g_curr_ndev;
+	}
 
 	switch (cmd) {
 	case NIOC_GET_IP:

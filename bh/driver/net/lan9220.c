@@ -15,6 +15,9 @@ struct lan9220_chip {
 static int lan9220_32bits;
 #endif
 
+// fixme
+static __u32 int_mask = 0xfffff07f;
+
 static inline __u32 lan9220_readl(__u8 reg)
 {
 	if (lan9220_32bits)
@@ -61,9 +64,12 @@ static void lan9220_mdio_write(struct net_device *ndev, __u8 addr, __u8 reg, __u
 	while (lan9220_csr_readl(MII_ACC) & 0x1);
 }
 
-static int lan9220_hw_init(void)
+static int lan9220_hw_init(struct net_device *ndev)
 {
 	__u32 val;
+#ifdef CONFIG_IRQ_SUPPORT
+	struct mii_phy *phy;
+#endif
 
 	// reset PHY
 	val = lan9220_readl(PMT_CTRL);
@@ -80,7 +86,14 @@ static int lan9220_hw_init(void)
 
 	// IRQ setting
 #ifdef CONFIG_IRQ_SUPPORT
-	lan9220_writel(INT_EN, 0xffffffff);
+	lan9220_writel(INT_EN, int_mask);
+
+	if (list_is_empty(&ndev->phy_list))
+		return -EIO;
+	phy = container_of(ndev->phy_list.next, struct mii_phy, phy_node);
+	ndev->mdio_write(ndev, phy->mii_id,
+		MII_REG_INT_MASK, PHY_INT_AN | PHY_INT_LINK);
+
 	val = lan9220_readl(IRQ_CFG);
 	lan9220_writel(IRQ_CFG, val | 0x1 << 8);
 #endif
@@ -165,20 +178,43 @@ static int lan9220_recv_packet(struct net_device *ndev)
 }
 
 #ifdef CONFIG_IRQ_SUPPORT
-#warning "to add link status detection"
 static int lan9220_isr(__u32 irq, void *dev)
 {
-	struct net_device *ndev = (struct net_device *)dev;
 	__u32 status;
+	struct mii_phy *phy;
+	struct net_device *ndev = (struct net_device *)dev;
 
+#if 0
+	// IRQ status issue
 	status = lan9220_readl(INT_STS);
+	printf("%s() line %d status = 0x%08x\n", __func__, __LINE__, status);
+	status &= int_mask;
+#else
+	status = lan9220_readl(INT_STS) & int_mask;
+#endif
 	if (0 == status)
 		return IRQ_NONE;
 	lan9220_writel(INT_STS, status);
 
-	// fixme
-	if (status & (1 << 20 | 1 << 3))
+	if (status & (INT_RXD | INT_RSFL))
 		lan9220_recv_packet(ndev);
+
+	if (status & INT_PHY) {
+		__u16 reg_src, reg_bms;
+
+		if (list_is_empty(&ndev->phy_list))
+			return -EIO;
+		phy = container_of(ndev->phy_list.next, struct mii_phy, phy_node);
+
+		reg_src = ndev->mdio_read(ndev, phy->mii_id, MII_REG_INT_SRC);
+		if (reg_src & (PHY_INT_AN | PHY_INT_LINK)) {
+			reg_bms = ndev->mdio_read(ndev, phy->mii_id, MII_REG_BMS);
+			// fixme: to be moved to up layer
+			printf("link %s, speed = %s\n",
+				reg_bms & (1 << 2) ? "up" : "down",
+				reg_bms & (3 << 13) ? "100M" : "10M");
+		}
+	}
 
 	return IRQ_HANDLED;
 }
@@ -206,12 +242,12 @@ static int __INIT__ lan9220_probe(void)
 	mac_id = lan9220_readl(ID_REV);
 
 	switch (mac_id >> 16) {
-	case 0x0118:
+	case PID_LAN9118:
 		lan9220_32bits = 1;
 		chip_name = "LAN9118 (32-bit)";
 		break;
 
-	case 0x9220:
+	case PID_LAN9220:
 		lan9220_32bits = 0;
 		chip_name = "LAN9220 (16-bit)";
 		break;
@@ -242,15 +278,22 @@ static int __INIT__ lan9220_probe(void)
 		goto error;
 
 #ifdef CONFIG_IRQ_SUPPORT
-	writel(VA(GPIO1_BASE + LEVELDETECT1), 1 << 19); // fixme
+	// fixme
+	if ((mac_id >> 16) == PID_LAN9118)
+		writel(VA(GPIO1_BASE + LEVELDETECT1), 1 << 19);
+	else
+		writel(VA(GPIO1_BASE + LEVELDETECT0), 1 << 19);
+
 	ret = irq_register_isr(LAN9220_IRQ_NUM, lan9220_isr, ndev);
 	if (ret < 0)
 		goto error;
 #endif
 
-	ret = lan9220_hw_init();
-	return ret;
+	ret = lan9220_hw_init(ndev);
+	if (!ret)
+		return 0;
 
+	// TODO: deinit and unregister the ndev
 error:
 	free(ndev);
 	return ret;
