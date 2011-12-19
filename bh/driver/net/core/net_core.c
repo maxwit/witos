@@ -847,12 +847,12 @@ int ndev_register(struct net_device *ndev)
 {
 	int index;
 	int ret;
-	char buff[CONF_VAL_LEN];
-	char attr[CONF_ATTR_LEN];
-	struct mii_phy *phy;
 	__u32 ip;
 	__u32 net_mask;
 	__u8 mac_addr[MAC_ADR_LEN];
+	char buff[CONF_VAL_LEN];
+	char attr[CONF_ATTR_LEN];
+	struct mii_phy *phy;
 
 	if (!ndev || !ndev->send_packet || !ndev->set_mac_addr)
 		return -EINVAL;

@@ -65,26 +65,27 @@ static int lan9220_hw_init(void)
 {
 	__u32 val;
 
-	// reset phy
-	val = lan9220_readl(HW_CFG);
-	lan9220_writel(HW_CFG, val | 0x1);
-	while (lan9220_readl(HW_CFG) & 0x1);
-
-	// reset mac
-	// while (lan9220_readl(PMT_CTRL) & 0x1);
+	// reset PHY
 	val = lan9220_readl(PMT_CTRL);
 	lan9220_writel(PMT_CTRL, val | 0x1 << 10);
 	while (lan9220_readl(PMT_CTRL) & 0x1 << 10);
 
-	// fifo setting
-	// irq setting
+	udelay(200);
+	// while (lan9220_readl(PMT_CTRL) & 0x1);
+
+	// reset MAC CSR
+	val = lan9220_readl(HW_CFG);
+	lan9220_writel(HW_CFG, val | 0x1);
+	while (lan9220_readl(HW_CFG) & 0x1);
+
+	// IRQ setting
 #ifdef CONFIG_IRQ_SUPPORT
 	lan9220_writel(INT_EN, 0xffffffff);
 	val = lan9220_readl(IRQ_CFG);
 	lan9220_writel(IRQ_CFG, val | 0x1 << 8);
 #endif
 
-	// enable rx and tx
+	// enable RX and TX
 	val = lan9220_csr_readl(MAC_CR);
 	lan9220_csr_writel(MAC_CR, val | 0x3 << 2);
 
@@ -96,23 +97,22 @@ static int lan9220_send_packet(struct net_device *ndev, struct sock_buff *skb)
 	int i;
 	__u32 cmd_A, cmd_B, status;
 	__u32 *data;
-	__UNUSED__ __u32 psr;
+	__u32 __UNUSED__ psr;
 
 	lock_irq_psr(psr);
 
-	cmd_A = (1 << 13) | (1 << 12) | (skb->size & 0x3ff);
-	cmd_B = skb->size & 0x3ff;
-	data = (__u32 *)skb->data;
+	cmd_A = (1 << 13) | (1 << 12) | (skb->size & 0x7ff);
+	cmd_B = skb->size & 0x7ff;
 
 	lan9220_writel(TX_DATA_PORT, cmd_A);
 	lan9220_writel(TX_DATA_PORT, cmd_B);
 
+	data = (__u32 *)skb->data;
 	for (i = 0; i < skb->size; i += 4, data++)
 		lan9220_writel(TX_DATA_PORT, *data);
 
 	status = lan9220_readl(TX_CFG);
 	lan9220_writel(TX_CFG, status | 0x1 << 1);
-	// wait for tx complete
 	while (lan9220_readl(TX_CFG) & 0x1);
 
 	status = lan9220_readl(TX_STATUS_PORT);
@@ -137,7 +137,7 @@ static int lan9220_recv_packet(struct net_device *ndev)
 
 	while (packet_count--) {
 		packet_status = lan9220_readl(RX_STATUS_PORT);
-		// fixme, need to discard the error packet
+		// fixme: to discard the error packet
 		packet_length = packet_status >> 16 & 0x3fff;
 		if (0 == packet_length)
 			break;
@@ -174,11 +174,10 @@ static int lan9220_isr(__u32 irq, void *dev)
 	status = lan9220_readl(INT_STS);
 	if (0 == status)
 		return IRQ_NONE;
-
 	lan9220_writel(INT_STS, status);
 
 	// fixme
-	if ((status & 1 << 20) | 1 << 3)
+	if (status & (1 << 20 | 1 << 3))
 		lan9220_recv_packet(ndev);
 
 	return IRQ_HANDLED;
@@ -197,16 +196,14 @@ static int lan9220_set_mac(struct net_device *ndev, const __u8 *mac)
 	return 0;
 }
 
-static __INIT__ int lan9220_probe(void)
+static int __INIT__ lan9220_probe(void)
 {
 	int ret;
 	__u32 mac_id;
 	struct net_device *ndev;
 	const char *chip_name;
 
-#warning "add vendor id checking"
 	mac_id = lan9220_readl(ID_REV);
-	printf("ID = 0x%08x\n", mac_id);
 
 	switch (mac_id >> 16) {
 	case 0x0118:
@@ -220,9 +217,12 @@ static __INIT__ int lan9220_probe(void)
 		break;
 
 	default:
-		chip_name = "Unknown";
-		break;
+		// chip_name = "Unknown";
+		// break;
+		return -ENODEV;
 	}
+
+	printf("%s found, rev = 0x%04x\n", chip_name, mac_id & 0xFFFF);
 
 	ndev = ndev_new(0);
 	if (NULL == ndev)
