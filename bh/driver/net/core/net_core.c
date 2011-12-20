@@ -1028,7 +1028,6 @@ int ndev_ioctl(struct net_device *ndev, int cmd, void *arg)
 {
 	struct mii_phy *phy;
 	struct link_status *status;
-	__u16 speed;
 
 	// fixme!!!
 	if (NULL == ndev) {
@@ -1078,27 +1077,7 @@ int ndev_ioctl(struct net_device *ndev, int cmd, void *arg)
 			break;
 		}
 
-		speed = ndev->mdio_read(ndev, phy->mii_id, MII_REG_STAT);
-		switch (speed >> 12) {
-		case 1:
-			status->link_speed = ETHER_SPEED_10M_HD;
-			break;
-
-		case 2:
-			status->link_speed = ETHER_SPEED_10M_FD;
-			break;
-
-		case 4:
-			status->link_speed = ETHER_SPEED_100M_HD;
-			break;
-
-		case 8:
-			status->link_speed = ETHER_SPEED_100M_FD;
-			break;
-
-		default:
-			break;
-		}
+		status->link_speed = mii_get_link_speed(phy);
 
 	default:
 		return -EINVAL;

@@ -2,6 +2,7 @@
 #include <net/net.h>
 #include <net/mii.h>
 #include <irq.h>
+#include <device.h>
 #include "lan9220.h"
 
 #if 0
@@ -232,7 +233,7 @@ static int lan9220_set_mac(struct net_device *ndev, const __u8 *mac)
 	return 0;
 }
 
-static int __INIT__ lan9220_probe(void)
+static int __INIT__ lan9220_init(struct device *dev)
 {
 	int ret;
 	__u32 mac_id;
@@ -299,4 +300,14 @@ error:
 	return ret;
 }
 
-DRIVER_INIT(lan9220_probe);
+static struct driver lan9220_driver = {
+	.name = "SMSC LAN9220",
+	.init = lan9220_init,
+};
+
+static int __INIT__ lan9220_driver_init(void)
+{
+	return driver_register(&lan9220_driver);
+}
+
+DRIVER_INIT(lan9220_driver_init);

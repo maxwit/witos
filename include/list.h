@@ -47,4 +47,3 @@ static inline int list_is_empty(const struct list_node *head)
 
 #define list_for_each(iter, head) \
 	for (iter = (head)->next; iter != (head); iter = iter->next)
-

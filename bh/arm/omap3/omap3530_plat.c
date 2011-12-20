@@ -3,6 +3,7 @@
 #include <io.h>
 #include <flash/flash.h>
 #include <sysconf.h>
+#include <device.h>
 
 // fxime: add __INITDATA__
 static const struct part_attr omap3530_part_tab[] = {
@@ -44,6 +45,24 @@ static const struct part_attr omap3530_part_tab[] = {
 		.part_name = "data_2"
 	},
 };
+
+#ifdef CONFIG_BOARD_EVM3530
+static struct device lan9220 = {
+	.name = "SMSC LAN9220",
+	.memio = 0x28000000,
+	.irq = GPIO_IRQ(19),
+};
+
+static int __INIT__ evm3530_device_init(void)
+{
+	int ret;
+
+	ret = device_register(&lan9220);
+	return ret;
+}
+
+POSTSUBS_INIT(evm3530_device_init);
+#endif
 
 static int __INIT__ omap3530_init(void)
 {
