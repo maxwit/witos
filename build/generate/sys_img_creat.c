@@ -113,15 +113,14 @@ int main(int argc, char *argv[])
 
 	checksum(sys);
 
-	printf("\"%s\" created! (checksum = 0x%08X)\n",
-		img_file, sys->checksum);
-
 	ret = write(img_fd, buff, sys->offset + sys->size);
 	if (ret < 0) {
 		sprintf(str, "write %s", img_file);
 		perror(str);
 		goto L2;
 	}
+
+	printf("\"%s\" created!\n", img_file);
 
 	// fixme
 	ret = 0;

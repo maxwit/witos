@@ -13,7 +13,7 @@ void udelay(__u32 n)
 // init clock, gpio, wdt, etc.
 int soc_init(void)
 {
-	__u32	val = S3C6410_SRAM_BASE + S3C6410_SRAM_SIZE;
+	__u32 val = S3C6410_SRAM_BASE + S3C6410_SRAM_SIZE;
 
 	asm volatile ("mov sp, %0\n\t"::"r"(val));
 

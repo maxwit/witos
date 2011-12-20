@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
 		return fd_mmc;
 	}
 
-	fd_img = open(fn_img, O_RDWR);
+	fd_img = open(fn_img, O_RDONLY);
 	if (fd_img < 0) {
 		printf("fail to open %s!\n", fn_img);
 		ret = -EIO;
@@ -62,7 +62,13 @@ int main(int argc, char *argv[])
 
 	for (i = 0; i < MAX_SIZE;) {
 		len = read(fd_img, buff, BUF_LEN);
+		if (len < 0)
+			goto L2;
+
 		ret = write(fd_mmc, buff, len);
+		if (ret < 0)
+			goto L2;
+
 		i += BUF_LEN;
 
 		if (len < BUF_LEN)
@@ -78,6 +84,7 @@ int main(int argc, char *argv[])
 	printf("%lu bytes written!\n", i - BUF_LEN + len);
 #endif
 
+L2:
 	close(fd_img);
 L1:
 	close(fd_mmc);

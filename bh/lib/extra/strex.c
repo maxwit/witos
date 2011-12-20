@@ -239,14 +239,17 @@ int str_to_ip(__u8 ip_val[], const char *ip_str)
 
 #if 1
 	while (*ip_str) {
-		if (ISDIGIT(*ip_str))
+		if (ISDIGIT(*ip_str)) {
 			num = 10 * num + *ip_str - '0';
-		else if ('.' == *ip_str && num <= 255 && dot < 3) {
+		} else if ('.' == *ip_str && num <= 255 && dot < 3) {
 			ip_val[dot] = (__u8)num;
 			dot++;
 			num = 0;
-		} else
+		} else {
+			DPRINT("%s() line %d: invalid IP string \"%s\"\n",
+				__func__, __LINE__, ip_str);
 			return -EINVAL;
+		}
 
 		ip_str++;
 	}
@@ -293,14 +296,12 @@ int str_to_ip(__u8 ip_val[], const char *ip_str)
 int ip_to_str(char buf[], const __u32 ip)
 {
 	sprintf(buf, "%d.%d.%d.%d",
-			ip & 0xff,
-			(ip >> 8) & 0xff,
-			(ip >> 16) & 0xff,
-			(ip >> 24) & 0xff);
+		ip & 0xff, (ip >> 8) & 0xff, (ip >> 16) & 0xff, (ip >> 24) & 0xff);
 
 	return 0;
 }
 
+// fixme!
 int str_to_mac(__u8 mac[], const char *str)
 {
 	int i, j;
@@ -308,20 +309,26 @@ int str_to_mac(__u8 mac[], const char *str)
 	char buf[MAC_STR_LEN];
 	char *p = buf;
 
-	strncpy((char*)buf, str, MAC_STR_LEN);
+	strncpy(buf, str, MAC_STR_LEN);
 
 	for (i = j = 0; i <= MAC_STR_LEN && j < MAC_ADR_LEN; i++) {
 		if (':' == buf[i]|| '\0' == buf[i]) {
 			buf[i] = '\0';
 			if (hex_str_to_val(p, &num) <= 0 || num > 255)
-				return -EINVAL;
+				goto error;
+
 			mac[j++] = num;
 			p = buf + i + 1;
 		}
 	}
 
 	if (j != MAC_ADR_LEN)
-		return -EINVAL;
+		goto error;
 
 	return 0;
+
+error:
+	DPRINT("%s() line %d: invalid MAC address \"%s\"\n",
+		__func__, __LINE__, str);
+	return -EINVAL;
 }

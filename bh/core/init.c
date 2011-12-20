@@ -109,7 +109,7 @@ int main(void)
 
 	system_init();
 
-	// TODO: check if sysconfig is dirty. if yes, save sysconf.
+	conf_store();
 
 #ifdef CONFIG_AUTO_BOOT
 	auto_boot();

@@ -123,7 +123,7 @@ int omap3530_irq_init(void)
 {
 	int irq_num;
 
-	// reset the inc
+	// reset the INTC
 	writel(VA(INTCPS_BASE + INTCPS_SYSCONFIG), 0x1 << 1);
 	while (readl(VA(INTCPS_BASE + INTCPS_SYSCONFIG)) & (0x1 << 1));
 

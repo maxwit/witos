@@ -1,6 +1,6 @@
 CFLAGS += -include shell.h
 
-dir-y += basic user mem go uart reboot boot
+dir-y = basic user mem go uart reboot boot
 dir-$(CONFIG_FLASH) += flash
 dir-$(CONFIG_NET) += ipconfig ping tftp dhclient ftp
 #dir-$(CONFIG_FS) += mount

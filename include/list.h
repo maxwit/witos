@@ -11,8 +11,7 @@ static inline void list_head_init(struct list_node *head)
 }
 
 static inline void __list_add(struct list_node *new_node,
-			struct list_node *prev,
-			struct list_node *next)
+					struct list_node *prev, struct list_node *next)
 {
 	next->prev = new_node;
 	new_node->next  = next;

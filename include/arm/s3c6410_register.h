@@ -303,7 +303,7 @@
 #define UDIVSLOT     0x2C
 
 #define CONFIG_UART_ENABLE_FIFO
-#define CURR_UART_BASE   (UART_BASE + CONFIG_UART_INDEX * 0x4000)
+#define CURR_UART_BASE   (UART_BASE + CONFIG_UART_INDEX * 0x400)
 
 // fixme: to support CONFIG_DEFAULT_UART
 #define s3c_uart_readb(reg)        readb(VA(UART_BASE + reg))

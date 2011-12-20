@@ -20,7 +20,7 @@
 #define DM9000_PHYS_BASE         0x18000000
 #define DM9000_INDEX_PORT        (DM9000_PHYS_BASE + 0x0)
 #define DM9000_DATA_PORT         (DM9000_PHYS_BASE + 0x4)
-#elif defined(CONFIG_OMAP3530)
+#elif defined(CONFIG_BOARD_DEVKIT8000)
 #define CONFIG_DM9000_IRQ        0
 #define DM9000_PHYS_BASE         0x2c000000
 #define DM9000_INDEX_PORT        (DM9000_PHYS_BASE + 0x0)

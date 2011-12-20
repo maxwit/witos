@@ -6,7 +6,6 @@
 
 	.global _start
 	.global hang
-	.global tim_addr
 
 #ifdef CONFIG_OMAP3530
 	.word (_end - _start)

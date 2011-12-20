@@ -98,10 +98,10 @@ typedef enum {
 
 struct oob_opt {
 	__u8  *data_buff;
-	__u8	*oob_buff;
-	__u32	 data_len;
+	__u8  *oob_buff;
+	__u32  data_len;
 	__u32  oob_len;
-	__u32	 ret_len;
+	__u32  ret_len;
 	__u32  oob_ret_len;
 	__u32  oob_off;
 	OOB_MODE  op_mode;
@@ -109,7 +109,7 @@ struct oob_opt {
 
 struct image_info {
 	char  image_name[MAX_FILE_NAME_LEN];
-	__u32   image_size;
+	__u32 image_size;
 };
 
 struct flash_chip {
