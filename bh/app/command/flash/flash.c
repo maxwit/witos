@@ -85,6 +85,7 @@ static int read_write(int argc, char *argv[])
 	char start_unit = 0, size_unit = 0;
 	void *buff = NULL;
 	struct flash_chip *flash;
+	struct block_device *bdev;
 
 	while ((ch = getopt(argc, argv, "a:l:m:h")) != -1) {
 		switch (ch) {
@@ -137,7 +138,8 @@ static int read_write(int argc, char *argv[])
 	}
 
 #warning
-	flash = get_current_flash();
+	bdev = get_bdev_by_volume(get_curr_volume());
+	flash = flash_open(bdev->dev.name);
 	assert(flash);
 
 	// -a xxxblock or -a xxxpage
