@@ -134,6 +134,7 @@ long random(void)
 
 static int check_ip_is_user(__u32 ip)
 {
+#warning
 	int ret, i;
 	int sockfd;
 	struct sockaddr_in remote_addr, local_addr;

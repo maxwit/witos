@@ -276,7 +276,7 @@ struct sock_buff {
 	// struct sockaddr_in remote_addr;
 };
 
-struct net_device_stat {
+struct ndev_stat {
 	__u32 rx_packets;
 	__u32 tx_packets;
 	__u32 tx_errors;
@@ -301,7 +301,7 @@ struct net_device {
 	__u8  mac_addr[MAC_ADR_LEN];
 	void *chip;
 
-	struct net_device_stat stat;
+	struct ndev_stat stat;
 
 	//
 	int (*send_packet)(struct net_device *ndev, struct sock_buff *skb);

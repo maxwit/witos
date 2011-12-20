@@ -76,8 +76,7 @@ struct mii_phy *mii_phy_probe(struct net_device *ndev, __u8 mii_id)
 	DPRINT("%s(): ID = 0x%04x, 0x%04x @ %d\n",
 		__func__, ven_id, dev_id, mii_id);
 
-	if (ven_id == 0xFFFF || ven_id == 0x0000 ||
-			dev_id == 0xFFFF || dev_id == 0x0000)
+	if (ven_id == 0x0 || dev_id == 0x0)
 		return NULL;
 
 	phy = zalloc(sizeof(*phy));
@@ -90,7 +89,7 @@ struct mii_phy *mii_phy_probe(struct net_device *ndev, __u8 mii_id)
 	return phy;
 }
 
-void mii_reset_phy(struct net_device *ndev, struct mii_phy *phy)
+int mii_reset_phy(struct net_device *ndev, struct mii_phy *phy)
 {
 	__u16 val;
 	int time_out = 100;
@@ -100,11 +99,12 @@ void mii_reset_phy(struct net_device *ndev, struct mii_phy *phy)
 	while (time_out > 0) {
 		val = ndev->mdio_read(ndev, phy->mii_id, MII_REG_BMC);
 		if (!(val & MII_PHY_RESET))
-			return;
+			return 0;
 
 		udelay(10);
 		time_out--;
 	}
 
 	printf("PHY reset failed!\n");
+	return -ETIMEDOUT;
 }

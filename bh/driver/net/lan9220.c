@@ -36,14 +36,14 @@ static inline void lan9220_writel(__u8 reg, __u32 val)
 	}
 }
 
-static __u32 lan9220_csr_readl(__u32 csr)
+static inline __u32 lan9220_csr_readl(__u32 csr)
 {
 	lan9220_writel(MAC_CSR_CMD, 1 << 31 | 1 << 30 | csr);
 	while (lan9220_readl(MAC_CSR_CMD) & 1 << 31);
 	return lan9220_readl(MAC_CSR_DATA);
 }
 
-static void lan9220_csr_writel(__u32 csr, __u32 val)
+static inline void lan9220_csr_writel(__u32 csr, __u32 val)
 {
 	lan9220_writel(MAC_CSR_DATA, val);
 	lan9220_writel(MAC_CSR_CMD, 1 << 31 | csr);
@@ -59,7 +59,7 @@ static __u16 lan9220_mdio_read(struct net_device *ndev, __u8 addr, __u8 reg)
 
 static void lan9220_mdio_write(struct net_device *ndev, __u8 addr, __u8 reg, __u16 val)
 {
-	lan9220_csr_writel(MII_DATA, val & 0xffff);
+	lan9220_csr_writel(MII_DATA, val);
 	lan9220_csr_writel(MII_ACC, addr << 11 | reg << 6 | 1 << 1 | 1);
 	while (lan9220_csr_readl(MII_ACC) & 0x1);
 }

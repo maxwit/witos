@@ -111,6 +111,7 @@ static struct sock_buff *sock_recv_packet(struct socket *sock)
 
 int qu_is_empty(int fd)
 {
+#warning
 	__UNUSED__ __u32 psr;
 	struct socket *sock;
 

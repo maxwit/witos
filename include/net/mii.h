@@ -168,5 +168,4 @@ int mii_get_link_connection(struct mii_phy * phy);
 
 struct mii_phy *mii_phy_probe(struct net_device *ndev, __u8 mii_id);
 
-void mii_reset_phy(struct net_device *ndev, struct mii_phy *phy);
-
+int mii_reset_phy(struct net_device *ndev, struct mii_phy *phy);

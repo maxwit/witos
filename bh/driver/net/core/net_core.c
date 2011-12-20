@@ -91,7 +91,6 @@ static inline void mac_fill_bcast(__u8 mac[])
 #ifdef CONFIG_NET_DEBUG
 static void ether_info(struct ether_header *eth_head)
 {
-
 	printf("\tEther frame type: 0x%04x\n", ntohs(eth_head->frame_type));
 
 	printf("\tdest mac: %02x:%02x:%02x:%02x:%02x:%02x\n",
