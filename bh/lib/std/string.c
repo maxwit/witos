@@ -1,44 +1,44 @@
 #include <string.h>
 #include <types.h>
 
-size_t strlen(const char *psrc)
+size_t strlen(const char *src)
 {
 	const char *iter;
 
-	for (iter = psrc; *iter; iter++);
+	for (iter = src; *iter; iter++);
 
-	return iter - psrc;
+	return iter - src;
 }
 
-size_t strnlen(const char *psrc, size_t count)
+size_t strnlen(const char *src, size_t count)
 {
 	const char *iter;
 
-	for (iter = psrc; *iter && count; iter++, count--);
+	for (iter = src; *iter && count; iter++, count--);
 
-	return iter - psrc;
+	return iter - src;
 }
 
-char *strcpy(char *pdst, const char *psrc)
+char *strcpy(char *dst, const char *src)
 {
-	char *iter = pdst;
+	char *iter = dst;
 
-	while ((*iter = *psrc) != '\0') {
+	while ((*iter = *src) != '\0') {
 		iter++;
-		psrc++;
+		src++;
 	}
 
-	return pdst;
+	return dst;
 }
 
-char *strncpy(char *pdst, const char *psrc, size_t count)
+char *strncpy(char *dst, const char *src, size_t count)
 {
-	char *iter = pdst;
+	char *iter = dst;
 	size_t n = 0;
 
-	while ((n < count) && (*iter = *psrc)) {
+	while ((n < count) && (*iter = *src)) {
 		iter++;
-		psrc++;
+		src++;
 		n++;
 	}
 
@@ -47,7 +47,7 @@ char *strncpy(char *pdst, const char *psrc, size_t count)
 		n++;
 	}
 
-	return pdst;
+	return dst;
 }
 
 int strcmp (const char *pstr1, const char *pstr2)
@@ -93,30 +93,30 @@ int strcasecmp (const char *pstr1, const char *pstr2)
 	return *pstr1 - *pstr2;
 }
 
-char *strcat(char *pdst, const char *psrc)
+char *strcat(char *dst, const char *src)
 {
 	char *iter;
 
-	for (iter = pdst; *iter; iter++);
+	for (iter = dst; *iter; iter++);
 
-	while ((*iter = *psrc) != '\0') {
+	while ((*iter = *src) != '\0') {
 		iter++;
-		psrc++;
+		src++;
 	}
 
-	return pdst;
+	return dst;
 }
 
-char *strncat(char *pdst, const char *psrc, size_t count)
+char *strncat(char *dst, const char *src, size_t count)
 {
 	char *iter;
 	size_t n = 0;
 
-	for (iter = pdst; *iter; iter++);
+	for (iter = dst; *iter; iter++);
 
-	while (n < count && (*iter = *psrc)) {
+	while (n < count && (*iter = *src)) {
 		iter++;
-		psrc++;
+		src++;
 		n++;
 	}
 
@@ -126,14 +126,14 @@ char *strncat(char *pdst, const char *psrc, size_t count)
 		n++;
 	}
 
-	return pdst;
+	return dst;
 }
 
-char *strchr(const char *psrc, int c)
+char *strchr(const char *src, int c)
 {
 	const char *iter;
 
-	for (iter = psrc; *iter; iter++) {
+	for (iter = src; *iter; iter++) {
 		if (*iter == c)
 			return (char *)iter;
 	}
@@ -141,13 +141,13 @@ char *strchr(const char *psrc, int c)
 	return NULL;
 }
 
-char *strrchr(const char *psrc, size_t c)
+char *strrchr(const char *src, size_t c)
 {
 	const char *iter;
 
-	for (iter = psrc; *iter; iter++);
+	for (iter = src; *iter; iter++);
 
-	while (iter > psrc) {
+	while (iter > src) {
 		iter--;
 		if (*iter == c)
 			return (char *)iter;
@@ -156,75 +156,75 @@ char *strrchr(const char *psrc, size_t c)
 	return NULL;
 }
 
-void *memcpy(void *pdst, const void *psrc, size_t count)
+void *memcpy(void *dst, const void *src, size_t count)
 {
-	__u8 *pd;
-	const __u8 *ps;
+	__u8 *d;
+	const __u8 *s;
 
-	pd = pdst;
-	ps = psrc;
+	d = dst;
+	s = src;
 
 	while (count > 0) {
-		*pd++ = *ps++;
+		*d++ = *s++;
 		count--;
 	}
 
-	return pdst;
+	return dst;
 }
 
-void *memmove(void *pdst, const void *psrc, size_t count)
+void *memmove(void *dst, const void *src, size_t count)
 {
-	__u8 *pd;
-	const __u8 *ps;
+	__u8 *d;
+	const __u8 *s;
 
-	if (pdst < psrc) {
-		pd = pdst;
-		ps = psrc;
+	if (dst < src) {
+		d = dst;
+		s = src;
 
 		while (count > 0) {
-			*pd++ = *ps++;
+			*d++ = *s++;
 			count--;
 		}
 	} else {
-		pd = pdst + count;
-		ps = psrc + count;
+		d = dst + count;
+		s = src + count;
 
 		while (count > 0) {
-			*--pd = *--ps;
+			*--d = *--s;
 			count--;
 		}
 	}
 
-	return pdst;
+	return dst;
 }
 
-void *memset(void *psrc, int c, size_t count)
+void *memset(void *src, int c, size_t count)
 {
-	char *ps = psrc;
+	char *s = src;
 
 	while (count) {
-		*ps = c;
+		*s = c;
 
-		ps++;
+		s++;
 		count--;
 	}
 
-	return psrc;
+	return src;
 }
 
-long memcmp(const void* pdst, const void* psrc, size_t count)
+long memcmp(const void* dst, const void* src, size_t count)
 {
-	const __u8 *ps, *pd;
+	const __u8 *s, *d;
 
-	pd = pdst;
-	ps = psrc;
+	d = dst;
+	s = src;
 
 	while (count > 0) {
-		if (*pd != *ps)
-			return *pd - *ps;
+		if (*d != *s)
+			return *d - *s;
 
-		ps++;
-		pd++;
+		s++;
+		d++;
 
 		count--;
 	}
