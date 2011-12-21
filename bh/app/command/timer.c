@@ -2,7 +2,7 @@
 
 int main(int argc, char *argv[])
 {
-#ifdef CONFIG_IRQ_SUPPORT
+#ifdef CONFIG_TIMER_SUPPORT
 	volatile __u32 count;
 
 #if 1
@@ -17,6 +17,9 @@ int main(int argc, char *argv[])
 			printf("%d, %d\n", count, m);
 	} while (count < m);
 #endif
+#else
+	printf("Timer not support on this platform!\n");
 #endif
+
 	return 0;
 }

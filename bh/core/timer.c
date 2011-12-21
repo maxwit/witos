@@ -95,5 +95,4 @@ void mdelay(__u32 n)
 {
 	udelay(1000 * n);
 }
-
 #endif
