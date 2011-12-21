@@ -933,7 +933,8 @@ struct net_device *ndev_new(size_t chip_size)
 
 	ndev->chip = (void *)ndev + core_size;
 	ndev->phy_mask = 0xFFFFFFFF;
-	ndev->stat.speed = ETHER_LINK_DOWN;
+	ndev->link.connected = false;
+	ndev->link.speed = ETHER_SPEED_UNKNOWN;
 
 	// set default name
 	snprintf(ndev->ifx_name, NET_NAME_LEN, "eth%d", ndev_count);
@@ -1029,8 +1030,6 @@ int ndev_check_link_status()
 // fixme: to be moved to net_api.c
 int ndev_ioctl(struct net_device *ndev, int cmd, void *arg)
 {
-	struct link_status *status;
-
 #warning
 	// fixme!!!
 	if (NULL == ndev) {
@@ -1067,10 +1066,12 @@ int ndev_ioctl(struct net_device *ndev, int cmd, void *arg)
 		ndev->set_mac_addr(ndev, arg);
 		break;
 
-	case NIOC_GET_STATUS:
-		status = (struct link_status *)arg;
-		status->connected = (ndev->stat.speed != ETHER_LINK_DOWN);
-		status->link_speed = ndev->stat.speed;
+	case NIOC_GET_LINK:
+		*(struct link_status *)arg = ndev->link;
+		break;
+
+	case NIOC_GET_STAT:
+		*(struct ndev_stat *)arg = ndev->stat;
 		break;
 
 	default:
@@ -1082,14 +1083,14 @@ int ndev_ioctl(struct net_device *ndev, int cmd, void *arg)
 
 void ndev_link_change(struct net_device *ndev)
 {
-	printf("%s(%s) link ", ndev->ifx_name, ndev->chip_name);
+	printf("%s(\"%s\") link ", ndev->ifx_name, ndev->chip_name);
 
-	if (ndev->stat.speed == ETHER_LINK_DOWN)	{
+	if (ndev->link.connected == false)	{
 		printf("down!\n");
 	} else {
 		printf("up, speed = ");
 
-		switch (ndev->stat.speed) {
+		switch (ndev->link.speed) {
 		case ETHER_SPEED_10M_HD:
 			printf("10M Half duplex!\n");
 			break;
@@ -1105,7 +1106,7 @@ void ndev_link_change(struct net_device *ndev)
 		// TODO:
 
 		default:
-			printf("UNKNOW!\n");
+			printf("Unknown!\n");
 			break;
 		}
 	}

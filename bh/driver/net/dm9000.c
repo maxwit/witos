@@ -188,34 +188,34 @@ static int dm9000_link_change(struct net_device *ndev)
 		return -EIO;
 	phy = container_of(ndev->phy_list.next, struct mii_phy, phy_node);
 
-	link = dm9000_readb(0x1);
-
+	link = dm9000_readb(DM9000_NSR);
 	if (link & (1 << 6)) {
-		stat = ndev->mdio_read(ndev, phy->mii_id, MII_REG_STAT);
+		ndev->link.connected = true;
 
+		stat = ndev->mdio_read(ndev, phy->mii_id, MII_REG_STAT);
 		switch (stat >> 12) {
 		case 1:
-			ndev->stat.speed = ETHER_SPEED_10M_HD;
+			ndev->link.speed = ETHER_SPEED_10M_HD;
 			break;
 
 		case 2:
-			ndev->stat.speed = ETHER_SPEED_10M_FD;
+			ndev->link.speed = ETHER_SPEED_10M_FD;
 			break;
 		
 		case 4:
-			ndev->stat.speed = ETHER_SPEED_100M_HD;
+			ndev->link.speed = ETHER_SPEED_100M_HD;
 			break;
 		
 		case 8:
-			ndev->stat.speed = ETHER_SPEED_100M_FD;
+			ndev->link.speed = ETHER_SPEED_100M_FD;
 			break;
 		
 		default:
-			ndev->stat.speed = ETHER_SPEED_UNKNOW;
+			ndev->link.speed = ETHER_SPEED_UNKNOW;
 			break;
 		}
 	} else {
-		ndev->stat.speed = ETHER_LINK_DOWN;
+		ndev->link.connected = false;
 	}
 
 	ndev_link_change(ndev);

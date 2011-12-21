@@ -196,7 +196,6 @@ static int lan9220_link_change(struct net_device *ndev)
 {
 	__u16 reg_src, reg_bms;
 	struct mii_phy *phy;
-	struct ndev_stat *stat = &ndev->stat;
 
 	if (list_is_empty(&ndev->phy_list))
 		return -EIO;
@@ -207,31 +206,34 @@ static int lan9220_link_change(struct net_device *ndev)
 		reg_bms = ndev->mdio_read(ndev, phy->mii_id, MII_REG_BMS);
 
 		if (reg_bms & (1 << 2)) {
-			__u16 link = ndev->mdio_read(ndev, phy->mii_id, MII_REG_SPCS);
+			__u16 link;
 
+			ndev->link.connected = true;
+
+			link  = ndev->mdio_read(ndev, phy->mii_id, MII_REG_SPCS);
 			switch ((link >> 2) & 0x7) {
 			case 1:
-				stat->speed = ETHER_SPEED_10M_HD;
+				ndev->link.speed = ETHER_SPEED_10M_HD;
 				break;
 
 			case 5:
-				stat->speed = ETHER_SPEED_10M_FD;
+				ndev->link.speed = ETHER_SPEED_10M_FD;
 				break;
 
 			case 2:
-				stat->speed = ETHER_SPEED_100M_HD;
+				ndev->link.speed = ETHER_SPEED_100M_HD;
 				break;
 
 			case 6:
-				stat->speed = ETHER_SPEED_100M_FD;
+				ndev->link.speed = ETHER_SPEED_100M_FD;
 				break;
 
 			default:
-				stat->speed = ETHER_SPEED_UNKNOW;
+				ndev->link.speed = ETHER_SPEED_UNKNOW;
 				break;
 			}
 		} else {
-			stat->speed = ETHER_LINK_DOWN;
+			ndev->link.connected = false;
 		}
 
 		ndev_link_change(ndev);

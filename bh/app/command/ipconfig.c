@@ -6,16 +6,18 @@ static int show_net_info(struct net_device *ndev)
 	__u8 local[IPV4_ADR_LEN];
 	__u8 mask[IPV4_ADR_LEN];
 	__u8 mac[MAC_ADR_LEN];
-	struct link_status net_status;
-	const char *speed = "none";
+	struct link_status link;
+	struct ndev_stat stat;
+	const char *speed;
 
 	ndev_ioctl(ndev, NIOC_GET_IP, local);
 	ndev_ioctl(ndev, NIOC_GET_MASK, mask);
 	ndev_ioctl(ndev, NIOC_GET_MAC, mac);
-	ndev_ioctl(ndev, NIOC_GET_STATUS, &net_status);
+	ndev_ioctl(ndev, NIOC_GET_LINK, &link);
+	ndev_ioctl(ndev, NIOC_GET_STAT, &stat);
 
-	if (net_status.connected) {
-		switch (net_status.link_speed) {
+	if (link.connected) {
+		switch (link.speed) {
 		case ETHER_SPEED_10M_HD:
 			speed = "10M_HD";
 			break;
@@ -43,23 +45,25 @@ static int show_net_info(struct net_device *ndev)
 		default:
 			break;
 		}
+	} else {
+		speed = "Unknown";
 	}
 
-	printf("%-8schip name:%s\n"
-			"\tlocal addr: %d.%d.%d.%d\n"
-			"\tlocal mask: %d.%d.%d.%d\n"
-			"\tMAC addr: %02x:%02x:%02x:%02x:%02x:%02x\n"
-			"\tconnection:%s speed:%s\n"
-			"\tRX packets:%d errors:%d\n"
-			"\tTX packets:%d errors:%d\n",
-			ndev->ifx_name,
-			ndev->chip_name,
-			local[0], local[1], local[2], local[3],
-			mask[0], mask[1], mask[2], mask[3],
-			mac[0], mac[1], mac[2], mac[3], mac[4], mac[5],
-			net_status.connected ? "yes" : "no", speed,
-			ndev->stat.rx_packets, ndev->stat.rx_errors,
-			ndev->stat.tx_packets, ndev->stat.tx_errors);
+	printf("%-8schip name: \"%s\"\n"
+		"\tlocal addr: %d.%d.%d.%d\n"
+		"\tlocal mask: %d.%d.%d.%d\n"
+		"\tMAC addr: %02x:%02x:%02x:%02x:%02x:%02x\n"
+		"\tconnected:%s speed:%s\n"
+		"\tRX packets:%d errors:%d\n"
+		"\tTX packets:%d errors:%d\n",
+		ndev->ifx_name,
+		ndev->chip_name,
+		local[0], local[1], local[2], local[3],
+		mask[0], mask[1], mask[2], mask[3],
+		mac[0], mac[1], mac[2], mac[3], mac[4], mac[5],
+		link.connected ? "yes" : "no", speed,
+		stat.rx_packets, stat.rx_errors,
+		stat.tx_packets, stat.tx_errors);
 
 	return 0;
 }
@@ -85,6 +89,7 @@ int main(int argc, char *argv[])
 		list_for_each(iter, ndev_list) {
 			ndev = container_of(iter, struct net_device, ndev_node);
 			show_net_info(ndev);
+			putchar('\n');
 		}
 
 		return 0;
