@@ -242,7 +242,7 @@ static int tftp_get_file(int argc, char **argv)
 
 	if (dlopt.file) {
 		strncpy(dlopt.file->name, dlopt.file_name, MAX_FILE_NAME_LEN);
-		dlopt.file->size = ret;
+		dlopt.file->size = dlopt.xmit_size;
 		set_bdev_file_attr(dlopt.file);
 	}
 

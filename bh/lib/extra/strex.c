@@ -48,11 +48,11 @@ int val_to_dec_str(char *str, long val)
 		val = -val;
 	}
 
-	while (val) {
+	do {
 		buff[i] = val % 10 + '0';
 		val /= 10;
 		i--;
-	}
+	} while (val);
 
 	while (++i < MAX_DEC_LEN) {
 		str[j] = buff[i];
