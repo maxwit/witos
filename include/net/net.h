@@ -2,6 +2,7 @@
 
 #include <types.h>
 #include <list.h>
+#include <device.h>
 
 // fixme
 #define	PF_INET		2	/* IP protocol family.  */
@@ -292,6 +293,7 @@ struct link_status {
 #define NET_NAME_LEN 16
 
 struct net_device {
+	struct device *dev;
 	const char *chip_name;
 	char ifx_name[NET_NAME_LEN];
 	struct list_node ndev_node;

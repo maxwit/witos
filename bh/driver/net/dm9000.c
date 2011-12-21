@@ -181,28 +181,28 @@ static int dm9000_recv_packet(struct net_device *ndev)
 
 static int dm9000_isr(__u32 irq, void *dev)
 {
-	__u8 status;
+	__u8 irq_stat, rx_stat;
 	struct net_device* ndev = dev;
 
-	status = dm9000_readb(DM9000_ISR);
-	if (0 == status)
+	irq_stat = dm9000_readb(DM9000_ISR);
+	if (0 == irq_stat)
 		return 0;
 
-	dm9000_writeb(DM9000_ISR, status);
+	dm9000_writeb(DM9000_ISR, irq_stat);
 
-	DPRINT("%s() line %d: status = 0x%08x\n",
-		__func__, __LINE__, status);
+	DPRINT("%s() line %d: irq_stat = 0x%08x\n",
+		__func__, __LINE__, irq_stat);
 
-	if (status & 0x1) {
-		status = dm9000_readb(DM9000_RSR);
-		if (status & 0xBF)
-			printf("%s(): RX Status = 0x%02x\n", __func__, status);
+	if (irq_stat & 0x1) {
+		rx_stat = dm9000_readb(DM9000_RSR);
+		if (rx_stat & 0xBF)
+			printf("%s(): RX Status = 0x%02x\n", __func__, rx_stat);
 
 		dm9000_recv_packet(ndev);
 	}
 
 	// fixme: move to upper layer
-	if (status & 0x20) {
+	if (irq_stat & 0x20) {
 		__u8 link;
 
 		link = dm9000_readb(0x1) & 1 << 6;
@@ -223,7 +223,7 @@ static int __INIT__ dm9000_init(void)
 {
 	int ret;
 	__u16 ven_id, dev_id;
-	__u8  rev;
+	__u8 rev;
 	struct net_device *ndev;
 	const char *chip_name;
 

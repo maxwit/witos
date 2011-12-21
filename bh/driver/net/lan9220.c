@@ -2,7 +2,6 @@
 #include <net/net.h>
 #include <net/mii.h>
 #include <irq.h>
-#include <device.h>
 #include "lan9220.h"
 
 #if 0
@@ -239,8 +238,14 @@ static int __INIT__ lan9220_init(struct device *dev)
 {
 	int ret;
 	__u32 mac_id;
-	struct net_device *ndev;
 	const char *chip_name;
+	struct net_device *ndev;
+
+	ndev = ndev_new(0);
+	if (NULL == ndev)
+		return -ENOMEM;
+
+	ndev->dev = dev;
 
 	mac_id = lan9220_readl(ID_REV);
 
@@ -258,14 +263,10 @@ static int __INIT__ lan9220_init(struct device *dev)
 	default:
 		// chip_name = "Unknown";
 		// break;
-		return -ENODEV;
+		return -ENODEV; // fixme
 	}
 
 	printf("%s found, rev = 0x%04x\n", chip_name, mac_id & 0xFFFF);
-
-	ndev = ndev_new(0);
-	if (NULL == ndev)
-		return -ENOMEM;
 
 	ndev->chip_name = chip_name;
 	ndev->set_mac_addr = lan9220_set_mac;
