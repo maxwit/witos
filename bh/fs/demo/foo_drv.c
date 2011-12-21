@@ -38,7 +38,7 @@ static int foo_card_register(struct foo_drive *foo)
 {
 	struct disk_drive *drive = &foo->drive;
 
-	sprintf(drive->bdev.dev.name, "foo%d", foo_card_count++);
+	sprintf(drive->bdev.name, "foo%d", foo_card_count++);
 
 	// TODO: fix size
 	drive->bdev.bdev_base = 0;

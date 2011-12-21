@@ -1230,17 +1230,17 @@ int nand_erase(struct nand_chip *nand, struct erase_opt *opt)
 	int rewrite_bbt[NAND_MAX_CHIPS]={0};
 	unsigned int bbt_masked_page = 0xffffffff;
 
-	DPRINT("%s(): start = 0x%08x, erase_count = 0x%08x\n",
+	DPRINT("%s(): start = 0x%08x, size = 0x%08x\n",
 			__func__, opt->estart, opt->esize);
 
 	// fixme
 	if (opt->estart & (flash->erase_size - 1)) {
-		printf("%s(): Data address not aligned! (0x%08x)\n", __func__, opt->estart);
+		printf("%s(): erase start not aligned! (0x%08x)\n", __func__, opt->estart);
 		return -EINVAL;
 	}
 
 	if (opt->esize & (flash->erase_size - 1)) {
-		printf("%s(): Data length not aligned! (0x%08x)\n", __func__, opt->esize);
+		printf("%s(): erase size not aligned! (0x%08x)\n", __func__, opt->esize);
 		return -EINVAL;
 	}
 

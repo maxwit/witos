@@ -28,7 +28,7 @@ static void block_info_show(struct block_device *bdev)
 
 	printf("0x%08x - 0x%08x %s (%c:) --- %s bytes\n",
 		bdev->bdev_base, bdev->bdev_base + bdev->bdev_size,
-		bdev->dev.name, bdev->volume, str);
+		bdev->name, bdev->volume, str);
 }
 
 int main(int argc, char *argv[])

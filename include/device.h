@@ -1,4 +1,5 @@
 #pragma once
+
 #include <list.h>
 
 #define MAX_DEV_NAME 64
@@ -8,14 +9,13 @@ struct driver;
 struct bus;
 
 struct resource {
-	void *memio;
+	unsigned long stat;
 	size_t size;
 };
 
 struct device {
-	char name[MAX_DEV_NAME];
 	unsigned long memio;
-	size_t size;
+	// size_t size;
 	int irq;
 
 	struct bus *bus;
@@ -38,6 +38,7 @@ struct driver {
 
 struct bus {
 	const char *type;
+	int (*match)(struct device *, struct driver *);
 	struct list_node dev_list, drv_list;
 };
 

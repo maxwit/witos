@@ -32,7 +32,6 @@ builtin-obj := $(path)/built-in.o
 all: $(dir-y) $(builtin-obj)
 
 $(builtin-obj): $(obj-y) $(subdir-obj)
-	@echo $(obj-y)
 	$(LD) $(LDFLAGS) -r $^ -o $@
 
 PHONY += $(dir-y)

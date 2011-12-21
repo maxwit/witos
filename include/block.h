@@ -60,7 +60,8 @@ struct bdev_file {
 };
 
 struct block_device {
-	struct device dev;
+	// struct device dev;
+	char name[MAX_DEV_NAME];
 
 	size_t bdev_base;
 	size_t bdev_size;

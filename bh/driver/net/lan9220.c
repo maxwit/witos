@@ -2,6 +2,7 @@
 #include <net/net.h>
 #include <net/mii.h>
 #include <irq.h>
+#include <platform.h>
 #include "lan9220.h"
 
 #if 1
@@ -283,20 +284,25 @@ static int lan9220_set_mac(struct net_device *ndev, const __u8 *mac)
 	return 0;
 }
 
-static int __INIT__ lan9220_init(struct device *dev)
+static int __INIT__ lan9220_init(struct platform_device *plat_dev)
 {
 	int ret;
 	__u16 id[2];
 	const char *chip_name;
+	int irq;
+	unsigned long mem;
 	struct net_device *ndev;
 	struct lan9220_chip *lan9220;
+
+	mem = platform_get_memory(plat_dev);
+	irq = platform_get_irq(plat_dev);
 
 	ndev = ndev_new(sizeof(*lan9220));
 	if (NULL == ndev)
 		return -ENOMEM;
 
 	lan9220 = ndev->chip;
-	lan9220->iomem = VA(dev->memio);
+	lan9220->iomem = VA(mem);
 #ifdef CONFIG_IRQ_SUPPORT
 	lan9220->int_mask = 0xfffff07f;
 #endif
@@ -343,7 +349,7 @@ static int __INIT__ lan9220_init(struct device *dev)
 	else
 		writel(VA(GPIO1_BASE + LEVELDETECT0), 1 << 19);
 
-	ret = irq_register_isr(LAN9220_IRQ_NUM, lan9220_isr, ndev);
+	ret = irq_register_isr(irq, lan9220_isr, ndev);
 	if (ret < 0)
 		goto error;
 #endif
@@ -358,14 +364,16 @@ error:
 	return ret;
 }
 
-static struct driver lan9220_driver = {
-	.name = "SMSC LAN9220",
+static struct platform_driver lan9220_driver = {
+	.drv = {
+		.name = "SMSC LAN9220",
+	},
 	.init = lan9220_init,
 };
 
 static int __INIT__ lan9220_driver_init(void)
 {
-	return driver_register(&lan9220_driver);
+	return platform_driver_register(&lan9220_driver);
 }
 
 DRIVER_INIT(lan9220_driver_init);

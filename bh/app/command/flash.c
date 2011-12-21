@@ -34,7 +34,7 @@ static struct flash_chip *get_current_flash()
 	v = get_curr_volume();
 	bdev = get_bdev_by_volume(v);
 	flash = container_of(bdev, struct flash_chip, bdev);
-	if (0 != strncmp(flash->bdev.dev.name, "mtdblock", strlen("mtdblock"))) {
+	if (0 != strncmp(flash->bdev.name, "mtdblock", strlen("mtdblock"))) {
 		printf("The current volume is not a flash device!\n");
 		return NULL;
 	}
@@ -44,7 +44,7 @@ static struct flash_chip *get_current_flash()
 
 static int is_master(struct flash_chip *flash)
 {
-	if (NULL == strchr(flash->bdev.dev.name, 'p'))
+	if (NULL == strchr(flash->bdev.name, 'p'))
 		return 1;
 
 	return 0;
@@ -69,7 +69,7 @@ static int info(int argc, char *argv[])
 		"blocksize: 0x%08x\n",
 		flash->bdev.volume,
 		is_master(flash) ? flash->name : flash->master->name,
-		flash->bdev.dev.name,
+		flash->bdev.name,
 		flash->bdev.bdev_base,
 		flash->bdev.bdev_size,
 		flash->write_size,
@@ -139,7 +139,7 @@ static int read_write(int argc, char *argv[])
 
 #warning
 	bdev = get_bdev_by_volume(get_curr_volume());
-	flash = flash_open(bdev->dev.name);
+	flash = flash_open(bdev->name);
 	assert(flash);
 
 	// -a xxxblock or -a xxxpage

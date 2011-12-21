@@ -1,4 +1,5 @@
-dir-y += uart block
+dir-y += uart block platform
+
 dir-$(CONFIG_SPI) += spi
 dir-$(CONFIG_FLASH) += flash
 dir-$(CONFIG_NET) += net

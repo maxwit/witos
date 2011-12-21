@@ -112,7 +112,7 @@ static int mmc_card_register(struct mmc_card *card)
 {
 	struct disk_drive *drive = &card->drive;
 
-	sprintf(drive->bdev.dev.name, "mmcblock%d", mmc_card_count);
+	sprintf(drive->bdev.name, "mmcblock%d", mmc_card_count);
 	mmc_card_count++;
 
 	// TODO: fix size

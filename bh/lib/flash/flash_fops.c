@@ -429,7 +429,7 @@ int set_bdev_file_attr(struct bdev_file *file)
 		return -1;
 	}
 
-	pn = strchr(file->bdev->dev.name, 'p');
+	pn = strchr(file->bdev->name, 'p');
 
 	if (pn == NULL) {
 		return 0;
@@ -463,7 +463,7 @@ int get_bdev_file_attr(struct bdev_file * file)
 		return -1;
 	}
 
-	pn = strchr(file->bdev->dev.name, 'p');
+	pn = strchr(file->bdev->name, 'p');
 
 	if (pn == NULL) {
 		file->name[0] = '\0';

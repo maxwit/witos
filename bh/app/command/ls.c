@@ -9,11 +9,11 @@ static int show_info(int flag)
 	char curr_volume;
 	struct disk_drive *disk;
 	struct flash_chip *flash;
-	struct block_device *block_dev;
+	struct block_device *bdev;
 
 	curr_volume = get_curr_volume();
-	block_dev   = get_bdev_by_volume(curr_volume);
-	if (block_dev == NULL)
+	bdev = get_bdev_by_volume(curr_volume);
+	if (bdev == NULL)
 		return -1;
 
 	if (flag == 1) {
@@ -23,27 +23,27 @@ static int show_info(int flag)
 			   "start:        0x%08x\n"
 			   "end:          0x%08x\n"
 			   "size:         0x%08x\n",
-				block_dev->volume,
-				block_dev->dev.name,
-				block_dev->bdev_base,
-				block_dev->bdev_base + block_dev->bdev_size,
-			    block_dev->bdev_size);
+				bdev->volume,
+				bdev->name,
+				bdev->bdev_base,
+				bdev->bdev_base + bdev->bdev_size,
+			    bdev->bdev_size);
 
-		if (!strncmp(block_dev->dev.name, "mtdblock", strlen("mtdblock"))) {
-			flash = container_of(block_dev, struct flash_chip, bdev);
+		if (!strncmp(bdev->name, "mtdblock", strlen("mtdblock"))) {
+			flash = container_of(bdev, struct flash_chip, bdev);
 			printf("block size:   0x%08x\n"
 				   "page size:    0x%08x\n",
 				   flash->erase_size, flash->write_size);
-			if (strchr(block_dev->dev.name, 'p'))
+			if (strchr(bdev->name, 'p'))
 				printf("flash:        %s\n", flash->master->name);
 			else
 				printf("flash:        %s\n", flash->name);
 		} else {
-			disk = container_of(block_dev, struct disk_drive, bdev);
+			disk = container_of(bdev, struct disk_drive, bdev);
 			printf("sector size:   %u\n", disk->sect_size);
 		}
 	} else {
-		printf("\ndevice name: %s  (%c:)\n", block_dev->dev.name, block_dev->volume);
+		printf("\ndevice name: %s  (%c:)\n", bdev->name, bdev->volume);
 	}
 
 	return 0;
@@ -53,12 +53,12 @@ int main(int argc, char *argv[])
 {
 	int opt;
 	int ret = 0;
-	int flag_l = 0;
+	int flag = 0;
 
 	while ((opt = getopt(argc, argv, "l")) != -1) {
 		switch (opt) {
 		case 'l':
-			flag_l = 1;
+			flag = 1;
 			break;
 		default:
 			usage();
@@ -66,14 +66,12 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if ((flag_l == 0 && argc == 2) || argc > 2) {
+	if ((flag == 0 && argc == 2) || argc > 2) {
 		usage();
 		return -EINVAL;
 	}
 
-	ret = show_info(flag_l);
-	if (ret < 0)
-		printf("Show device information failed!\n");
+	ret = show_info(flag);
 
 	return ret;
 }

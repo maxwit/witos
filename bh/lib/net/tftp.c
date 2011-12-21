@@ -117,7 +117,7 @@ int tftp_download(struct tftp_opt *opt)
 	if (file) {
 		ret = file->open(file, opt->type);
 		if (ret < 0) {
-			printf("fail to open \"%s\"!\n", file->bdev->dev.name);
+			printf("fail to open \"%s\"!\n", file->bdev->name);
 			goto L1;
 		}
 	}
@@ -263,7 +263,7 @@ int tftp_upload(struct tftp_opt *opt)
 	if (file) {
 		ret = file->open(file, opt->type);
 		if (ret < 0) {
-			printf("fail to open \"%s\"!\n", file->bdev->dev.name);
+			printf("fail to open \"%s\"!\n", file->bdev->name);
 			goto L1;
 		}
 	}

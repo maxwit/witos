@@ -13,7 +13,7 @@ struct block_device *get_bdev_by_name(const char *name)
 	list_for_each(iter, &g_bdev_list)
 	{
 		bdev = container_of(iter, struct block_device, bdev_node);
-		if (!strcmp(bdev->dev.name, name))
+		if (!strcmp(bdev->name, name))
 			return bdev;
 	}
 
@@ -51,7 +51,7 @@ int block_device_register(struct block_device *bdev)
 
 	printf("    0x%08x - 0x%08x %s (%c:)\n",
 		bdev->bdev_base, bdev->bdev_base + bdev->bdev_size,
-		bdev->dev.name, bdev->volume);
+		bdev->name, bdev->volume);
 
 	return 0;
 }

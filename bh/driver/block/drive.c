@@ -73,7 +73,7 @@ int disk_drive_register(struct disk_drive *drive)
 	struct disk_drive *slave;
 	struct part_attr part_tab[MSDOS_MAX_PARTS];
 
-	printf("registering disk drive \"%s\":\n", drive->bdev.dev.name);
+	printf("registering disk drive \"%s\":\n", drive->bdev.name);
 
 	ret = block_device_register(&drive->bdev);
 	// if ret < 0 ...
@@ -88,8 +88,8 @@ int disk_drive_register(struct disk_drive *drive)
 		if (NULL == slave)
 			return -ENOMEM;
 
-		snprintf(slave->bdev.dev.name, PART_NAME_LEN, "%sp%d",
-			drive->bdev.dev.name, i + 1);
+		snprintf(slave->bdev.name, PART_NAME_LEN, "%sp%d",
+			drive->bdev.name, i + 1);
 
 		slave->bdev.bdev_base = part_tab[i].part_base;
 		slave->bdev.bdev_size = part_tab[i].part_size;
@@ -108,11 +108,11 @@ int disk_drive_register(struct disk_drive *drive)
 #if 0
 	struct list_node *iter;
 
-	printf("%s:", drive->bdev.dev.name);
+	printf("%s:", drive->bdev.name);
 	list_for_each(iter, &drive->slave_list)
 	{
 		slave = container_of(iter, struct disk_drive, slave_list);
-		printf(" %s", slave->bdev.dev.name);
+		printf(" %s", slave->bdev.name);
 	}
 	printf("\n");
 #endif
