@@ -30,7 +30,7 @@
 #define ARRAY_ELEM_NUM(arr) (sizeof(arr) / sizeof((arr)[0]))
 
 #define container_of(ptr, type, member) \
-	(type *)((char *)ptr - (char *)(&((type *)0)->member))
+	(type *)((char *)ptr - (long)(&((type *)0)->member))
 
 #define min_t(type, x, y) \
 		({ type __x = (x); type __y = (y); __x < __y ? __x: __y; })
