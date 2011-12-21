@@ -156,12 +156,12 @@
 struct net_device;
 
 struct mii_phy {
-	__u8  mii_id;
+	__u8  addr;
 	__u16 ven_id, dev_id;
 	struct net_device *ndev;
 	struct list_node phy_node;
 };
 
-struct mii_phy *mii_phy_probe(struct net_device *ndev, __u8 mii_id);
+struct mii_phy *mii_phy_probe(struct net_device *ndev, __u8 addr);
 
 int mii_reset_phy(struct net_device *ndev, struct mii_phy *phy);

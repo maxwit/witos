@@ -21,12 +21,12 @@ static void dm9000_writeb(__u8 reg, __u8 val)
 	writeb(VA(DM9000_DATA_PORT), val);
 }
 
-static __u16 dm9000_mdio_read(struct net_device *ndev, __u8 mii_id, __u8 reg)
+static __u16 dm9000_mdio_read(struct net_device *ndev, __u8 addr, __u8 reg)
 {
 	__u16 val;
 
 	// dm9000_writeb(DM9000_EPAR, DM9000_PHY_INTER | reg);
-	dm9000_writeb(DM9000_EPAR, (mii_id & 0x3) << 6 | reg);
+	dm9000_writeb(DM9000_EPAR, (addr & 0x3) << 6 | reg);
 	dm9000_writeb(DM9000_EPCR, DM9000_PHY_SELECT | DM9000_PHY_READ);
 
 	while (dm9000_readb(DM9000_EPCR) & DM9000_PHY_BUSY);
@@ -38,10 +38,10 @@ static __u16 dm9000_mdio_read(struct net_device *ndev, __u8 mii_id, __u8 reg)
 	return val;
 }
 
-static void dm9000_mdio_write(struct net_device *ndev, __u8 mii_id, __u8 reg, __u16 val)
+static void dm9000_mdio_write(struct net_device *ndev, __u8 addr, __u8 reg, __u16 val)
 {
 	// dm9000_writeb(DM9000_EPAR, DM9000_PHY_INTER | reg);
-	dm9000_writeb(DM9000_EPAR, (mii_id & 0x3) << 6 | reg);
+	dm9000_writeb(DM9000_EPAR, (addr & 0x3) << 6 | reg);
 	dm9000_writeb(DM9000_EPDRL, val & 0xff);
 	dm9000_writeb(DM9000_EPDRH, (val >> 8) & 0xff);
 
@@ -192,7 +192,7 @@ static int dm9000_link_change(struct net_device *ndev)
 	if (link & (1 << 6)) {
 		ndev->link.connected = true;
 
-		stat = ndev->mdio_read(ndev, phy->mii_id, MII_REG_STAT);
+		stat = ndev->mdio_read(ndev, phy->addr, MII_REG_STAT);
 		switch (stat >> 12) {
 		case 1:
 			ndev->link.speed = ETHER_SPEED_10M_HD;

@@ -143,11 +143,11 @@ static int at91_emac_recv(struct net_device * ndev)
 	return 0;
 }
 
-static __u16 at91_emac_mdio_read(struct net_device *ndev, __u8 mii_id, __u8 reg)
+static __u16 at91_emac_mdio_read(struct net_device *ndev, __u8 addr, __u8 reg)
 {
 	__u32 frame;
 
-	frame = (1 << 30) | (2 << 28) | (mii_id << 23) | (reg << 18) | (2 << 16);
+	frame = (1 << 30) | (2 << 28) | (addr << 23) | (reg << 18) | (2 << 16);
 	at91_emac_writel(EMAC_MAN, frame);
 
 	while (!(at91_emac_readl(EMAC_NSR) & EMAC_IDLE));
@@ -157,9 +157,9 @@ static __u16 at91_emac_mdio_read(struct net_device *ndev, __u8 mii_id, __u8 reg)
 	return (__u16)(frame & 0xffff);
 }
 
-static void at91_emac_mdio_write(struct net_device *ndev, __u8 mii_id, __u8 reg, __u16 val)
+static void at91_emac_mdio_write(struct net_device *ndev, __u8 addr, __u8 reg, __u16 val)
 {
-	at91_emac_writel(EMAC_MAN, (1 << 30) | (1 << 28) | (mii_id << 23) | (reg << 18) | (2 << 16) | val);
+	at91_emac_writel(EMAC_MAN, (1 << 30) | (1 << 28) | (addr << 23) | (reg << 18) | (2 << 16) | val);
 
 	while (!(at91_emac_readl(EMAC_NSR) & EMAC_IDLE));
 }

@@ -104,7 +104,7 @@ static int lan9220_hw_init(struct net_device *ndev)
 	if (list_is_empty(&ndev->phy_list))
 		return -EIO;
 	phy = container_of(ndev->phy_list.next, struct mii_phy, phy_node);
-	ndev->mdio_write(ndev, phy->mii_id,
+	ndev->mdio_write(ndev, phy->addr,
 		MII_REG_INT_MASK, PHY_INT_AN | PHY_INT_LINK);
 
 	val = lan9220_readl(lan9220, IRQ_CFG);
@@ -201,16 +201,16 @@ static int lan9220_link_change(struct net_device *ndev)
 		return -EIO;
 	phy = container_of(ndev->phy_list.next, struct mii_phy, phy_node);
 
-	reg_src = ndev->mdio_read(ndev, phy->mii_id, MII_REG_INT_SRC);
+	reg_src = ndev->mdio_read(ndev, phy->addr, MII_REG_INT_SRC);
 	if (reg_src & (PHY_INT_AN | PHY_INT_LINK)) {
-		reg_bms = ndev->mdio_read(ndev, phy->mii_id, MII_REG_BMS);
+		reg_bms = ndev->mdio_read(ndev, phy->addr, MII_REG_BMS);
 
 		if (reg_bms & (1 << 2)) {
 			__u16 link;
 
 			ndev->link.connected = true;
 
-			link  = ndev->mdio_read(ndev, phy->mii_id, MII_REG_SPCS);
+			link  = ndev->mdio_read(ndev, phy->addr, MII_REG_SPCS);
 			switch ((link >> 2) & 0x7) {
 			case 1:
 				ndev->link.speed = ETHER_SPEED_10M_HD;

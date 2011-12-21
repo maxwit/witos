@@ -843,27 +843,19 @@ struct net_device *net_get_dev(const char *ifx)
 }
 #endif
 
-int ndev_register(struct net_device *ndev)
+static int ndev_config(struct net_device *ndev)
 {
-	int index;
+#warning
 	int ret;
 	__u32 ip;
 	__u32 net_mask;
 	__u8 mac_addr[MAC_ADR_LEN];
 	char buff[CONF_VAL_LEN];
 	char attr[CONF_ATTR_LEN];
-	struct mii_phy *phy;
-
-	if (!ndev || !ndev->send_packet || !ndev->set_mac_addr)
-		return -EINVAL;
-
-	if (!ndev->chip_name)
-		printf("Warning: chip_name is NOT set!\n");
 
 	// set IP address
 	sprintf(attr, "net.%s.address", ndev->ifx_name);
 	if (conf_get_attr(attr, buff) < 0 || str_to_ip((__u8 *)&ip, buff) < 0) {
-#warning
 		ip = CONFIG_LOCAL_IP;
 	}
 
@@ -874,7 +866,6 @@ int ndev_register(struct net_device *ndev)
 	sprintf(attr, "net.%s.netmask", ndev->ifx_name);
 	if (conf_get_attr(attr, buff) < 0 || \
 		str_to_ip((__u8 *)&net_mask, buff) < 0) {
-#warning
 		net_mask = CONFIG_NET_MASK;
 	}
 
@@ -885,7 +876,6 @@ int ndev_register(struct net_device *ndev)
 	// set mac address
 	sprintf(attr, "net.%s.mac", ndev->ifx_name);
 	if (conf_get_attr(attr, buff) < 0 || str_to_mac(mac_addr, buff) < 0) {
-#warning
 		memcpy(mac_addr, g_def_mac, MAC_ADR_LEN);
 	}
 
@@ -893,16 +883,13 @@ int ndev_register(struct net_device *ndev)
 	if (ret < 0)
 		return ret;
 
-	list_add_tail(&ndev->ndev_node, &g_ndev_list);
+	return 0;
+}
+static int mii_scan(struct net_device *ndev)
+{
+	int index, count = 0;
+	struct mii_phy *phy;
 
-	if (!g_curr_ndev)
-		g_curr_ndev = ndev;
-
-	// fixme
-	if (!ndev->phy_mask || !ndev->mdio_read || !ndev->mdio_write)
-		return 0;
-
-	// detect PHY
 	for (index = 0; index < 32; index++) {
 		if (!((1 << index) & ndev->phy_mask))
 			continue;
@@ -912,13 +899,46 @@ int ndev_register(struct net_device *ndev)
 			phy->ndev = ndev;
 			list_add_tail(&phy->phy_node, &ndev->phy_list);
 
-			mii_reset_phy(ndev, phy);
+			// does it work in any case?
+			// mii_reset_phy(ndev, phy);
 
-			// fixme
 			printf("PHY @ MII[%d]: Vendor ID = 0x%04x, Device ID = 0x%04x\n",
 				index, phy->ven_id, phy->dev_id);
+
+			count++;
 		}
 	}
+
+	return count;
+}
+
+int ndev_register(struct net_device *ndev)
+{
+	int ret;
+
+	if (!ndev || !ndev->send_packet || !ndev->set_mac_addr)
+		return -EINVAL;
+
+	if (!ndev->chip_name)
+		printf("Warning: chip_name is NOT set!\n");
+
+	ret = ndev_config(ndev);
+	if (ret < 0)
+		return ret;
+
+	if (ndev->phy_mask && ndev->mdio_read && ndev->mdio_write) {
+		ret = mii_scan(ndev);
+		if (ret < 0)
+			return ret;
+	} else {
+		printf("%s: MII does NOT support!\n", ndev->chip_name);
+	}
+
+	list_add_tail(&ndev->ndev_node, &g_ndev_list);
+
+	// fixme
+	if (!g_curr_ndev)
+		g_curr_ndev = ndev;
 
 	return 0;
 }

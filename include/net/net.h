@@ -315,8 +315,8 @@ struct net_device {
 	// PHY
 	__u32 phy_mask;
 	struct list_node phy_list;
-	__u16 (*mdio_read)(struct net_device *ndev, __u8 mii_id, __u8 reg);
-	void (*mdio_write)(struct net_device *ndev, __u8 mii_id, __u8 reg, __u16 val);
+	__u16 (*mdio_read)(struct net_device *ndev, __u8 addr, __u8 reg);
+	void (*mdio_write)(struct net_device *ndev, __u8 addr, __u8 reg, __u16 val);
 };
 
 static inline __u16 htons(__u16 val)
