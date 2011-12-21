@@ -25,6 +25,7 @@ static struct net_device *g_curr_ndev; // fixme
 static const char *g_arp_desc[] = {"N/A", "Request", "Reply"};
 #endif
 static int ndev_count = 0;
+#warning
 const static __u8 g_def_mac[] = CONFIG_MAC_ADDR;
 
 static int pseudo_calculate_checksum(struct sock_buff *skb, __u16 *checksum)
@@ -947,16 +948,15 @@ struct net_device *ndev_new(size_t chip_size)
 }
 
 #ifndef CONFIG_IRQ_SUPPORT
-int ndev_recv_poll()
+int ndev_poll()
 {
 	int ret = -ENODEV;
 	struct list_node *iter;
-	struct net_device *ndev;
 
-	list_for_each(iter, &g_ndev_list)
-	{
+	list_for_each(iter, &g_ndev_list) {
+		struct net_device *ndev;
+
 		ndev = container_of(iter, struct net_device, ndev_node);
-
 		if (ndev->ndev_poll)
 			ret = ndev->ndev_poll(ndev);
 	}
@@ -965,75 +965,11 @@ int ndev_recv_poll()
 }
 #endif
 
-// fixme: remove this API
-int ndev_check_link_status()
-{
-#if 0
-	int speed, phy_count;
-	struct net_device *ndev;
-	struct mii_phy *phy;
-	struct list_node *ndev_ln, *phy_ln;
-
-	list_for_each(ndev_ln, &g_ndev_list)
-	{
-		ndev = container_of(ndev_ln, struct net_device, ndev_node);
-		phy_count = 0;
-
-		printf("Detecting ethernet speed for %s(%s):",
-			ndev->ifx_name, ndev->chip_name);
-
-		list_for_each(phy_ln, &ndev->phy_list)
-		{
-			phy = container_of(phy_ln, struct mii_phy, phy_node);
-
-			printf("\n\tPHY @ MII[%d]: ", phy->mii_id);
-
-			speed = mii_get_link_speed(phy);
-
-			if (speed < 0)
-				printf("NOT linked, please check the cable!\n");
-			else {
-				switch(speed) {
-				case ETHER_SPEED_10M_HD:
-					printf("10M Half Duplex activated!\n");
-					break;
-
-				case ETHER_SPEED_10M_FD:
-					printf("10M Full Duplex activated!\n");
-					break;
-
-				case ETHER_SPEED_100M_HD:
-					printf("100M Half Duplex activated!\n");
-					break;
-
-				case ETHER_SPEED_100M_FD:
-					printf("100M Full Duplex activated!\n");
-					break;
-
-				default:
-					printf("Unknown speed (%d)!\n", speed);
-					break;
-				}
-			}
-
-			phy_count++;
-		}
-
-		if (0 == phy_count)
-			printf(" no PHY found!\n");
-	}
-#endif
-
-	return 0;
-}
-
-// fixme: to be moved to net_api.c
 int ndev_ioctl(struct net_device *ndev, int cmd, void *arg)
 {
 #warning
-	// fixme!!!
 	if (NULL == ndev) {
-		// printf("%s() line %d: fixme!\n", __func__, __LINE__);
+		printf("%s() line %d: fixme!\n", __func__, __LINE__);
 		ndev = g_curr_ndev;
 	}
 

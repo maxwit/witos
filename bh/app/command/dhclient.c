@@ -124,12 +124,7 @@ static int send_dhcp_declient(int sockfd, struct dhcp_packet *packet, struct soc
 // fixme!!!
 long random(void)
 {
-	__u8 mac_addr[MAC_ADR_LEN];
-
-	ndev_ioctl(NULL, NIOC_GET_MAC, mac_addr);
-
-	// just get a random number, mac addr is a random num
-	return mac_addr[4] << 24 | mac_addr[3] << 16 | mac_addr[2] << 8 | mac_addr[1];
+	return 0x12345678;
 }
 
 static int check_ip_is_user(__u32 ip)

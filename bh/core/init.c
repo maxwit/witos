@@ -55,9 +55,6 @@ static int __INIT__ system_init(void)
 	// show system information
 	printf("%s\n", banner);
 
-	ndev_check_link_status();
-	printf("\n");
-
 	return 0;
 }
 

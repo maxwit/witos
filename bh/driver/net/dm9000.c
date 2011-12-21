@@ -301,18 +301,18 @@ static int __INIT__ dm9000_init(void)
 		return -ENOMEM;
 
 	ndev->chip_name    = chip_name;
-	//
 	ndev->send_packet  = dm9000_send_packet;
 	ndev->set_mac_addr = dm9000_set_mac;
-#ifndef CONFIG_IRQ_SUPPORT
-	ndev->ndev_poll    = dm9000_poll;
-#endif
 	// MII
 	ndev->phy_mask   = 2;
 	ndev->mdio_read  = dm9000_mdio_read;
 	ndev->mdio_write = dm9000_mdio_write;
 
+#ifdef CONFIG_IRQ_SUPPORT
 	ret = irq_register_isr(CONFIG_DM9000_IRQ, dm9000_isr, ndev);
+#else
+	ndev->ndev_poll = dm9000_poll;
+#endif
 
 	ret = ndev_register(ndev);
 

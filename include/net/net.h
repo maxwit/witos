@@ -145,11 +145,11 @@ struct icmp_packet {
 
 //
 struct ping_packet {
-	__u8    type;
-	__u8    code;
-	__u16  chksum;
-	__u16  id;
-	__u16  seqno;
+	__u8  type;
+	__u8  code;
+	__u16 chksum;
+	__u16 id;
+	__u16 seqno;
 };
 
 //
@@ -374,14 +374,13 @@ int ndev_register(struct net_device *ndev);
 int netif_rx(struct sock_buff *skb);
 
 #ifndef CONFIG_IRQ_SUPPORT
-int ndev_recv_poll();
+int ndev_poll();
 #else
-#define ndev_recv_poll()
+static inline int ndev_poll()
+{
+	return 0;
+}
 #endif
-
-// int ping_request(struct socket *socket, struct eth_addr *remote_addr);
-
-// int ping_request(struct socket *socket);
 
 int ndev_check_link_status();
 

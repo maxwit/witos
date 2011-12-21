@@ -314,29 +314,33 @@ static int __INIT__ lan9220_init(struct platform_device *plat_dev)
 	id[1] = readw(lan9220->iomem + ID_REV + 2); // Device ID
 
 	switch (id[1]) {
-	case PID_LAN9118:
+	case DEV_ID_LAN9118:
 		lan9220->busw32 = 1;
 		chip_name = "LAN9118 (32-bit)";
 		break;
 
-	case PID_LAN9220:
+	case DEV_ID_LAN9220:
 		lan9220->busw32 = 0;
 		chip_name = "LAN9220 (16-bit)";
 		break;
 
 	default:
+		printf("unknown device id (0x%04x)!\n", id[1]);
 		ret = -ENODEV;
 		goto error;
 	}
 
 	printf("%s found, rev = 0x%04x\n", chip_name, id[0]);
 
-	ndev->chip_name = chip_name;
+	ndev->chip_name    = chip_name;
 	ndev->set_mac_addr = lan9220_set_mac;
-	ndev->send_packet = lan9220_send_packet;
+	ndev->send_packet  = lan9220_send_packet;
 #ifndef CONFIG_IRQ_SUPPORT
-	ndev->ndev_poll = lan9220_poll;
+	ndev->ndev_poll    = lan9220_poll;
 #endif
+
+	// MII
+	ndev->phy_mask   = 2;
 	ndev->mdio_read  = lan9220_mdio_read;
 	ndev->mdio_write = lan9220_mdio_write;
 
@@ -346,7 +350,7 @@ static int __INIT__ lan9220_init(struct platform_device *plat_dev)
 
 #ifdef CONFIG_IRQ_SUPPORT
 	// fixme
-	if (id[1] == PID_LAN9118)
+	if (id[1] == DEV_ID_LAN9118)
 		writel(VA(GPIO1_BASE + LEVELDETECT1), 1 << 19);
 	else
 		writel(VA(GPIO1_BASE + LEVELDETECT0), 1 << 19);

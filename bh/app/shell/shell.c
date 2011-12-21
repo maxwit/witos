@@ -45,7 +45,7 @@ static char shell_getchar(void)
 			break;
 
 		// TODO: replace with tasklet
-		ndev_recv_poll();
+		ndev_poll();
 	}
 
 	return ch;

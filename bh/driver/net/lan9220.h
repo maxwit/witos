@@ -1,7 +1,7 @@
 #pragma once
 
-#define PID_LAN9118     0x0118
-#define PID_LAN9220     0x9220
+#define DEV_ID_LAN9118  0x0118
+#define DEV_ID_LAN9220  0x9220
 
 #define MAC_CR          0x1
 #define ADDRH           0x2
@@ -21,7 +21,7 @@
 
 #define INT_STS			0x58
 #define INT_EN			0x5c
-// IRQ bits:
+// MAC IRQ bits
 #define INT_RSFL        (1 << 3)
 #define INT_TSFL        (1 << 7)
 #define INT_PHY         (1 << 18)
@@ -52,6 +52,6 @@
 // MII registers
 #define MII_REG_INT_SRC   29
 #define MII_REG_INT_MASK  30
-// PHY IRQ
+// PHY IRQ bits
 #define PHY_INT_LINK      (1 << 4)
 #define PHY_INT_AN        (1 << 6)
