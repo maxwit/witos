@@ -229,7 +229,7 @@ static int lan9220_link_change(struct net_device *ndev)
 				break;
 
 			default:
-				ndev->link.speed = ETHER_SPEED_UNKNOW;
+				ndev->link.speed = ETHER_SPEED_UNKNOWN;
 				break;
 			}
 		} else {

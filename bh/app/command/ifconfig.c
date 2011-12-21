@@ -72,6 +72,7 @@ int main(int argc, char *argv[])
 {
 	__u32 local_ip, local_mask;
 	__u8 mac[MAC_ADR_LEN];
+#warning "too many flags!"
 	int flag_ip, flag_mask, flag_mac, flag_conf;
 	struct net_device *ndev;
 	struct list_node *iter, *ndev_list;
