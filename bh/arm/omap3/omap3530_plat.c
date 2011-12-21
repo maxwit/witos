@@ -49,7 +49,7 @@ static const struct part_attr omap3530_part_tab[] = {
 #ifdef CONFIG_BOARD_EVM3530
 static struct device lan9220 = {
 	.name = "SMSC LAN9220",
-	.memio = 0x28000000,
+	.memio = (void *)0x28000000,
 	.irq = GPIO_IRQ(19),
 };
 
