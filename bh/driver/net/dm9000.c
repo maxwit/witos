@@ -158,7 +158,7 @@ static int dm9000_recv_packet(struct net_device *ndev)
 				readw(VA(DM9000_DATA_PORT));
 
 			printf("\n%s(), line %d error: status = 0x%04x, size = %d\n",
-			 		__func__, __LINE__, rx_stat, rx_size);
+					__func__, __LINE__, rx_stat, rx_size);
 		} else {
 			rx_data  = (__u16 *)skb->data;  // or head;
 
@@ -201,17 +201,17 @@ static int dm9000_link_change(struct net_device *ndev)
 		case 2:
 			ndev->link.speed = ETHER_SPEED_10M_FD;
 			break;
-		
+
 		case 4:
 			ndev->link.speed = ETHER_SPEED_100M_HD;
 			break;
-		
+
 		case 8:
 			ndev->link.speed = ETHER_SPEED_100M_FD;
 			break;
-		
+
 		default:
-			ndev->link.speed = ETHER_SPEED_UNKNOW;
+			ndev->link.speed = ETHER_SPEED_UNKNOWN;
 			break;
 		}
 	} else {
