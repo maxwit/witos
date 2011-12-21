@@ -61,6 +61,8 @@ static int __INIT__ bus_init(void)
 {
 	list_head_init(&general_bus.dev_list);
 	list_head_init(&general_bus.drv_list);
+
+	return 0;
 }
 
 SUBSYS_INIT(bus_init);

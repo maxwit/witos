@@ -25,7 +25,7 @@ static struct net_device *g_curr_ndev; // fixme
 static const char *g_arp_desc[] = {"N/A", "Request", "Reply"};
 #endif
 static int ndev_count = 0;
-const static g_def_mac[] = CONFIG_MAC_ADDR;
+const static __u8 g_def_mac[] = CONFIG_MAC_ADDR;
 
 static int pseudo_calculate_checksum(struct sock_buff *skb, __u16 *checksum)
 {

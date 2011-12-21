@@ -17,7 +17,9 @@ static int lan9220_32bits;
 #endif
 
 // fixme
+#ifdef CONFIG_IRQ_SUPPORT
 static __u32 int_mask = 0xfffff07f;
+#endif
 
 static inline __u32 lan9220_readl(__u8 reg)
 {
