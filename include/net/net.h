@@ -81,7 +81,8 @@ enum __flags_type {
 
 #define MKIP(a, b, c, d) ((d << 24) | (c << 16) | (b << 8) | a)
 
-enum EtherSpeed {
+enum ether_speed {
+	ETHER_LINK_DOWN,
 	ETHER_SPEED_UNKNOW,
 	ETHER_SPEED_10M_HD,
 	ETHER_SPEED_10M_FD,
@@ -282,18 +283,19 @@ struct ndev_stat {
 	__u32 tx_packets;
 	__u32 tx_errors;
 	__u32 rx_errors;
+	//
+	enum ether_speed speed;
 };
 
 struct link_status {
 	int connected;
-	enum EtherSpeed link_speed;
+	enum ether_speed link_speed;
 };
 
 //
 #define NET_NAME_LEN 16
 
 struct net_device {
-	struct device *dev;
 	const char *chip_name;
 	char ifx_name[NET_NAME_LEN];
 	struct list_node ndev_node;
@@ -384,6 +386,8 @@ int ndev_recv_poll();
 // int ping_request(struct socket *socket);
 
 int ndev_check_link_status();
+
+void ndev_link_change(struct net_device *ndev);
 
 struct list_node *net_get_device_list(void);
 

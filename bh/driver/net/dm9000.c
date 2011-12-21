@@ -179,6 +179,50 @@ static int dm9000_recv_packet(struct net_device *ndev)
 	return 0;
 }
 
+static int dm9000_link_change(struct net_device *ndev)
+{
+	__u8 link, stat;
+	struct mii_phy *phy;
+
+	if (list_is_empty(&ndev->phy_list))
+		return -EIO;
+	phy = container_of(ndev->phy_list.next, struct mii_phy, phy_node);
+
+	link = dm9000_readb(0x1);
+
+	if (link & (1 << 6)) {
+		stat = ndev->mdio_read(ndev, phy->mii_id, MII_REG_STAT);
+
+		switch (stat >> 12) {
+		case 1:
+			ndev->stat.speed = ETHER_SPEED_10M_HD;
+			break;
+
+		case 2:
+			ndev->stat.speed = ETHER_SPEED_10M_FD;
+			break;
+		
+		case 4:
+			ndev->stat.speed = ETHER_SPEED_100M_HD;
+			break;
+		
+		case 8:
+			ndev->stat.speed = ETHER_SPEED_100M_FD;
+			break;
+		
+		default:
+			ndev->stat.speed = ETHER_SPEED_UNKNOW;
+			break;
+		}
+	} else {
+		ndev->stat.speed = ETHER_LINK_DOWN;
+	}
+
+	ndev_link_change(ndev);
+
+	return 0;
+}
+
 static int dm9000_isr(__u32 irq, void *dev)
 {
 	__u8 irq_stat, rx_stat;
@@ -201,13 +245,8 @@ static int dm9000_isr(__u32 irq, void *dev)
 		dm9000_recv_packet(ndev);
 	}
 
-	// fixme: move to upper layer
-	if (irq_stat & 0x20) {
-		__u8 link;
-
-		link = dm9000_readb(0x1) & 1 << 6;
-		printf("dm9000 link %s\n", link ? "up" : "down");
-	}
+	if (irq_stat & 0x20)
+		dm9000_link_change(ndev);
 
 	return 0;
 }

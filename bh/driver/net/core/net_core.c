@@ -931,8 +931,9 @@ struct net_device *ndev_new(size_t chip_size)
 	if (NULL == ndev)
 		return NULL;
 
-	ndev->chip = (struct net_device *)((__u8 *)ndev + core_size);
+	ndev->chip = (void *)ndev + core_size;
 	ndev->phy_mask = 0xFFFFFFFF;
+	ndev->stat.speed = ETHER_LINK_DOWN;
 
 	// set default name
 	snprintf(ndev->ifx_name, NET_NAME_LEN, "eth%d", ndev_count);
@@ -966,6 +967,7 @@ int ndev_recv_poll()
 // fixme: remove this API
 int ndev_check_link_status()
 {
+#if 0
 	int speed, phy_count;
 	struct net_device *ndev;
 	struct mii_phy *phy;
@@ -1019,6 +1021,7 @@ int ndev_check_link_status()
 		if (0 == phy_count)
 			printf(" no PHY found!\n");
 	}
+#endif
 
 	return 0;
 }
@@ -1026,9 +1029,9 @@ int ndev_check_link_status()
 // fixme: to be moved to net_api.c
 int ndev_ioctl(struct net_device *ndev, int cmd, void *arg)
 {
-	struct mii_phy *phy;
 	struct link_status *status;
 
+#warning
 	// fixme!!!
 	if (NULL == ndev) {
 		// printf("%s() line %d: fixme!\n", __func__, __LINE__);
@@ -1065,19 +1068,10 @@ int ndev_ioctl(struct net_device *ndev, int cmd, void *arg)
 		break;
 
 	case NIOC_GET_STATUS:
-		if (list_is_empty(&ndev->phy_list))
-			return -ENODEV;
-
-		phy = container_of(ndev->phy_list.next, struct mii_phy, phy_node);
 		status = (struct link_status *)arg;
-
-		status->connected = !!(ndev->mdio_read(ndev, phy->mii_id, MII_REG_BMS) & 0x20);
-		if (!status->connected) {
-			status->link_speed = ETHER_SPEED_UNKNOW;
-			break;
-		}
-
-		status->link_speed = mii_get_link_speed(phy);
+		status->connected = (ndev->stat.speed != ETHER_LINK_DOWN);
+		status->link_speed = ndev->stat.speed;
+		break;
 
 	default:
 		return -EINVAL;
@@ -1086,10 +1080,41 @@ int ndev_ioctl(struct net_device *ndev, int cmd, void *arg)
 	return 0;
 }
 
-void socket_init(void);
+void ndev_link_change(struct net_device *ndev)
+{
+	printf("%s(%s) link ", ndev->ifx_name, ndev->chip_name);
+
+	if (ndev->stat.speed == ETHER_LINK_DOWN)	{
+		printf("down!\n");
+	} else {
+		printf("up, speed = ");
+
+		switch (ndev->stat.speed) {
+		case ETHER_SPEED_10M_HD:
+			printf("10M Half duplex!\n");
+			break;
+
+		case ETHER_SPEED_100M_FD:
+			printf("100M Full duplex!\n");
+			break;
+
+		case ETHER_SPEED_1000M_FD:
+			printf("1000M Full duplex!\n");
+			break;
+
+		// TODO:
+
+		default:
+			printf("UNKNOW!\n");
+			break;
+		}
+	}
+}
 
 static int __INIT__ net_core_init(void)
 {
+	void socket_init(void);
+
 	socket_init();
 
 	list_head_init(&g_host_list);

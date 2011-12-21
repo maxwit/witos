@@ -14,7 +14,7 @@ struct resource {
 
 struct device {
 	char name[MAX_DEV_NAME];
-	void *memio;
+	unsigned long memio;
 	size_t size;
 	int irq;
 
