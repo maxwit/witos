@@ -2,7 +2,7 @@
 #include <string.h>
 #include <getopt.h>
 #include <errno.h>
-#include <net/net.h>
+#include <net/socket.h>
 #include <fs/fs.h>
 #include <sysconf.h>
 #include <shell.h>

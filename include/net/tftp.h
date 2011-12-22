@@ -1,6 +1,5 @@
 #pragma once
 
-#include <net/net.h>
 #include <block.h>
 
 // fixme
