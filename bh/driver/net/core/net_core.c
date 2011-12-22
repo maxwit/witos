@@ -67,6 +67,7 @@ struct socket *udp_search_socket(const struct udp_header *, const struct ip_head
 struct socket *tcp_search_socket(const struct tcp_header *, const struct ip_header *);
 
 struct socket *icmp_search_socket(const struct ping_packet *ping_pkt, const struct ip_header *ip_pkt);
+
 static inline bool ip_is_bcast(__u32 ip)
 {
 	__u32 mask;
@@ -992,6 +993,16 @@ int ndev_poll()
 	return ret;
 }
 #endif
+
+struct net_device *ndev_get_first(void)
+{
+	struct list_node *first = g_ndev_list.next;
+
+	if (!first)
+		return NULL;
+
+	return container_of(first, struct net_device, ndev_node);
+}
 
 int ndev_ioctl(struct net_device *ndev, int cmd, void *arg)
 {

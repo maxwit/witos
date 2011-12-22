@@ -217,7 +217,7 @@ int main(int argc, char *argv[])
 
 		if (iter == ndev_list) {
 			printf("device \'%s\' not found\n", nic_name);
-			return 1;
+			return -ENODEV;
 		}
 	}
 
@@ -239,7 +239,7 @@ int main(int argc, char *argv[])
 		goto ERROR;
 	}
 
-	ret = ndev_ioctl(NULL, NIOC_GET_MAC, mac_addr);
+	ret = ndev_ioctl(ndev, NIOC_GET_MAC, mac_addr);
 
 	srandom(__LINE__);
 	xid = random();

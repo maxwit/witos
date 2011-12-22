@@ -382,11 +382,11 @@ static inline int ndev_poll()
 }
 #endif
 
-int ndev_check_link_status();
-
 void ndev_link_change(struct net_device *ndev);
 
+// fix the following 2 APIs
 struct list_node *net_get_device_list(void);
+struct net_device *ndev_get_first(void);
 
 #define NIOC_GET_IP     1
 #define NIOC_SET_IP     2
