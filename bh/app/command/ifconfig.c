@@ -43,6 +43,7 @@ static int show_net_info(struct net_device *ndev)
 			break;
 
 		default:
+			speed = "Unknown";
 			break;
 		}
 	} else {

@@ -1,4 +1,5 @@
 #include <getopt.h>
+#include <random.h> // fixme: to be removed
 #include <sysconf.h>
 #include <net/net.h>
 
@@ -121,12 +122,6 @@ static int send_dhcp_declient(int sockfd, struct dhcp_packet *packet, struct soc
 				(const struct sockaddr *)remote_addr, sizeof(*remote_addr));
 }
 
-// fixme!!!
-long random(void)
-{
-	return 0x12345678;
-}
-
 static int check_ip_is_user(__u32 ip)
 {
 #warning
@@ -182,7 +177,7 @@ int main(int argc, char *argv[])
 	int opt;
 	int ret, i, j;
 	int sockfd;
-	__u32 xid = random();
+	__u32 xid;
 	char nic_name[NET_NAME_LEN];
 	char ip_str[IPV4_STR_LEN];
 	__u8 mac_addr[MAC_ADR_LEN];
@@ -245,6 +240,9 @@ int main(int argc, char *argv[])
 	}
 
 	ret = ndev_ioctl(NULL, NIOC_GET_MAC, mac_addr);
+
+	srandom(__LINE__);
+	xid = random();
 
 	init_dhcp_packet(&packet, xid, mac_addr);
 
