@@ -122,6 +122,8 @@ static int send_dhcp_declient(int sockfd, struct dhcp_packet *packet, struct soc
 				(const struct sockaddr *)remote_addr, sizeof(*remote_addr));
 }
 
+int qu_is_empty(int fd);
+
 static int check_ip_is_user(__u32 ip)
 {
 #warning
@@ -206,7 +208,7 @@ int main(int argc, char *argv[])
 	}
 
 	if (nic) {
-		ndev_list= net_get_device_list();
+		ndev_list= ndev_get_list();
 
 		list_for_each(iter, ndev_list) {
 			ndev = container_of(iter, struct net_device, ndev_node);

@@ -1,4 +1,5 @@
 #include <net/net.h>
+#include <net/skb.h>
 #include <uart/uart.h>
 
 #define MAX_SOCK_NUM  32
@@ -683,8 +684,6 @@ struct socket *icmp_search_socket(const struct ping_packet *ping_pkt, const stru
 	return NULL;
 }
 
-
-
 struct socket *arp_search_socket(const struct arp_packet *arp_pkt)
 {
 	int fd;
@@ -708,8 +707,7 @@ struct socket *arp_search_socket(const struct arp_packet *arp_pkt)
 	return NULL;
 }
 
-
-void socket_init(void)
+void __INIT__ socket_init(void)
 {
 	int fd;
 

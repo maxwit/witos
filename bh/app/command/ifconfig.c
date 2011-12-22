@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
 	char ip[IPV4_STR_LEN];
 	char mask[IPV4_STR_LEN];
 
-	ndev_list = net_get_device_list();
+	ndev_list = ndev_get_list();
 	if (list_is_empty(ndev_list)) {
 		printf("There're no net device found!\n");
 		return -ENODEV;

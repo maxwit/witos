@@ -1,5 +1,8 @@
 #pragma once
 
+#define DECL_INIT_LIST(list) \
+	struct list_node list = {.next = &list, .prev = &list}
+
 struct list_node {
 	struct list_node *next, *prev;
 };
