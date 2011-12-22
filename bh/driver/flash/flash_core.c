@@ -5,9 +5,6 @@
 
 static struct list_node g_master_list;
 
-static const struct part_attr *g_part_attr;
-static int g_part_num = 0;
-
 static int set_root_dev(int root_dev)
 {
 	char buff[CONF_VAL_LEN];
@@ -43,17 +40,32 @@ static int get_root_dev(int *root_dev)
 }
 #endif
 
-void __INIT__ flash_add_part_tab(const struct part_attr *attr, int num)
-{
-	g_part_attr = attr;
-	g_part_num  = num;
-}
+/*
+ * copy from Linux kernel (driver/mtd/cmdlinepart.c)
+ *
+ * mtdparts=<mtddef>[;<mtddef]
+ * <mtddef>  := <mtd-id>:<partdef>[,<partdef>]
+ *              where <mtd-id> is the name from the "cat /proc/mtd" command
+ * <partdef> := <size>[@offset][<name>][ro][lk]
+ * <mtd-id>  := unique name used in mapping driver/device (mtd->name)
+ * <size>    := standard linux memsize OR "-" to denote all remaining space
+ * <name>    := '(' NAME ')'
+ *
+ * Examples:
+ *
+ * 1 NOR Flash, with 1 single writable partition:
+ * edb7312-nor:-
+ *
+ * 1 NOR Flash with 2 partitions, 1 NAND with one
+ * edb7312-nor:256k(ARMboot)ro,-(root);edb7312-nand:-(home)
+ *
+ */
 
 // fixme:
 // 1. to fix cross/overlapped parts
 // 2. as an API and called from flash core
-static int __INIT__ flash_adjust_part_tab(struct flash_chip *host,
-						struct part_attr *new_attr,	const struct part_attr *attr_tmpl, __u32 parts)
+static int __INIT__ flash_parse_part_tab(struct flash_chip *host,
+						struct part_attr *new_attr,	const char *part_str)
 {
 	int index = 0;
 	__u32 curr_base;
@@ -153,8 +165,6 @@ static int __INIT__ flash_adjust_part_tab(struct flash_chip *host,
 	return index;
 }
 
-// TODO: support tab/chip macthing
-
 static int g_flash_count = 0;
 
 static int part_read(struct flash_chip *slave,
@@ -229,8 +239,7 @@ int flash_register(struct flash_chip *flash)
 	list_head_init(&flash->slave_list);
 	list_add_tail(&flash->master_node, &g_master_list);
 
-	n = flash_adjust_part_tab(flash,
-			part_tab, g_part_attr, g_part_num);
+	n = flash_parse_part_tab(flash, part_tab, "omap2-nand.0:512K(g-bios-th),2M(g-bios-bh),1(g-bios-sys),3M(linux),64M(rootfs),64M(user),-(data)");
 
 	for (i = 0; i < n; i++) {
 		slave = zalloc(sizeof(*slave));

@@ -25,6 +25,7 @@ CONFIG_NAND = y
 CONFIG_NAND_S3C24X = y
 CONFIG_NAND_ECC_MODE = NAND_ECC_SW
 CONFIG_NOR = y
+CONFIG_FLASH_PARTS = "s3c6410_nand.0:512K(g-bios-th),2M(g-bios-bh),1(g-bios-sys),3M(linux),64M(rootfs),64M(user),-(data)"
 
 # UART
 CONFIG_UART = y
