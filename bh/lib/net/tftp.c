@@ -16,11 +16,6 @@ struct tftp_packet {
 	__u8 data[0];
 } __PACKED__;
 
-struct str_part_type {
-	char *str;
-	PART_TYPE type;
-};
-
 static int tftp_make_req(__u8 *buff, __u16 req, const char *file_name, const char *mode)
 {
 	int len;
