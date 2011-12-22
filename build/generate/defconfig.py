@@ -109,13 +109,13 @@ if __name__ == "__main__":
 	fd_def_cfg.close()
 
 	if config.has_key('MAC_ADDR') == False:
-		mac1 = hex(random.randint(0, 255)).rsplit("x", 1)[1]
-		mac2 = hex(random.randint(1, 255)).rsplit("x", 1)[1]
-		mac3 = hex(random.randint(1, 255)).rsplit("x", 1)[1]
-		mac4 = hex(random.randint(1, 255)).rsplit("x", 1)[1]
-		mac5 = hex(random.randint(1, 255)).rsplit("x", 1)[1]
-		config['MAC_ADDR'] = '"2:' + mac1 + ':' + mac2 + ':' + mac3\
-							 + ':' + mac4 + ':' + str(mac5) + '"'
+		mac1 = hex(random.randint(0, 255))[2:]
+		mac2 = hex(random.randint(1, 255))[2:]
+		mac3 = hex(random.randint(1, 255))[2:]
+		mac4 = hex(random.randint(1, 255))[2:]
+		mac5 = hex(random.randint(1, 255))[2:]
+		config['MAC_ADDR'] = '"10:' + mac1 + ':' + mac2 + ':' + \
+							mac3 + ':' + mac4 + ':' + str(mac5) + '"'
 
 	# fixme:
 	# (1) netmask issue;
