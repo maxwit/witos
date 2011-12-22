@@ -25,8 +25,6 @@ static struct net_device *g_curr_ndev; // fixme
 static const char *g_arp_desc[] = {"N/A", "Request", "Reply"};
 #endif
 static int ndev_count = 0;
-#warning
-const static __u8 g_def_mac[] = CONFIG_MAC_ADDR;
 
 static int pseudo_calculate_checksum(struct sock_buff *skb, __u16 *checksum)
 {
@@ -771,14 +769,15 @@ void skb_free(struct sock_buff *skb)
 
 int net_get_server_ip(__u32 *ip)
 {
+	int ret;
 	char buff[CONF_VAL_LEN];
 
-	if (conf_get_attr("net.server", buff) < 0 || \
-		str_to_ip((__u8 *)ip, buff) < 0) {
-		*ip = CONFIG_SERVER_IP;
-	}
+	if (conf_get_attr("net.server", buff) >= 0)
+		ret = str_to_ip((__u8 *)ip, buff);
+	else
+		ret = str_to_ip((__u8 *)ip, CONFIG_SERVER_IP);
 
-	return 0;
+	return ret;
 }
 
 int net_set_server_ip(__u32 ip)
@@ -845,43 +844,52 @@ struct net_device *net_get_dev(const char *ifx)
 
 static int ndev_config(struct net_device *ndev)
 {
-#warning
 	int ret;
 	__u32 ip;
 	__u32 net_mask;
 	__u8 mac_addr[MAC_ADR_LEN];
 	char buff[CONF_VAL_LEN];
 	char attr[CONF_ATTR_LEN];
+	const char *str;
 
 	// set IP address
 	sprintf(attr, "net.%s.address", ndev->ifx_name);
-	if (conf_get_attr(attr, buff) < 0 || str_to_ip((__u8 *)&ip, buff) < 0) {
-		ip = CONFIG_LOCAL_IP;
-	}
+	if (conf_get_attr(attr, buff) >= 0)
+		str = buff;
+	else
+		str = CONFIG_LOCAL_IP;
 
-	ret = ndev_ioctl(ndev, NIOC_SET_IP, (void *)ip);
-	//
+	ret = str_to_ip((__u8 *)&ip, str);
+	if (ret < 0)
+		printf("%s(): invalid IP \"%s\"!\n", __func__, str);
+	else
+		ret = ndev_ioctl(ndev, NIOC_SET_IP, (void *)ip);
 
 	// set net mask
 	sprintf(attr, "net.%s.netmask", ndev->ifx_name);
-	if (conf_get_attr(attr, buff) < 0 || \
-		str_to_ip((__u8 *)&net_mask, buff) < 0) {
-		net_mask = CONFIG_NET_MASK;
-	}
+	if (conf_get_attr(attr, buff) >= 0)
+		str = buff;
+	else
+		str = CONFIG_NET_MASK;
 
-	ret = ndev_ioctl(ndev, NIOC_SET_MASK, (void *)net_mask);
+	ret = str_to_ip((__u8 *)&net_mask, str);
 	if (ret < 0)
-		return ret;
+		printf("%s(): invalid netmask \"%s\"!\n", __func__, str);
+	else
+		ret = ndev_ioctl(ndev, NIOC_SET_MASK, (void *)net_mask);
 
 	// set mac address
 	sprintf(attr, "net.%s.mac", ndev->ifx_name);
-	if (conf_get_attr(attr, buff) < 0 || str_to_mac(mac_addr, buff) < 0) {
-		memcpy(mac_addr, g_def_mac, MAC_ADR_LEN);
-	}
+	if (conf_get_attr(attr, buff) >= 0)
+		str = buff;
+	else
+		str = CONFIG_MAC_ADDR;
 
-	ret = ndev_ioctl(ndev, NIOC_SET_MAC, mac_addr);
+	ret = str_to_mac(mac_addr, str);
 	if (ret < 0)
-		return ret;
+		printf("%s(): invalid MAC address \"%s\"!\n", __func__, str);
+	else
+		ret = ndev_ioctl(ndev, NIOC_SET_MAC, mac_addr);
 
 	return 0;
 }
