@@ -67,8 +67,6 @@ int conf_del_attr(const char *attr)
 	int mov_len;
 	char *sys_data = (char *)g_sysconf + g_sysconf->offset;
 
-	printf("del: %s\n", attr);
-
 	p = search_attr(sys_data, g_sysconf->size, attr);
 	if (p == NULL) {
 		DPRINT("Attribute \"%s\" is not exist, del attr error!\n", attr);
@@ -93,8 +91,6 @@ int conf_add_attr(const char *attr, const char *val)
 	int len;
 	char *sys_data = (char *)g_sysconf + g_sysconf->offset;
 
-	printf("add: %s = \"%s\"\n", attr, val);
-
 	p = search_attr(sys_data, g_sysconf->size, attr);
 	if (p != NULL) {
 		DPRINT("Fail to add attribute \"%s\"! (already exists)\n", attr);
@@ -117,8 +113,6 @@ int conf_set_attr(const char *attr, const char *val)
 	int cur_len, new_len;
 	int t;
 	char *sys_data = (char *)g_sysconf + g_sysconf->offset;
-
-	printf("set: %s = \"%s\"\n", attr, val);
 
 	p = search_attr(sys_data, g_sysconf->size, attr);
 	if (p == NULL) {

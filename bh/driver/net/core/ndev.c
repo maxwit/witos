@@ -32,7 +32,6 @@ struct net_device *net_get_dev(const char *ifx)
 
 static int ndev_config(struct net_device *ndev)
 {
-	int ret;
 	__u32 ip, netmask;
 	__u8 mac[MAC_ADR_LEN];
 	char buff[CONF_VAL_LEN];
@@ -41,17 +40,17 @@ static int ndev_config(struct net_device *ndev)
 	// set IP address
 	sprintf(attr, "net.%s.address", ndev->ifx_name);
 	if (!conf_get_attr(attr, buff) && !str_to_ip((__u8 *)&ip, buff))
-		ret = ndev_ioctl(ndev, NIOC_SET_IP, (void *)ip);
+		ndev_ioctl(ndev, NIOC_SET_IP, (void *)ip);
 
 	// set net mask
 	sprintf(attr, "net.%s.netmask", ndev->ifx_name);
 	if (!conf_get_attr(attr, buff) && !str_to_ip((__u8 *)&netmask, buff))
-		ret = ndev_ioctl(ndev, NIOC_SET_MASK, (void *)netmask);
+		ndev_ioctl(ndev, NIOC_SET_MASK, (void *)netmask);
 
 	// set mac address
 	sprintf(attr, "net.%s.mac", ndev->ifx_name);
 	if (!conf_get_attr(attr, buff) && !str_to_mac(mac, buff))
-		ret = ndev_ioctl(ndev, NIOC_SET_MAC, mac);
+		ndev_ioctl(ndev, NIOC_SET_MAC, mac);
 
 	return 0;
 }
