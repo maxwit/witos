@@ -4,8 +4,7 @@
 #include <fs/fs.h>
 #include <net/net.h>
 
-#define GB_SYSCFG_VER       7
-
+#define GB_SYSCFG_VER    7
 #define GB_SYSCFG_MAGIC  MKFOURCC('G', 's', 'y', 's')
 
 #define CONSOLE_DEV_NAME_LEN   63

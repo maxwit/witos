@@ -172,6 +172,40 @@ int conf_get_attr(const char *attr, char val[])
 	return 0;
 }
 
+// fixme
+static inline void conf_check_add(const char *attr, const char *val)
+{
+	char str[CONF_VAL_LEN];
+
+	if (conf_get_attr(attr, str) < 0)
+		conf_add_attr(attr, val);
+}
+
+static int conf_check_default()
+{
+#ifdef CONFIG_SERVER_IP
+	conf_check_add("net.server", CONFIG_SERVER_IP);
+#endif
+
+#ifdef CONFIG_LOCAL_IP
+	conf_check_add("net.eth0.address", CONFIG_LOCAL_IP);
+#endif
+
+#ifdef CONFIG_NET_MASK
+	conf_check_add("net.eth0.netmask", CONFIG_NET_MASK);
+#endif
+
+#ifdef CONFIG_MAC_ADDR
+	conf_check_add("net.eth0.mac", CONFIG_MAC_ADDR);
+#endif
+
+#ifdef CONFIG_CONSOLE_NAME
+	conf_check_add("console", CONFIG_CONSOLE_NAME);
+#endif
+
+	return 0;
+}
+
 int conf_load()
 {
 	__u32 new_sum, old_sum;
@@ -186,6 +220,8 @@ int conf_load()
 		DPRINT("checksum error! (0x%08x != 0x%08x)\n", new_sum, old_sum);
 		return -EIO;
 	}
+
+	conf_check_default();
 
 	return 0;
 }
@@ -268,6 +304,8 @@ void conf_reset(void)
 	g_sysconf->magic  = GB_SYSCFG_MAGIC;
 	g_sysconf->size   = 0;
 	g_sysconf->offset = sizeof(*g_sysconf);
+
+	conf_check_default();
 
 	conf_checksum(NULL);
 
