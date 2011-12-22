@@ -63,6 +63,7 @@ struct block_device {
 	// struct device dev;
 	char name[MAX_DEV_NAME];
 
+	// part_attr
 	size_t bdev_base;
 	size_t bdev_size;
 

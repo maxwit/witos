@@ -10,25 +10,13 @@
 
 static void block_info_show(struct block_device *bdev)
 {
-	__u32 device_size = bdev->bdev_size;
-	char str[STR_LEN];
+	char hr_size[STR_LEN];
 
-	if (device_size >= (1 << 30)) {
-		snprintf(str, STR_LEN, "%d.%dG",
-			device_size >> 30, (((device_size >> 20) & 0x3FF) * 10) >> 10);
-	} else if (device_size >= (1 << 20)) {
-		snprintf(str, STR_LEN, "%d.%dM",
-			device_size >> 20, (((device_size >> 10) & 0x3FF) * 10) >> 10);
-	} else if (device_size >= (1 << 10)) {
-		snprintf(str, STR_LEN, "%d.%dK",
-			device_size >> 10, ((device_size & 0x3FF) * 10) >> 10);
-	} else {
-		snprintf(str, STR_LEN, "%d", device_size);
-	}
+	val_to_hr_str(bdev->bdev_size, hr_size);
 
-	printf("0x%08x - 0x%08x %s (%c:) --- %s bytes\n",
+	printf("0x%08x - 0x%08x %s: %s (%c) %s\n",
 		bdev->bdev_base, bdev->bdev_base + bdev->bdev_size,
-		bdev->name, bdev->volume, str);
+		hr_size, bdev->name, bdev->volume);
 }
 
 int main(int argc, char *argv[])
@@ -40,18 +28,17 @@ int main(int argc, char *argv[])
 	switch (argc) {
 	case 1:
 		v = get_home_volume();
+		bdev = get_bdev_by_volume(v);
 		break;
 
 	case 2:
 		vol = argv[1];
 
-		if (IS_ALPH(vol[0]) && \
-			('\0' == vol[1] || (':' == vol[1] && '\0' == vol[2])))
-				v = vol[0];
-		else {
-			usage();
-			return -EINVAL;
-		};
+		if (IS_ALPH(vol[0]) && '\0' == vol[1])
+			bdev = get_bdev_by_volume(vol[0]);
+		else
+			bdev = get_bdev_by_name(vol);
+
 		break;
 
 	default:
@@ -59,17 +46,17 @@ int main(int argc, char *argv[])
 		return -EINVAL;
 	}
 
-	bdev = get_bdev_by_volume(v);
 	if (!bdev) {
-		printf("fail to change to \"%c\", no such block device!\n", v);
+		printf("fail to cd to \"%c\", no such block device!\n", v);
+		usage();
 		return -ENODEV;
 	}
 
 	block_info_show(bdev);
 
-	if (v >= 'a' && v <= 'z') {
+	v = bdev->volume;
+	if (v >= 'a' && v <= 'z')
 		v = v + 'A' -'a';
-	}
 
 	set_curr_volume(v);
 

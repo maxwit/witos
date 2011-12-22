@@ -1,6 +1,8 @@
 #include <sysconf.h>
 #include <flash/flash.h>
 
+#define FLASH_BDEV_NAME "mtdblock"
+
 static struct list_node g_master_list;
 
 static const struct part_attr *g_part_attr;
@@ -215,7 +217,8 @@ int flash_register(struct flash_chip *flash)
 	struct flash_chip *slave;
 	struct part_attr part_tab[MAX_FLASH_PARTS];
 
-	snprintf(flash->bdev.name, MAX_DEV_NAME, "mtdblock%d", g_flash_count);
+	snprintf(flash->bdev.name, MAX_DEV_NAME,
+		FLASH_BDEV_NAME "%c", 'a' + g_flash_count);
 	g_flash_count++;
 
 	printf("registering flash device \"%s\":\n", flash->bdev.name);
@@ -234,9 +237,7 @@ int flash_register(struct flash_chip *flash)
 		if (NULL == slave)
 			return -ENOMEM;
 
-		// fixme
-		snprintf(slave->bdev.name, PART_NAME_LEN, "%sp%d",
-			flash->bdev.name, i + 1);
+		snprintf(slave->bdev.name, PART_NAME_LEN, FLASH_BDEV_NAME "%d", i + 1);
 
 		slave->bdev.bdev_base = part_tab[i].part_base;
 		slave->bdev.bdev_size = part_tab[i].part_size;

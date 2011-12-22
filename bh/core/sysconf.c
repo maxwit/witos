@@ -194,19 +194,21 @@ int conf_load()
 int conf_store()
 {
 	int ret;
-	__u32 conf_base, conf_size;
+	__u32 conf_base = 0, conf_size;
 	struct flash_chip *flash;
 
 	if (!g_conf_dirty)
 		return 0;
 
-	flash = flash_open("mtdblock0");
+	// fixme
+#warning
+	flash = flash_open("mtdblock3");
 	if (NULL == flash) {
-		printf("open flash error\n");
+		printf("Fail to open flash!\n");
 		return -ENODEV;
 	}
 
-	conf_base = flash->erase_size * CONFIG_SYS_START_BLK;
+	// conf_base = flash->erase_size * CONFIG_SYS_START_BLK;
 	conf_size = g_sysconf->size + g_sysconf->offset;
 
 	ret = flash_erase(flash, conf_base, conf_size, EDF_ALLOWBB);
