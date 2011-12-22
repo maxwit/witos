@@ -276,6 +276,7 @@ int bind(int fd, const struct sockaddr *addr, socklen_t len)
 	struct socket *sock;
 	const struct sockaddr_in *sa;
 	struct sockaddr_in *sin;
+	struct net_device *ndev;
 
 	sock = get_sock(fd);
 	if (NULL == sock) {
@@ -292,13 +293,14 @@ int bind(int fd, const struct sockaddr *addr, socklen_t len)
 		sa = (const struct sockaddr_in *)addr;
 
 		sin->sin_port = sa->sin_port ? sa->sin_port : htons(port_alloc(sock->type));
-#if 1
-		if (sa->sin_addr.s_addr == htonl(INADDR_ANY))
-			ret = ndev_ioctl(NULL, NIOC_GET_IP, &sin->sin_addr.s_addr);
-		else
+
+		if (sa->sin_addr.s_addr == htonl(INADDR_ANY)) {
+			// fixme: to find the best ndev
+			ndev = ndev_get_first();
+			sin->sin_addr.s_addr = ndev->ip;
+		} else {
 			sin->sin_addr = sa->sin_addr;
-#endif
-//		sin->sin_addr = sa->sin_addr;
+		}
 
 		break;
 	}
@@ -584,9 +586,11 @@ struct socket *udp_search_socket(const struct udp_header *udp_pkt, const struct 
 	int fd;
 	struct socket *sock;
 	struct sockaddr_in *saddr;
+#if 0
 	__u32 src_ip;
 
 	ndev_ioctl(NULL, NIOC_GET_IP, &src_ip);
+#endif
 
 	for (fd = 1; fd < MAX_SOCK_NUM; fd++) {
 		sock = g_sock_fds[fd];
@@ -650,9 +654,11 @@ struct socket *icmp_search_socket(const struct ping_packet *ping_pkt, const stru
 {
 	int fd;
 	struct socket *sock;
+#if 0
 	__u32 src_ip;
 
 	ndev_ioctl(NULL, NIOC_GET_IP, &src_ip);
+#endif
 
 	for (fd = 1; fd < MAX_SOCK_NUM; fd++) {
 		sock = g_sock_fds[fd];

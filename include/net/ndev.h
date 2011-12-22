@@ -77,7 +77,7 @@ void ndev_link_change(struct net_device *ndev);
 
 // fix the following 2 APIs
 struct list_node *ndev_get_list(void);
-struct net_device *ndev_get_first(void);
+struct net_device *ndev_get_first();
 
 #define NIOC_GET_IP     1
 #define NIOC_SET_IP     2

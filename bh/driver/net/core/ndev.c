@@ -4,7 +4,6 @@
 #include <net/mii.h>
 
 static DECL_INIT_LIST(g_ndev_list);
-static struct net_device *g_curr_ndev = NULL; // fixme
 static int ndev_count = 0;
 
 struct list_node *ndev_get_list(void)
@@ -105,10 +104,6 @@ int ndev_register(struct net_device *ndev)
 
 	list_add_tail(&ndev->ndev_node, &g_ndev_list);
 
-	// fixme
-	if (!g_curr_ndev)
-		g_curr_ndev = ndev;
-
 	return 0;
 }
 
@@ -154,7 +149,7 @@ int ndev_poll()
 }
 #endif
 
-struct net_device *ndev_get_first(void)
+struct net_device *ndev_get_first()
 {
 	struct list_node *first = g_ndev_list.next;
 
@@ -166,11 +161,7 @@ struct net_device *ndev_get_first(void)
 
 int ndev_ioctl(struct net_device *ndev, int cmd, void *arg)
 {
-#warning
-	if (NULL == ndev) {
-		printf("%s() line %d: fixme!\n", __func__, __LINE__);
-		ndev = g_curr_ndev;
-	}
+	assert(ndev);
 
 	switch (cmd) {
 	case NIOC_GET_IP:

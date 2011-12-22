@@ -2,6 +2,7 @@
 
 #include <types.h>
 #include <list.h>
+#include <net/ndev.h>
 
 struct socket;
 
@@ -12,6 +13,7 @@ struct sock_buff {
 
 	struct list_node node;
 	struct socket *sock;
+	struct net_device *ndev;
 	// struct sockaddr_in remote_addr;
 };
 

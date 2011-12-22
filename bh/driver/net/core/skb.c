@@ -22,6 +22,10 @@ struct sock_buff *skb_alloc(__u32 prot_len, __u32 data_len)
 
 	list_head_init(&skb->node);
 
+	// fixme!!
+	skb->ndev = ndev_get_first();
+	assert(skb->ndev);
+
 	return skb;
 }
 

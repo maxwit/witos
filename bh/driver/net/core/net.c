@@ -62,19 +62,9 @@ struct socket *tcp_search_socket(const struct tcp_header *, const struct ip_head
 
 struct socket *icmp_search_socket(const struct ping_packet *ping_pkt, const struct ip_header *ip_pkt);
 
-static inline bool ip_is_bcast(__u32 ip)
+static inline bool ip_is_bcast(struct net_device *ndev, __u32 ip)
 {
-	__u32 mask;
-	int ret;
-
-	ret = ndev_ioctl(NULL, NIOC_GET_MASK, &mask);
-	if (ret < 0)
-		return false;
-
-	if (~(mask | ip) == 0)
-		return true;
-
-	return false;
+	return ~(ndev->mask | ip) == 0;
 }
 
 static inline void mac_fill_bcast(__u8 mac[])
@@ -512,7 +502,7 @@ void ip_send_packet(struct sock_buff *skb, __u8 prot)
 
 	nip = sock->saddr[SA_DST].sin_addr.s_addr;
 
-	if (ip_is_bcast(ntohl(nip))) {
+	if (ip_is_bcast(skb->ndev, ntohl(nip))) {
 		mac_fill_bcast(mac);
 		pmac = mac;
 	} else {
@@ -536,15 +526,16 @@ void ip_send_packet(struct sock_buff *skb, __u8 prot)
 void arp_send_packet(const __u8 nip[], const __u8 *mac, __u16 op_code)
 {
 	struct sock_buff *skb;
+	struct net_device *ndev;
 	struct arp_packet *arp_pkt;
-	__u8 mac_addr[MAC_ADR_LEN];
-	__u32 src_ip;
 
 	skb = skb_alloc(ETH_HDR_LEN, ARP_PKT_LEN);
 	if (NULL == skb) {
 		printf("%s: fail to alloc skb!\n", __func__);
 		return;
 	}
+
+	ndev = skb->ndev;
 
 	arp_pkt = (struct arp_packet *)skb->data;
 
@@ -554,26 +545,23 @@ void arp_send_packet(const __u8 nip[], const __u8 *mac, __u16 op_code)
 	arp_pkt->prot_size = IPV4_ADR_LEN;
 	arp_pkt->op_code   = op_code;
 
-	ndev_ioctl(NULL, NIOC_GET_MAC, mac_addr); //fixme for failure
-	memcpy(arp_pkt->src_mac, mac_addr, MAC_ADR_LEN);
-
-	ndev_ioctl(NULL, NIOC_GET_IP, &src_ip);
-	memcpy(arp_pkt->src_ip, &src_ip, IPV4_ADR_LEN);
+	memcpy(arp_pkt->src_ip, &ndev->ip, IPV4_ADR_LEN);
+	memcpy(arp_pkt->des_ip, nip, IPV4_ADR_LEN);
+	memcpy(arp_pkt->src_mac, ndev->mac_addr, MAC_ADR_LEN);
 
 	if (NULL == mac)
 		mac_fill_bcast(arp_pkt->des_mac);
 	else
 		memcpy(arp_pkt->des_mac, mac, MAC_ADR_LEN);
-	memcpy(arp_pkt->des_ip, nip, IPV4_ADR_LEN);
 
 	ether_send_packet(skb, arp_pkt->des_mac, ETH_TYPE_ARP);
 }
 
 static int arp_recv_packet(struct sock_buff *skb)
 {
-	struct arp_packet *arp_pkt;
 	__u32 ip;
-	__u32 local_ip;
+	struct arp_packet *arp_pkt;
+	struct net_device *ndev = skb->ndev;
 
 	arp_pkt = (struct arp_packet *)skb->data;
 
@@ -629,8 +617,7 @@ static int arp_recv_packet(struct sock_buff *skb)
 		break;
 
 	case ARP_OP_REQ:
-		ndev_ioctl(NULL, NIOC_GET_IP, &local_ip);
-		if (0 == memcmp(arp_pkt->des_ip, &local_ip, IPV4_ADR_LEN))
+		if (0 == memcmp(arp_pkt->des_ip, &ndev->ip, IPV4_ADR_LEN))
 			arp_send_packet(arp_pkt->src_ip, arp_pkt->src_mac, ARP_OP_REP);
 
 		skb_free(skb);
@@ -684,9 +671,8 @@ int netif_rx(struct sock_buff *skb)
 //------------------ Send Package to Hardware -----------------
 void ether_send_packet(struct sock_buff *skb, const __u8 mac[], __u16 eth_type)
 {
-	__u8 mac_addr[MAC_ADR_LEN];
 	struct ether_header *eth_head;
-	struct net_device *ndev;
+	struct net_device *ndev = skb->ndev;
 
 	skb->data -= ETH_HDR_LEN;
 	skb->size += ETH_HDR_LEN;
@@ -700,14 +686,8 @@ void ether_send_packet(struct sock_buff *skb, const __u8 mac[], __u16 eth_type)
 	eth_head = (struct ether_header *)skb->data;
 
 	memcpy(eth_head->des_mac, mac, MAC_ADR_LEN);
-
-	ndev_ioctl(NULL, NIOC_GET_MAC, mac_addr); //fixme for failure
-	memcpy(eth_head->src_mac, mac_addr, MAC_ADR_LEN);
-
+	memcpy(eth_head->src_mac, ndev->mac_addr, MAC_ADR_LEN);
 	eth_head->frame_type = eth_type;
-
-#warning
-	ndev = ndev_get_first();
 
 	ndev->send_packet(ndev, skb);
 
