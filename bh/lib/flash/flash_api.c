@@ -1,6 +1,4 @@
-#ifdef CONFIG_DEBUG
 #include <stdio.h>
-#endif
 #include <flash/flash.h>
 
 struct flash_chip *flash_open(const char *name)

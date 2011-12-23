@@ -5,11 +5,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// sys config image size
-#define SYSCONF_SIZE(config) ((config)->offset + (config)->size)
+struct sysconfig {
+	char* const data;
+	bool is_dirty;
+	size_t size;
+};
 
-static char *g_sysconf;
-static bool g_conf_dirty = false;
+static struct sysconfig g_config = {
+	.data = (char *)CONFIG_SYS_START_MEM + 4,
+	.is_dirty = false,
+	.size = 0,
+};
 
 __u32 get_load_mem_addr()
 {
@@ -26,7 +32,7 @@ static char *search_attr(const char *str)
 	int i, j;
 	int len = strlen(str);
 	int is_attr = 1;
-	const char *data = g_sysconf;
+	const char *data = g_config.data;
 
 	for (i = 0; data[i] != EOF; i++) {
 		if (is_attr) {
@@ -69,7 +75,7 @@ int conf_del_attr(const char *attr)
 
 	*p = EOF;
 
-	g_conf_dirty = true;
+	g_config.is_dirty = true;
 
 	return 0;
 }
@@ -85,14 +91,14 @@ int conf_add_attr(const char *attr, const char *val)
 		return -EBUSY;
 	}
 
-	p = g_sysconf;
+	p = g_config.data;
 	while (*p != EOF) p++;
 
 	len = sprintf(p, "%s = %s\n", attr, val);
 
 	p[len] = EOF;
 
-	g_conf_dirty = true;
+	g_config.is_dirty = true;
 
 	return 0;
 }
@@ -120,15 +126,15 @@ int conf_set_attr(const char *attr, const char *val)
 	t = new_len - cur_len;
 
 	size = 0;
-	while (g_sysconf[size] != EOF) size++;
+	while (g_config.data[size] != EOF) size++;
 
 	if (t != 0) {
-		memmove(q + t, q, size - (q - g_sysconf));
-		g_sysconf[size + t] = EOF;
+		memmove(q + t, q, size - (q - g_config.data));
+		g_config.data[size + t] = EOF;
 	}
 
 	memcpy(p, val, new_len);
-	g_conf_dirty = true;
+	g_config.is_dirty = true;
 
 	return 0;
 }
@@ -194,11 +200,14 @@ static int conf_check_default()
 
 int conf_load()
 {
+	const char *p;
 	__u32 *sys_magic = (__u32 *)CONFIG_SYS_START_MEM;
-	g_sysconf = (char *)CONFIG_SYS_START_MEM + 4;
 
 	if (GB_SYSCFG_MAGIC != *sys_magic)
 		return -EINVAL;
+
+	for (p = g_config.data; *p != EOF; p++);
+	g_config.size = p - g_config.data;
 
 	conf_check_default();
 
@@ -209,36 +218,32 @@ int conf_load()
 int conf_store()
 {
 	int ret;
-	__u32 conf_base = 0, conf_size;
+	__u32 conf_base;
 	struct flash_chip *flash;
-	char *c;
 
-	if (!g_conf_dirty)
+	if (!g_config.is_dirty)
 		return 0;
 
 	// fixme
-#warning
-	flash = flash_open("mtdblock3");
+	flash = flash_open("mtdblock");
+	if (NULL == flash)
+		flash = flash_open("mtdblock1");
 	if (NULL == flash) {
 		printf("Fail to open flash!\n");
 		return -ENODEV;
 	}
 
-	// conf_base = flash->erase_size * CONFIG_SYS_START_BLK;
-	conf_size = 0;
-	c = g_sysconf;
-	while (c[conf_size] != 0xFF) {
-		conf_size++;
-	}
+	conf_base = CONFIG_SYS_START_BLK << flash->erase_shift;
 
-	ret = flash_erase(flash, conf_base, conf_size, EDF_ALLOWBB);
+	ret = flash_erase(flash, conf_base, g_config.size, EDF_ALLOWBB);
 	if (ret < 0)
 		goto L1;
 
-	ret = flash_write(flash, g_sysconf, conf_size, conf_base);
-	// if ret < 0 ...
+	ret = flash_write(flash, g_config.data, g_config.size, conf_base);
+	if (ret < 0)
+		goto L1;
 
-	g_conf_dirty = false;
+	g_config.is_dirty = false;
 
 L1:
 	flash_close(flash);
@@ -253,7 +258,7 @@ int conf_list_attr()
 	char *p;
 	int is_attr = 1;
 
-	p = g_sysconf;
+	p = g_config.data;
 	i = j = 0;
 	while (p[i] != EOF) {
 		if (is_attr) {
@@ -284,10 +289,10 @@ int conf_list_attr()
 
 void conf_reset(void)
 {
-	*(__u32 *)(g_sysconf - 4) = G_SYS_MAGIC;
-	*g_sysconf = EOF;
+	*(__u32 *)(g_config.data - 4) = G_SYS_MAGIC;
+	*g_config.data = EOF;
 
 	conf_check_default();
 
-	g_conf_dirty = true;
+	g_config.is_dirty = true;
 }
