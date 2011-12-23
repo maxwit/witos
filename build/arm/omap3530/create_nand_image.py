@@ -127,6 +127,24 @@ def get_val(p):
 
 	return val
 
+def get_parts():
+	parts = {}
+	sys_file = open(".sysconfig", 'r')
+	while 1:
+		line = sys_file.readline()
+		if len(line) == 0:
+			sys_file.close()
+			return parts
+
+		if line.find('flash.part') <> -1:
+			break;
+
+	parts_string = line.split('"')[1]
+	print parts_string
+
+	parts = parse_parts(parts_string)
+	return parts
+
 def up_align(val, base):
 	return ((val + base - 1) / base) * base
 
@@ -207,8 +225,7 @@ if __name__ == "__main__":
 	print "block_size: " + str(nang_img.flash_block_size)
 	print "oob_size  : " + str(nang_img.flash_oob_size)
 
-	CONFIG_FLASH_PARTS = "omap2-nand.0:512K(g-bios-th),2M(g-bios-bh),1(g-bios-sys),3M(linux),64M(rootfs),64M(user),-(data)"
-	parts = parse_parts(CONFIG_FLASH_PARTS)
+	parts = get_parts()
 
 	offset = 0
 	for index in img_names:
