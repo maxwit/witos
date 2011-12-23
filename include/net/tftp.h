@@ -1,6 +1,5 @@
 #pragma once
 
-#include <net/net.h>
 #include <block.h>
 
 // fixme
@@ -28,7 +27,7 @@
 
 struct tftp_opt {
 	bool  verbose;
-	__u32 server_ip;
+	__u32 server_ip; // const char *server;
 	char  file_name[MAX_FILE_NAME_LEN];
 	char  path[MAX_PATH_LEN];
 	char  mode[MAX_MODE_LEN];

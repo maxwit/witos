@@ -67,7 +67,7 @@ def get_ip_address(ifname):
 		local_ip = fcntl.ioctl(s.fileno(), 0x8915, # SIOCGIFADDR
 					struct.pack('256s', ifname[:15]))
 	except IOError:
-		return "0.0.0.0"
+		return "10.0.0.1"
 
 	return socket.inet_ntoa(local_ip[20:24])
 
@@ -109,25 +109,23 @@ if __name__ == "__main__":
 	fd_def_cfg.close()
 
 	if config.has_key('MAC_ADDR') == False:
-		mac1 = random.randint(0, 255)
-		mac2 = random.randint(1, 255)
-		mac3 = random.randint(1, 255)
-		mac4 = random.randint(1, 255)
-		mac5 = random.randint(1, 255)
-		config['MAC_ADDR'] = '{' + str(mac1) + ', ' + str(mac2) + ', ' + str(mac3)\
-							 + ', ' + str(mac4) + ', ' + str(mac5) + ', 2}'
+		mac1 = hex(random.randint(0, 255))[2:]
+		mac2 = hex(random.randint(1, 255))[2:]
+		mac3 = hex(random.randint(1, 255))[2:]
+		mac4 = hex(random.randint(1, 255))[2:]
+		mac5 = hex(random.randint(1, 255))[2:]
+		config['MAC_ADDR'] = '"10:' + mac1 + ':' + mac2 + ':' + \
+							mac3 + ':' + mac4 + ':' + str(mac5) + '"'
 
 	# fixme:
 	# (1) netmask issue;
 	# (2) assert(local != server)
 	if config.has_key('SERVER_IP') == False:
 		server_ip = get_ip_address('eth0') # fixme
-		config['SERVER_IP'] = 'MKIP(' + server_ip.replace('.', ',') + ')'
-
+		config['SERVER_IP'] = '"' + server_ip + '"'
 		local_ip = server_ip.rsplit(".", 1)[0] + "." + str(random.randint(1, 254))
-		config['LOCAL_IP'] = 'MKIP(' + local_ip.replace('.', ',') + ')'
-
-		config['NET_MASK'] = 'MKIP(255,255,255,0)'
+		config['LOCAL_IP'] = '"' + local_ip + '"'
+		config['NET_MASK'] = "\"255.255.255.0\""
 
 	parse_config("build/configs/configs.xml")
 

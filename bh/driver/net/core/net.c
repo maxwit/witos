@@ -1,9 +1,6 @@
 #include <sysconf.h>
 #include <net/net.h>
-#include <net/mii.h>
 #include <uart/uart.h>
-
-// TODO: split into several files
 
 struct host_addr {
 	struct eth_addr in_addr;
@@ -18,15 +15,10 @@ struct pseudo_header {
 	__u16 size;
 };
 
-static struct list_node g_host_list;
-static struct list_node g_ndev_list;
-static struct net_device *g_curr_ndev; // fixme
+static DECL_INIT_LIST(g_host_list);
 #ifdef CONFIG_DEBUG
 static const char *g_arp_desc[] = {"N/A", "Request", "Reply"};
 #endif
-static int ndev_count = 0;
-#warning
-const static __u8 g_def_mac[] = CONFIG_MAC_ADDR;
 
 static int pseudo_calculate_checksum(struct sock_buff *skb, __u16 *checksum)
 {
@@ -70,19 +62,9 @@ struct socket *tcp_search_socket(const struct tcp_header *, const struct ip_head
 
 struct socket *icmp_search_socket(const struct ping_packet *ping_pkt, const struct ip_header *ip_pkt);
 
-static inline bool ip_is_bcast(__u32 ip)
+static inline bool ip_is_bcast(struct net_device *ndev, __u32 ip)
 {
-	__u32 mask;
-	int ret;
-
-	ret = ndev_ioctl(NULL, NIOC_GET_MASK, &mask);
-	if (ret < 0)
-		return false;
-
-	if (~(mask | ip) == 0)
-		return true;
-
-	return false;
+	return ~(ndev->mask | ip) == 0;
 }
 
 static inline void mac_fill_bcast(__u8 mac[])
@@ -520,7 +502,7 @@ void ip_send_packet(struct sock_buff *skb, __u8 prot)
 
 	nip = sock->saddr[SA_DST].sin_addr.s_addr;
 
-	if (ip_is_bcast(ntohl(nip))) {
+	if (ip_is_bcast(skb->ndev, ntohl(nip))) {
 		mac_fill_bcast(mac);
 		pmac = mac;
 	} else {
@@ -544,15 +526,16 @@ void ip_send_packet(struct sock_buff *skb, __u8 prot)
 void arp_send_packet(const __u8 nip[], const __u8 *mac, __u16 op_code)
 {
 	struct sock_buff *skb;
+	struct net_device *ndev;
 	struct arp_packet *arp_pkt;
-	__u8 mac_addr[MAC_ADR_LEN];
-	__u32 src_ip;
 
 	skb = skb_alloc(ETH_HDR_LEN, ARP_PKT_LEN);
 	if (NULL == skb) {
 		printf("%s: fail to alloc skb!\n", __func__);
 		return;
 	}
+
+	ndev = skb->ndev;
 
 	arp_pkt = (struct arp_packet *)skb->data;
 
@@ -562,26 +545,23 @@ void arp_send_packet(const __u8 nip[], const __u8 *mac, __u16 op_code)
 	arp_pkt->prot_size = IPV4_ADR_LEN;
 	arp_pkt->op_code   = op_code;
 
-	ndev_ioctl(NULL, NIOC_GET_MAC, mac_addr); //fixme for failure
-	memcpy(arp_pkt->src_mac, mac_addr, MAC_ADR_LEN);
-
-	ndev_ioctl(NULL, NIOC_GET_IP, &src_ip);
-	memcpy(arp_pkt->src_ip, &src_ip, IPV4_ADR_LEN);
+	memcpy(arp_pkt->src_ip, &ndev->ip, IPV4_ADR_LEN);
+	memcpy(arp_pkt->des_ip, nip, IPV4_ADR_LEN);
+	memcpy(arp_pkt->src_mac, ndev->mac_addr, MAC_ADR_LEN);
 
 	if (NULL == mac)
 		mac_fill_bcast(arp_pkt->des_mac);
 	else
 		memcpy(arp_pkt->des_mac, mac, MAC_ADR_LEN);
-	memcpy(arp_pkt->des_ip, nip, IPV4_ADR_LEN);
 
 	ether_send_packet(skb, arp_pkt->des_mac, ETH_TYPE_ARP);
 }
 
 static int arp_recv_packet(struct sock_buff *skb)
 {
-	struct arp_packet *arp_pkt;
 	__u32 ip;
-	__u32 local_ip;
+	struct arp_packet *arp_pkt;
+	struct net_device *ndev = skb->ndev;
 
 	arp_pkt = (struct arp_packet *)skb->data;
 
@@ -637,8 +617,7 @@ static int arp_recv_packet(struct sock_buff *skb)
 		break;
 
 	case ARP_OP_REQ:
-		ndev_ioctl(NULL, NIOC_GET_IP, &local_ip);
-		if (0 == memcmp(arp_pkt->des_ip, &local_ip, IPV4_ADR_LEN))
+		if (0 == memcmp(arp_pkt->des_ip, &ndev->ip, IPV4_ADR_LEN))
 			arp_send_packet(arp_pkt->src_ip, arp_pkt->src_mac, ARP_OP_REP);
 
 		skb_free(skb);
@@ -693,7 +672,7 @@ int netif_rx(struct sock_buff *skb)
 void ether_send_packet(struct sock_buff *skb, const __u8 mac[], __u16 eth_type)
 {
 	struct ether_header *eth_head;
-	__u8 mac_addr[MAC_ADR_LEN];
+	struct net_device *ndev = skb->ndev;
 
 	skb->data -= ETH_HDR_LEN;
 	skb->size += ETH_HDR_LEN;
@@ -707,13 +686,10 @@ void ether_send_packet(struct sock_buff *skb, const __u8 mac[], __u16 eth_type)
 	eth_head = (struct ether_header *)skb->data;
 
 	memcpy(eth_head->des_mac, mac, MAC_ADR_LEN);
-
-	ndev_ioctl(NULL, NIOC_GET_MAC, mac_addr); //fixme for failure
-	memcpy(eth_head->src_mac, mac_addr, MAC_ADR_LEN);
-
+	memcpy(eth_head->src_mac, ndev->mac_addr, MAC_ADR_LEN);
 	eth_head->frame_type = eth_type;
 
-	g_curr_ndev->send_packet(g_curr_ndev, skb);
+	ndev->send_packet(ndev, skb);
 
 	skb_free(skb);
 }
@@ -736,63 +712,6 @@ __u16 net_calc_checksum(const void *buff, __u32 size)
 	chksum = (chksum & 0xffff) + (chksum >> 16);
 
 	return chksum & 0xffff;
-}
-
-// fixme!
-struct sock_buff *skb_alloc(__u32 prot_len, __u32 data_len)
-{
-	struct sock_buff *skb;
-
-	skb = malloc(sizeof(struct sock_buff));
-	if (NULL == skb)
-		return NULL;
-
-	skb->head = malloc((prot_len + data_len + 1) & ~1);
-	if (NULL == skb->head) {
-		DPRINT("%s(): malloc failed (size = %d bytes)!\n",
-			__func__, prot_len + data_len);
-		return NULL;
-	}
-
-	skb->data = skb->head + prot_len;
-	skb->size = data_len;
-
-	list_head_init(&skb->node);
-
-	return skb;
-}
-
-void skb_free(struct sock_buff *skb)
-{
-	assert(skb && skb->head);
-
-	free(skb->head);
-	free(skb);
-}
-
-int net_get_server_ip(__u32 *ip)
-{
-	char buff[CONF_VAL_LEN];
-
-	if (conf_get_attr("net.server", buff) < 0 || \
-		str_to_ip((__u8 *)ip, buff) < 0) {
-		*ip = CONFIG_SERVER_IP;
-	}
-
-	return 0;
-}
-
-int net_set_server_ip(__u32 ip)
-{
-	char ip_str[IPV4_STR_LEN];
-	const char *attr = "net.server";
-
-	ip_to_str(ip_str, ip);
-
-	if (conf_set_attr(attr, ip_str) < 0)
-		conf_add_attr(attr, ip_str);
-
-	return 0;
 }
 
 struct eth_addr *getaddr(__u32 nip)
@@ -821,276 +740,38 @@ struct eth_addr *getaddr(__u32 nip)
 	return addr;
 }
 
-struct list_node *net_get_device_list(void)
+int net_get_server_ip(__u32 *ip)
 {
-	return &g_ndev_list;
-}
-
-#if 0
-struct net_device *net_get_dev(const char *ifx)
-{
-	struct net_device *ndev;
-	struct list_node *iter;
-
-	list_for_each(iter, net_get_device_list())
-	{
-		ndev = container_of(iter, struct net_device, ndev_node);
-
-		if (!strcmp(ifx, ndev->ifx_name))
-			return ndev;
-	}
-
-	return NULL;
-}
-#endif
-
-static int ndev_config(struct net_device *ndev)
-{
-#warning
 	int ret;
-	__u32 ip;
-	__u32 net_mask;
-	__u8 mac_addr[MAC_ADR_LEN];
 	char buff[CONF_VAL_LEN];
-	char attr[CONF_ATTR_LEN];
 
-	// set IP address
-	sprintf(attr, "net.%s.address", ndev->ifx_name);
-	if (conf_get_attr(attr, buff) < 0 || str_to_ip((__u8 *)&ip, buff) < 0) {
-		ip = CONFIG_LOCAL_IP;
-	}
-
-	ret = ndev_ioctl(ndev, NIOC_SET_IP, (void *)ip);
-	//
-
-	// set net mask
-	sprintf(attr, "net.%s.netmask", ndev->ifx_name);
-	if (conf_get_attr(attr, buff) < 0 || \
-		str_to_ip((__u8 *)&net_mask, buff) < 0) {
-		net_mask = CONFIG_NET_MASK;
-	}
-
-	ret = ndev_ioctl(ndev, NIOC_SET_MASK, (void *)net_mask);
-	if (ret < 0)
-		return ret;
-
-	// set mac address
-	sprintf(attr, "net.%s.mac", ndev->ifx_name);
-	if (conf_get_attr(attr, buff) < 0 || str_to_mac(mac_addr, buff) < 0) {
-		memcpy(mac_addr, g_def_mac, MAC_ADR_LEN);
-	}
-
-	ret = ndev_ioctl(ndev, NIOC_SET_MAC, mac_addr);
-	if (ret < 0)
-		return ret;
-
-	return 0;
-}
-static int mii_scan(struct net_device *ndev)
-{
-	int index, count = 0;
-	struct mii_phy *phy;
-
-	for (index = 0; index < 32; index++) {
-		if (!((1 << index) & ndev->phy_mask))
-			continue;
-
-		phy = mii_phy_probe(ndev, index);
-		if (phy) {
-			phy->ndev = ndev;
-			list_add_tail(&phy->phy_node, &ndev->phy_list);
-
-			// does it work in any case?
-			// mii_reset_phy(ndev, phy);
-
-			printf("PHY @ MII[%d]: Vendor ID = 0x%04x, Device ID = 0x%04x\n",
-				index, phy->ven_id, phy->dev_id);
-
-			count++;
-		}
-	}
-
-	return count;
-}
-
-int ndev_register(struct net_device *ndev)
-{
-	int ret;
-
-	if (!ndev || !ndev->send_packet || !ndev->set_mac_addr)
-		return -EINVAL;
-
-	if (!ndev->chip_name)
-		printf("Warning: chip_name is NOT set!\n");
-
-	ret = ndev_config(ndev);
-	if (ret < 0)
-		return ret;
-
-	if (ndev->phy_mask && ndev->mdio_read && ndev->mdio_write) {
-		ret = mii_scan(ndev);
-		if (ret < 0)
-			return ret;
-	} else {
-		printf("%s: MII does NOT support!\n", ndev->chip_name);
-	}
-
-	list_add_tail(&ndev->ndev_node, &g_ndev_list);
-
-	// fixme
-	if (!g_curr_ndev)
-		g_curr_ndev = ndev;
-
-	return 0;
-}
-
-struct net_device *ndev_new(size_t chip_size)
-{
-	struct net_device *ndev;
-	__u32 core_size = (sizeof(struct net_device) + WORD_SIZE - 1) & ~(WORD_SIZE - 1);
-
-	ndev = zalloc(core_size + chip_size);
-	if (NULL == ndev)
-		return NULL;
-
-	ndev->chip = (void *)ndev + core_size;
-	ndev->phy_mask = 0xFFFFFFFF;
-	ndev->link.connected = false;
-	ndev->link.speed = ETHER_SPEED_UNKNOWN;
-
-	// set default name
-	snprintf(ndev->ifx_name, NET_NAME_LEN, "eth%d", ndev_count);
-	ndev_count++;
-
-	list_head_init(&ndev->ndev_node);
-	list_head_init(&ndev->phy_list);
-
-	return ndev;
-}
-
-#ifndef CONFIG_IRQ_SUPPORT
-int ndev_poll()
-{
-	int ret = -ENODEV;
-	struct list_node *iter;
-
-	list_for_each(iter, &g_ndev_list) {
-		struct net_device *ndev;
-
-		ndev = container_of(iter, struct net_device, ndev_node);
-		if (ndev->ndev_poll)
-			ret = ndev->ndev_poll(ndev);
-	}
+	if (conf_get_attr("net.server", buff) >= 0)
+		ret = str_to_ip((__u8 *)ip, buff);
+	else
+		ret = str_to_ip((__u8 *)ip, CONFIG_SERVER_IP);
 
 	return ret;
 }
-#endif
 
-struct net_device *ndev_get_first(void)
+int net_set_server_ip(__u32 ip)
 {
-	struct list_node *first = g_ndev_list.next;
+	char ip_str[IPV4_STR_LEN];
+	const char *attr = "net.server";
 
-	if (!first)
-		return NULL;
+	ip_to_str(ip_str, ip);
 
-	return container_of(first, struct net_device, ndev_node);
-}
-
-int ndev_ioctl(struct net_device *ndev, int cmd, void *arg)
-{
-#warning
-	if (NULL == ndev) {
-		printf("%s() line %d: fixme!\n", __func__, __LINE__);
-		ndev = g_curr_ndev;
-	}
-
-	switch (cmd) {
-	case NIOC_GET_IP:
-		*(__u32 *)arg = ndev->ip;
-		break;
-
-	case NIOC_SET_IP:
-		ndev->ip = (__u32)arg;
-		break;
-
-	case NIOC_GET_MASK:
-		*(__u32 *)arg = ndev->mask;
-		break;
-
-	case NIOC_SET_MASK:
-		ndev->mask = (__u32)arg;
-		break;
-
-	case NIOC_GET_MAC:
-		memcpy(arg, ndev->mac_addr, MAC_ADR_LEN);
-		break;
-
-	case NIOC_SET_MAC:
-		if (!ndev->set_mac_addr)
-			return -EINVAL;
-
-		memcpy(ndev->mac_addr, arg, MAC_ADR_LEN);
-		ndev->set_mac_addr(ndev, arg);
-		break;
-
-	case NIOC_GET_LINK:
-		*(struct link_status *)arg = ndev->link;
-		break;
-
-	case NIOC_GET_STAT:
-		*(struct ndev_stat *)arg = ndev->stat;
-		break;
-
-	default:
-		return -EINVAL;
-	}
+	if (conf_set_attr(attr, ip_str) < 0)
+		conf_add_attr(attr, ip_str);
 
 	return 0;
 }
 
-void ndev_link_change(struct net_device *ndev)
+static int __INIT__ net_init(void)
 {
-	printf("%s(\"%s\") link ", ndev->ifx_name, ndev->chip_name);
-
-	if (ndev->link.connected == false)	{
-		printf("down!\n");
-	} else {
-		printf("up, speed = ");
-
-		switch (ndev->link.speed) {
-		case ETHER_SPEED_10M_HD:
-			printf("10M Half duplex!\n");
-			break;
-
-		case ETHER_SPEED_100M_FD:
-			printf("100M Full duplex!\n");
-			break;
-
-		case ETHER_SPEED_1000M_FD:
-			printf("1000M Full duplex!\n");
-			break;
-
-		// TODO:
-
-		default:
-			printf("Unknown!\n");
-			break;
-		}
-	}
-}
-
-static int __INIT__ net_core_init(void)
-{
-	void socket_init(void);
+	void __INIT__ socket_init(void);
 
 	socket_init();
-
-	list_head_init(&g_host_list);
-	list_head_init(&g_ndev_list);
-
-	g_curr_ndev = NULL;
-
 	return 0;
 }
 
-SUBSYS_INIT(net_core_init);
+SUBSYS_INIT(net_init);

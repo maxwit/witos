@@ -67,8 +67,6 @@ int conf_del_attr(const char *attr)
 	int mov_len;
 	char *sys_data = (char *)g_sysconf + g_sysconf->offset;
 
-	printf("del: %s\n", attr);
-
 	p = search_attr(sys_data, g_sysconf->size, attr);
 	if (p == NULL) {
 		DPRINT("Attribute \"%s\" is not exist, del attr error!\n", attr);
@@ -93,8 +91,6 @@ int conf_add_attr(const char *attr, const char *val)
 	int len;
 	char *sys_data = (char *)g_sysconf + g_sysconf->offset;
 
-	printf("add: %s = \"%s\"\n", attr, val);
-
 	p = search_attr(sys_data, g_sysconf->size, attr);
 	if (p != NULL) {
 		DPRINT("Fail to add attribute \"%s\"! (already exists)\n", attr);
@@ -117,8 +113,6 @@ int conf_set_attr(const char *attr, const char *val)
 	int cur_len, new_len;
 	int t;
 	char *sys_data = (char *)g_sysconf + g_sysconf->offset;
-
-	printf("set: %s = \"%s\"\n", attr, val);
 
 	p = search_attr(sys_data, g_sysconf->size, attr);
 	if (p == NULL) {
@@ -172,6 +166,40 @@ int conf_get_attr(const char *attr, char val[])
 	return 0;
 }
 
+// fixme
+static inline void conf_check_add(const char *attr, const char *val)
+{
+	char str[CONF_VAL_LEN];
+
+	if (conf_get_attr(attr, str) < 0)
+		conf_add_attr(attr, val);
+}
+
+static int conf_check_default()
+{
+#ifdef CONFIG_SERVER_IP
+	conf_check_add("net.server", CONFIG_SERVER_IP);
+#endif
+
+#ifdef CONFIG_LOCAL_IP
+	conf_check_add("net.eth0.address", CONFIG_LOCAL_IP);
+#endif
+
+#ifdef CONFIG_NET_MASK
+	conf_check_add("net.eth0.netmask", CONFIG_NET_MASK);
+#endif
+
+#ifdef CONFIG_MAC_ADDR
+	conf_check_add("net.eth0.mac", CONFIG_MAC_ADDR);
+#endif
+
+#ifdef CONFIG_CONSOLE_NAME
+	conf_check_add("console", CONFIG_CONSOLE_NAME);
+#endif
+
+	return 0;
+}
+
 int conf_load()
 {
 	__u32 new_sum, old_sum;
@@ -186,6 +214,8 @@ int conf_load()
 		DPRINT("checksum error! (0x%08x != 0x%08x)\n", new_sum, old_sum);
 		return -EIO;
 	}
+
+	conf_check_default();
 
 	return 0;
 }
@@ -270,6 +300,8 @@ void conf_reset(void)
 	g_sysconf->magic  = GB_SYSCFG_MAGIC;
 	g_sysconf->size   = 0;
 	g_sysconf->offset = sizeof(*g_sysconf);
+
+	conf_check_default();
 
 	conf_checksum(NULL);
 

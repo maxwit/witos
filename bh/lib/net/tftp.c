@@ -1,4 +1,5 @@
 #include <net/tftp.h>
+#include <net/socket.h>
 #include <getopt.h>
 #include <sysconf.h>
 
@@ -14,11 +15,6 @@ struct tftp_packet {
 	};
 	__u8 data[0];
 } __PACKED__;
-
-struct str_part_type {
-	char *str;
-	PART_TYPE type;
-};
 
 static int tftp_make_req(__u8 *buff, __u16 req, const char *file_name, const char *mode)
 {
@@ -62,28 +58,21 @@ int tftp_download(struct tftp_opt *opt)
 	int sockfd;
 	__u16 blk_num;
 	__u8 *buff_ptr;
-	__u32 client_ip;
 	socklen_t addrlen;
 	__u8 buf[TFTP_BUF_LEN];
 	size_t  pkt_len, load_len;
 	struct bdev_file *file;
 	struct tftp_packet *tftp_pkt = (struct tftp_packet *)buf;
 	struct sockaddr_in local_addr, remote_addr;
-	char server_ip[IPV4_STR_LEN], local_ip[IPV4_STR_LEN];
-
-	ndev_ioctl(NULL, NIOC_GET_IP, &client_ip);
-
-	if (ip_to_str(local_ip, client_ip) < 0) {
-		printf("Error: Local IP!\n");
-		return -EINVAL;
-	}
+	char server_ip[IPV4_STR_LEN];
 
 	if (ip_to_str(server_ip, opt->server_ip) < 0) {
 		printf("Error: Server IP!\n");
 		return -EINVAL;
 	}
 
-	printf(" \"%s\": %s => %s\n", opt->file_name, server_ip, local_ip);
+	// printf(" \"%s\": %s => %s\n", opt->file_name, server_ip, local_ip);
+	printf("loading file \"%s\" from %s\n", opt->file_name, server_ip);
 
 	sockfd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (sockfd <= 0) {
@@ -92,7 +81,7 @@ int tftp_download(struct tftp_opt *opt)
 	}
 
 	memset(&local_addr, 0, sizeof(local_addr));
-	local_addr.sin_addr.s_addr = client_ip;
+	local_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 	ret = bind(sockfd, (struct sockaddr *)&local_addr, sizeof(struct sockaddr));
 	if (ret < 0)
 		goto L1;
@@ -205,20 +194,12 @@ int tftp_upload(struct tftp_opt *opt)
 	int sockfd;
 	__u16 blk_num;
 	char *buff_ptr;
-	__u32 client_ip;
 	socklen_t addrlen;
 	__u8 buf[TFTP_BUF_LEN];
 	size_t pkt_len, send_len, dat_len;
 	struct tftp_packet *tftp_pkt = (struct tftp_packet *)buf;
 	struct sockaddr_in local_addr, remote_addr;
-	char server_ip[IPV4_STR_LEN], local_ip[IPV4_STR_LEN];
-
-	ndev_ioctl(NULL, NIOC_GET_IP, &client_ip);
-
-	if (ip_to_str(local_ip, client_ip) < 0) {
-		printf("Error: Local IP!\n");
-		return -EINVAL;
-	}
+	char server_ip[IPV4_STR_LEN];
 
 	if (ip_to_str(server_ip, opt->server_ip) < 0) {
 		printf("Error: Server IP!\n");
@@ -232,12 +213,12 @@ int tftp_upload(struct tftp_opt *opt)
 	}
 
 	memset(&local_addr, 0, sizeof(local_addr));
-	local_addr.sin_addr.s_addr = client_ip;
+	local_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 	ret = bind(sockfd, (struct sockaddr *)&local_addr, sizeof(struct sockaddr));
 	if (ret < 0)
 		goto L1;
 
-	printf(" \"%s\": %s => %s\n", opt->file_name, local_ip, server_ip);
+	printf("putting file \"%s\" to %s\n", opt->file_name, server_ip);
 
 	pkt_len = tftp_make_req((__u8 *)tftp_pkt, TFTP_WRQ, opt->file_name,
 				opt->mode[0] ? opt->mode : TFTP_MODE_OCTET);

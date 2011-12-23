@@ -1,7 +1,6 @@
 #include <shell.h>
 #include <sysconf.h>
 // fixme: to be removed!
-#include <net/net.h>
 #include <uart/uart.h>
 #include <font/font.h>
 
