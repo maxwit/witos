@@ -50,20 +50,30 @@ static void omap3530_irq_mask(__u32 irq)
 	writel(VA(INTCPS_BASE + INTCPS_MIRN_SETN(irq >> 5)), 1 << (irq & 0x1f));
 }
 
-static void omap3530_set_trigger(__u32 nr, __u32 type)
+static int omap3530_set_trigger(__u32 nr, __u32 type)
 {
+	int off;
+
 	if (nr < INTC_PINS)
 		return;
 
+	off = (nr - INTC_PINS) & 0x1F;
+
 	switch (type) {
 	case IRQ_TYPE_LOW:
+		writel(VA(GPIO1_BASE + LEVELDETECT1), 1 << off);
 		break;
+
 	case IRQ_TYPE_HIGH:
+		writel(VA(GPIO1_BASE + LEVELDETECT0), 1 << off);
 		break;
+
 	case IRQ_TYPE_FALLING:
 		break;
+
 	case IRQ_TYPE_RISING:
 		break;
+
 	default:
 		break;
 	}
@@ -72,6 +82,7 @@ static void omap3530_set_trigger(__u32 nr, __u32 type)
 static struct int_ctrl omap3530_intctl = {
 	.mask  = omap3530_irq_mask,
 	.umask = omap3530_irq_umask,
+	.set_trigger = omap3530_set_trigger,
 };
 
 static int handle_dev_irq_list(__u32 irq, struct irq_dev *idev)

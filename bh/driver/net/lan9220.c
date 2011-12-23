@@ -5,11 +5,10 @@
 #include <platform.h>
 #include "lan9220.h"
 
-#if 1
 struct lan9220_chip {
 	void *iomem;
 #ifdef CONFIG_IRQ_SUPPORT
-		__u32 int_mask; // = 0xfffff07f;
+	__u32 int_mask;
 #endif
 #if 1
 	int busw32;
@@ -17,14 +16,7 @@ struct lan9220_chip {
 	__u32 (*readl)(lan9220_chip *, int);
 	__u32 (*writel)(lan9220_chip *, int, __u32);
 #endif
-	// ...
 };
-#else
-static int busw32;
-#ifdef CONFIG_IRQ_SUPPORT
-static __u32 int_mask = 0xfffff07f;
-#endif
-#endif
 
 static inline __u32 lan9220_readl(struct lan9220_chip *lan9220, __u8 reg)
 {
@@ -349,11 +341,10 @@ static int __INIT__ lan9220_init(struct platform_device *plat_dev)
 		goto error;
 
 #ifdef CONFIG_IRQ_SUPPORT
-	// fixme
 	if (id[1] == DEV_ID_LAN9118)
-		writel(VA(GPIO1_BASE + LEVELDETECT1), 1 << 19);
+		irq_set_trigger(irq, IRQ_TYPE_LOW);
 	else
-		writel(VA(GPIO1_BASE + LEVELDETECT0), 1 << 19);
+		irq_set_trigger(irq, IRQ_TYPE_HIGH);
 
 	ret = irq_register_isr(irq, lan9220_isr, ndev);
 	if (ret < 0)
