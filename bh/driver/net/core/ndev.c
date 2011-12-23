@@ -1,4 +1,5 @@
 #include <sysconf.h>
+#include <stdlib.h>
 #include <net/net.h>
 #include <net/ndev.h>
 #include <net/mii.h>
@@ -31,6 +32,7 @@ struct net_device *net_get_dev(const char *ifx)
 
 static int ndev_config(struct net_device *ndev)
 {
+	int ret;
 	__u32 ip, netmask;
 	__u8 mac[MAC_ADR_LEN];
 	char buff[CONF_VAL_LEN];
@@ -48,10 +50,21 @@ static int ndev_config(struct net_device *ndev)
 
 	// set mac address
 	sprintf(attr, "net.%s.mac", ndev->ifx_name);
-	if (!conf_get_attr(attr, buff) && !str_to_mac(mac, buff))
-		ndev_ioctl(ndev, NIOC_SET_MAC, mac);
+	if (conf_get_attr(attr, buff) < 0 || str_to_ip(mac, buff) < 0) {
+		int i;
 
-	return 0;
+		mac[0] = 0x20;
+		mac[1] = 0x12;
+
+		// make sure different ndev use different MAC address
+		srandom(ndev_count + 1);
+		for (i = 2; i < MAC_ADR_LEN; i++)
+			mac[i] = random();
+	}
+
+	ret = ndev_ioctl(ndev, NIOC_SET_MAC, mac);
+
+	return ret;
 }
 static int mii_scan(struct net_device *ndev)
 {

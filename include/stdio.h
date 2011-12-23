@@ -1,7 +1,5 @@
 #pragma once
 
-// #include <types.h>
-
 int putchar(int);
 
 char *gets(char *);
