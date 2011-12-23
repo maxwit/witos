@@ -54,16 +54,21 @@ include/autoconf.h: .config
 	@cp build/configs/arm/$(@:%_defconfig=%_sysconfig) .sysconfig
 	@echo
 
-IMAGE_UTILITY = build/generate/sys_img_creat
+# IMAGE_UTILITY = build/generate/sys_img_creat
 
 # fixme
-$(IMAGE_UTILITY): $(IMAGE_UTILITY).c
-	gcc -Wall $< -o $@
+# $(IMAGE_UTILITY): $(IMAGE_UTILITY).c
+#	gcc -Wall $< -o $@
 
 # fixme
-build/g-bios-sys.bin: .sysconfig $(IMAGE_UTILITY)
-	$(IMAGE_UTILITY) $< $@
+# build/g-bios-sys.bin: .sysconfig $(IMAGE_UTILITY)
+# 	$(IMAGE_UTILITY) $< $@
+# 	@echo
+
+build/g-bios-sys.bin: .sysconfig
+	@cp $< $@
 	@echo
+
 
 install:
 	@mkdir -p $(IMG_DIR)
