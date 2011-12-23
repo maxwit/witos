@@ -24,7 +24,7 @@ static int __INIT__ evm3530_device_init(void)
 POSTSUBS_INIT(evm3530_device_init);
 #endif
 
-static int __INIT__ omap3530_init(void)
+static int __INIT__ omap3_init(void)
 {
 	__u32 val, val4;
 #ifdef CONFIG_LAN9220
@@ -111,9 +111,9 @@ static int __INIT__ omap3530_init(void)
 	return 0;
 }
 
-PLAT_INIT(omap3530_init);
+PLAT_INIT(omap3_init);
 
-static void omap3530_reset(void)
+static void omap3_reset(void)
 {
 	__u32 val;
 
@@ -122,4 +122,4 @@ static void omap3530_reset(void)
 	writel(VA(PRM_BASE + PRM_RSTCTRL), val);
 }
 
-DECL_RESET(omap3530_reset);
+DECL_RESET(omap3_reset);

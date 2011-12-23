@@ -23,7 +23,7 @@ int soc_init(void)
 	writel(WDTTIMER2 + WSPR, 0x5555);
 
 	// init SP
-	word = OMAP3530_SRAM_BASE + OMAP3530_SRAM_SIZE;
+	word = OMAP3_SRAM_BASE + OMAP3_SRAM_SIZE;
 
 	asm volatile ("mov sp, %0\n\t"::"r"(word));
 

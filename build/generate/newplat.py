@@ -5,7 +5,7 @@ import mw_socs
 
 arch = 'arm'
 cpu = 'cortex-a8'
-soc = 'OMAP3530'
+soc = 'OMAP3'
 board = 'N900'
 
 def create_defconfig(arch, soc):

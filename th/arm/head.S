@@ -7,7 +7,7 @@
 	.global _start
 	.global hang
 
-#ifdef CONFIG_OMAP3530
+#ifdef CONFIG_OMAP3
 	.word (_end - _start)
 	.word _start
 #endif
@@ -59,7 +59,7 @@ handle_reset:
 	strh r1, [r0, #WTCON]
 #endif
 
-#ifdef CONFIG_OMAP3530
+#ifdef CONFIG_OMAP3
 	mov r12, #0x1		@ to invalidate L2
 	.word 0xE1600070	@ Call SMI monitor
 #endif

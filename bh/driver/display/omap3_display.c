@@ -7,7 +7,7 @@
 #define lcd_omap3_writel(reg, val) \
 	writel(VA(DISPC_BASE + reg), val) //fix
 
-static int omap3530_set_vmode(struct display *disp, const struct lcd_vmode *vm)
+static int omap3_set_vmode(struct display *disp, const struct lcd_vmode *vm)
 {
 	__u32 fmt;
 	// __u32 bpp;
@@ -50,7 +50,7 @@ static int omap3530_set_vmode(struct display *disp, const struct lcd_vmode *vm)
 	return 0;
 }
 
-static int __INIT__ omap3530_display_init(void)
+static int __INIT__ omap3_display_init(void)
 {
 	void *va;
 	__u32 dma;
@@ -80,9 +80,9 @@ static int __INIT__ omap3530_display_init(void)
 	disp->video_mem_va = va;
 	disp->video_mem_pa = dma;
 	disp->pix_fmt      = CONFIG_PIXEL_FORMAT;
-	disp->set_vmode    = omap3530_set_vmode;
+	disp->set_vmode    = omap3_set_vmode;
 
-	omap3530_set_vmode(disp, vm);
+	omap3_set_vmode(disp, vm);
 
 	display_register(disp);
 
@@ -93,4 +93,4 @@ error:
 	return -1;
 }
 
-DRIVER_INIT(omap3530_display_init);
+DRIVER_INIT(omap3_display_init);

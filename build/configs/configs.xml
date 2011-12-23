@@ -18,7 +18,7 @@
 						</config>
 					</choice>
 				</config>
-				<config name="OMAP3530" bool="y">
+				<config name="OMAP3" bool="y">
 					<config name="ARCH_VER" string="armv7-a"/>
 					<config name="CONSOLE_NAME" string="ttyO"/>
 					<choice name="BOARD" default="EVM3530">

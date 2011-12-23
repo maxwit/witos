@@ -1,7 +1,7 @@
-# OMAP3530 Platform Configuration
+# OMAP3 Platform Configuration
 
 # Basic Definition
-CONFIG_OMAP3530=y
+CONFIG_OMAP3=y
 CONFIG_BOARD_BEAGLE=y
 CONFIG_ARCH=arm
 # CONFIG_ARCH_VER=armv6k

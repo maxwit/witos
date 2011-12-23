@@ -1,13 +1,13 @@
 #include <uart/uart.h>
 
-static void omap3530_uart_send_byte(__u8 b)
+static void omap3_uart_send_byte(__u8 b)
 {
 	while (readb(VA(UART_BASE + SSR_REG)) & 0x1);
 
 	writeb(VA(UART_BASE + THR_REG), b);
 }
 
-static __u8 omap3530_uart_recv_byte(void)
+static __u8 omap3_uart_recv_byte(void)
 {
 	while (!(readb(VA(UART_BASE + LSR_REG)) & 0x1));
 
@@ -19,7 +19,7 @@ __u32 uart_rxbuf_count()
 	return readb(VA(UART_BASE + LSR_REG)) & 0x1;
 }
 
-static int omap3530_uart_init(void)
+static int omap3_uart_init(void)
 {
 	__u8	byte;
 	__u16 half;
@@ -210,26 +210,26 @@ static int omap3530_uart_init(void)
 	udelay(0x1000);
 #if 0
 	udelay(1000000);
-	omap3530_uart_send_byte('x');
+	omap3_uart_send_byte('x');
 	udelay(1000000);
-	omap3530_uart_send_byte('y');
+	omap3_uart_send_byte('y');
 	udelay(1000000);
-	omap3530_uart_send_byte('z');
+	omap3_uart_send_byte('z');
 	udelay(1000000);
 
 	udelay(10000);
-	omap3530_uart_send_byte('6');
+	omap3_uart_send_byte('6');
 	udelay(10000);
-	omap3530_uart_send_byte('5');
+	omap3_uart_send_byte('5');
 	udelay(10000);
-	omap3530_uart_send_byte('4');
+	omap3_uart_send_byte('4');
 	udelay(10000);
-	omap3530_uart_send_byte('3');
+	omap3_uart_send_byte('3');
 #endif
 
 	return 0;
 }
 
-DECLARE_UART_INIT(omap3530_uart_init);
-DECLARE_UART_SEND(omap3530_uart_send_byte);
-DECLARE_UART_RECV(omap3530_uart_recv_byte);
+DECLARE_UART_INIT(omap3_uart_init);
+DECLARE_UART_SEND(omap3_uart_send_byte);
+DECLARE_UART_RECV(omap3_uart_recv_byte);

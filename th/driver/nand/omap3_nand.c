@@ -1,6 +1,6 @@
 #include <flash/nand.h>
 
-static int omap3530_nand_ready(struct nand_chip *nand)
+static int omap3_nand_ready(struct nand_chip *nand)
 {
 	while (!(readl(VA(GPMC_BASE + GPMC_STATUS)) & (1 << 8)))
 	writel(VA(GPMC_BASE + GPMC_STATUS), 1 << 8);
@@ -31,7 +31,7 @@ int nand_init(struct nand_chip *nand)
 	nand->cmmd_port = GPMC_BASE + GPMC_NAND_COMMAND_0;
 	nand->addr_port = GPMC_BASE + GPMC_NAND_ADDRESS_0;
 	nand->data_port = GPMC_BASE + GPMC_NAND_DATA_0;
-	nand->flash_ready = omap3530_nand_ready;
+	nand->flash_ready = omap3_nand_ready;
 
 	return nand_probe(nand);
 }
