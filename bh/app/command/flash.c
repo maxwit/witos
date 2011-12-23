@@ -136,7 +136,7 @@ static int read_write(int argc, char *argv[])
 		return -EINVAL;
 	}
 
-#warning
+	// fixme
 	bdev = get_bdev_by_volume(get_curr_volume());
 	flash = flash_open(bdev->name);
 	assert(flash);
@@ -158,7 +158,7 @@ static int read_write(int argc, char *argv[])
 	if (start + size >= flash->chip_size) {
 		printf("Address 0x%08x overflow!\n", start + size);
 		ret = -EINVAL;
-		goto ERROR;
+		goto error;
 	}
 
 	if (0 == strcmp(argv[0], "read")) {
@@ -168,7 +168,7 @@ static int read_write(int argc, char *argv[])
 			usage();
 
 			ret = -EINVAL;
-			goto ERROR;
+			goto error;
 		}
 		printf("Read 0x%08x bytes data to mem 0x%08x from flash 0x%08x\n", size, (__u32)buff, start);
 	} else {
@@ -178,11 +178,12 @@ static int read_write(int argc, char *argv[])
 			usage();
 
 			ret = -EINVAL;
-			goto ERROR;
+			goto error;
 		}
 		printf("write 0x%08x bytes data to flash 0x%08x from mem 0x%08x\n", size, start, (__u32)buff);
 	}
-ERROR:
+
+error:
 	flash_close(flash);
 
 	return ret;

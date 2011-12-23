@@ -1,6 +1,11 @@
 #include <net/net.h>
 #include <getopt.h>
 
+#define FLAG_IP    (1 << 0)
+#define FLAG_MASK  (1 << 1)
+#define FLAG_MAC   (1 << 2)
+#define FLAG_CFG   (1 << 3)
+
 static int show_net_info(struct net_device *ndev)
 {
 	__u8 local[IPV4_ADR_LEN];
@@ -69,17 +74,16 @@ static int show_net_info(struct net_device *ndev)
 	return 0;
 }
 
+// fix the world!
 int main(int argc, char *argv[])
 {
 	__u32 local_ip, local_mask;
 	__u8 mac[MAC_ADR_LEN];
-#warning "too many flags!"
-	int flag_ip, flag_mask, flag_mac, flag_conf;
+	char ip[IPV4_STR_LEN], mask[IPV4_STR_LEN], mac_str[MAC_STR_LEN];
+	__u32 flag = 0;
+	int opt;
 	struct net_device *ndev;
 	struct list_node *iter, *ndev_list;
-	int opt;
-	char ip[IPV4_STR_LEN];
-	char mask[IPV4_STR_LEN];
 
 	ndev_list = ndev_get_list();
 	if (list_is_empty(ndev_list)) {
@@ -99,29 +103,28 @@ int main(int argc, char *argv[])
 
 	ndev = container_of(ndev_list->next, struct net_device, ndev_node);
 
-	flag_ip = flag_mask = flag_mac = flag_conf = 0;
 	while ((opt = getopt(argc, argv, "n:m:sh")) != -1) {
 		switch (opt) {
 		case 'n':
 			if (str_to_ip((__u8*)&local_mask, optarg)) {
-				printf("Invalid netmask!\n");
+				printf("Invalid netmask \"%s\"!\n", optarg);
 				return -EINVAL;
 			}
 
-			flag_mask = 1;
+			flag |= FLAG_MASK;
 			break;
 
 		case 'm':
 			if (str_to_mac(mac, optarg)) {
-				printf("Invalid MAC address!\n");
+				printf("Invalid MAC address \"%s\"!\n", optarg);
 				return -EINVAL;
 			}
 
-			flag_mac = 1;
+			flag |= FLAG_MAC;
 			break;
 
 		case 's':
-			flag_conf = 1;
+			flag |= FLAG_CFG;
 			break;
 
 		case 'h':
@@ -132,7 +135,7 @@ int main(int argc, char *argv[])
 	}
 
 	if (str_to_ip((__u8*)&local_ip, argv[optind]) == 0) {
-		flag_ip = 1;
+		flag |= FLAG_IP;
 	} else {
 		list_for_each(iter, ndev_list) {
 			ndev = container_of(iter, struct net_device, ndev_node);
@@ -147,32 +150,34 @@ int main(int argc, char *argv[])
 		optind++;
 
 		if (optind < argc && str_to_ip((__u8*)&local_ip, argv[optind]) == 0)
-			flag_ip = 1;
+			flag |= FLAG_IP;
 	}
 
-
-	if (flag_ip)
+	if (flag & FLAG_IP)
 		ndev_ioctl(ndev, NIOC_SET_IP, (void*)local_ip);
 
-	if (flag_mac)
+	if (flag & FLAG_MAC)
 		ndev_ioctl(ndev, NIOC_SET_MAC, (void*)mac);
 
-	if (flag_mask)
+	if (flag & FLAG_MASK)
 		ndev_ioctl(ndev, NIOC_SET_MASK, (void*)local_mask);
 
-	if (flag_conf) {
-		if (flag_ip) {
+	if (flag & FLAG_CFG) {
+		if (flag & FLAG_IP) {
 			ip_to_str(ip, local_ip);
 			conf_set_attr("net.eth0.address", ip);
 		}
 
-		if (flag_mask) {
+		if (flag & FLAG_MASK) {
 			ip_to_str(mask, local_mask);
 			conf_set_attr("net.eth0.address", mask);
 		}
 
-		if (flag_mac)
-			conf_set_attr("net.eth0.mac", (char *)mac);
+		if (flag & FLAG_MAC) {
+			sprintf(mac_str, "%x.%02x.%02x.%02x%.02x.%02",
+				mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+			conf_set_attr("net.eth0.mac", mac_str);
+		}
 
 		conf_store();
 	}
