@@ -2,11 +2,11 @@
 #include <block.h>
 #include <shell.h>
 
+#if 0
 #define IS_ALPH(c) (((c) >= 'a' && (c) <= 'z') || \
 			((c) >= 'A' && (c) <= 'Z'))
 
 #define STR_LEN  8
-#define TAILL_NUM 239
 
 static void block_info_show(struct block_device *bdev)
 {
@@ -14,14 +14,17 @@ static void block_info_show(struct block_device *bdev)
 
 	val_to_hr_str(bdev->size, hr_size);
 
-	printf("0x%08x - 0x%08x %s: %s (%c) %s\n",
+	printf("0x%08x - 0x%08x %s: %s (%s) %s\n",
 		bdev->base, bdev->base + bdev->size,
-		hr_size, bdev->name, bdev->volume);
+		hr_size, bdev->name, bdev->label);
 }
+#endif
 
+// fixme
 int main(int argc, char *argv[])
 {
 	char v;
+	int index;
 	const char *vol;
 	struct block_device *bdev;
 
@@ -34,8 +37,8 @@ int main(int argc, char *argv[])
 	case 2:
 		vol = argv[1];
 
-		if (IS_ALPH(vol[0]) && '\0' == vol[1])
-			bdev = get_bdev_by_volume(vol[0]);
+		if (dec_str_to_val(vol, &index) >= 0 && index > 0)
+			bdev = get_bdev_by_volume('A' + index - 1);
 		else
 			bdev = get_bdev_by_name(vol);
 
@@ -51,7 +54,7 @@ int main(int argc, char *argv[])
 		return -ENODEV;
 	}
 
-	block_info_show(bdev);
+	// block_info_show(bdev);
 
 	v = bdev->volume;
 	if (v >= 'a' && v <= 'z')

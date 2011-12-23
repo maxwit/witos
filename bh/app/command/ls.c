@@ -17,23 +17,22 @@ static int show_info(int verbose)
 		return -ENODEV;
 
 	if (verbose == 1) {
-		putchar('\n');
-		printf("label:        %s (%c)\n"
-			   "device:       %s\n"
-			   "start:        0x%08x\n"
-			   "end:          0x%08x\n"
-			   "size:         0x%08x\n",
-				bdev->label[0] ? bdev->label : "N/A", bdev->volume,
+		printf("device      : %s\n"
+			   "label       : %s\n"
+			   "start       : 0x%08x\n"
+			   "end         : 0x%08x\n"
+			   "size        : 0x%08x\n",
 				bdev->name,
+				bdev->label[0] ? bdev->label : "N/A",
 				bdev->base,
 				bdev->base + bdev->size,
 			    bdev->size);
 
 		if (!strncmp(bdev->name, BDEV_NAME_FLASH, strlen(BDEV_NAME_FLASH))) {
 			flash = container_of(bdev, struct flash_chip, bdev);
-			printf("block size   : 0x%08x\n"
-				   "page size    : 0x%08x\n"
-				   "host         : %s\n",
+			printf("block size  : 0x%08x\n"
+				   "page size   : 0x%08x\n"
+				   "host        : %s\n",
 				   flash->erase_size,
 				   flash->write_size,
 				   flash->master->name); // fixme: in case of no part available
@@ -42,7 +41,7 @@ static int show_info(int verbose)
 			printf("sector size:   %u\n", disk->sect_size);
 		}
 	} else {
-		printf("\ndevice name: %s  (%c:)\n", bdev->name, bdev->volume);
+		printf("\ndevice: %s (%s)\n", bdev->name, bdev->label);
 	}
 
 	return 0;
@@ -70,7 +69,7 @@ int main(int argc, char *argv[])
 		return -EINVAL;
 	}
 
-	ret = show_info(verbose);
+	ret = show_info(1);
 
 	return ret;
 }

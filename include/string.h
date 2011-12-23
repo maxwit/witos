@@ -43,7 +43,7 @@ char *strrchr(const char *, size_t);
 int hex_str_to_val(const char *str, __u32 *val);
 int val_to_hex_str(char *str, __u32 val);
 
-int dec_str_to_val(const char *str, __u32 *val);
+int dec_str_to_val(const char *str, int *val);
 int val_to_dec_str(char *str, long val);
 
 int hr_str_to_val(const char *str, __u32 *val);

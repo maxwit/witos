@@ -81,14 +81,12 @@ char get_home_volume(void)
 
 static void show_prompt(void)
 {
-	char vol;
 	struct block_device *bdev;
 
-	vol = get_curr_volume();
-	bdev = get_bdev_by_volume(vol);
+	bdev = get_bdev_by_volume(g_cur_vol);
 	assert (bdev != NULL);
 
-	printf("g-bios: %s (%c) # ", bdev->name, vol);
+	printf("g-bios: %s# ", bdev->name);
 }
 
 static int inline get_pre_space_count(char *buf)

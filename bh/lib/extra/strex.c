@@ -93,7 +93,7 @@ int val_to_hex_str(char *str, __u32 val)
 	return j;
 }
 
-int dec_str_to_val(const char *str, __u32 *val)
+int dec_str_to_val(const char *str, int *val)
 {
 	long tmp = 0;
 	const char *num = str;
@@ -197,7 +197,7 @@ int str_to_val(const char *str, __u32 *val)
 	if ('0' == *str && ('x' == *(str + 1) || 'X' == *(str + 1)))
 		ret = hex_str_to_val(str + 2, &tmp);
 	else
-		ret = dec_str_to_val(str, &tmp);
+		ret = dec_str_to_val(str, (int *)&tmp);
 
 	if (ret >= 0)
 		*val = tmp;
