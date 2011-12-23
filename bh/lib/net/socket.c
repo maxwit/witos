@@ -75,7 +75,7 @@ static struct sock_buff *sock_recv_packet(struct socket *sock)
 	char key;
 
 	while (1) {
-		ret = uart_read(CONFIG_DBGU_ID, (__u8 *)&key, 1, WAIT_ASYNC);
+		ret = uart_read(CONFIG_UART_INDEX, (__u8 *)&key, 1, WAIT_ASYNC);
 		if (ret > 0 && key == CHAR_CTRL_C)
 			return NULL;
 
@@ -252,7 +252,7 @@ struct eth_addr *gethostaddr(const __u32 nip)
 		int ret;
 		__u8  key;
 
-		ret = uart_read(CONFIG_DBGU_ID, &key, 1, WAIT_ASYNC);
+		ret = uart_read(CONFIG_UART_INDEX, &key, 1, WAIT_ASYNC);
 		if (ret > 0 && key == CHAR_CTRL_C)
 			return NULL;
 

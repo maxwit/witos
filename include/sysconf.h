@@ -7,6 +7,9 @@
 #define GB_SYSCFG_VER    7
 #define GB_SYSCFG_MAGIC  MKFOURCC('G', 's', 'y', 's')
 
+// End of the file
+#define EOF 0xFF
+
 #define CONSOLE_DEV_NAME_LEN   63
 #define DEFAULT_KCMDLINE_LEN   512
 
@@ -19,12 +22,6 @@
 #define BM_TFTP        (16 << 8)
 
 /////////////////////////////
-struct sys_config {
-	__u32 magic;
-	__u32 size;
-	__u32 offset;
-	__u32 checksum;
-};
 
 #define CONF_VAL_LEN 512
 #define CONF_ATTR_LEN 128

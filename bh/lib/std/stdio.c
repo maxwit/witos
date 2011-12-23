@@ -525,8 +525,3 @@ int fflush(int fd)
 {
 	return 0;
 }
-
-void clear_screen(void)
-{
-	printf("\033[2J");
-}

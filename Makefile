@@ -4,7 +4,7 @@ MAJOR_VER = 2
 MINOR_VER = 5
 
 TOP_DIR := $(shell pwd)
-IMG_DIR := $(CONFIG_IMAGE_PATH)/boot
+IMG_DIR := $(CONFIG_IMAGE_PATH)
 
 CROSS_COMPILE = $(CONFIG_CROSS_COMPILE:"%"=%)
 
@@ -54,13 +54,21 @@ include/autoconf.h: .config
 	@cp build/configs/arm/$(@:%_defconfig=%_sysconfig) .sysconfig
 	@echo
 
-build/generate/sys_img_creat: build/generate/sys_img_creat.c
-	gcc -Wall $< -o $@
+# IMAGE_UTILITY = build/generate/sys_img_creat
 
 # fixme
-build/g-bios-sys.bin: build/generate/sys_img_creat
-	@$< .sysconfig $@
+# $(IMAGE_UTILITY): $(IMAGE_UTILITY).c
+#	gcc -Wall $< -o $@
+
+# fixme
+# build/g-bios-sys.bin: .sysconfig $(IMAGE_UTILITY)
+# 	$(IMAGE_UTILITY) $< $@
+# 	@echo
+
+build/g-bios-sys.bin: .sysconfig
+	@cp $< $@
 	@echo
+
 
 install:
 	@mkdir -p $(IMG_DIR)

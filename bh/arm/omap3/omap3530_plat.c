@@ -5,47 +5,6 @@
 #include <sysconf.h>
 #include <platform.h>
 
-// fxime: add __INITDATA__
-static const struct part_attr omap3530_part_tab[] = {
-	{
-		.part_type = PT_BL_GTH,
-		.part_size = KB(512),
-		.part_name = "g-bios",
-	},
-	{
-		.part_type = PT_BL_GBH,
-		.part_size = MB(2),
-		.part_name = "g-bios",
-	},
-	{
-		.part_type = PT_BL_GCONF,
-		.part_size = 1, // 1 block
-		.part_name = "g-bios",
-	},
-	{
-		.part_type = PT_OS_LINUX,
-		.part_size = MB(3),
-	},
-	{
-		.part_type = PT_FS_RAMDISK,
-		.part_size = MB(3),
-	},
-	{
-		.part_type = PT_FS_JFFS2,
-		.part_size = MB(64),
-		.part_name = "rootfs"
-	},
-	{
-		.part_type = PT_FS_YAFFS2,
-		.part_size = MB(64),
-		.part_name = "data_1"
-	},
-	{
-		.part_type = PT_FS_UBIFS,
-		.part_name = "data_2"
-	},
-};
-
 #ifdef CONFIG_BOARD_EVM3530
 static struct platform_device lan9220_device = {
 	.dev = {
@@ -81,8 +40,6 @@ static int __INIT__ omap3530_init(void)
 
 	val4 = readl(VA(PADCONF_GPMC_NBE1));
 	DPRINT("GPIO62 = 0x%08x\n", val4);
-
-	flash_add_part_tab(omap3530_part_tab, ARRAY_ELEM_NUM(omap3530_part_tab));
 
 	// GPMC
 	for (val4 = 0x7A; val4 <= 0x8C; val4 += 2)

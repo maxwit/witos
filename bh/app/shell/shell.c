@@ -2,6 +2,7 @@
 #include <uart/uart.h>
 #include <net/net.h>
 #include <shell.h>
+#include <block.h>
 
 #define APP_HIST_DEPTH			    16  // should be 2**n bytes aligned.
 #define APP_ADJUST_INDEX(index)    ((index) & (APP_HIST_DEPTH - 1))
@@ -40,7 +41,7 @@ static char shell_getchar(void)
 	while (1) {
 		int ret;
 
-		ret = uart_read(CONFIG_DBGU_ID, (__u8 *)&ch, 1, WAIT_ASYNC);
+		ret = uart_read(CONFIG_UART_INDEX, (__u8 *)&ch, 1, WAIT_ASYNC);
 		if (ret > 0)
 			break;
 
@@ -94,9 +95,14 @@ static void show_prompt(void)
 		printf("set to %d\n", d);
 	}
 #endif
-	char vol = get_curr_volume();
+	char vol;
+	struct block_device *bdev;
 
-	printf("g-bios %c:\\> ", vol);
+	vol = get_curr_volume();
+	bdev = get_bdev_by_volume(vol);
+	assert (bdev != NULL);
+
+	printf("g-bios: %s (%c) # ", bdev->name, vol);
 }
 
 static int inline get_pre_space_count(char *buf)

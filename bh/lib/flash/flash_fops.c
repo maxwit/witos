@@ -459,9 +459,7 @@ int get_bdev_file_attr(struct bdev_file * file)
 	char file_val[CONF_VAL_LEN];
 	char *pn;
 
-	if (file == NULL) {
-		return -1;
-	}
+	assert(file != NULL);
 
 	pn = strchr(file->bdev->name, 'p');
 

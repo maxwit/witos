@@ -80,6 +80,7 @@ int disk_drive_register(struct disk_drive *drive)
 	list_head_init(&drive->slave_list);
 	list_add_tail(&drive->master_node, &g_master_list);
 
+	// fixme: to support uEFI/GPT
 	n = msdos_part_scan(drive, part_tab);
 	// if n < 0 ...
 
