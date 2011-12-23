@@ -29,7 +29,7 @@ static int show_info(int verbose)
 				bdev->bdev_base + bdev->bdev_size,
 			    bdev->bdev_size);
 
-		if (!strncmp(bdev->name, BDEV_NAME_FLASH, sizeof(BDEV_NAME_FLASH) - 1)) {
+		if (!strncmp(bdev->name, BDEV_NAME_FLASH, strlen(BDEV_NAME_FLASH))) {
 			flash = container_of(bdev, struct flash_chip, bdev);
 			printf("block size   : 0x%08x\n"
 				   "page size    : 0x%08x\n"

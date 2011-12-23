@@ -47,7 +47,6 @@ int main(int argc, char *argv[])
 	}
 
 	if (!bdev) {
-		printf("fail to cd to \"%c\", no such block device!\n", v);
 		usage();
 		return -ENODEV;
 	}

@@ -59,14 +59,14 @@ static int ndev_config(struct net_device *ndev)
 		// make sure different ndev use different MAC address
 		srandom(ndev_count + 1);
 		for (i = 2; i < MAC_ADR_LEN; i++)
-			mac[i] = random();
+			mac[i] = (__u8)(random());
 	}
 
 	ret = ndev_ioctl(ndev, NIOC_SET_MAC, mac);
 
 	return ret;
 }
-static int mii_scan(struct net_device *ndev)
+static int mii_bus_scan(struct net_device *ndev)
 {
 	int index, count = 0;
 	struct mii_phy *phy;
@@ -108,7 +108,7 @@ int ndev_register(struct net_device *ndev)
 		return ret;
 
 	if (ndev->phy_mask && ndev->mdio_read && ndev->mdio_write) {
-		ret = mii_scan(ndev);
+		ret = mii_bus_scan(ndev);
 		if (ret < 0)
 			return ret;
 	} else {
