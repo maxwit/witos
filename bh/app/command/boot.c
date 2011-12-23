@@ -102,12 +102,12 @@ static int flash_load_image(PART_TYPE type, __u8 **buff_ptr, __u32 *buff_len)
 	image_size = bdev->file->size;
 
 	// to be optimized
-	if (image_size <= 0 || image_size >= bdev->bdev_size) {
+	if (image_size <= 0 || image_size >= bdev->size) {
 		printf("%s(): image seems invalid, still try to load.\n"
 			"current image size = %d(0x%x), adjusted to partition size %d(0x%x)!\n",
-			__func__, image_size, image_size, bdev->bdev_size, bdev->bdev_size);
+			__func__, image_size, image_size, bdev->size, bdev->size);
 
-		image_size = bdev->bdev_size;
+		image_size = bdev->size;
 	}
 
 	buff = malloc(image_size);
@@ -228,20 +228,20 @@ static int build_command_line(char *cmd_line, size_t max_len)
 			break;
 #elif defined(CONFIG_MERGE_GB_PARTS)
 		case PT_BL_GTH:
-			gb_base = attr->part_base;
-			gb_size += attr->part_size;
+			gb_base = attr->base;
+			gb_size += attr->size;
 			break;
 
 		case PT_BL_GBH:
-			if (gb_base > attr->part_base)
-				gb_base = attr->part_base;
-			gb_size += attr->part_size;
+			if (gb_base > attr->base)
+				gb_base = attr->base;
+			gb_size += attr->size;
 			break;
 
 		case PT_BL_GCONF: // must be defined and the the last GB partition
-			if (gb_base > attr->part_base)
-				gb_base = attr->part_base;
-			gb_size += attr->part_size;
+			if (gb_base > attr->base)
+				gb_base = attr->base;
+			gb_size += attr->size;
 
 			part_str += sprintf(part_str, "0x%x@0x%x(g-bios),", gb_size, gb_base);
 			mtd_root++;
@@ -255,9 +255,9 @@ static int build_command_line(char *cmd_line, size_t max_len)
 		case PT_FS_CRAMFS:
 		case PT_FS_UBIFS:
 			part_str += sprintf(part_str, "0x%x@0x%x(%s),",
-							attr->part_size,
-							attr->part_base,
-							attr->part_name);
+							attr->size,
+							attr->base,
+							attr->label);
 
 			if (part_idx < root_idx)
 				mtd_root++;
@@ -294,7 +294,7 @@ static int build_command_line(char *cmd_line, size_t max_len)
 		default:
 			ret = -EINVAL;
 			printf("partition %d (%s) is NOT set for filesystem!\n",
-				root_idx, attr_tab[root_idx].part_name);
+				root_idx, attr_tab[root_idx].label);
 			goto L2;
 		}
 	}

@@ -1849,8 +1849,8 @@ int nand_register(struct nand_chip *nand)
 
 	nand->page_in_buff = -1;
 
-	flash->bdev.bdev_base = 0;
-	flash->bdev.bdev_size = flash->chip_size;
+	flash->bdev.base = 0;
+	flash->bdev.size = flash->chip_size;
 	flash->bdev.fs = NULL;
 
 	ret = flash_register(flash);

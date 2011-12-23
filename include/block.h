@@ -37,9 +37,9 @@ struct block_device;
 
 struct part_attr {
 	PART_TYPE part_type;
-	__u32   part_base;
-	__u32   part_size;
-	char  part_name[PART_NAME_LEN];
+	__u32 base;
+	__u32 size;
+	char  label[PART_NAME_LEN];
 };
 
 struct block_buff {
@@ -70,8 +70,8 @@ struct block_device {
 	char name[MAX_DEV_NAME]; // mmcblockXpY, mtdblockN, sdaN
 
 	// part_attr
-	size_t bdev_base;
-	size_t bdev_size;
+	size_t base;
+	size_t size;
 	char   label[PART_NAME_LEN];
 
 	// fixme!

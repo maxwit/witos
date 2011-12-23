@@ -81,20 +81,6 @@ char get_home_volume(void)
 
 static void show_prompt(void)
 {
-#if 0
-	int d;
-
-	struct partition *part;
-
-	part = flash_bdev_open(PART_CURR, OP_RDONLY);
-	if (NULL != part) {
-		d = part_get_index(part);
-		part_close(part);
-	} else {
-		d = part_get_home();
-		printf("set to %d\n", d);
-	}
-#endif
 	char vol;
 	struct block_device *bdev;
 

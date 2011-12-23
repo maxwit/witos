@@ -50,7 +50,7 @@ int block_device_register(struct block_device *bdev)
 	list_add_tail(&bdev->bdev_node, &g_bdev_list);
 
 	printf("    0x%08x - 0x%08x %s (%c)\n",
-		bdev->bdev_base, bdev->bdev_base + bdev->bdev_size,
+		bdev->base, bdev->base + bdev->size,
 		bdev->name, bdev->volume);
 
 	return 0;

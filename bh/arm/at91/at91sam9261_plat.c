@@ -2,38 +2,6 @@
 #include <arm/at91sam926x.h>
 #include <sysconf.h>
 
-// fxime: add __INITDATA__
-static const struct part_attr at91sam9261_part_tab[] =
-{
-	{
-		.part_type = PT_BL_GBH,
-		.part_size = KB(512),
-		.part_name = "g-bios",
-	},
-	{
-		.part_type = PT_BL_GCONF,
-		.part_size = 1, // 1 block
-		.part_name = "sysconfig",
-	},
-	{
-		.part_type = PT_OS_LINUX,
-		.part_size = MB(2),
-	},
-	{
-		.part_type = PT_FS_RAMDISK,
-		.part_size = MB(6),
-	},
-	{
-		.part_type = PT_FS_JFFS2,
-		.part_size = MB(24),
-		.part_name = "rootfs"
-	},
-	{
-		.part_type = PT_FS_YAFFS2,
-		.part_name = "data"
-	},
-};
-
 // fixme
 #define CONFIG_DM9000_PIO_RESET  PIOC
 #define CONFIG_DM9000_PIN_RESET  (1 << 10)
@@ -60,8 +28,6 @@ static int __INIT__ at91sam9261_init(void)
 
 	at91sam926x_timer_init();
 #endif
-
-	flash_add_part_tab(at91sam9261_part_tab, ARRAY_ELEM_NUM(at91sam9261_part_tab));
 
 	return 0;
 }

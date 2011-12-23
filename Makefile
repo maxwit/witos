@@ -71,7 +71,6 @@ $(DEFCONFIG_LIST):
 
 build/g-bios-sys.bin: .sysconfig
 	@cp $< $@
-	@echo
 
 install:
 	@mkdir -p $(IMG_DIR)

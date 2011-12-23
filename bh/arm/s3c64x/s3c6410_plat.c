@@ -5,59 +5,15 @@
 #include <sysconf.h>
 #include <spi.h>
 
-// fxime: add __INITDATA__
-static const struct part_attr mw61_part_tab[] =
-{
-	{
-		.part_type = PT_BL_GTH,
-		.part_size = 1, // 1 block
-		.part_name = "g-bios",
-	},
-	{
-		.part_type = PT_BL_GBH,
-		.part_size = KB(256),
-		.part_name = "g-bios",
-	},
-	{
-		.part_type = PT_BL_GCONF,
-		.part_size = 1, // 1 block
-		.part_name = "g-bios",
-	},
-	{
-		.part_type = PT_OS_LINUX,
-		.part_size = MB(2),
-	},
-	{
-		.part_type = PT_FS_RAMDISK,
-		.part_size = MB(2),
-	},
-	{
-		.part_type = PT_FS_JFFS2,
-		.part_size = MB(64),
-		.part_name = "rootfs"
-	},
-	{
-		.part_type = PT_FS_YAFFS2,
-		.part_size = MB(64),
-		.part_name = "data_1"
-	},
-	{
-		.part_type = PT_FS_UBIFS,
-		.part_name = "data_2"
-	},
-};
-
 #ifdef CONFIG_SPI
-static struct spi_master mw61_spi_master[] =
-{
+static struct spi_master mw61_spi_master[] = {
 	{
 		.name = "s3c6410_spi0",
 		.bus_num = 0,
 	},
 };
 
-static struct spi_slave mw61_spi_slave[] =
-{
+static struct spi_slave mw61_spi_slave[] = {
 	{
 		.name = "w25x_nor_flash",
 	},
@@ -117,8 +73,6 @@ static int __INIT__ mw61_init(void)
 	//clean external interrupt
 	val = readl(VA(EINT0PEND));
 	writel(VA(EINT0PEND), val);
-
-	flash_add_part_tab(mw61_part_tab, ARRAY_ELEM_NUM(mw61_part_tab));
 
 #ifdef CONFIG_SPI
 	// master 0

@@ -12,10 +12,10 @@ static void block_info_show(struct block_device *bdev)
 {
 	char hr_size[STR_LEN];
 
-	val_to_hr_str(bdev->bdev_size, hr_size);
+	val_to_hr_str(bdev->size, hr_size);
 
 	printf("0x%08x - 0x%08x %s: %s (%c) %s\n",
-		bdev->bdev_base, bdev->bdev_base + bdev->bdev_size,
+		bdev->base, bdev->base + bdev->size,
 		hr_size, bdev->name, bdev->volume);
 }
 

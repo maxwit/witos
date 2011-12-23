@@ -25,9 +25,9 @@ static int show_info(int verbose)
 			   "size:         0x%08x\n",
 				bdev->label[0] ? bdev->label : "N/A", bdev->volume,
 				bdev->name,
-				bdev->bdev_base,
-				bdev->bdev_base + bdev->bdev_size,
-			    bdev->bdev_size);
+				bdev->base,
+				bdev->base + bdev->size,
+			    bdev->size);
 
 		if (!strncmp(bdev->name, BDEV_NAME_FLASH, strlen(BDEV_NAME_FLASH))) {
 			flash = container_of(bdev, struct flash_chip, bdev);

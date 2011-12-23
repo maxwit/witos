@@ -62,7 +62,7 @@ static int flash_bdev_close(struct bdev_file *file)
 		__u32 pos_adj;
 
 		//printf("%s(): pos = 0x%08x, blk_base = 0x%08x, blk_off = 0x%08x, rest = 0x%08x\n",
-			// __func__, file->cur_pos + file->attr->part_base, blk_buff->blk_base, blk_buff->blk_off, rest);
+			// __func__, file->cur_pos + file->attr->base, blk_buff->blk_base, blk_buff->blk_off, rest);
 
 		type = get_image_type(file);
 
@@ -71,12 +71,12 @@ static int flash_bdev_close(struct bdev_file *file)
 		case PT_FS_YAFFS2:
 			pos_adj = file->cur_pos / (flash->write_size + flash->oob_size) * flash->write_size;
 			flash_pos = pos_adj;
-			ret = flash_erase(flash, flash_pos, bdev->bdev_size - pos_adj, eflag);
+			ret = flash_erase(flash, flash_pos, bdev->size - pos_adj, eflag);
 			break;
 
 #if 0
 		case PT_BL_GBIOS:
-			flash_pos = part_base + (CONFIG_GBH_START_BLK << flash->erase_shift) + file->cur_pos;
+			flash_pos = base + (CONFIG_GBH_START_BLK << flash->erase_shift) + file->cur_pos;
 			ret = flash_erase(flash, flash_pos, rest, eflag);
 			break;
 #endif
@@ -84,7 +84,7 @@ static int flash_bdev_close(struct bdev_file *file)
 			// eflag |= EDF_JFFS2;
 		default: // fixme
 			flash_pos = file->cur_pos;
-			ret = flash_erase(flash, flash_pos, bdev->bdev_size - file->cur_pos, eflag);
+			ret = flash_erase(flash, flash_pos, bdev->size - file->cur_pos, eflag);
 			break;
 		}
 
@@ -154,10 +154,10 @@ static ssize_t flash_bdev_write(struct bdev_file *file, const void *buff, __u32 
 
 	part_type = get_image_type(file);
 
-	if (size + file->cur_pos > bdev->bdev_size) {
+	if (size + file->cur_pos > bdev->size) {
 		char tmp[32];
 
-		val_to_hr_str(bdev->bdev_size, tmp);
+		val_to_hr_str(bdev->size, tmp);
 		printf("File size too large! (> %s)\n", tmp);
 
 		return -ENOMEM;
@@ -204,7 +204,7 @@ static ssize_t flash_bdev_write(struct bdev_file *file, const void *buff, __u32 
 				break;
 #if 0
 			case PT_BL_GBIOS:
-				flash_pos = part_base + (CONFIG_GBH_START_BLK << flash->erase_shift) + file->cur_pos;
+				flash_pos = base + (CONFIG_GBH_START_BLK << flash->erase_shift) + file->cur_pos;
 				break;
 #endif
 			case PT_FS_JFFS2:
@@ -281,7 +281,7 @@ int GuPartCreate(struct part_info *pt_info, int nFreeIndex, __u32 size, PART_TYP
 		return -ENODEV;
 
 	// (size & (host->erase_size - 1)) || // fixme
-	if (0 == size || size > pFreeAttr->part_size)
+	if (0 == size || size > pFreeAttr->size)
 		return -EINVAL;
 
 	if (PartProtected(part_type))  // reasonable ?
@@ -291,10 +291,10 @@ int GuPartCreate(struct part_info *pt_info, int nFreeIndex, __u32 size, PART_TYP
 		return -EINVAL;
 
 	// move to AdjustXXX()?
-	if (pt_info->parts == MAX_FLASH_PARTS && size != pFreeAttr->part_size)
-		size = pFreeAttr->part_size;
+	if (pt_info->parts == MAX_FLASH_PARTS && size != pFreeAttr->size)
+		size = pFreeAttr->size;
 
-	if (size < pFreeAttr->part_size) {
+	if (size < pFreeAttr->size) {
 		struct part_attr *pCurrAttr;
 
 		pCurrAttr = pt_info->attr_tab + pt_info->parts;
@@ -305,10 +305,10 @@ int GuPartCreate(struct part_info *pt_info, int nFreeIndex, __u32 size, PART_TYP
 			pCurrAttr--;
 		}
 
-		pFreeAttr[1].part_base += size;
-		pFreeAttr[1].part_size -= size;
+		pFreeAttr[1].base += size;
+		pFreeAttr[1].size -= size;
 
-		pFreeAttr->part_size = size;
+		pFreeAttr->size = size;
 
 		pt_info->parts++;
 	}
@@ -402,12 +402,12 @@ int part_show(const struct flash_chip *flash)
 		sprintf(szPartIdx, "%c%d",
 			(nIndex == nRootIndex) ? '*' : ' ', nIndex);
 
-		val_to_hr_str(attr_tab[nIndex].part_size, szPartSize);
+		val_to_hr_str(attr_tab[nIndex].size, szPartSize);
 
 		printf("  %-3s   0x%08x - 0x%08x  %-8s  %-9s  \"%s\"\n",
 			szPartIdx,
-			attr_tab[nIndex].part_base,
-			attr_tab[nIndex].part_base + attr_tab[nIndex].part_size,
+			attr_tab[nIndex].base,
+			attr_tab[nIndex].base + attr_tab[nIndex].size,
 			szPartSize,
 			part_type2str(attr_tab[nIndex].part_type),
 			part_get_name(&attr_tab[nIndex]));

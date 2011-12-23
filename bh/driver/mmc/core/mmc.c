@@ -116,8 +116,8 @@ static int mmc_card_register(struct mmc_card *card)
 	mmc_card_count++;
 
 	// TODO: fix size
-	drive->bdev.bdev_base = 0;
-	drive->bdev.bdev_size = 0;
+	drive->bdev.base = 0;
+	drive->bdev.size = 0;
 	drive->sect_size = MMC_BLK_SIZE;
 
 	drive->get_block = mmc_get_block;

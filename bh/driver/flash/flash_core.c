@@ -49,16 +49,16 @@ static int __INIT__ flash_parse_part(struct flash_chip *host,
 
 		// part size
 		if (*p == '-') {
-			part->part_size = host->chip_size - curr_base;
+			part->size = host->chip_size - curr_base;
 			p++;
 		} else {
 			for (i = 0; *p && *p!= '@' && *p != '('; i++, p++)
 				buff[i] = *p;
 			buff[i] = '\0';
 
-			hr_str_to_val(buff, &part->part_size);
+			hr_str_to_val(buff, &part->size);
 
-			ALIGN_UP(part->part_size, host->erase_size);
+			ALIGN_UP(part->size, host->erase_size);
 		}
 
 		// part base
@@ -67,26 +67,26 @@ static int __INIT__ flash_parse_part(struct flash_chip *host,
 				buff[i] = *p;
 			buff[i] = '\0';
 
-			hr_str_to_val(buff, &part->part_base);
+			hr_str_to_val(buff, &part->base);
 
-			ALIGN_UP(part->part_base, host->erase_size);
+			ALIGN_UP(part->base, host->erase_size);
 
-			curr_base = part->part_base;
+			curr_base = part->base;
 		} else {
-			part->part_base = curr_base;
+			part->base = curr_base;
 		}
 
 		// part label and image
 		i = 0;
 		if (*p == '(') {
 			for (p++; *p && *p != ')'; i++, p++)
-				part->part_name[i] = *p;
+				part->label[i] = *p;
 
 			p++;
 		}
-		part->part_name[i] = '\0';
+		part->label[i] = '\0';
 
-		curr_base += part->part_size;
+		curr_base += part->size;
 
 		index++;
 		part++;
@@ -119,7 +119,7 @@ static int part_read(struct flash_chip *slave,
 {
 	struct flash_chip *master = slave->master;
 
-	return master->read(master, slave->bdev.bdev_base + from, len, retlen, buff);
+	return master->read(master, slave->bdev.base + from, len, retlen, buff);
 }
 
 static int part_write(struct flash_chip *slave,
@@ -127,14 +127,14 @@ static int part_write(struct flash_chip *slave,
 {
 	struct flash_chip *master = slave->master;
 
-	return master->write(master, slave->bdev.bdev_base + to, len, retlen, buff);
+	return master->write(master, slave->bdev.base + to, len, retlen, buff);
 }
 
 static int part_erase(struct flash_chip *slave, struct erase_opt *opt)
 {
 	struct flash_chip *master = slave->master;
 
-	opt->estart += slave->bdev.bdev_base;
+	opt->estart += slave->bdev.base;
 	return master->erase(master, opt);
 }
 
@@ -143,7 +143,7 @@ static int part_read_oob(struct flash_chip *slave,
 {
 	struct flash_chip *master = slave->master;
 
-	return master->read_oob(master, slave->bdev.bdev_base + from, ops);
+	return master->read_oob(master, slave->bdev.base + from, ops);
 }
 
 static int part_write_oob(struct flash_chip *slave,
@@ -151,21 +151,21 @@ static int part_write_oob(struct flash_chip *slave,
 {
 	struct flash_chip *master = slave->master;
 
-	return master->write_oob(master, slave->bdev.bdev_base + to, opt);
+	return master->write_oob(master, slave->bdev.base + to, opt);
 }
 
 static int part_block_is_bad(struct flash_chip *slave, __u32 off)
 {
 	struct flash_chip *master = slave->master;
 
-	return master->block_is_bad(master, slave->bdev.bdev_base + off);
+	return master->block_is_bad(master, slave->bdev.base + off);
 }
 
 static int part_block_mark_bad(struct flash_chip *slave, __u32 off)
 {
 	struct flash_chip *master = slave->master;
 
-	return master->block_mark_bad(master, slave->bdev.bdev_base + off);
+	return master->block_mark_bad(master, slave->bdev.base + off);
 }
 
 int flash_register(struct flash_chip *flash)
@@ -196,9 +196,9 @@ int flash_register(struct flash_chip *flash)
 
 			snprintf(slave->bdev.name, PART_NAME_LEN, BDEV_NAME_FLASH "%d", i + 1);
 
-			slave->bdev.bdev_base = part_tab[i].part_base;
-			slave->bdev.bdev_size = part_tab[i].part_size;
-			strncpy(slave->bdev.label, part_tab[i].part_name,
+			slave->bdev.base = part_tab[i].base;
+			slave->bdev.size = part_tab[i].size;
+			strncpy(slave->bdev.label, part_tab[i].label,
 				sizeof(slave->bdev.label));
 
 			slave->write_size  = flash->write_size;

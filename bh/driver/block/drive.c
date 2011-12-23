@@ -40,10 +40,10 @@ static int msdos_part_scan(struct disk_drive *drive, struct part_attr part_tab[]
 		// 1. fix part_type
 		// 2. support size large than 4G
 		part_tab[i].part_type = PT_NONE;
-		part_tab[i].part_name[0] = '\0';
+		part_tab[i].label[0] = '\0';
 
-		part_tab[i].part_base = dos_pt[i].lba_start * drive->sect_size;
-		part_tab[i].part_size = dos_pt[i].lba_size * drive->sect_size;
+		part_tab[i].base = dos_pt[i].lba_start * drive->sect_size;
+		part_tab[i].size = dos_pt[i].lba_size * drive->sect_size;
 
 		DPRINT("0x%08x - 0x%08x (%dM)\n",
 			dos_pt[i].lba_start, dos_pt[i].lba_start + dos_pt[i].lba_size,
@@ -57,14 +57,14 @@ static int drive_get_block(struct disk_drive *drive, int start, void *buff)
 {
 	struct disk_drive *master = drive->master;
 
-	return master->get_block(master, drive->bdev.bdev_base + start, buff);
+	return master->get_block(master, drive->bdev.base + start, buff);
 }
 
 static int drive_put_block(struct disk_drive *drive, int start, const void *buff)
 {
 	struct disk_drive *master = drive->master;
 
-	return master->put_block(master, drive->bdev.bdev_base + start, buff);
+	return master->put_block(master, drive->bdev.base + start, buff);
 }
 
 int disk_drive_register(struct disk_drive *drive)
@@ -92,8 +92,8 @@ int disk_drive_register(struct disk_drive *drive)
 		snprintf(slave->bdev.name, PART_NAME_LEN, "%sp%d",
 			drive->bdev.name, i + 1);
 
-		slave->bdev.bdev_base = part_tab[i].part_base;
-		slave->bdev.bdev_size = part_tab[i].part_size;
+		slave->bdev.base = part_tab[i].base;
+		slave->bdev.size = part_tab[i].size;
 
 		slave->sect_size = drive->sect_size;
 		slave->master    = drive;

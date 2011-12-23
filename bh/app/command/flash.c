@@ -70,8 +70,8 @@ static int info(int argc, char *argv[])
 		flash->bdev.volume,
 		is_master(flash) ? flash->name : flash->master->name,
 		flash->bdev.name,
-		flash->bdev.bdev_base,
-		flash->bdev.bdev_size,
+		flash->bdev.base,
+		flash->bdev.size,
 		flash->write_size,
 		flash->erase_size);
 
@@ -323,7 +323,7 @@ static int dump(int argc, char *argv[])
 			return -EINVAL;
 		}
 	} else {
-		start = flash->bdev.bdev_base;
+		start = flash->bdev.base;
 	}
 
 	flash_close(flash);
@@ -467,8 +467,8 @@ static int erase(int argc, char *argv[])
 
 	// if option is "-p" erase the whole partiton or default current partition with no option
 	if (arg_flag == 2) {
-		start = flash->bdev.bdev_base;
-		size  = flash->bdev.bdev_size;
+		start = flash->bdev.base;
+		size  = flash->bdev.size;
 	} else {
 		// -a xxxblock or -a xxxpage
 		if (start_unit == 'b') {

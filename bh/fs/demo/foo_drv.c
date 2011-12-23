@@ -41,8 +41,8 @@ static int foo_card_register(struct foo_drive *foo)
 	sprintf(drive->bdev.name, "foo%d", foo_card_count++);
 
 	// TODO: fix size
-	drive->bdev.bdev_base = 0;
-	drive->bdev.bdev_size = 0;
+	drive->bdev.base = 0;
+	drive->bdev.size = 0;
 	drive->bdev.sect_size = 512;
 
 	list_head_init(&drive->slave_list);
