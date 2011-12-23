@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-__WEAK__ void reset(void);
+void __WEAK__ reset(void);
 
 int main(int argc, char *argv[])
 {
