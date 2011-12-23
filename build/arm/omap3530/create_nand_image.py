@@ -23,19 +23,35 @@ class switch(object):
 		else:
 			return False
 
-# mkae image class
-class make_image:
+# make image class
+class nand_image_t:
 	def __init__ (self):
 		self.flash_image_name = ""
 
 		# default size
 		self.flash_page_size   = 2048
-		self.flash_oob_size    = 64
-		self.flash_block_size  = 64
+		self.flash_block_size = 64 * 2048
+		self.flash_oob_size = 64
 		self.flash_image_pages = 131072
 
 	# make image
 	def create(self):
+		for case in switch(self.flash_page_size):
+			if case(512):
+				self.flash_block_size = 32 * 512
+				self.flash_oob_size = 16
+				break
+
+			if case(1024):
+				self.flash_block_size = 64 * 1024
+				self.flash_oob_size = 32
+				break
+
+			if case(4096):
+				self.flash_block_size = 64 * 4096
+				self.flash_oob_size = 128
+				break
+
 		data = "\xff"
 		count = 0
 
@@ -53,10 +69,11 @@ class make_image:
 
 		fd.close()
 
-	def put_no_oob(self, image_name, image_page_offset):
+	def put_no_oob(self, image_name, image_offset):
 		data = "\xff"
 		size = os.path.getsize(image_name)
 		image_pages = size / self.flash_page_size
+		image_page_offset = image_offset / self.flash_page_size
 
 		if (size % self.flash_page_size) != 0:
 			image_pages = image_pages + 1
@@ -90,6 +107,44 @@ def usage():
 	print '	' + sys.argv[0] + ' th.bin bh.bin -o flash.img'
 	print '	' + sys.argv[0] + ' th.bin bh.bin -o flash.img -p 2048'
 
+# 512K(g-bios-th)
+def get_val(p):
+	string = p.split('(')[0]
+	K = 1024
+	M = 1024 * K
+	G = 1024 * M
+
+	val = 0
+	for c in string:
+		if c <= '9' and c >= '0':
+			val = val * 10 + int(c)
+		elif c == 'G' or c == 'g':
+			val = val * G
+		elif c == 'M' or c == 'm':
+			val = val * M
+		elif c == 'K' or c == 'k':
+			val = val * K
+
+	return val
+
+def up_align(val, base):
+	return ((val + base - 1) / base) * base
+
+# "omap2-nand.0:512K(g-bios-th),2M(g-bios-bh),1(g-bios-sys),3M(linux),64M(rootfs),64M(user),-(data)"
+def parse_parts(parts_string):
+	flash = {}
+	flash_index = 0
+	for f in parts_string.split(';'):
+		parts = {}
+		part_index = 0
+		for p in f.split(':')[1].split(','):
+			parts[part_index] = get_val(p)
+			part_index = part_index + 1
+
+		flash[flash_index] = parts;
+		flash_index = flash_index + 1
+	return flash[0] # fixme: default use the first flash partiontable
+
 if __name__ == "__main__":
 	argv_len = len(sys.argv)
 	if argv_len < 6:
@@ -98,20 +153,7 @@ if __name__ == "__main__":
 
 	page_flags = 0
 
-	# part size
-	th_part_size = 0
-	bh_part_size = 524288
-	cfg_part_size = 2621440
-	ker_part_size = 2752512
-	jf2_part_size = 9043968
-	yaf_part_size = 37184 * 2048
-	ubi_part_size = 69952 * 2048
-
-	mk = make_image()
-
-	bl1 = sys.argv[1]
-	bl2 = sys.argv[2]
-	bl3 = sys.argv[3]
+	nang_img = nand_image_t()
 
 	try:
 		opts, srgs = getopt.getopt(sys.argv[1:], "o:p:h")
@@ -119,81 +161,58 @@ if __name__ == "__main__":
 		usage()
 		sys.exit()
 
+	img_names = {}
+	index = 0
+	opt_is_used = 0
 	for opt in srgs:
-		if opt == '-o':
-			mk.flash_image_name = srgs[(srgs.index(opt) + 1)]
-
-		if opt == '-p':
-			mk.flash_page_size = int(srgs[(srgs.index(opt) + 1)])
-			page_flags = 1
+		if opt_is_used == 1:
+			opt_is_used = 0
+			continue
 
 		if opt == '-h':
 			usage()
 			sys.exit()
 
-	if os.path.exists(bl1) == False:
-		print bl1, "is not exists"
-		usage()
-		sys.exit()
+		if opt == '-o':
+			nang_img.flash_image_name = srgs[(srgs.index(opt) + 1)]
+			opt_is_used = 1
+			continue
 
-	if os.path.exists(bl2) == False:
-		print bl2, "is not exists"
-		usage()
-		sys.exit()
+		if opt == '-p':
+			nang_img.flash_page_size = int(srgs[(srgs.index(opt) + 1)])
+			page_flags = 1;
+			opt_is_used = 1
+			continue
 
-	if os.path.exists(bl3) == False:
-		print bl3, "is not exists"
-		usage()
-		sys.exit()
+		# check img_names
+		if os.path.exists(opt) == False:
+			print img, "is not exists"
+			usage()
+			sys.exit()
+		img_names[index] = opt
+		index = index + 1
 
-	if page_flags == 1:
-		for case in switch(mk.flash_page_size):
-			if case(512):
-				mk.flash_block_size = 32
-				mk.flash_oob_size = 16
-				break
-
-			if case(1024):
-				mk.flash_block_size = 64
-				mk.flash_oob_size = 32
-				break
-
-			if case(2048):
-				mk.flash_block_size = 64
-				mk.flash_oob_size = 64
-				break
-
-			if case(4096):
-				mk.flash_block_size = 64
-				mk.flash_oob_size = 128
-				break
-
-	print "image name : " + mk.flash_image_name
-	print "page_size : " + str(mk.flash_page_size)
-	print "block_size: " + str(mk.flash_block_size)
-	print "oob_size  : " + str(mk.flash_oob_size)
-
-	if os.path.exists(mk.flash_image_name) == False:
+	if os.path.exists(nang_img.flash_image_name) == False:
 		print "create image ..."
-		mk.create()  # make image
+		nang_img.create()  # make image
 	else:
-		print mk.flash_image_name, "is exists"
+		print nang_img.flash_image_name, "is exists"
 		ret = raw_input("Remaster (y or n): ")
 		if ret == "y":
 			print "create image ..."
-			mk.create()  # make image
+			nang_img.create()  # make image
 
-	print "add " + bl1  + " into image"
-	bl1_page_offset	= th_part_size
-	mk.put_no_oob(bl1, bl1_page_offset)
-	print "put " + bl1 + " into flash image done!"
+	print "image name : " + nang_img.flash_image_name
+	print "page_size : " + str(nang_img.flash_page_size)
+	print "block_size: " + str(nang_img.flash_block_size)
+	print "oob_size  : " + str(nang_img.flash_oob_size)
 
-	print "add " + bl2  + " into image"
-	bl2_page_offset = bh_part_size / mk.flash_page_size
-	mk.put_no_oob(bl2, bl2_page_offset)
-	print "put " + bl2 + " into flash image done!"
+	CONFIG_FLASH_PARTS = "omap2-nand.0:512K(g-bios-th),2M(g-bios-bh),1(g-bios-sys),3M(linux),64M(rootfs),64M(user),-(data)"
+	parts = parse_parts(CONFIG_FLASH_PARTS)
 
-	print "add " + bl3  + " into image"
-	bl3_page_offset = cfg_part_size / mk.flash_page_size
-	mk.put_no_oob(bl3, bl3_page_offset)
-	print "put " + bl3 + " into flash image done!"
+	offset = 0
+	for index in img_names:
+		print "add " + img_names[index] + " into image"
+		nang_img.put_no_oob(img_names[index], offset)
+		offset = offset + up_align(parts[index], nang_img.flash_block_size)
+		print "put " + img_names[index] + " into flash image done!"
