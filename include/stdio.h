@@ -16,8 +16,6 @@ int snprintf(char *, int , const char *, ...);
 
 int fflush(int);
 
-void clear_screen(void);
-
 #define BUG() \
 	do { \
 		printf(" BUG @ %s() line %d!\n", __func__, __LINE__); \

@@ -41,7 +41,7 @@ static char shell_getchar(void)
 	while (1) {
 		int ret;
 
-		ret = uart_read(CONFIG_DBGU_ID, (__u8 *)&ch, 1, WAIT_ASYNC);
+		ret = uart_read(CONFIG_UART_INDEX, (__u8 *)&ch, 1, WAIT_ASYNC);
 		if (ret > 0)
 			break;
 

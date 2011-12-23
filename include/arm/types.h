@@ -30,4 +30,3 @@ typedef enum {false, true} bool;
 			(len) += (align) - nTemp; \
 		} \
 	} while (0)
-

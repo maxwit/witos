@@ -4,168 +4,114 @@
 #define FLASH_BDEV_NAME "mtdblock"
 
 static struct list_node g_master_list;
-
-static int set_root_dev(int root_dev)
-{
-	char buff[CONF_VAL_LEN];
-	char *attr;
-
-	attr = "linux.root_dev";
-	val_to_dec_str(buff, root_dev);
-	if (conf_set_attr(attr, buff) < 0) {
-		conf_add_attr(attr, buff);
-	}
-
-	return 0;
-}
-
-#if 0
-static int get_root_dev(int *root_dev)
-{
-	char buff[CONF_VAL_LEN];
-	char *attr;
-
-	attr = "linux.root_dev";
-	if (0 == conf_get_attr(attr, buff)) {
-		if (str_to_val(buff, (__u32 *)root_dev) < 0) {
-			DPRINT_ATTR(attr, ATTR_FMT_ERR);
-			*root_dev = DEFAULT_ROOT_DEV;
-		}
-	} else {
-		DPRINT_ATTR(attr, ATTR_NOT_FOUND);
-		*root_dev = DEFAULT_ROOT_DEV;
-	}
-
-	return 0;
-}
-#endif
+static int g_flash_count = 0;
 
 /*
- * copy from Linux kernel (driver/mtd/cmdlinepart.c)
+ * g-bios flash partition definition
+ * original from Linux kernel (driver/mtd/cmdlinepart.c)
  *
- * mtdparts=<mtddef>[;<mtddef]
+ * mtdparts  := <mtddef>[;<mtddef]
  * <mtddef>  := <mtd-id>:<partdef>[,<partdef>]
  *              where <mtd-id> is the name from the "cat /proc/mtd" command
  * <partdef> := <size>[@offset][<name>][ro][lk]
  * <mtd-id>  := unique name used in mapping driver/device (mtd->name)
- * <size>    := standard linux memsize OR "-" to denote all remaining space
+ * <size>    := standard linux memsize or "-" to denote all remaining space
  * <name>    := '(' NAME ')'
  *
- * Examples:
- *
- * 1 NOR Flash, with 1 single writable partition:
- * edb7312-nor:-
- *
- * 1 NOR Flash with 2 partitions, 1 NAND with one
+ * Examples:  1 NOR Flash with 2 partitions, 1 NAND with one
  * edb7312-nor:256k(ARMboot)ro,-(root);edb7312-nand:-(home)
+ *
+ *
+ * fixme:
+ * 1. to fix cross/overlapped parts
+ * 2. as an API and called from flash core
+ * 3. to support <partdef> := <size>[@offset][(<label>[, <image_name>, <image_size>])]
+ * 4. handle exception
  *
  */
 
-// fixme:
-// 1. to fix cross/overlapped parts
-// 2. as an API and called from flash core
-static int __INIT__ flash_parse_part_tab(struct flash_chip *host,
-						struct part_attr *new_attr,	const char *part_str)
+static int __INIT__ flash_parse_part(struct flash_chip *host,
+						struct part_attr *part,	const char *part_def)
 {
-	int index = 0;
-	__u32 curr_base;
+	int i, index = 0;
+	__u32 curr_base = 0;
+	char buff[128];
+	const char *p;
 
-	if (parts > MAX_FLASH_PARTS)
-		parts = MAX_FLASH_PARTS;
+	p = strchr(part_def, ':');
+	if (!p)
+		goto error;
+	p++;
 
-	curr_base  = attr_tmpl[0].part_base;
-	curr_base -= curr_base % host->erase_size; // fixme: to use macro
+	while (*p && *p != ';') {
+		if (curr_base >= host->chip_size)
+			goto error;
 
-	while (index < parts) {
-		if (curr_base + host->erase_size > host->chip_size)
-			break;
-
-		new_attr->part_type = attr_tmpl->part_type;
-
-		if (0 == attr_tmpl->part_base) {
-			if (PT_BL_GBH == new_attr->part_type) {
-				new_attr->part_base = CONFIG_GBH_START_BLK * host->erase_size;
-
-				if (new_attr->part_base < curr_base) {
-					printf("Invalid BH start block!\n");
-					return -EINVAL;
-				}
-			} else
-				new_attr->part_base = curr_base;
+		// part size
+		if (*p == '-') {
+			part->part_size = host->chip_size - curr_base;
+			p++;
 		} else {
-			// fixme
-			if (PT_BL_GBH == new_attr->part_type && \
-				new_attr->part_base != CONFIG_GBH_START_BLK * host->erase_size)
-			{
-				printf("%s() line %d: fixme!\n", __func__, __LINE__);
-			} else if (new_attr->part_type >= PT_FS_BEGIN && new_attr->part_type <= PT_FS_END) {
-				set_root_dev(index);
-				break;
-			}
+			for (i = 0; *p && *p!= '@' && *p != '('; i++, p++)
+				buff[i] = *p;
+			buff[i] = '\0';
 
-			new_attr->part_base = attr_tmpl->part_base;
+			hr_str_to_val(buff, &part->part_size);
 
-			ALIGN_UP(new_attr->part_base, host->erase_size);
-
-			curr_base = new_attr->part_base;
+			ALIGN_UP(part->part_size, host->erase_size);
 		}
 
-		if (0 == attr_tmpl->part_size)
-			new_attr->part_size = host->chip_size - curr_base;
-		else {
-			new_attr->part_size = attr_tmpl->part_size;
+		// part base
+		if (*p == '@') {
+			for (i = 0, p++; *p && *p != '('; i++, p++)
+				buff[i] = *p;
+			buff[i] = '\0';
 
-			ALIGN_UP(new_attr->part_size, host->erase_size);
+			hr_str_to_val(buff, &part->part_base);
+
+			ALIGN_UP(part->part_base, host->erase_size);
+
+			curr_base = part->part_base;
+		} else {
+			part->part_base = curr_base;
 		}
 
-#if 0
-		if (PT_BL_GCONF == new_attr->part_type)
-			host->conf_attr = new_attr;
-		else if (PT_OS_LINUX == new_attr->part_type) {
-			__u32 end, gap;
+		// part label and image
+		if (*p == '(') {
+			for (i = 0, p++; *p && *p != ')'; i++, p++)
+				part->part_name[i] = *p;
 
-			end = new_attr->part_base + new_attr->part_size;
-			gap = end & (MB(1) - 1);
-
-			if (gap)
-				new_attr->part_size += MB(1) - gap;
+			p += 2;
 		}
-#endif
+		part->part_name[i] = '\0';
 
-		if (new_attr->part_base + new_attr->part_size > host->chip_size)
-			break;
-
-		curr_base += new_attr->part_size;
-
-		if ('\0' == attr_tmpl->part_name[0])
-		{
-			// strncpy(new_attr->part_name, part_type2str(new_attr->part_type), sizeof(new_attr->part_name));
-		}
-		else
-			strncpy(new_attr->part_name, attr_tmpl->part_name, sizeof(new_attr->part_name));
-
-		new_attr++;
-		attr_tmpl++;
+		curr_base += part->part_size;
 
 		index++;
+		part++;
 	}
-
-#if 1
-	if (curr_base + host->erase_size <= host->chip_size) {
-		new_attr->part_type  = PT_FREE;
-		new_attr->part_base = curr_base;
-		new_attr->part_size = host->chip_size - curr_base;
-
-		strncpy(new_attr->part_name, "free", sizeof(new_attr->part_name));
-
-		index++;
-	}
-#endif
 
 	return index;
+
+error:
+	printf("%s(): invalid part definition \"%s\"\n", __func__, part_def);
+	return -EINVAL;
 }
 
-static int g_flash_count = 0;
+static int __INIT__ flash_scan_part(struct flash_chip *host,
+						struct part_attr part[])
+{
+	int ret;
+	char part_def[CONF_VAL_LEN];
+
+	ret = conf_get_attr("flash.part", part_def);
+	if (ret < 0)
+		return ret;
+
+	// TODO: add code here!
+
+	return flash_parse_part(host, part, part_def);
+}
 
 static int part_read(struct flash_chip *slave,
 				__u32 from, __u32 len, __u32 *retlen, __u8 *buff)
@@ -227,63 +173,60 @@ int flash_register(struct flash_chip *flash)
 	struct flash_chip *slave;
 	struct part_attr part_tab[MAX_FLASH_PARTS];
 
-	snprintf(flash->bdev.name, MAX_DEV_NAME,
-		FLASH_BDEV_NAME "%c", 'a' + g_flash_count);
-	g_flash_count++;
-
-	printf("registering flash device \"%s\":\n", flash->bdev.name);
-
-	flash_fops_init(&flash->bdev); // fixme: not here!
-	ret = block_device_register(&flash->bdev);
-	// if ret < 0 ...
-	list_head_init(&flash->slave_list);
+	printf("registering flash device \"%s\":\n", flash->name);
 	list_add_tail(&flash->master_node, &g_master_list);
 
-	n = flash_parse_part_tab(flash, part_tab, "omap2-nand.0:512K(g-bios-th),2M(g-bios-bh),1(g-bios-sys),3M(linux),64M(rootfs),64M(user),-(data)");
+	n = flash_scan_part(flash, part_tab);
 
-	for (i = 0; i < n; i++) {
-		slave = zalloc(sizeof(*slave));
-		if (NULL == slave)
-			return -ENOMEM;
+	if (n <= 0) {
+		snprintf(flash->bdev.name, MAX_DEV_NAME,
+			FLASH_BDEV_NAME "%c", 'A' + g_flash_count);
 
-		snprintf(slave->bdev.name, PART_NAME_LEN, FLASH_BDEV_NAME "%d", i + 1);
+		flash_fops_init(&flash->bdev); // fixme: not here!
+		ret = block_device_register(&flash->bdev);
+		// if ret < 0 ...
+	} else {
+		list_head_init(&flash->slave_list);
 
-		slave->bdev.bdev_base = part_tab[i].part_base;
-		slave->bdev.bdev_size = part_tab[i].part_size;
+		for (i = 0; i < n; i++) {
+			slave = zalloc(sizeof(*slave));
+			if (NULL == slave)
+				return -ENOMEM;
 
-		slave->write_size  = flash->write_size;
-		slave->erase_size  = flash->erase_size;
-		slave->chip_size   = flash->chip_size;
-		slave->write_shift = flash->write_shift;
-		slave->erase_shift = flash->erase_shift;
-		slave->chip_shift  = flash->chip_shift;
-		slave->type        = flash->type;
-		slave->oob_size    = flash->oob_size;
-		slave->oob_mode    = flash->oob_mode;
-		slave->master      = flash;
-		list_add_tail(&slave->slave_node, &flash->slave_list);
+			snprintf(slave->bdev.name, PART_NAME_LEN, FLASH_BDEV_NAME "%d", i + 1);
 
-		slave->read  = part_read;
-		slave->write = part_write;
-		slave->erase = part_erase;
-		slave->read_oob  = part_read_oob;
-		slave->write_oob = part_write_oob;
-		slave->block_is_bad   = part_block_is_bad;
-		slave->block_mark_bad = part_block_mark_bad;
-		slave->scan_bad_block = flash->scan_bad_block; // fixme
+			slave->bdev.bdev_base = part_tab[i].part_base;
+			slave->bdev.bdev_size = part_tab[i].part_size;
 
-		flash_fops_init(&slave->bdev);
-		ret = block_device_register(&slave->bdev);
+			slave->write_size  = flash->write_size;
+			slave->erase_size  = flash->erase_size;
+			slave->chip_size   = flash->chip_size;
+			slave->write_shift = flash->write_shift;
+			slave->erase_shift = flash->erase_shift;
+			slave->chip_shift  = flash->chip_shift;
+			slave->type        = flash->type;
+			slave->oob_size    = flash->oob_size;
+			slave->oob_mode    = flash->oob_mode;
+			slave->master      = flash;
+
+			slave->read  = part_read;
+			slave->write = part_write;
+			slave->erase = part_erase;
+			slave->read_oob  = part_read_oob;
+			slave->write_oob = part_write_oob;
+			slave->block_is_bad   = part_block_is_bad;
+			slave->block_mark_bad = part_block_mark_bad;
+			slave->scan_bad_block = flash->scan_bad_block; // fixme
+
+			list_add_tail(&slave->slave_node, &flash->slave_list);
+
+			flash_fops_init(&slave->bdev);
+			ret = block_device_register(&slave->bdev);
+			// if ret < 0 ...
+		}
 	}
 
-#if 0
-	part_show(flash);
-
-	if (PT_BL_GBH == part->attr->part_type) {
-		part_set_home(0);
-		part_change(0);
-	}
-#endif
+	g_flash_count++;
 
 	return ret;
 }
