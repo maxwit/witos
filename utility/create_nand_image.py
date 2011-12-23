@@ -3,6 +3,7 @@
 import sys
 import os
 import getopt
+import re
 
 # switch class
 class switch(object):
@@ -129,26 +130,25 @@ def get_val(p):
 
 def get_parts():
 	parts = {}
-	sys_file = open(".sysconfig", 'r')
-	while 1:
-		line = sys_file.readline()
-		if len(line) == 0:
-			sys_file.close()
-			return parts
+	try:
+		sys_file = open(".sysconfig", 'r')
+	except:
+		print "fail to open sysconfig"
+		exit(1)
 
-		if line.find('flash.part') <> -1:
+	for line in sys_file:
+		if re.match(r'^flash.part', line) <> None:
+			elem = re.split('\s*=\s*', line.replace('\n',''))
+			parts = parse_parts(elem[1])
 			break;
 
-	parts_string = line.split('"')[1]
-	print parts_string
+	sys_file.close()
 
-	parts = parse_parts(parts_string)
 	return parts
 
 def up_align(val, base):
 	return ((val + base - 1) / base) * base
 
-# "omap2-nand.0:512K(g-bios-th),2M(g-bios-bh),1(g-bios-sys),3M(linux),64M(rootfs),64M(user),-(data)"
 def parse_parts(parts_string):
 	flash = {}
 	flash_index = 0
@@ -168,8 +168,6 @@ if __name__ == "__main__":
 	if argv_len < 6:
 		usage()
 		sys.exit()
-
-	page_flags = 0
 
 	nang_img = nand_image_t()
 
@@ -198,7 +196,6 @@ if __name__ == "__main__":
 
 		if opt == '-p':
 			nang_img.flash_page_size = int(srgs[(srgs.index(opt) + 1)])
-			page_flags = 1;
 			opt_is_used = 1
 			continue
 
@@ -221,9 +218,9 @@ if __name__ == "__main__":
 			nang_img.create()  # make image
 
 	print "image name : " + nang_img.flash_image_name
-	print "page_size : " + str(nang_img.flash_page_size)
-	print "block_size: " + str(nang_img.flash_block_size)
-	print "oob_size  : " + str(nang_img.flash_oob_size)
+	print "page_size  : " + str(nang_img.flash_page_size)
+	print "block_size : " + str(nang_img.flash_block_size)
+	print "oob_size   : " + str(nang_img.flash_oob_size)
 
 	parts = get_parts()
 

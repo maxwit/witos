@@ -147,10 +147,15 @@ struct mmc_host {
 };
 
 int mmc_register(struct mmc_host * mmc);
-struct mmc_host * mmc_get_host(int id);
-int mmc_read_blk(struct mmc_host *host, __u8 *buf, int start);
-int mmc_write_blk(struct mmc_host *host, const __u8 *buf, int start);
-int mmc_erase_blk(struct mmc_host *host, int start);
-int mmc_decode_cid(struct mmc_host *host);
-int mmc_sd_detect_card(struct mmc_host *host);
 
+struct mmc_host * mmc_get_host(int id);
+
+int mmc_read_blk(struct mmc_host *host, __u8 *buf, int start);
+
+int mmc_write_blk(struct mmc_host *host, const __u8 *buf, int start);
+
+int mmc_erase_blk(struct mmc_host *host, int start);
+
+int mmc_decode_cid(struct mmc_host *host);
+
+int mmc_sd_detect_card(struct mmc_host *host);

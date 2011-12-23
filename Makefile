@@ -62,7 +62,7 @@ $(IMAGE_UTILITY): $(IMAGE_UTILITY).c
 
 # fixme
 build/g-bios-sys.bin: .sysconfig $(IMAGE_UTILITY)
-	@$(IMAGE_UTILITY) $< $@
+	$(IMAGE_UTILITY) $< $@
 	@echo
 
 install:

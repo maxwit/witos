@@ -47,6 +47,8 @@ static int __INIT__ flash_parse_part(struct flash_chip *host,
 		if (curr_base >= host->chip_size)
 			goto error;
 
+		while (' ' == *p) p++;
+
 		// part size
 		if (*p == '-') {
 			part->part_size = host->chip_size - curr_base;
@@ -81,7 +83,7 @@ static int __INIT__ flash_parse_part(struct flash_chip *host,
 			for (i = 0, p++; *p && *p != ')'; i++, p++)
 				part->part_name[i] = *p;
 
-			p += 2;
+			p++;
 		}
 		part->part_name[i] = '\0';
 
