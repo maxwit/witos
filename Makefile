@@ -33,6 +33,10 @@ MAKEFLAGS = --no-print-directory
 export AS CC LD OBJDUMP OBJCOPY ASFLAGS CFLAGS LDFLAGS MAKEFLAGS
 export builtin-obj TOP_DIR
 
+# fixme
+DEFCONFIG_PATH = build/configs/arm
+DEFCONFIG_LIST = $(shell ls $(DEFCONFIG_PATH))
+
 include build/rules/common.mk
 
 dir-y := th bh
@@ -48,10 +52,10 @@ include/autoconf.h: .config
 	@sed -i '/^$$/d' $@
 
 # fixme
-%_defconfig:
-	@echo "configure for $(@:%_defconfig=%) board"
+$(DEFCONFIG_LIST):
+	@echo "configure for board \"$(@:%_defconfig=%)\""
 	@./build/generate/defconfig.py $@
-	@cp build/configs/arm/$(@:%_defconfig=%_sysconfig) .sysconfig
+	@cp $(DEFCONFIG_PATH)/$(@:%_defconfig=%_sysconfig) .sysconfig
 	@echo
 
 # IMAGE_UTILITY = build/generate/sys_img_creat
@@ -68,7 +72,6 @@ include/autoconf.h: .config
 build/g-bios-sys.bin: .sysconfig
 	@cp $< $@
 	@echo
-
 
 install:
 	@mkdir -p $(IMG_DIR)
