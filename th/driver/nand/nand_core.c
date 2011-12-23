@@ -2,14 +2,15 @@
 #include <loader.h>
 #include <flash/nand.h>
 
-// TODO: add 16-bits support
+// fixme
+#define CONFIG_GBH_MAX_LEN   KB(512)
+#define CONFIG_GSC_MAX_LEN   KB(128)
 
 #define TIMEOUT_COUNT        (1 << 14)
 #define IS_LARGE_PAGE(flash) (flash->write_size >= KB(1))
 #define IS_POW2(n)           (((n) & ((n) - 1)) == 0)
 
-static const __u8 nand_ids[] =
-{
+static const __u8 nand_ids[] = {
 	0x33, 0x35, 0x36, 0x39, 0x43, 0x45, 0x46, 0x49, 0x53, 0x55,
 	0x56, 0x59, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x78, 0x79,
 };
@@ -179,12 +180,12 @@ static __u8 *nand_read_page(struct nand_chip *flash, __u32 page_idx, __u8 *buff)
 #endif
 
 // load bottom-half from nand with timeout checking
-__WEAK__
-int nand_load(struct nand_chip *flash, __u32 start_blk, void *start_mem)
+// fixme
+int __WEAK__ nand_load(struct nand_chip *flash, __u32 start_blk, void *start_mem, __u32 size)
 {
 	__u32 cur_page, end_page;
 	__u32 wshift = 0, eshift = 0, shift;
-	__u32 bh_len = GBH_LOAD_SIZE; // fixme!!!
+	__u32 bh_len = size;
 #ifdef CONFIG_NAND_16BIT
 	__u16 *buff;
 #else
@@ -208,6 +209,7 @@ int nand_load(struct nand_chip *flash, __u32 start_blk, void *start_mem)
 
 	buff = nand_read_page(flash, cur_page, buff);
 
+#if 0
 	if (GBH_MAGIC == *(__u32 *)(start_mem + GBH_MAGIC_OFFSET)) {
 		bh_len = *(__u32 *)(start_mem + GBH_SIZE_OFFSET);
 #ifdef CONFIG_DEBUG
@@ -222,6 +224,7 @@ int nand_load(struct nand_chip *flash, __u32 start_blk, void *start_mem)
 #ifdef CONFIG_DEBUG
 	else
 		printf("g-bios BH not found! assuming size 0x%x\n", bh_len);
+#endif
 #endif
 
 	end_page = cur_page + ((bh_len - 1) >> wshift);
@@ -247,11 +250,13 @@ static int nand_loader(struct loader_opt *opt)
 		return ret;
 
 	// it's safer to load sysconf first
-	ret = nand_load(&nand, CONFIG_SYS_START_BLK, (void *)CONFIG_SYS_START_MEM);
+	ret = nand_load(&nand, CONFIG_SYS_START_BLK,
+			(void *)CONFIG_SYS_START_MEM, CONFIG_GSC_MAX_LEN);
 	if (ret < 0)
 		return ret;
 
-	ret = nand_load(&nand, CONFIG_GBH_START_BLK, (void *)CONFIG_GBH_START_MEM);
+	ret = nand_load(&nand, CONFIG_GBH_START_BLK,
+			(void *)CONFIG_GBH_START_MEM, CONFIG_GBH_MAX_LEN);
 	if (ret < 0)
 		return ret;
 

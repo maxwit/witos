@@ -17,7 +17,7 @@
 
 #ifndef __ASSEMBLY__
 
-#define GBH_LOAD_SIZE     MB(2)
+// #define GBH_LOAD_SIZE     MB(2)
 
 int cpu_init(void);
 
