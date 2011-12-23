@@ -7,6 +7,12 @@
 #define PART_NAME_LEN 32
 #define MAX_FILE_NAME_LEN   64
 
+#define BDEV_NAME_FLASH  "mtdblock"
+#define BDEV_NAME_MMC    "mmcblock"
+#define BDEV_NAME_SCSI   "sd"
+#define BDEV_NAME_ATA    "hd" // fixme
+#define BDEV_NAME_NBD    "nbd"
+
 typedef enum {
 	PT_NONE,
 	PT_BAD,
@@ -61,11 +67,12 @@ struct bdev_file {
 
 struct block_device {
 	// struct device dev;
-	char name[MAX_DEV_NAME];
+	char name[MAX_DEV_NAME]; // mmcblockXpY, mtdblockN, sdaN
 
 	// part_attr
 	size_t bdev_base;
 	size_t bdev_size;
+	char   label[PART_NAME_LEN];
 
 	// fixme!
 	void *fs;

@@ -1,8 +1,6 @@
 #include <sysconf.h>
 #include <flash/flash.h>
 
-#define FLASH_BDEV_NAME "mtdblock"
-
 static struct list_node g_master_list;
 static int g_flash_count = 0;
 
@@ -79,8 +77,9 @@ static int __INIT__ flash_parse_part(struct flash_chip *host,
 		}
 
 		// part label and image
+		i = 0;
 		if (*p == '(') {
-			for (i = 0, p++; *p && *p != ')'; i++, p++)
+			for (p++; *p && *p != ')'; i++, p++)
 				part->part_name[i] = *p;
 
 			p++;
@@ -182,7 +181,7 @@ int flash_register(struct flash_chip *flash)
 
 	if (n <= 0) {
 		snprintf(flash->bdev.name, MAX_DEV_NAME,
-			FLASH_BDEV_NAME "%c", 'A' + g_flash_count);
+			BDEV_NAME_FLASH "%c", 'A' + g_flash_count);
 
 		flash_fops_init(&flash->bdev); // fixme: not here!
 		ret = block_device_register(&flash->bdev);
@@ -195,10 +194,12 @@ int flash_register(struct flash_chip *flash)
 			if (NULL == slave)
 				return -ENOMEM;
 
-			snprintf(slave->bdev.name, PART_NAME_LEN, FLASH_BDEV_NAME "%d", i + 1);
+			snprintf(slave->bdev.name, PART_NAME_LEN, BDEV_NAME_FLASH "%d", i + 1);
 
 			slave->bdev.bdev_base = part_tab[i].part_base;
 			slave->bdev.bdev_size = part_tab[i].part_size;
+			strncpy(slave->bdev.label, part_tab[i].part_name,
+				sizeof(slave->bdev.label));
 
 			slave->write_size  = flash->write_size;
 			slave->erase_size  = flash->erase_size;
