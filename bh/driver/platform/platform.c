@@ -1,6 +1,13 @@
 #include <platform.h>
 
-static struct bus platform_bus;
+static int match(struct device *dev, struct driver *drv);
+
+static struct bus platform_bus = {
+	.name     = "platform",
+	.match    = match,
+	.dev_list = HEAD_INIT(platform_bus.dev_list),
+	.drv_list = HEAD_INIT(platform_bus.drv_list),
+};
 
 static int match(struct device *dev, struct driver *drv)
 {
@@ -10,7 +17,6 @@ static int match(struct device *dev, struct driver *drv)
 	plat_dev = container_of(dev, struct platform_device, dev);
 	// plat_drv = container_of(drv, struct platform_driver, drv);
 
-	// printf("%s(): 0x%08p.%s == %s\n", __func__, plat_dev, plat_dev->name, drv->name);
 	return !strcmp(plat_dev->name, drv->name);
 }
 
@@ -44,11 +50,6 @@ int platform_driver_register(struct platform_driver *plat_drv)
 
 static int __INIT__ platform_init(void)
 {
-	platform_bus.match = match;
-
-	list_head_init(&platform_bus.dev_list);
-	list_head_init(&platform_bus.drv_list);
-
 	return 0;
 }
 

@@ -209,7 +209,7 @@ struct mmc_host * mmc_get_host(int id)
 
 int mmc_register(struct mmc_host *host)
 {
-	int ret = 0, i, n;
+	int ret, i;
 
 	if (!host || !host->send_cmd)
 		return -EINVAL;
@@ -226,20 +226,21 @@ int mmc_register(struct mmc_host *host)
 
 	g_mmc_host[i] = host;
 
-	n = mmc_sd_detect_card(host);
-	if (n < 0)
-		printf("No SD Found!\n");
-	else
-		printf("Card = %s\n", host->card.card_name);
+	ret = mmc_sd_detect_card(host);
+	if (ret < 0) {
+		printf("No SD card found!\n");
+		goto L1;
+	}
+
+	printf("SD Card found, name = %s\n", host->card.card_name);
 
 L1:
 	return ret;
 }
 
-static int __INIT__ mmc_core_init(void)
+static int __INIT__ mmc_init(void)
 {
-
 	return 0;
 }
 
-SUBSYS_INIT(mmc_core_init);
+SUBSYS_INIT(mmc_init);

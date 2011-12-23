@@ -37,7 +37,7 @@ struct driver {
 };
 
 struct bus {
-	const char *type;
+	const char *name;
 	int (*match)(struct device *, struct driver *);
 	struct list_node dev_list, drv_list;
 };

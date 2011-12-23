@@ -16,7 +16,7 @@ struct msdos_part {
 	__u32 lba_size;
 };
 
-static struct list_node g_master_list;
+static DECL_INIT_LIST(g_master_list);
 
 // fixme: to support extended partion
 static int msdos_part_scan(struct disk_drive *drive, struct part_attr part_tab[])
@@ -124,7 +124,6 @@ int disk_drive_init(void)
 static int __INIT__ disk_drive_init(void)
 #endif
 {
-	list_head_init(&g_master_list);
 	return 0;
 }
 

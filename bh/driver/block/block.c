@@ -3,7 +3,7 @@
 #include <block.h>
 #include <list.h>
 
-static struct list_node g_bdev_list;
+static DECL_INIT_LIST(g_bdev_list);
 
 struct block_device *get_bdev_by_name(const char *name)
 {
@@ -62,8 +62,6 @@ int block_device_init(void)
 static int __INIT__ block_device_init(void)
 #endif
 {
-	list_head_init(&g_bdev_list);
-
 	return 0;
 }
 

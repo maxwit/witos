@@ -1,7 +1,10 @@
 #pragma once
 
+#define HEAD_INIT(list) \
+	{.next = &list, .prev = &list}
+
 #define DECL_INIT_LIST(list) \
-	struct list_node list = {.next = &list, .prev = &list}
+	struct list_node list = HEAD_INIT(list)
 
 struct list_node {
 	struct list_node *next, *prev;

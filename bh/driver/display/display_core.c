@@ -171,7 +171,7 @@ void *video_mem_alloc(__u32 *phy_addr, const struct lcd_vmode *vm, pixel_format_
 		return NULL;
 	}
 
-	buff = dma_malloc(size, phy_addr);
+	buff = dma_alloc_coherent(size, phy_addr);
 	if (NULL == buff) {
 		DPRINT("%s() line %d: no free memory (size = %d)!\n", __func__, __LINE__, size);
 		return NULL;

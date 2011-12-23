@@ -1,6 +1,6 @@
 #include <flash/flash.h>
 
-static struct list_node g_master_list;
+static DECL_INIT_LIST(g_master_list);
 static int g_flash_count = 0;
 
 /*
@@ -240,11 +240,9 @@ int flash_unregister (struct flash_chip *flash)
 	return 0;
 }
 
-static int __INIT__ flash_core_init(void)
+static int __INIT__ flash_init(void)
 {
-	list_head_init(&g_master_list);
-
 	return 0;
 }
 
-SUBSYS_INIT(flash_core_init);
+SUBSYS_INIT(flash_init);

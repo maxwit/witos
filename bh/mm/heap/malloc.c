@@ -12,7 +12,7 @@ struct mem_region {
 	struct list_node ln_mem_region;
 };
 
-static struct list_node g_free_region_list;
+static DECL_INIT_LIST(g_free_region_list);
 
 static inline struct mem_region *get_successor(struct mem_region *region)
 {
@@ -53,8 +53,6 @@ static int __INIT__ __heap_init(__u32 start, __u32 end)
 	tail->pre_size = first->curr_size;
 	tail->curr_size = 1;
 
-	list_head_init(&g_free_region_list);
-
 	list_add_tail(&first->ln_mem_region, &g_free_region_list);
 
 	return 0;
@@ -92,10 +90,8 @@ void *malloc(size_t size)
 	lock_irq_psr(psr);
 
 	alloc_size = LIST_NODE_ALIGN(size);
-	list_for_each(iter, &g_free_region_list)
-	{
+	list_for_each(iter, &g_free_region_list) {
 		curr_region = container_of(iter, struct mem_region, ln_mem_region);
-		// printf("%d <--> %d\n", curr_region->curr_size, alloc_size);
 		if (curr_region->curr_size >= alloc_size)
 			goto do_alloc;
 	}
@@ -153,23 +149,25 @@ void free(void *p)
 	unlock_irq_psr(psr);
 }
 
-void *zalloc(__u32 len)
+void *zalloc(__u32 size)
 {
 	void *p;
 
-	p = malloc(len);
+	p = malloc(size);
 
 	if (p)
-		memset(p, 0, len);
+		memset(p, 0, size);
 
 	return p;
 }
 
-void *dma_malloc(size_t len, __u32 *pa)
+void *dma_alloc_coherent(size_t size, __u32 *pa)
 {
 	void *va;
 
-	va = malloc(len);
+	va = malloc(size);
+	if (NULL == va)
+		return NULL;
 
 	*pa = (__u32)va;
 
