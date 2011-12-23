@@ -2,7 +2,6 @@
 #include <init.h>
 #include <io.h>
 #include <flash/flash.h>
-#include <sysconf.h>
 #include <spi.h>
 
 #ifdef CONFIG_SPI

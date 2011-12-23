@@ -1,4 +1,3 @@
-#include <sysconf.h>
 #include <getopt.h>
 
 #define LEN 128

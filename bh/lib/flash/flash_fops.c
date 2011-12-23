@@ -1,6 +1,5 @@
 #include <block.h>
 #include <flash/flash.h>
-#include <sysconf.h>
 
 static inline void blk_buf_init(struct block_buff *blk_buf, void *buff, size_t size)
 {

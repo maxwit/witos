@@ -1,4 +1,3 @@
-#include <sysconf.h>
 #include <stdlib.h>
 #include <net/net.h>
 #include <net/ndev.h>

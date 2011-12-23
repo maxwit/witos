@@ -1,5 +1,5 @@
 #include <loader.h>
-#include <sysconf.h>
+#include <fs/fs.h>
 #include <uart/uart.h>
 #include <uart/ymodem.h>
 

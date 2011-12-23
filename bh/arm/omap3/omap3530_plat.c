@@ -2,7 +2,6 @@
 #include <init.h>
 #include <io.h>
 #include <flash/flash.h>
-#include <sysconf.h>
 #include <platform.h>
 
 #ifdef CONFIG_BOARD_EVM3530
@@ -105,7 +104,7 @@ static int __INIT__ omap3530_init(void)
 	writel(VA(0x48004c30), val);
 
 #ifdef CONFIG_IRQ_SUPPORT
-	omap3530_irq_init();
+	omap3_irq_init();
 	irq_enable();
 #endif
 

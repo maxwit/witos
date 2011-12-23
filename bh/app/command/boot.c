@@ -1,12 +1,12 @@
-#include <sysconf.h>
 #include <getopt.h>
 #include <image.h>
+#include <net/net.h>
 #include <net/tftp.h>
 #include <uart/uart.h>
 #include <fs/fs.h>
 #include <mmc/mmc.h>
-#include "linux.h"
 #include <flash/flash.h>
+#include <linux.h>
 
 #define UIMAGE_HEAD_SIZE     64
 

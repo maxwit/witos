@@ -2,7 +2,6 @@
 #include <uart/ymodem.h>
 #include <uart/kermit.h>
 #include <uart/uart.h>
-#include <sysconf.h>
 #include <getopt.h>
 #include <flash/flash.h>
 

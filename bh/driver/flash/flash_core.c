@@ -1,4 +1,3 @@
-#include <sysconf.h>
 #include <flash/flash.h>
 
 static struct list_node g_master_list;

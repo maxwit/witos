@@ -1,6 +1,5 @@
 #include <flash/flash.h>
 #include <arm/at91sam926x.h>
-#include <sysconf.h>
 
 // fixme
 #define CONFIG_DM9000_PIO_RESET  PIOC

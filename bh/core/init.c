@@ -1,5 +1,4 @@
 #include <shell.h>
-#include <sysconf.h>
 // fixme: to be removed!
 #include <uart/uart.h>
 #include <font/font.h>

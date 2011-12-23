@@ -1,4 +1,4 @@
-#include <sysconf.h>
+#include <net/net.h>
 #include <getopt.h>
 
 static int show_net_info(struct net_device *ndev)

@@ -1,4 +1,3 @@
-#include <sysconf.h>
 #include <net/net.h>
 #include <getopt.h>
 

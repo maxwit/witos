@@ -36,7 +36,6 @@ typedef enum {
 struct block_device;
 
 struct part_attr {
-	PART_TYPE part_type;
 	__u32 base;
 	__u32 size;
 	char  label[PART_NAME_LEN];

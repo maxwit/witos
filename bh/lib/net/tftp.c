@@ -1,7 +1,7 @@
+#include <getopt.h>
+#include <net/net.h>
 #include <net/tftp.h>
 #include <net/socket.h>
-#include <getopt.h>
-#include <sysconf.h>
 
 #define TFTP_DEBUG
 // fixme: to be removed

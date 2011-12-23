@@ -24,7 +24,7 @@ int read_irq_num(void)
 	return irq_num;
 }
 
-static void omap3530_irq_umask(__u32 irq_num)
+static void omap3_irq_umask(__u32 irq_num)
 {
 	switch (irq_num) {
 	case 20:
@@ -45,17 +45,17 @@ static void omap3530_irq_umask(__u32 irq_num)
 	writel(VA(INTCPS_BASE + INTCPS_MIRN_CLEN(irq_num >> 5)), 1 << (irq_num & 0x1f));
 }
 
-static void omap3530_irq_mask(__u32 irq)
+static void omap3_irq_mask(__u32 irq)
 {
 	writel(VA(INTCPS_BASE + INTCPS_MIRN_SETN(irq >> 5)), 1 << (irq & 0x1f));
 }
 
-static int omap3530_set_trigger(__u32 nr, __u32 type)
+static int omap3_set_trigger(__u32 nr, __u32 type)
 {
 	int off;
 
 	if (nr < INTC_PINS)
-		return;
+		return -EINVAL;
 
 	off = (nr - INTC_PINS) & 0x1F;
 
@@ -77,12 +77,14 @@ static int omap3530_set_trigger(__u32 nr, __u32 type)
 	default:
 		break;
 	}
+
+	return 0;
 }
 
-static struct int_ctrl omap3530_intctl = {
-	.mask  = omap3530_irq_mask,
-	.umask = omap3530_irq_umask,
-	.set_trigger = omap3530_set_trigger,
+static struct int_ctrl omap3_intctl = {
+	.mask  = omap3_irq_mask,
+	.umask = omap3_irq_umask,
+	.set_trigger = omap3_set_trigger,
 };
 
 static int handle_dev_irq_list(__u32 irq, struct irq_dev *idev)
@@ -101,7 +103,7 @@ static int handle_dev_irq_list(__u32 irq, struct irq_dev *idev)
 	return retval;
 }
 
-static void omap3530_handle(struct int_pin *pin, __u32 irq)
+static void omap3_irq_handle(struct int_pin *pin, __u32 irq)
 {
 	__u32 irq_status;
 	struct irq_dev *dev_list = pin->dev_list;
@@ -130,7 +132,7 @@ static void omap3530_handle(struct int_pin *pin, __u32 irq)
 	writel(VA(INTCPS_BASE + INTCPS_CONTROL), 0x1);
 }
 
-int omap3530_irq_init(void)
+int omap3_irq_init(void)
 {
 	int irq_num;
 
@@ -141,8 +143,8 @@ int omap3530_irq_init(void)
 	writel(VA(INTCPS_BASE + INTCPS_SYSCONFIG), 0x1);
 
 	for (irq_num = 0; irq_num < MAX_IRQ_NUM; irq_num++) {
-		irq_assoc_intctl(irq_num, &omap3530_intctl);
-		irq_set_handler(irq_num, omap3530_handle, 0);
+		irq_assoc_intctl(irq_num, &omap3_intctl);
+		irq_set_handler(irq_num, omap3_irq_handle, 0);
 
 		if (irq_num < INTC_PINS)
 			writel(VA(INTCPS_BASE + INTCPS_ILRM(irq_num)), 0x0);

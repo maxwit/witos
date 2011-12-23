@@ -1,6 +1,6 @@
 #include <errno.h>
 #include <loader.h>
-#include <sysconf.h>
+#include <fs/fs.h>
 #include <uart/uart.h>
 #include <uart/kermit.h>
 #ifdef CONFIG_DEBUG

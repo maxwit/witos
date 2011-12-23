@@ -37,11 +37,8 @@ static int msdos_part_scan(struct disk_drive *drive, struct part_attr part_tab[]
 			break;
 
 		// fixme:
-		// 1. fix part_type
-		// 2. support size large than 4G
-		part_tab[i].part_type = PT_NONE;
+		// support size large than 4G
 		part_tab[i].label[0] = '\0';
-
 		part_tab[i].base = dos_pt[i].lba_start * drive->sect_size;
 		part_tab[i].size = dos_pt[i].lba_size * drive->sect_size;
 

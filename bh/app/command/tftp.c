@@ -1,5 +1,5 @@
 #include <getopt.h>
-#include <sysconf.h>
+#include <net/net.h>
 #include <net/tftp.h>
 #include <flash/flash.h>
 

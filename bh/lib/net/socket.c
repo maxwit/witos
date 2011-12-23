@@ -110,10 +110,10 @@ static struct sock_buff *sock_recv_packet(struct socket *sock)
 	return NULL;
 }
 
+// fixme: to be removed
 int qu_is_empty(int fd)
 {
-#warning
-	__UNUSED__ __u32 psr;
+	__u32 __UNUSED__ psr;
 	struct socket *sock;
 
 	sock = get_sock(fd);

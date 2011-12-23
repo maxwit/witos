@@ -1,6 +1,6 @@
 #include <getopt.h>
 #include <random.h> // fixme: to be removed
-#include <sysconf.h>
+#include <fs/fs.h>
 #include <net/net.h>
 
 // DHCP opcode

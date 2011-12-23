@@ -728,11 +728,12 @@ static int __INIT__ init_cmd_queue(void)
 
 int shell(void)
 {
+	char buff[CONF_VAL_LEN];
+
 	init_cmd_queue();
 
-#warning
-	// TODO: parse sysconfig and set evironment variable
-	set_curr_volume(get_home_volume());
+	if (!conf_get_attr("home", buff))
+		set_curr_volume(buff[0]);
 
 	while (1) {
 		int argc;

@@ -1,4 +1,3 @@
-#include <sysconf.h>
 #include <net/net.h>
 #include <flash/flash.h>
 #include <string.h>

@@ -2,7 +2,6 @@
 #include <init.h>
 #include <arm/s3c24x0.h>
 #include <flash/flash.h>
-#include <sysconf.h>
 
 static int __INIT__ s3c2440_init(void)
 {

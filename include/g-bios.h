@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <timer.h>
 #include <io.h>
+#include <sysconf.h>
 #endif
 
 #include <image.h>

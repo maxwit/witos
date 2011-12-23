@@ -1,6 +1,5 @@
 #include <flash/flash.h>
 #include <getopt.h>
-#include <sysconf.h>
 #include <string.h>
 #include <bar.h>
 #include <task.h>

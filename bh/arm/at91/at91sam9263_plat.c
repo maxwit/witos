@@ -1,6 +1,5 @@
 #include <flash/flash.h>
 #include <arm/at91sam926x.h>
-#include <sysconf.h>
 
 #define CONFIG_PIO_PC10 (1 << 10)
 
