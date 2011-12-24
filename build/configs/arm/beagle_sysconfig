@@ -8,7 +8,7 @@ linux.console_device = ttyS0
 linux.mach_id        = 0x5000
 linux.cmd_line       = root=/dev/mtdblock3
 
-home                 = C:
+home                 = B
 
 net.server           = 10.0.0.1
 net.eth0.address     = 10.0.0.2

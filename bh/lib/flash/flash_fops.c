@@ -9,6 +9,7 @@ static inline void blk_buf_init(struct block_buff *blk_buf, void *buff, size_t s
 
 static inline PART_TYPE get_image_type(const struct bdev_file *file)
 {
+#warning
 	return PT_FREE;
 }
 

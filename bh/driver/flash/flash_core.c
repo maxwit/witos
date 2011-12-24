@@ -30,7 +30,7 @@ static int g_flash_count = 0;
 static int __INIT__ flash_parse_part(struct flash_chip *host,
 						struct part_attr *part,	const char *part_def)
 {
-	int i, index = 0;
+	int i, ret = -EINVAL, index = 0;
 	__u32 curr_base = 0;
 	char buff[128];
 	const char *p;
@@ -55,7 +55,9 @@ static int __INIT__ flash_parse_part(struct flash_chip *host,
 				buff[i] = *p;
 			buff[i] = '\0';
 
-			hr_str_to_val(buff, &part->size);
+			ret = hr_str_to_val(buff, &part->size);
+			if (ret < 0)
+				goto error;
 
 			ALIGN_UP(part->size, host->erase_size);
 		}
@@ -66,7 +68,9 @@ static int __INIT__ flash_parse_part(struct flash_chip *host,
 				buff[i] = *p;
 			buff[i] = '\0';
 
-			hr_str_to_val(buff, &part->base);
+			ret = hr_str_to_val(buff, &part->base);
+			if (ret < 0)
+				goto error;
 
 			ALIGN_UP(part->base, host->erase_size);
 
@@ -82,6 +86,8 @@ static int __INIT__ flash_parse_part(struct flash_chip *host,
 				part->label[i] = *p;
 
 			p++;
+			if (',' == *p)
+				p++;
 		}
 		part->label[i] = '\0';
 
@@ -95,7 +101,7 @@ static int __INIT__ flash_parse_part(struct flash_chip *host,
 
 error:
 	printf("%s(): invalid part definition \"%s\"\n", __func__, part_def);
-	return -EINVAL;
+	return ret;
 }
 
 static int __INIT__ flash_scan_part(struct flash_chip *host,
