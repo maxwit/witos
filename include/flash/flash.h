@@ -27,6 +27,7 @@ enum {
 };
 
 #define BLOCK_DEV_NAME_LEN  32
+#define MTD_ID_NAME_LEN     32
 
 #define IS_FS_PART(type) (PT_FS_BEGIN <= (type) && (type) <= PT_FS_END)
 
@@ -127,6 +128,7 @@ struct flash_chip {
 
 	int   type;
 	char  name[BLOCK_DEV_NAME_LEN];
+	char  mtd_id[MTD_ID_NAME_LEN];
 
 	size_t write_size;
 	size_t erase_size;
