@@ -35,7 +35,7 @@ static char *search_attr(const char *str)
 	int is_attr = 1;
 	const char *data = g_config.data;
 
-	for (i = 0; data[i] != EOF; i++) {
+	for (i = 0; i < g_config.size; i++) {
 		if (is_attr) {
 			if (data[i] != ' ') {
 				for (j = 0; j < len && data[i + j] == str[j]; j++);
@@ -68,13 +68,13 @@ int conf_del_attr(const char *attr)
 	q = strchr(p, '\n');
 	q++;
 
-	while (*q != EOF) {
+	while (q < g_config.data + g_config.size) {
 		*p = *q;
 		p++;
 		q++;
 	}
 
-	*p = EOF;
+	g_config.size = p - g_config.data;
 
 	g_config.is_dirty = true;
 
@@ -92,12 +92,10 @@ int conf_add_attr(const char *attr, const char *val)
 		return -EBUSY;
 	}
 
-	p = g_config.data;
-	while (*p != EOF) p++;
+	p = g_config.data + g_config.size;
 
 	len = sprintf(p, "%s = %s\n", attr, val);
-
-	p[len] = EOF;
+	g_config.size += len;
 
 	g_config.is_dirty = true;
 
@@ -109,7 +107,6 @@ int conf_set_attr(const char *attr, const char *val)
 	char *p, *q;
 	int cur_len, new_len;
 	int t;
-	int size;
 
 	p = search_attr(attr);
 	if (p == NULL) {
@@ -126,12 +123,9 @@ int conf_set_attr(const char *attr, const char *val)
 
 	t = new_len - cur_len;
 
-	size = 0;
-	while (g_config.data[size] != EOF) size++;
-
 	if (t != 0) {
-		memmove(q + t, q, size - (q - g_config.data));
-		g_config.data[size + t] = EOF;
+		memmove(q + t, q, g_config.size - (q - g_config.data));
+		g_config.size += t;
 	}
 
 	memcpy(p, val, new_len);
@@ -261,7 +255,7 @@ int conf_list_attr()
 
 	p = g_config.data;
 	i = j = 0;
-	while (p[i] != EOF) {
+	while (i < g_config.size) {
 		if (is_attr) {
 			if (p[i] != ' ' && p[i] != '=') {
 				attr[j++] = p[i];
@@ -291,7 +285,7 @@ int conf_list_attr()
 void conf_reset(void)
 {
 	*(__u32 *)(g_config.data - 4) = GB_SYSCFG_MAGIC;
-	*g_config.data = EOF;
+	g_config.size = 0;
 
 	conf_check_default();
 
