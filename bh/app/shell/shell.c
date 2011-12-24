@@ -14,15 +14,14 @@
 #endif
 
 struct command_stack {
-	char *cmd_stack[APP_HIST_DEPTH];
-	int	  cmd_hist;
+	char *stack[APP_HIST_DEPTH];
+	int	  hist;
 };
 
 extern const struct command g_exe_begin[], g_exe_end[];
 extern const struct help_info g_help_begin[], g_help_end[];
 
-// fixme: DO NOT use pointer here
-static struct command_stack *g_cmd_stack = NULL;
+static struct command_stack g_cmd_stack;
 static char g_cur_vol, g_home_vol = 'A';
 
 int help(int argc, char *argv[]);
@@ -268,21 +267,21 @@ static int cmd_up_key(char *buf, int *cur_pos, int *pindex, int *cur_max)
 	int lpos = *cur_pos;
 
 	//save current buffer, but history index does not increase
-	if (index == g_cmd_stack->cmd_hist) {
+	if (index == g_cmd_stack.hist) {
 		buf[lpos] = '\0';
 
-		if (NULL == g_cmd_stack->cmd_stack[g_cmd_stack->cmd_hist]) {
-			if (NULL == (g_cmd_stack->cmd_stack[g_cmd_stack->cmd_hist] = (char *)malloc(MAX_ARG_LEN))) {
+		if (NULL == g_cmd_stack.stack[g_cmd_stack.hist]) {
+			if (NULL == (g_cmd_stack.stack[g_cmd_stack.hist] = (char *)malloc(MAX_ARG_LEN))) {
 				printf("ERROR: fail to malloc!\n");
 				return -1;
 			}
 		}
-		strcpy(g_cmd_stack->cmd_stack[g_cmd_stack->cmd_hist], buf);
+		strcpy(g_cmd_stack.stack[g_cmd_stack.hist], buf);
 	}
 
 	index = APP_ADJUST_INDEX(index - 1);
 
-	if (index != g_cmd_stack->cmd_hist && NULL != g_cmd_stack->cmd_stack[index]) {
+	if (index != g_cmd_stack.hist && NULL != g_cmd_stack.stack[index]) {
 		// erase the command on screen
 		for (i = 0; i < lpos; i++) {
 			buf[i] = '\0'; //erase input buffer
@@ -290,12 +289,12 @@ static int cmd_up_key(char *buf, int *cur_pos, int *pindex, int *cur_max)
 		}
 
 		// show history command
-		printf("%s", g_cmd_stack->cmd_stack[index]);
+		printf("%s", g_cmd_stack.stack[index]);
 
 		//update buffer & index
-		strcpy(buf, g_cmd_stack->cmd_stack[index]);
+		strcpy(buf, g_cmd_stack.stack[index]);
 		*pindex = index;
-		*cur_pos = strlen(g_cmd_stack->cmd_stack[index]);
+		*cur_pos = strlen(g_cmd_stack.stack[index]);
 		*cur_max = *cur_pos;
 
 		printf("\033[0K");
@@ -312,7 +311,7 @@ static int cmd_down_key(char *buf, int *cur_pos, int *pindex, int *cur_max)
 	int index = *pindex;
 	int lpos = *cur_pos;
 
-	if (index == g_cmd_stack->cmd_hist)
+	if (index == g_cmd_stack.hist)
 		return 0;
 
 	index = APP_ADJUST_INDEX(index + 1);
@@ -324,12 +323,12 @@ static int cmd_down_key(char *buf, int *cur_pos, int *pindex, int *cur_max)
 	}
 
 	// show history command
-	printf("%s", g_cmd_stack->cmd_stack[index]);
+	printf("%s", g_cmd_stack.stack[index]);
 
 	//update buffer & index
-	strcpy(buf, g_cmd_stack->cmd_stack[index]);
+	strcpy(buf, g_cmd_stack.stack[index]);
 	*pindex = index;
-	*cur_pos = strlen(g_cmd_stack->cmd_stack[index]);
+	*cur_pos = strlen(g_cmd_stack.stack[index]);
 	*cur_max = *cur_pos;
 
 	printf("\033[0K");
@@ -359,17 +358,17 @@ static int cmd_left_key(char *buf, int *cur_pos, int *cur_max)
 
 static int cmd_update_history(const char *buf)
 {
-	if (NULL == g_cmd_stack->cmd_stack[g_cmd_stack->cmd_hist]) {
-		if (NULL == (g_cmd_stack->cmd_stack[g_cmd_stack->cmd_hist] = (char *)malloc(MAX_ARG_LEN))) {
+	if (NULL == g_cmd_stack.stack[g_cmd_stack.hist]) {
+		if (NULL == (g_cmd_stack.stack[g_cmd_stack.hist] = (char *)malloc(MAX_ARG_LEN))) {
 			printf("ERROR: fail to malloc!\n");
 			return -1;
 		}
 	}
 
-	strcpy(g_cmd_stack->cmd_stack[g_cmd_stack->cmd_hist], buf);
+	strcpy(g_cmd_stack.stack[g_cmd_stack.hist], buf);
 
-	++g_cmd_stack->cmd_hist;
-	g_cmd_stack->cmd_hist = APP_ADJUST_INDEX(g_cmd_stack->cmd_hist);
+	++g_cmd_stack.hist;
+	g_cmd_stack.hist = APP_ADJUST_INDEX(g_cmd_stack.hist);
 
 	return 0;
 }
@@ -395,7 +394,7 @@ static int command_read_line(char buf[])
 	char input_c;
 	int cur_pos = 0;
 	int cur_max = 0;
-	int hst_pos = g_cmd_stack->cmd_hist;
+	int hst_pos = g_cmd_stack.hist;
 	int esc_sequence = 0;
 	int spec_key = 0;
 	int ret;
@@ -709,29 +708,25 @@ L1:
 	return ret;
 }
 
-// fixme: to be removed
-static int __INIT__ init_cmd_queue(void)
+static inline int shell_init(void)
 {
-	g_cmd_stack = (struct command_stack *)zalloc(sizeof(*g_cmd_stack));
+	int i;
+	char buff[CONF_VAL_LEN];
 
-	if (NULL == g_cmd_stack) {
-		DPRINT("%s, %s(), line %d: No memory!\n",
-				__FILE__, __func__, __LINE__);
+	for (i = 0; i < APP_HIST_DEPTH; i++)
+		g_cmd_stack.stack[i] = NULL;
 
-		return -ENOMEM;
-	}
+	g_cmd_stack.hist = 0;
+
+	if (!conf_get_attr("home", buff))
+		set_curr_volume(buff[0]);
 
 	return 0;
 }
 
 int shell(void)
 {
-	char buff[CONF_VAL_LEN];
-
-	init_cmd_queue();
-
-	if (!conf_get_attr("home", buff))
-		set_curr_volume(buff[0]);
+	shell_init();
 
 	while (1) {
 		int argc;
@@ -747,6 +742,7 @@ int shell(void)
 		}
 
 		exec(argc, argv);
+
 		putchar('\n');
 	}
 
