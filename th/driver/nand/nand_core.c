@@ -3,8 +3,7 @@
 #include <flash/nand.h>
 
 // fixme
-#define CONFIG_GBH_MAX_LEN   KB(512)
-#define CONFIG_GSC_MAX_LEN   KB(128)
+#define CONFIG_GBH_DEF_LEN   KB(512)
 
 #define TIMEOUT_COUNT        (1 << 14)
 #define IS_LARGE_PAGE(flash) (flash->write_size >= KB(1))
@@ -181,11 +180,11 @@ static __u8 *nand_read_page(struct nand_chip *flash, __u32 page_idx, __u8 *buff)
 
 // load bottom-half from nand with timeout checking
 // fixme
-int __WEAK__ nand_load(struct nand_chip *flash, __u32 start_blk, void *start_mem, __u32 size)
+int __WEAK__ nand_load(struct nand_chip *flash, __u32 start_blk, void *start_mem)
 {
 	__u32 cur_page, end_page;
 	__u32 wshift = 0, eshift = 0, shift;
-	__u32 bh_len = size;
+	__u32 bh_len = CONFIG_GBH_DEF_LEN;
 #ifdef CONFIG_NAND_16BIT
 	__u16 *buff;
 #else
@@ -209,22 +208,16 @@ int __WEAK__ nand_load(struct nand_chip *flash, __u32 start_blk, void *start_mem
 
 	buff = nand_read_page(flash, cur_page, buff);
 
-#if 0
 	if (GBH_MAGIC == *(__u32 *)(start_mem + GBH_MAGIC_OFFSET)) {
 		bh_len = *(__u32 *)(start_mem + GBH_SIZE_OFFSET);
 #ifdef CONFIG_DEBUG
-		printf("g-bios BH found:) size = 0x%x\n", bh_len);
-#endif
-	} else if (G_SYS_MAGIC == *(__u32 *)(start_mem + G_SYS_MAGIC_OFFSET)) {
-		bh_len = *(__u32 *)(start_mem + GBH_SIZE_OFFSET);
-#ifdef CONFIG_DEBUG
-		printf("g-bios sysconf found:) size = 0x%x\n", bh_len);
+		printf("g-bios-bh found:) size = 0x%x\n", bh_len);
 #endif
 	}
 #ifdef CONFIG_DEBUG
-	else
-		printf("g-bios BH not found! assuming size 0x%x\n", bh_len);
-#endif
+	else {
+		printf("g-bios-bh not found! assuming size 0x%x\n", bh_len);
+	}
 #endif
 
 	end_page = cur_page + ((bh_len - 1) >> wshift);
@@ -249,18 +242,7 @@ static int nand_loader(struct loader_opt *opt)
 	if (ret < 0)
 		return ret;
 
-	// it's safer to load sysconf first
-	ret = nand_load(&nand, CONFIG_SYS_START_BLK,
-			(void *)CONFIG_SYS_START_MEM, CONFIG_GSC_MAX_LEN);
-	if (ret < 0)
-		return ret;
-
-	ret = nand_load(&nand, CONFIG_GBH_START_BLK,
-			(void *)CONFIG_GBH_START_MEM, CONFIG_GBH_MAX_LEN);
-	if (ret < 0)
-		return ret;
-
-	// TODO: check overlaop here! (and move the code to upper layer)
+	ret = nand_load(&nand, CONFIG_GBH_START_BLK, (void *)CONFIG_GBH_START_MEM);
 
 	return ret;
 }

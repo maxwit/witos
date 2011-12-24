@@ -10,10 +10,12 @@ struct sysconfig {
 	size_t size;
 };
 
+extern char _maxwit_project_g_bios__sysconfig[];
+extern unsigned int _maxwit_project_g_bios__sysconfig_len;
+
 static struct sysconfig g_config = {
-	.data = (char *)CONFIG_SYS_START_MEM + 4,
+	.data = _maxwit_project_g_bios__sysconfig + 4,
 	.is_dirty = false,
-	.size = 0,
 };
 
 __u32 get_load_mem_addr()
@@ -190,8 +192,10 @@ static int conf_check_default()
 	conf_check_add("net.eth0.mac", CONFIG_MAC_ADDR);
 #endif
 
+#if 0
 #ifdef CONFIG_CONSOLE_NAME
 	conf_check_add("console", CONFIG_CONSOLE_NAME);
+#endif
 #endif
 
 	return 0;
@@ -199,14 +203,13 @@ static int conf_check_default()
 
 int conf_load()
 {
-	const char *p;
-	__u32 *sys_magic = (__u32 *)CONFIG_SYS_START_MEM;
+	__u32 *sys_magic = (__u32 *)_maxwit_project_g_bios__sysconfig;
 
 	if (GB_SYSCFG_MAGIC != *sys_magic)
 		return -EINVAL;
 
-	for (p = g_config.data; *p != EOF; p++);
-	g_config.size = p - g_config.data;
+	g_config.size = _maxwit_project_g_bios__sysconfig_len;
+	DPRINT("sysconf: base = 0x%p, size = %d\n", g_config.data, g_config.size);
 
 	conf_check_default();
 
@@ -219,20 +222,19 @@ int conf_store()
 	int ret;
 	__u32 conf_base;
 	struct flash_chip *flash;
+	extern char _start[];
 
 	if (!g_config.is_dirty)
 		return 0;
 
 	// fixme
-	flash = flash_open("mtdblock");
-	if (NULL == flash)
-		flash = flash_open("mtdblock1");
+	flash = flash_open("mtdblock2");
 	if (NULL == flash) {
 		printf("Fail to open flash!\n");
 		return -ENODEV;
 	}
 
-	conf_base = CONFIG_SYS_START_BLK << flash->erase_shift;
+	conf_base = _maxwit_project_g_bios__sysconfig - _start;
 
 	ret = flash_erase(flash, conf_base, g_config.size, EDF_ALLOWBB);
 	if (ret < 0)
@@ -288,7 +290,7 @@ int conf_list_attr()
 
 void conf_reset(void)
 {
-	*(__u32 *)(g_config.data - 4) = G_SYS_MAGIC;
+	*(__u32 *)(g_config.data - 4) = GB_SYSCFG_MAGIC;
 	*g_config.data = EOF;
 
 	conf_check_default();

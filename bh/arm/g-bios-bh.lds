@@ -55,5 +55,11 @@ SECTIONS
 		bss_end = .;
 	}
 
+	. = ALIGN(128 << 10);
+	.gsect_sysconfig ALIGN(4):
+	{
+		*(.gsect_sysconfig)
+	}
+
 	_end = ALIGN(4);
 }

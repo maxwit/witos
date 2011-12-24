@@ -22,7 +22,7 @@ extern const struct command g_exe_begin[], g_exe_end[];
 extern const struct help_info g_help_begin[], g_help_end[];
 
 static struct command_stack g_cmd_stack;
-static char g_cur_vol, g_home_vol = 'A';
+static char g_cur_vol = 'C', g_home_vol = 'A';
 
 int help(int argc, char *argv[]);
 

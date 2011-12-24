@@ -35,7 +35,7 @@ export builtin-obj TOP_DIR
 
 # fixme
 DEFCONFIG_PATH = build/configs/arm
-DEFCONFIG_LIST = $(shell ls $(DEFCONFIG_PATH))
+DEFCONFIG_LIST = $(shell cd $(DEFCONFIG_PATH) && ls *_defconfig)
 
 include build/rules/common.mk
 

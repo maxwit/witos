@@ -10,7 +10,7 @@ _start:
 	ldr   pc, [pc, #24]
 	ldr   pc, [pc, #24]
 	ldr   pc, [pc, #24]
-	.word (bss_begin - _start) @ for AT91SAM926X
+	.word (_end - _start) @ for AT91SAM926X
 	ldr   pc, [pc, #20]
 	ldr   pc, [pc, #20]
 
