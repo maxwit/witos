@@ -26,36 +26,33 @@ POSTSUBS_INIT(evm3530_device_init);
 
 static int __INIT__ omap3_init(void)
 {
-	__u32 val, val4;
+	__u32 val;
 #ifdef CONFIG_LAN9220
 	__u16 val2;
 #endif
 
-	//
-	val4 = readl(VA(PADCONF_GPMC_NBE1));
-	DPRINT("GPIO62 = 0x%08x\n", val4);
-	val4 |= 0xffff0000;
-	writel(VA(PADCONF_GPMC_NBE1), val4);
+	val = readl(VA(PADCONF_GPMC_NBE1));
+	val |= 0xffff0000;
+	writel(VA(PADCONF_GPMC_NBE1), val);
 
-	val4 = readl(VA(PADCONF_GPMC_NBE1));
-	DPRINT("GPIO62 = 0x%08x\n", val4);
+	val = readl(VA(PADCONF_GPMC_NBE1));
 
 	// GPMC
-	for (val4 = 0x7A; val4 <= 0x8C; val4 += 2)
-		writew(VA(0x48002000 + val4), 0);
+	for (val = 0x7A; val <= 0x8C; val += 2)
+		writew(VA(0x48002000 + val), 0);
 
-	for (; val4 <= 0xAC; val4 += 2)
-		writew(VA(0x48002000 + val4), 1 << 8);
+	for (; val <= 0xAC; val += 2)
+		writew(VA(0x48002000 + val), 1 << 8);
 
 #if defined(CONFIG_BOARD_BEAGLE) && defined(CONFIG_SMSC91X)
-	val4 = readl(VA(GPMC_CONFIG1(1)));
-	val4 &= ~(0x3 << 10);
-	val4 &= ~(0x1 << 9);
-	val4 |= 0x1;
-	writel(VA(GPMC_CONFIG1(1)), val4);
+	val = readl(VA(GPMC_CONFIG1(1)));
+	val &= ~(0x3 << 10);
+	val &= ~(0x1 << 9);
+	val |= 0x1;
+	writel(VA(GPMC_CONFIG1(1)), val);
 
-	val4 = 0x8 << 8 | 0x1 << 6 | 0x8;
-	writel(VA(GPMC_CONFIG7(1)), val4);
+	val = 0x8 << 8 | 0x1 << 6 | 0x8;
+	writel(VA(GPMC_CONFIG7(1)), val);
 #elif defined(CONFIG_BOARD_DEVKIT8000) && defined(CONFIG_DM9000)
 	writew(VA(0x480020BA), 1 << 4 | 1 << 3 | 0);
 

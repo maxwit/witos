@@ -277,17 +277,16 @@ struct nand_chip {
 
 	struct oob_opt opt;
 
-	__u8    *bbt;
+	__u8 *bbt;
+	__u8 *oob_buf;
 
-	__u8    *oob_buf;
+	struct nand_buffer *buffers;
 
-	struct nand_buffer   *buffers;
+	struct nand_bad_blk *bbt_td;
+	struct nand_bad_blk *bbt_md;
+	struct nand_bad_blk *bad_blk_patt;
 
-	struct nand_bad_blk    *bbt_td;
-	struct nand_bad_blk    *bbt_md;
-	struct nand_bad_blk    *bad_blk_patt;
-
-	__u32  bus_idx;
+	__u32 bus_idx;
 	const char *name; // [MTD_DEV_NAME_LEN];
 
 	struct list_node nand_node;

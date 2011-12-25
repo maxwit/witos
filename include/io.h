@@ -2,71 +2,34 @@
 
 #include <types.h>
 
-#if 0
+#define VA(x) ((void *)(x))
 
-#define VA(x)  ((__u32)(x))
-
-static __u8 inline readb(__u32 addr)
+static inline __u8 readb(void *mem)
 {
-	return *(volatile __u8 *)addr;
+	return *(volatile __u8 *)mem;
 }
 
-static void inline writeb(__u32 addr, __u8 val)
+static void inline writeb(void *mem, __u8 val)
 {
-	*(volatile __u8 *)addr = val;
+	*(volatile __u8 *)mem = val;
 }
 
-static __u16 inline readw(__u32 addr)
+static inline __u16 readw(void *mem)
 {
-	return *(volatile __u16 *)addr;
+	return *(volatile __u16 *)mem;
 }
 
-static void inline writew(__u32 addr, __u16 val)
+static void inline writew(void *mem, __u16 val)
 {
-	*(volatile __u16 *)addr = val;
+	*(volatile __u16 *)mem = val;
 }
 
-static __u32 inline readl(__u32 addr)
+static inline __u32 readl(void *mem)
 {
-	return *(volatile __u32 *)addr;
+	return *(volatile __u32 *)mem;
 }
 
-static void inline writel(__u32 addr, __u32 val)
+static void inline writel(void *mem, __u32 val)
 {
-	*(volatile __u32 *)addr = val;
+	*(volatile __u32 *)mem = val;
 }
-
-#else
-
-#define VA(x)  ((void *)(x))
-
-static __u8 inline readb(void *addr)
-{
-	return *(volatile __u8 *)addr;
-}
-
-static void inline writeb(void *addr, __u8 val)
-{
-	*(volatile __u8 *)addr = val;
-}
-
-static __u16 inline readw(void *addr)
-{
-	return *(volatile __u16 *)addr;
-}
-
-static void inline writew(void *addr, __u16 val)
-{
-	*(volatile __u16 *)addr = val;
-}
-
-static __u32 inline readl(void *addr)
-{
-	return *(volatile __u32 *)addr;
-}
-
-static void inline writel(void *addr, __u32 val)
-{
-	*(volatile __u32 *)addr = val;
-}
-#endif

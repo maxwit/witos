@@ -14,13 +14,13 @@ int soc_init(void)
 	__u32 word;
 
 	// disable WDT
-	writel(CM_FCLKEN_WKUP, 1 << 5);
-	writel(CM_ICLKEN_WKUP, 1 << 5);
-	while (readl(CM_IDLEST_WKUP) & (1 << 5));
+	writel(VA(CM_FCLKEN_WKUP), 1 << 5);
+	writel(VA(CM_ICLKEN_WKUP), 1 << 5);
+	while (readl(VA(CM_IDLEST_WKUP)) & (1 << 5));
 
-	writel(WDTTIMER2 + WSPR, 0xaaaa);
+	writel(VA(WDTTIMER2 + WSPR), 0xaaaa);
 	while (readl(VA(WDTTIMER2 + WWPS)));
-	writel(WDTTIMER2 + WSPR, 0x5555);
+	writel(VA(WDTTIMER2 + WSPR), 0x5555);
 
 	// init SP
 	word = OMAP3_SRAM_BASE + OMAP3_SRAM_SIZE;
@@ -29,101 +29,101 @@ int soc_init(void)
 
 	// System clock input selection: 26MHz
 	word = 0x3;
-	writel(PRM_CLKSEL, word);
+	writel(VA(PRM_CLKSEL), word);
 
 	// Input clock divider 2.
-	word = readl(PRM_CLKSRC_CTRL);
+	word = readl(VA(PRM_CLKSRC_CTRL));
 	word &= ~(0x3 << 6);
 	word |= 0x2 << 6;
-	writel(PRM_CLKSRC_CTRL, word);
+	writel(VA(PRM_CLKSRC_CTRL), word);
 
 	//	CLKOUTX2 = (SYS_CLK * M ) / ([N+1])
 	//			    13	      250	     12
 	//	MPU_CLK	=  CLKOUTX2  / M2
 	//						    1
-	word = readl(CM_CLKSEL1_PLL_MPU);
+	word = readl(VA(CM_CLKSEL1_PLL_MPU));
 	word &= ~(0x7FF << 8 | 0x7F);
 	word |= 0xFA << 8 | 0xC;
-	writel(CM_CLKSEL1_PLL_MPU, word);
+	writel(VA(CM_CLKSEL1_PLL_MPU), word);
 
-	word = readl(CM_CLKSEL2_PLL_MPU);
+	word = readl(VA(CM_CLKSEL2_PLL_MPU));
 	word &= ~(0x1F);
 	word |= 0x1;
-	writel(CM_CLKSEL2_PLL_MPU, word);
+	writel(VA(CM_CLKSEL2_PLL_MPU), word);
 
 	// lock mode.
-	word = readl(CM_CLKEN_PLL_MPU);
+	word = readl(VA(CM_CLKEN_PLL_MPU));
 	word |= 0x7;
-	writel(CM_CLKEN_PLL_MPU, word);
+	writel(VA(CM_CLKEN_PLL_MPU), word);
 
 	// DPLL3.
 	// fCORE_CLK  = (fSYS_CLK x M) / ((N+1) * M2)
 	// 332	                  13	 332     12      1
-	word = readl(CM_CLKSEL1_PLL);
+	word = readl(VA(CM_CLKSEL1_PLL));
 	word &= ~(0x7FF << 16);
 	word |= 0x14C << 16;
-	writel(CM_CLKSEL1_PLL, word);
+	writel(VA(CM_CLKSEL1_PLL), word);
 
-	word = readl(CM_CLKSEL1_PLL);
+	word = readl(VA(CM_CLKSEL1_PLL));
 	word &= ~(0x7F << 8);
 	word |= 0xC << 8;
-	writel(CM_CLKSEL1_PLL, word);
+	writel(VA(CM_CLKSEL1_PLL), word);
 
-	word = readl(CM_CLKSEL1_PLL);
+	word = readl(VA(CM_CLKSEL1_PLL));
 	word &= ~(0xF << 27);
 	word |= 0x1 << 27;
-	writel(CM_CLKSEL1_PLL, word);
+	writel(VA(CM_CLKSEL1_PLL), word);
 
 	// fL4_ICLK = fCORE_CLK / DIV_L4
 	// 166M            332M       2
-	word = readl(CM_CLKSEL_CORE);
+	word = readl(VA(CM_CLKSEL_CORE));
 	word &= ~(0x3 <<2);
 	word |= 0x2 << 2;
-	writel(CM_CLKSEL_CORE, word);
+	writel(VA(CM_CLKSEL_CORE), word);
 
 	// fL3_ICLK = fCORE_CLK / DIV_L3
 	// 166M            332M       2
-	word = readl(CM_CLKSEL_CORE);
+	word = readl(VA(CM_CLKSEL_CORE));
 	word &= ~(0x3);
 	word |= 0x2;
-	writel(CM_CLKSEL_CORE, word);
+	writel(VA(CM_CLKSEL_CORE), word);
 
 	// lock mode.
-	word = readl(CM_CLKEN_PLL);
+	word = readl(VA(CM_CLKEN_PLL));
 	word |= 0x7;
-	writel(CM_CLKEN_PLL, word);
+	writel(VA(CM_CLKEN_PLL), word);
 
 	//
 #if 1
-	word = readl(CM_ICLKEN_WKUP);
+	word = readl(VA(CM_ICLKEN_WKUP));
 	word |= 3;
-	writel(CM_ICLKEN_WKUP, word);
+	writel(VA(CM_ICLKEN_WKUP), word);
 
-	word = readl(CM_FCLKEN_WKUP);
+	word = readl(VA(CM_FCLKEN_WKUP));
 	word |= 1;
-	writel(CM_FCLKEN_WKUP, word);
+	writel(VA(CM_FCLKEN_WKUP), word);
 #endif
 
-	word = readl(CM_CLKSEL_PER);
+	word = readl(VA(CM_CLKSEL_PER));
 	word |= 1 << 0;
 	writel(VA(CM_CLKSEL_PER), word);
 
-	word = readl(CM_ICLKEN_PER);
+	word = readl(VA(CM_ICLKEN_PER));
 	word |= 1 << 3;
-	writel(CM_ICLKEN_PER, word);
+	writel(VA(CM_ICLKEN_PER), word);
 
-	readl(CM_FCLKEN_PER);
+	readl(VA(CM_FCLKEN_PER));
 	word |= 1 << 3;
-	writel(CM_FCLKEN_PER, word);
+	writel(VA(CM_FCLKEN_PER), word);
 
 	/* UART 3 Clocks */
-	readl(CM_FCLKEN_PER);
+	readl(VA(CM_FCLKEN_PER));
 	word |= 1 << 11;
-	writel(CM_FCLKEN_PER, word);
+	writel(VA(CM_FCLKEN_PER), word);
 
-	readl(CM_ICLKEN_PER);
+	readl(VA(CM_ICLKEN_PER));
 	word |= 1 << 11;
-	writel(CM_ICLKEN_PER, word);
+	writel(VA(CM_ICLKEN_PER), word);
 
 	return 0;
 }

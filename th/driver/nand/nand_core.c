@@ -197,8 +197,8 @@ int __WEAK__ nand_load(struct nand_chip *flash, __u32 block, void *mem)
 	curr_page = block << (eshift - wshift);
 	buff = nand_read_page(flash, curr_page, mem);
 
-	if (GBH_MAGIC == readl(mem + GBH_MAGIC_OFFSET)) {
-		load_size = readl(mem + GBH_SIZE_OFFSET);
+	if (GBH_MAGIC == readl(VA(mem + GBH_MAGIC_OFFSET))) {
+		load_size = readl(VA(mem + GBH_SIZE_OFFSET));
 #ifdef CONFIG_DEBUG
 		printf("g-bios-bh found.\n");
 #endif
@@ -213,7 +213,7 @@ int __WEAK__ nand_load(struct nand_chip *flash, __u32 block, void *mem)
 
 #ifdef CONFIG_DEBUG
 	printf("Nand loader: memory = 0x%x, flash = 0x%x, size = 0x%x\n",
-		mem, curr_page, load_size);
+		mem, block << eshift, load_size);
 #endif
 
 	while (++curr_page <= last_page)

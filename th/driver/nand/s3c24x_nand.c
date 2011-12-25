@@ -1,10 +1,10 @@
 #include <flash/nand.h>
 
 #define s3c24x_nfc_readl(reg) \
-	readl(NAND_CTRL_BASE + reg)
+	readl(VA(NAND_CTRL_BASE + reg))
 
 #define s3c24x_nfc_writel(reg, val) \
-	writel(NAND_CTRL_BASE + reg, val)
+	writel(VA(NAND_CTRL_BASE + reg), val)
 
 static int s3c24x_nand_ready(struct nand_chip *nand)
 {
@@ -23,9 +23,9 @@ int nand_init(struct nand_chip *nand)
 	s3c24x_nfc_writel(NF_CONT, 0x1);
 #endif
 
-	nand->cmmd_port = NAND_CTRL_BASE + NF_CMMD;
-	nand->addr_port = NAND_CTRL_BASE + NF_ADDR;
-	nand->data_port = NAND_CTRL_BASE + NF_DATA;
+	nand->cmmd_port = VA(NAND_CTRL_BASE + NF_CMMD);
+	nand->addr_port = VA(NAND_CTRL_BASE + NF_ADDR);
+	nand->data_port = VA(NAND_CTRL_BASE + NF_DATA);
 
 	nand->flash_ready = s3c24x_nand_ready;
 

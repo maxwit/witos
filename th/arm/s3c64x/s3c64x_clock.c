@@ -19,25 +19,25 @@ int soc_init(void)
 
 	// configure GPIO
 #ifdef CONFIG_DEBUG
-	val = readl(0x7F0080A0);
+	val = readl(VA(0x7F0080A0));
 	val &= ~(3 << 30);
 	val |= 1 << 30;
-	writel(0x7F0080A0, val);
+	writel(VA(0x7F0080A0), val);
 
-	val = readl(0x7F0080A4);
+	val = readl(VA(0x7F0080A4));
 	val |= 1 << 15;
-	writel(0x7F0080A4, val);
+	writel(VA(0x7F0080A4), val);
 #endif
 
-	val = readl(0x7F008820);
+	val = readl(VA(0x7F008820));
 	val &= ~0xFFFF;
 	val |= 0x1111;
-	writel(0x7F008820, val);
+	writel(VA(0x7F008820), val);
 
-	val = readl(0x7F008824);
+	val = readl(VA(0x7F008824));
 	val &= ~0xF;
 	val |= 0x6;
-	writel(0x7F008824, val);
+	writel(VA(0x7F008824), val);
 
 	// init Clock
 	syscon_write(APLL_LOCK, 0xE11);
@@ -54,8 +54,8 @@ int soc_init(void)
 	return 0;
 }
 
-#define ddr_write(reg, val) writel(DRAMC_BASE + reg, val)
-#define ddr_read(reg)       readl(DRAMC_BASE + reg)
+#define ddr_write(reg, val) writel(VA(DRAMC_BASE + reg), val)
+#define ddr_read(reg)       readl(VA(DRAMC_BASE + reg))
 
 #define CASL      3      // DDR266
 #define tRC       68
@@ -127,10 +127,10 @@ int mem_init(void)
 
 	while((ddr_read(P1MEMSTAT) & 0x3) != 1);
 
-	val = readl(0x7E00F120);
+	val = readl(VA(0x7E00F120));
 	val |= 0x1000;
 	val &= ~0xbf;
-	writel(0x7E00F120, val);
+	writel(VA(0x7E00F120), val);
 
 	return SDRAM_BASE + SDRAM_SIZE;
 }
