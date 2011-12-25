@@ -1,4 +1,3 @@
-sysG
 linux.boot_mode      = 0x1234
 linux.root_dev       = 2
 linux.kernel_image   = zImage

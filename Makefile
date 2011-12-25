@@ -48,14 +48,15 @@ $(dir-y): include/autoconf.h
 
 include/autoconf.h: .config
 	@build/generate/autoconf.py $< $@
-	@sed -i '/CONFIG_CROSS_COMPILE/d' $@
+	@sed -i -e '/CONFIG_CROSS_COMPILE/d' -e '/CONFIG_ARCH_VER\>/d'  $@
 	@sed -i '/^$$/d' $@
 
 # fixme
 $(DEFCONFIG_LIST):
 	@echo "configure for board \"$(@:%_defconfig=%)\""
 	@./build/generate/defconfig.py $@
-	@cp $(DEFCONFIG_PATH)/$(@:%_defconfig=%_sysconfig) .sysconfig
+	@grep -w "^sysG" $(DEFCONFIG_PATH)/$(@:%_defconfig=%_sysconfig) || echo sysG > .sysconfig && echo >> .sysconfig
+	@cat $(DEFCONFIG_PATH)/$(@:%_defconfig=%_sysconfig) >> .sysconfig
 	@echo
 
 install:

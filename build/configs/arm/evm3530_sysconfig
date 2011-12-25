@@ -1,4 +1,3 @@
-sysG
 linux.boot_mode      = 0x1234
 linux.root_dev       = 2
 linux.kernel_image   = zImage
@@ -16,4 +15,4 @@ net.eth0.gateway     = 10.0.0.1
 net.eth0.netmask     = 255.255.255.0
 net.eth0.mac         = 00:50:56:c0:00:18
 
-flash.part           = omap2-nand.0:512K(g-bios-th),2M(g-bios-bh),1(g-bios-sys),3M(linux),64M(rootfs),64M(user),-(data)
+flash.part           = omap2-nand.0:512K(g-bios-th),2M(g-bios-bh),3M(linux),64M(rootfs),64M(user),-(data)
