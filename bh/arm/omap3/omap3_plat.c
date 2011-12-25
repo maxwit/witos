@@ -7,7 +7,7 @@
 #ifdef CONFIG_BOARD_EVM3530
 static struct platform_device lan9220_device = {
 	.dev = {
-		.memio = 0x28000000,
+		.mem = 0x28000000,
 		.irq = GPIO_IRQ(19),
 	},
 	.name = "SMSC LAN9220",

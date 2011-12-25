@@ -4,15 +4,6 @@
 
 #include <arm/s3c24x0.h>
 
-#ifdef CONFIG_GTH
-void udelay(__u32 n)
-{
-	volatile __u32 m = n * (HCLK_RATE >> 20) >> 7;
-
-	while (m-- > 0);
-}
-#endif
-
 #define s3c24x0_wdt_writel(reg, val) \
 	writel(VA(WATCHDOG_BASE + (reg)), (val))
 

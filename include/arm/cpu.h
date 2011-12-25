@@ -20,8 +20,11 @@
 #define IRQ_STACK_SIZE   SVC_STACK_SIZE
 #define FIQ_STACK_SIZE   SVC_STACK_SIZE
 
-#define ALLOC_STACK_SIZE \
+// fixme
+#define CONFIG_STACK_SIZE \
 	(SVC_STACK_SIZE + UND_STACK_SIZE + ABT_STACK_SIZE + IRQ_STACK_SIZE + FIQ_STACK_SIZE)
+
+#define CONFIG_HEAP_SIZE   (8 << 20)
 
 #ifndef __ASSEMBLY__
 #ifdef CONFIG_IRQ_SUPPORT
@@ -49,11 +52,11 @@
 
 #define lock_irq_psr(cpsr) \
 	do { \
-		__u32 tmp; \
+		unsigned long _________tmp; \
 		asm volatile ("mrs %0, cpsr\n" \
 			"orr %1, %0, %2\n" \
 			"msr cpsr_c, %1\n" \
-			: "=r" (cpsr), "=r"(tmp) \
+			: "=r" (cpsr), "=r"(_________tmp) \
 			: "i" (ARM_IRQ_MASK) \
 			: "memory"); \
 	} while (0)
@@ -68,7 +71,7 @@
 
 #define fiq_enable() \
 	do { \
-		__u32 cpsr; \
+		unsigned long cpsr; \
 		asm volatile ("mrs %0, cpsr\n" \
 			"bic %0, %0, %1\n" \
 			"msr cpsr_c, %0\n" \

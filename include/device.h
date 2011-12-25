@@ -14,7 +14,7 @@ struct resource {
 };
 
 struct device {
-	unsigned long memio;
+	unsigned long mem;
 	// size_t size;
 	int irq;
 

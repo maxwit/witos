@@ -61,7 +61,7 @@ int conf_del_attr(const char *attr)
 
 	p = search_attr(attr);
 	if (p == NULL) {
-		DPRINT("Attribute \"%s\" is not exist, del attr error!\n", attr);
+		DPRINT("Attribute \"%s\" does not exists, del attr error!\n", attr);
 		return -1;
 	}
 
@@ -110,7 +110,7 @@ int conf_set_attr(const char *attr, const char *val)
 
 	p = search_attr(attr);
 	if (p == NULL) {
-		DPRINT("Attribute \"%s\" is not exist, set attr error\n", attr);
+		DPRINT("Attribute \"%s\" does not exists, set attr error\n", attr);
 		return -1;
 	}
 
@@ -140,7 +140,7 @@ int conf_get_attr(const char *attr, char val[])
 
 	p = search_attr(attr);
 	if (p == NULL) {
-		DPRINT("Attribute \"%s\" is not exist, get attr error!\n", attr);
+		DPRINT("Attribute \"%s\" does not exists, get attr error!\n", attr);
 		return -ENOENT;
 	}
 

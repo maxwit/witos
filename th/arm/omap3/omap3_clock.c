@@ -1,13 +1,4 @@
-
-// fixme!!!
-#ifdef CONFIG_GTH
-void udelay(__u32 n)
-{
-	volatile __u32 m = n;
-
-	while (m-- > 0);
-}
-#endif
+#include <arm/omap3.h>
 
 int soc_init(void)
 {

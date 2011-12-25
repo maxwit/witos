@@ -58,20 +58,19 @@ static int __INIT__ __heap_init(__u32 start, __u32 end)
 	return 0;
 }
 
-// fixme: __WEAK__
 int __INIT__ heap_init(void)
 {
 	unsigned long heap_start, heap_end;
 #ifdef CONFIG_NORMAL_SPACE
-	extern unsigned long bss_end[];
+	extern unsigned long _end[];
 
-	heap_start = (unsigned long)bss_end + ALLOC_STACK_SIZE;
+	heap_start = (unsigned long)_end;
 #else
 	extern unsigned long _start[];
 
-	heap_start = (unsigned long)_start - HEAP_SIZE;
+	heap_start = (unsigned long)_start - CONFIG_HEAP_SIZE;
 #endif
-	heap_end = heap_start + HEAP_SIZE;
+	heap_end = heap_start + CONFIG_HEAP_SIZE;
 
 	DPRINT("%s(): region = [0x%08x, 0x%08x]\n",
 			__func__, heap_start, heap_end);

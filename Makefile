@@ -41,7 +41,7 @@ include build/rules/common.mk
 
 dir-y := th bh
 
-all: $(dir-y) build/g-bios-sys.bin
+all: $(dir-y)
 
 $(dir-y): include/autoconf.h
 	@make $(img_build)$@
@@ -58,23 +58,9 @@ $(DEFCONFIG_LIST):
 	@cp $(DEFCONFIG_PATH)/$(@:%_defconfig=%_sysconfig) .sysconfig
 	@echo
 
-# IMAGE_UTILITY = build/generate/sys_img_creat
-
-# fixme
-# $(IMAGE_UTILITY): $(IMAGE_UTILITY).c
-#	gcc -Wall $< -o $@
-
-# fixme
-# build/g-bios-sys.bin: .sysconfig $(IMAGE_UTILITY)
-# 	$(IMAGE_UTILITY) $< $@
-# 	@echo
-
-build/g-bios-sys.bin: .sysconfig
-	@cp $< $@
-
 install:
 	@mkdir -p $(IMG_DIR)
-	@for fn in $(wildcard [tb]h/g-bios-*.bin) build/g-bios-sys.bin; do \
+	@for fn in $(wildcard [tb]h/g-bios-*.bin); do \
 		cp -v $$fn $(IMG_DIR); \
 	done
 	@echo
@@ -84,7 +70,6 @@ clean:
 		make $(img_build)$$dir clean; \
 		rm -vf $$dir/g-bios-$$dir.*; \
 	 done
-	@rm -vf build/g-bios-sys.bin
 	@echo
 
 distclean: clean

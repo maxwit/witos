@@ -24,9 +24,9 @@ _start:
 
 handle_reset:
 #ifdef CONFIG_NORMAL_SPACE
-	ldr   r0, =(bss_end + ALLOC_STACK_SIZE)
+	ldr   r0, =(_end + CONFIG_HEAP_SIZE + CONFIG_STACK_SIZE)
 #else
-	ldr   r0, =(_start - HEAP_SIZE)
+	ldr   r0, =(_start - CONFIG_HEAP_SIZE)
 #endif
 
 	msr   cpsr, #(ARM_MODE_UND | ARM_INT_MASK)
