@@ -7,7 +7,7 @@
 
 #define TIMEOUT_COUNT        (1 << 14)
 #define IS_LARGE_PAGE(flash) (flash->write_size >= KB(1))
-#define IS_POW2(n)           (((n) & ((n) - 1)) == 0)
+#define IS_POW2(n)           ((n) && ((n) & ((n) - 1)) == 0)
 
 static const __u8 nand_ids[] = {
 	0x33, 0x35, 0x36, 0x39, 0x43, 0x45, 0x46, 0x49, 0x53, 0x55,
@@ -141,7 +141,7 @@ L1:
 	printf("(Page Size = 0x%x, Block Size = 0x%x)\n",
 		flash->write_size, flash->block_size);
 
-	if (0 == flash->block_size || !IS_POW2(flash->write_size) || !IS_POW2(flash->block_size))
+	if (!IS_POW2(flash->write_size) || !IS_POW2(flash->block_size))
 		return -1;
 #endif
 
