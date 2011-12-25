@@ -61,6 +61,6 @@ int nand_init(struct nand_chip *nand)
 	nand->data_port = AT91SAM926X_PA_NAND + NAND_DATA;
 	nand->flash_ready = at91_nand_flash_ready;
 
-	return nand_probe(nand);
+	return 0;
 }
 

@@ -627,11 +627,10 @@ static __u8 *nand_copy_oob(struct nand_chip *nand,
 					continue;
 				}
 				boffs = free->nOfOffset + roffs;
-				bytes = min_t(__u32, len,
-						(free->nOfLen - roffs));
+				bytes = min(len, free->nOfLen - roffs);
 				roffs = 0;
 			} else {
-				bytes = min_t(__u32, len, free->nOfLen);
+				bytes = min(len, free->nOfLen);
 				boffs = free->nOfOffset;
 			}
 
@@ -650,22 +649,22 @@ static __u8 *nand_copy_oob(struct nand_chip *nand,
 
 static int nand_read_by_opt(struct nand_chip *nand, __u32 from, struct oob_opt *opt)
 {
-	int page, realpage;
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
-	struct nand_ctrl *nfc = nand->master;
-	struct ecc_stats stats;
 	int ret = 0;
 	__u32 readlen;
 	__u32 oobreadlen;
 	__u8 *oob_buf, *buff;
+	int page, real_page;
+	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct nand_ctrl *nfc = nand->master;
+	struct ecc_stats stats;
 
 	stats = flash->eccstat;
 
 	// chipnr = from >> flash->chip_shift;
 	nfc->select_chip(nand, true);
 
-	realpage = from >> flash->write_shift;
-	page = realpage & nand->page_num_mask;
+	real_page = from >> flash->write_shift;
+	page = real_page & nand->page_num_mask;
 
 	buff = opt->data_buff;
 	oob_buf = opt->oob_buff;
@@ -722,8 +721,8 @@ static int nand_read_by_opt(struct nand_chip *nand, __u32 from, struct oob_opt *
 		else
 			nand_wait_ready(nand);
 
-		realpage++;
-		page = realpage & nand->page_num_mask;
+		real_page++;
+		page = real_page & nand->page_num_mask;
 	}
 
 L1:
@@ -804,7 +803,7 @@ static int nand_write_oob_std(struct nand_chip *nand, int page)
 
 static int nand_do_read_oob(struct nand_chip *nand, __u32 from, struct oob_opt *opt)
 {
-	int page, realpage, chipnr, sndcmd = 1;
+	int page, real_page, chipnr, sndcmd = 1;
 	struct flash_chip *flash = NAND_TO_FLASH(nand);
 	struct nand_ctrl *nfc = nand->master;
 	int blkcheck = (1 << (nand->phy_erase_shift - flash->write_shift)) - 1;
@@ -834,8 +833,8 @@ static int nand_do_read_oob(struct nand_chip *nand, __u32 from, struct oob_opt *
 	chipnr = (int)(from >> flash->chip_shift);
 	nfc->select_chip(nand, true);
 
-	realpage = (int)(from >> flash->write_shift);
-	page = realpage & nand->page_num_mask;
+	real_page = (int)(from >> flash->write_shift);
+	page = real_page & nand->page_num_mask;
 
 	while (1) {
 		sndcmd = nfc->read_oob(nand, page, sndcmd);
@@ -861,9 +860,9 @@ static int nand_do_read_oob(struct nand_chip *nand, __u32 from, struct oob_opt *
 			flash->callback_func(flash, flash->callback_args);
 		}
 
-		realpage++;
+		real_page++;
 
-		page = realpage & nand->page_num_mask;
+		page = real_page & nand->page_num_mask;
 
 		if (!page) {
 			chipnr++;
@@ -935,9 +934,8 @@ static __u8 *nand_fill_oob(struct nand_chip *nand, __u8 *oob_buf, struct oob_opt
 
 	case FLASH_OOB_AUTO:
 	{
+		__u32 boffs = 0, bytes = 0, woffs = opt->oob_off;
 		struct oob_free_region *free = nfc->curr_oob_layout->free_region;
-		__u32 boffs = 0, woffs = opt->oob_off;
-		__u32 bytes = 0;
 
 		for(; free->nOfLen && len; free++, len -= bytes) {
 			if (woffs) {
@@ -947,10 +945,10 @@ static __u8 *nand_fill_oob(struct nand_chip *nand, __u8 *oob_buf, struct oob_opt
 				}
 
 				boffs = free->nOfOffset + woffs;
-				bytes = min_t(__u32, len, free->nOfLen - woffs);
+				bytes = min(len, free->nOfLen - woffs);
 				woffs = 0;
 			} else {
-				bytes = min_t(__u32, len, free->nOfLen);
+				bytes = min(len, free->nOfLen);
 				boffs = free->nOfOffset;
 			}
 
@@ -976,7 +974,7 @@ static inline bool check_aligned(__u32 align, __u32 val)
 static int nand_write_by_opt(struct nand_chip *nand, long to, struct oob_opt *opt)
 {
 	int status;
-	int realpage, page;
+	int real_page, page;
 	__u32 write_len;
 	__u8 *buff, *oob_buf;
 	__u32 page_buff_offset;
@@ -996,8 +994,8 @@ static int nand_write_by_opt(struct nand_chip *nand, long to, struct oob_opt *op
 		return -EINVAL;
 	}
 
-	// TODO: check opt->data_len align
 #if 0
+	// TODO: check opt->data_len align
 	if (FLASH_OOB_RAW != opt->op_mode) {
 		if (!check_aligned(flash->write_size, opt->data_len)) {
 			printf("%s(): page not aligned!\n", __func__);
@@ -1018,8 +1016,8 @@ static int nand_write_by_opt(struct nand_chip *nand, long to, struct oob_opt *op
 		return -EIO;
 	}
 
-	realpage = to >> flash->write_shift;
-	page = realpage & nand->page_num_mask;
+	real_page = to >> flash->write_shift;
+	page = real_page & nand->page_num_mask;
 	// blockmask = (1 << (nand->phy_erase_shift - flash->write_shift)) - 1;
 
 	page_buff_offset = nand->page_in_buff << flash->write_shift;
@@ -1066,19 +1064,20 @@ static int nand_write_by_opt(struct nand_chip *nand, long to, struct oob_opt *op
 		status = nfc->wait_func(nand);
 
 		if (status & NAND_STATUS_FAIL) {
-			printf("%s(): error @ line %d\n", __func__, __LINE__);
+			DPRINT("%s(): error @ line %d\n", __func__, __LINE__);
 			return -EIO;
 		}
 
 		if (flash->callback_func && flash->callback_args) {
 			flash->callback_args->page_index = page;
-			flash->callback_args->block_index = page >> (flash->erase_shift - flash->write_shift);
+			flash->callback_args->block_index = \
+				page >> (flash->erase_shift - flash->write_shift);
 
 			flash->callback_func(flash, flash->callback_args);
 		}
 
-		realpage++;
-		page = realpage & nand->page_num_mask;
+		real_page++;
+		page = real_page & nand->page_num_mask;
 	}
 
 	opt->ret_len = write_len;
@@ -1103,10 +1102,10 @@ static int nand_write(struct nand_chip *nand,
 	if (!len)
 		return 0;
 
-	nand->opt.data_len = len;
+	nand->opt.data_len  = len;
 	nand->opt.data_buff = (__u8 *)buff;
-	nand->opt.oob_buff = NULL;
-	nand->opt.op_mode = FLASH_OOB_PLACE;
+	nand->opt.oob_buff  = NULL;
+	nand->opt.op_mode   = FLASH_OOB_PLACE;
 
 	ret = nand_write_by_opt(nand, to, &nand->opt);
 	*retlen = nand->opt.ret_len;

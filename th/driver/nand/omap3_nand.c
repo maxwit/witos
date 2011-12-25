@@ -33,5 +33,5 @@ int nand_init(struct nand_chip *nand)
 	nand->data_port = GPMC_BASE + GPMC_NAND_DATA_0;
 	nand->flash_ready = omap3_nand_ready;
 
-	return nand_probe(nand);
+	return 0;
 }

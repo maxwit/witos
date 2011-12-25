@@ -24,9 +24,10 @@ int fflush(int);
 	do { if (!(x)) BUG(); } while (0)
 
 #ifdef CONFIG_DEBUG
-#define DPRINT(fmt, args ...)	printf(fmt, ##args)
-#define GEN_DGB() printf("%s(): line %d\n", __func__, __LINE__)
+#define DPRINT(fmt, args ...)  printf(fmt, ##args)
+#define GEN_DGB(fmt, args ...) \
+	printf("%s() line %d: " fmt "\n", __func__, __LINE__, ##args)
 #else
 #define DPRINT(fmt, args ...)
-#define GEN_DGB()
+#define GEN_DGB(fmt, args ...)
 #endif

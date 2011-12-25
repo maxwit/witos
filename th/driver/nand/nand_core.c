@@ -39,23 +39,23 @@ static __u8 inline nand_read_data(struct nand_chip *flash)
 
 static int nand_wait_ready(struct nand_chip *flash)
 {
-	volatile int i = 0;
+	int i;
 
 	if (flash->flash_ready) {
-		while (i < TIMEOUT_COUNT) {
+		for (i = 0; i < TIMEOUT_COUNT; i++) {
 			if (flash->flash_ready(flash))
 				return i;
-			i++;
 		}
+
 #ifdef CONFIG_DEBUG
 		printf("Nand Timeout!\n");
 #endif
-	} else {
-		while (i < TIMEOUT_COUNT)
-			i++;
+		return -1;
 	}
 
-	return i;
+	udelay(0x500);
+
+	return 0;
 }
 
 static void nand_send_cmd(struct nand_chip *flash,
@@ -91,12 +91,11 @@ static void nand_send_cmd(struct nand_chip *flash,
 	nand_wait_ready(flash);
 }
 
-int nand_probe(struct nand_chip *flash)
+static int nand_probe(struct nand_chip *flash)
 {
 	__u8  dev_id, ven_id, ext_id;
 	int front, end;
 
-	//
 	nand_write_cmd(flash, NAND_CMMD_RESET);
 	nand_wait_ready(flash);
 
@@ -115,11 +114,12 @@ int nand_probe(struct nand_chip *flash)
 	end = ARRAY_ELEM_NUM(nand_ids);
 
 	while (front <= end) {
+#if 0
 		int nMid = (front + end) / 2;
 
 		if (nand_ids[nMid] == dev_id) {
 			flash->write_size = 512;
-			flash->block_size = KB(16);
+			flash->erase_size = KB(16);
 
 			goto L1;
 		}
@@ -128,109 +128,98 @@ int nand_probe(struct nand_chip *flash)
 			end = nMid -1;
 		else
 			front = nMid + 1;
+#else
+		if (nand_ids[front] == dev_id) {
+			flash->write_size = 512;
+			flash->erase_size = KB(16);
+
+			goto L1;
+		}
+
+		front++;
+#endif
 	}
 
 	ext_id = nand_read_data(flash);
 	ext_id = nand_read_data(flash);
 
 	flash->write_size = KB(1) << (ext_id & 0x3);
-	flash->block_size = KB(64) << ((ext_id >> 4) & 0x03);
+	flash->erase_size = KB(64) << ((ext_id >> 4) & 0x03);
 
 L1:
 #ifdef CONFIG_DEBUG
 	printf("(Page Size = 0x%x, Block Size = 0x%x)\n",
-		flash->write_size, flash->block_size);
-
-	if (!IS_POW2(flash->write_size) || !IS_POW2(flash->block_size))
-		return -1;
+		flash->write_size, flash->erase_size);
 #endif
 
 	return 0;
 }
 
+static void *nand_read_page(struct nand_chip *flash, __u32 page_idx, void *buff)
+{
+	size_t count;
 #ifdef CONFIG_NAND_16BIT
-static __u16 *nand_read_page(struct nand_chip *flash, __u32 page_idx, __u16 *buff)
-{
-	__u32 len;
-
-	nand_send_cmd(flash, NAND_CMMD_READ0, page_idx, 0);
-
-	for (len = 0; len < (flash->write_size) / 2; len++) {
-		*buff = nand_read_data(flash);
-		buff++;
-	}
-
-	return buff;
-}
+	__u16 *data;
 #else
-static __u8 *nand_read_page(struct nand_chip *flash, __u32 page_idx, __u8 *buff)
-{
-	__u32 len;
+	__u8 *data;
+#endif
 
 	nand_send_cmd(flash, NAND_CMMD_READ0, page_idx, 0);
 
-	for (len = 0; len < flash->write_size; len++) {
-		*buff = nand_read_data(flash);
-		buff++;
+	data = buff;
+	for (count = 0; count < flash->write_size / sizeof(*data); count++) {
+		*data = nand_read_data(flash);
+		data++;
 	}
 
-	return buff;
+	return data;
 }
-#endif
 
 // load bottom-half from nand with timeout checking
-// fixme
-int __WEAK__ nand_load(struct nand_chip *flash, __u32 start_blk, void *start_mem)
+int __WEAK__ nand_load(struct nand_chip *flash, __u32 block, void *mem)
 {
-	__u32 cur_page, end_page;
+	__u32 curr_page, last_page;
 	__u32 wshift = 0, eshift = 0, shift;
-	__u32 bh_len = CONFIG_GBH_DEF_LEN;
-#ifdef CONFIG_NAND_16BIT
-	__u16 *buff;
-#else
-	__u8 *buff;
-#endif
-
-	buff = start_mem;
+	__u32 load_size;
+	void *buff;
 
 	// yes, calc shift in this way.
-	for (shift = 0; shift < sizeof(long) * 8; shift++) {
+	for (shift = 0; shift < WORD_SIZE * 8; shift++) {
 		if ((1 << shift) == flash->write_size)
 			wshift = shift;
-		else if ((1 << shift) == flash->block_size)
+		else if ((1 << shift) == flash->erase_size)
 			eshift = shift;
 	}
 
 	if (0 == wshift || 0 == eshift)
 		return -1;
 
-	cur_page = start_blk << (eshift - wshift);
+	curr_page = block << (eshift - wshift);
+	buff = nand_read_page(flash, curr_page, mem);
 
-	buff = nand_read_page(flash, cur_page, buff);
-
-	if (GBH_MAGIC == *(__u32 *)(start_mem + GBH_MAGIC_OFFSET)) {
-		bh_len = *(__u32 *)(start_mem + GBH_SIZE_OFFSET);
+	if (GBH_MAGIC == readl(mem + GBH_MAGIC_OFFSET)) {
+		load_size = readl(mem + GBH_SIZE_OFFSET);
 #ifdef CONFIG_DEBUG
-		printf("g-bios-bh found:) size = 0x%x\n", bh_len);
+		printf("g-bios-bh found.\n");
+#endif
+	} else {
+		load_size = CONFIG_GBH_DEF_LEN;
+#ifdef CONFIG_DEBUG
+		printf("g-bios-bh NOT found!\n");
 #endif
 	}
-#ifdef CONFIG_DEBUG
-	else {
-		printf("g-bios-bh not found! assuming size 0x%x\n", bh_len);
-	}
-#endif
 
-	end_page = cur_page + ((bh_len - 1) >> wshift);
+	last_page = curr_page + ((load_size - 1) >> wshift);
 
 #ifdef CONFIG_DEBUG
-	printf("Load memory = 0x%x, size = 0x%x, cur_page = 0x%x, end_page = 0x%x\n",
-		start_mem, bh_len, cur_page, end_page);
+	printf("Nand loader: memory = 0x%x, flash = 0x%x, size = 0x%x\n",
+		mem, curr_page, load_size);
 #endif
 
-	while (++cur_page <= end_page)
-		buff = nand_read_page(flash, cur_page, buff);
+	while (++curr_page <= last_page)
+		buff = nand_read_page(flash, curr_page, buff);
 
-	return (void *)buff - start_mem;
+	return buff - mem;
 }
 
 static int nand_loader(struct loader_opt *opt)
@@ -239,6 +228,10 @@ static int nand_loader(struct loader_opt *opt)
 	struct nand_chip nand = {0}; // nand_chip must be initialized
 
 	ret = nand_init(&nand);
+	if (ret < 0)
+		return ret;
+
+	ret = nand_probe(&nand);
 	if (ret < 0)
 		return ret;
 

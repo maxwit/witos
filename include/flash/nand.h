@@ -32,27 +32,13 @@
 #define NAND_CMMD_STATUS_RESET  0x7f
 #define NAND_CMMD_STATUS_CLEAR  0xff
 
-#define NAND_CMMD_NONE        -1
+#define NAND_CMMD_NONE          -1
 
-// fixme
+struct nand_chip;
+
 #ifdef CONFIG_GTH
 
-struct nand_chip {
-	__u32 cmmd_port;
-	__u32 addr_port;
-	__u32 data_port;
-
-	__u32 write_size;
-	__u32 block_size;
-
-	int (*flash_ready)(struct nand_chip *);
-};
-
 int nand_init(struct nand_chip *);
-int nand_probe(struct nand_chip *);
-#if 0
-int nand_load(struct nand_chip *, __u32, void *, __u32 size);
-#endif
 
 #else
 
@@ -117,14 +103,13 @@ typedef enum {
 	FL_PM_SUSPENDED,
 } NAND_STATE;
 
+struct nand_ctrl;
+
 struct nand_buffer {
 	__u8 ecccalc[NAND_MAX_OOB_SIZE];
 	__u8 ecccode[NAND_MAX_OOB_SIZE];
 	__u8 data_buff[NAND_MAX_PAGESIZE + NAND_MAX_OOB_SIZE];
 };
-
-struct nand_chip;
-struct nand_ctrl;
 
 struct nand_bad_blk {
 	int flags;
@@ -136,41 +121,6 @@ struct nand_bad_blk {
 	int reserved_block_code;
 	__u8  version[NAND_MAX_CHIPS];
 	__u8 *pattern;
-};
-
-struct nand_chip {
-	struct flash_chip parent;
-	struct nand_ctrl *master;
-
-	__u32  device_id;
-	__u32  vendor_id;
-
-	__u32  flags;
-
-	int  phy_erase_shift;
-	int  bbt_erase_shift;
-
-	int  page_num_mask;
-	int  page_in_buff;
-
-	int  bad_blk_oob_pos;
-
-	struct oob_opt opt;
-
-	__u8    *bbt;
-
-	__u8    *oob_buf;
-
-	struct nand_buffer   *buffers;
-
-	struct nand_bad_blk    *bbt_td;
-	struct nand_bad_blk    *bbt_md;
-	struct nand_bad_blk    *bad_blk_patt;
-
-	__u32  bus_idx;
-	const char *name; // [MTD_DEV_NAME_LEN];
-
-	struct list_node nand_node;
 };
 
 struct nand_ctrl {
@@ -296,5 +246,50 @@ struct nand_ctrl *nand_ctrl_new(void);
 struct nand_chip *nand_probe(struct nand_ctrl *nfc, int bus_idx);
 
 int nand_register(struct nand_chip * nand);
-
 #endif
+
+struct nand_chip {
+#ifdef CONFIG_GTH
+	void *cmmd_port;
+	void *addr_port;
+	void *data_port;
+
+	size_t write_size;
+	size_t erase_size;
+
+	int (*flash_ready)(struct nand_chip *);
+#else
+	struct flash_chip parent;
+	struct nand_ctrl *master;
+
+	__u32  device_id;
+	__u32  vendor_id;
+
+	__u32  flags;
+
+	int  phy_erase_shift;
+	int  bbt_erase_shift;
+
+	int  page_num_mask;
+	int  page_in_buff;
+
+	int  bad_blk_oob_pos;
+
+	struct oob_opt opt;
+
+	__u8    *bbt;
+
+	__u8    *oob_buf;
+
+	struct nand_buffer   *buffers;
+
+	struct nand_bad_blk    *bbt_td;
+	struct nand_bad_blk    *bbt_md;
+	struct nand_bad_blk    *bad_blk_patt;
+
+	__u32  bus_idx;
+	const char *name; // [MTD_DEV_NAME_LEN];
+
+	struct list_node nand_node;
+#endif
+};

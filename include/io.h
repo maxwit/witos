@@ -2,10 +2,7 @@
 
 #include <types.h>
 
-#define WAIT_INFINITE   0
-#define WAIT_ASYNC     -1
-
-#if CONFIG_GTH
+#if 0
 
 #define VA(x)  ((__u32)(x))
 
@@ -72,6 +69,4 @@ static void inline writel(void *addr, __u32 val)
 {
 	*(volatile __u32 *)addr = val;
 }
-
 #endif
-

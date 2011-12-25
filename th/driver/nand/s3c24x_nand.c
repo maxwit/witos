@@ -29,5 +29,5 @@ int nand_init(struct nand_chip *nand)
 
 	nand->flash_ready = s3c24x_nand_ready;
 
-	return nand_probe(nand);
+	return 0;
 }

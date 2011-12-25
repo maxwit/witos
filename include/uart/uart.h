@@ -1,5 +1,8 @@
 #pragma once
 
+#define WAIT_INFINITE   0
+#define WAIT_ASYNC     -1
+
 #define BR115200       115200
 
 #define UART_IOC_RSTFIFO    1
@@ -27,7 +30,6 @@ __u32 uart_rxbuf_count();
 int uart_ioctl(int id,int cmd,void * arg);
 
 int uart_recv_byte_timeout(__u8 *ch, int timeout);
-//
 
 #define DECLARE_UART_INIT(func) \
 	 int uart_init(void) __attribute__((alias(#func)))
@@ -37,5 +39,4 @@ int uart_recv_byte_timeout(__u8 *ch, int timeout);
 
 #define DECLARE_UART_RECV(func) \
 	 __u8 uart_recv_byte() __attribute__((alias(#func)))
-
 #endif

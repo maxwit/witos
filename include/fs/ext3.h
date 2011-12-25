@@ -2,17 +2,6 @@
 
 #include <fs/fs.h>
 
-#if CONFIG_HOST_DEMO
-#include <linux/types.h>
-
-typedef unsigned char   __u8;
-typedef unsigned short  __u16;
-typedef unsigned int    __u32;
-#endif
-
-typedef unsigned short  __le16;
-typedef unsigned int    __le32;
-
 /*
  * Structure of a blocks group descriptor
  */
