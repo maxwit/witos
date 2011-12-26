@@ -59,10 +59,8 @@ static int s3c6410_set_vmode(struct display *disp, const struct lcd_vmode *vm)
 
 static int __INIT__ s3c6410_display_init(void)
 {
-	void *va;
-	__u32 dma;
+	int ret;
 	__u32 val;
-	const struct lcd_vmode *vm;
 	struct display *disp;
 
 	writel(VA(GPI_CON), 0xaaaaaaaa);
@@ -81,35 +79,13 @@ static int __INIT__ s3c6410_display_init(void)
 	disp = display_create();
 	// if NULL
 
-	vm = lcd_get_vmode_by_name(CONFIG_LCD_MODEL);
-	if (NULL == vm) {
-		printf("No LCD video mode found!\n");
-		return -ENOENT;
-	}
-
-	va = video_mem_alloc(&dma, vm, CONFIG_PIXEL_FORMAT);
-	if(va == NULL) {
-		printf("Fail to dma alloc \n");
-		goto error;
-	}
-
-	DPRINT("DMA = 0x%08x, 0x%p\n", dma, va);
-
-	// disp->mmio = VA(LCD_BASE);
-	disp->video_mem_va = va;
-	disp->video_mem_pa = dma;
-	disp->pix_fmt      = CONFIG_PIXEL_FORMAT;
-	disp->set_vmode    = s3c6410_set_vmode;
-
-	s3c6410_set_vmode(disp, vm);
+	ret = display_config(disp, s3c6410_set_vmode);
+	if (ret < 0)
+		return ret;
 
 	display_register(disp);
 
 	return 0;
-
-error:
-	// TODO:
-	return -1;
 }
 
 DRIVER_INIT(s3c6410_display_init);

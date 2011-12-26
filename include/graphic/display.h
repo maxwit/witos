@@ -43,3 +43,4 @@ struct display {
 struct display* display_create(void);
 int display_register(struct display* disp);
 struct display* get_system_display(void);
+int display_config(struct display *disp, int (*set_vmode)(struct display *, const struct lcd_vmode *));

@@ -63,6 +63,7 @@ static int __INIT__ omap3_display_init(void)
 	disp = display_create();
 	// if NULL
 
+#if 0
 	ret = conf_get_attr("dispplay.lcd.model", model);
 	if (ret < 0)
 		goto error;
@@ -86,6 +87,11 @@ static int __INIT__ omap3_display_init(void)
 	ret = omap3_set_vmode(disp, vm);
 	if (ret < 0)
 		goto error;
+#else
+	ret = display_config(disp, omap3_set_vmode);
+	if (ret < 0)
+		return ret;
+#endif
 
 	ret = display_register(disp);
 	if (ret < 0)

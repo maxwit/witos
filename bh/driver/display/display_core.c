@@ -1,6 +1,7 @@
 #include <malloc.h>
 #include <graphic/display.h>
 #include <djpeg/djpeg.h>
+#include <errno.h>
 
 static struct display* g_system_display;
 
@@ -207,6 +208,50 @@ struct display *display_create(void)
 	}
 
 	return disp;
+}
+
+int display_config(struct display *disp,
+		int (*set_vmode)(struct display *, const struct lcd_vmode *))
+{
+	void *va;
+	unsigned long dma;
+	const struct lcd_vmode *vm;
+	char lcd_mode[CONF_ATTR_LEN];
+	pixel_format_t pixel_format;
+
+	if (conf_get_attr("display.lcd.model", lcd_mode) < 0) {
+		DPRINT("%s(): fail to get lcd model\n", __func__);
+		return -EINVAL;
+	}
+
+	vm = lcd_get_vmode_by_name(lcd_mode);
+	if (NULL == vm) {
+		printf("No LCD video mode found!\n");
+		return -ENOENT;
+	}
+
+	if (conf_get_attr("display.lcd.pixel_format", (char *)&pixel_format) < 0) {
+		DPRINT("%s(): fail to get lcd pixel format\n", __func__);
+		return -EINVAL;
+	}
+
+	va = video_mem_alloc(&dma, vm, pixel_format);
+	if(va == NULL) {
+		printf("Fail to dma alloc \n");
+		return -ENOMEM;
+	}
+
+	DPRINT("DMA = 0x%08x, 0x%p\n", dma, va);
+
+	// disp->mmio = VA(LCD_BASE);
+	disp->video_mem_va = va;
+	disp->video_mem_pa = dma;
+	disp->pix_fmt      = pixel_format;
+	disp->set_vmode    = set_vmode;
+
+	set_vmode(disp, vm);
+
+	return 0;
 }
 
 int display_register(struct display* disp)
