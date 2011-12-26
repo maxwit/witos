@@ -1,7 +1,5 @@
 #include <irq.h>
 #include <init.h>
-#include <io.h>
-#include <flash/flash.h>
 #include <spi.h>
 
 #ifdef CONFIG_SPI

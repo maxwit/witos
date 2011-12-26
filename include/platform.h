@@ -7,6 +7,7 @@ struct platform_id {
 struct platform_device {
 	struct device dev;
 	const char *name;
+	int (*init)(struct platform_device *);
 };
 
 struct platform_driver {

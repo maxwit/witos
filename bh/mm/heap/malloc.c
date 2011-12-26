@@ -7,8 +7,8 @@
 #define GET_SIZE(region)          ((region)->curr_size & ~(WORD_SIZE - 1))
 
 struct mem_region {
-	__u32   pre_size;
-	__u32   curr_size;
+	size_t pre_size;
+	size_t curr_size;
 	struct list_node ln_mem_region;
 };
 
@@ -24,7 +24,7 @@ static inline struct mem_region *get_predeccessor(struct mem_region *region)
 	return (struct mem_region *)((__u8 *)region - (region->pre_size & ~(WORD_SIZE - 1)) - DWORD_SIZE);
 }
 
-static void inline region_set_size(struct mem_region *region, __u32 size)
+static void inline region_set_size(struct mem_region *region, size_t size)
 {
 	struct mem_region *succ_region;
 
@@ -34,7 +34,7 @@ static void inline region_set_size(struct mem_region *region, __u32 size)
 	succ_region->pre_size = size;
 }
 
-static int __INIT__ __heap_init(__u32 start, __u32 end)
+static int __INIT__ __heap_init(unsigned long start, unsigned long end)
 {
 	struct mem_region *first, *tail;
 
@@ -48,7 +48,7 @@ static int __INIT__ __heap_init(__u32 start, __u32 end)
 	tail  = (struct mem_region *)(end - DWORD_SIZE);  // sizeof(*tail)
 
 	first->pre_size = 1;
-	first->curr_size = (__u32)tail - (__u32)first - DWORD_SIZE;
+	first->curr_size = (unsigned long)tail - (unsigned long)first - DWORD_SIZE;
 
 	tail->pre_size = first->curr_size;
 	tail->curr_size = 1;
@@ -69,7 +69,7 @@ int __INIT__ heap_init(void)
 #else
 	extern unsigned long _start[];
 
-	heap_end   = _start;
+	heap_end   = (unsigned long)_start;
 	heap_start = heap_end - CONFIG_HEAP_SIZE;
 #endif
 
@@ -83,9 +83,9 @@ void *malloc(size_t size)
 {
 	void *p = NULL;
 	struct list_node *iter;
-	__u32 alloc_size, reset_size;
+	size_t alloc_size, reset_size;
 	struct mem_region *curr_region, *succ_region;
-	__UNUSED__ __u32 psr;
+	__UNUSED__ unsigned long psr;
 
 	lock_irq_psr(psr);
 
@@ -125,11 +125,11 @@ do_alloc:
 void free(void *p)
 {
 	struct mem_region *curr_region, *succ_region;
-	__UNUSED__ __u32 psr;
+	__UNUSED__ unsigned long psr;
 
 	lock_irq_psr(psr);
 
-	curr_region = (struct mem_region *)((__u32)p - DWORD_SIZE);
+	curr_region = (struct mem_region *)((unsigned long)p - DWORD_SIZE);
 	succ_region = get_successor(curr_region);
 
 	if (IS_FREE(succ_region->curr_size)) {
@@ -149,7 +149,7 @@ void free(void *p)
 	unlock_irq_psr(psr);
 }
 
-void *zalloc(__u32 size)
+void *zalloc(size_t size)
 {
 	void *p;
 
@@ -161,7 +161,7 @@ void *zalloc(__u32 size)
 	return p;
 }
 
-void *dma_alloc_coherent(size_t size, __u32 *pa)
+void *dma_alloc_coherent(size_t size, unsigned long *pa)
 {
 	void *va;
 
@@ -169,7 +169,7 @@ void *dma_alloc_coherent(size_t size, __u32 *pa)
 	if (NULL == va)
 		return NULL;
 
-	*pa = (__u32)va;
+	*pa = (unsigned long)va;
 
 	return va;
 }

@@ -33,9 +33,15 @@ static int platform_driver_init(struct device *dev)
 
 int platform_device_register(struct platform_device *plat_dev)
 {
+	int ret;
+
 	plat_dev->dev.bus = &platform_bus;
 
-	// printf("%s(): 0x%08p.%s\n", __func__, plat_dev, plat_dev->name);
+	if (plat_dev->init) {
+		ret = plat_dev->init(plat_dev);
+		if (ret < 0)
+			return ret;
+	}
 
 	return device_register(&plat_dev->dev);
 }

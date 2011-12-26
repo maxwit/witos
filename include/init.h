@@ -3,6 +3,7 @@
 #include <types.h>
 
 #define __INIT__           __attribute__ ((__section__(".code.init")))
+#define __INIT_DATA__           __attribute__ ((__section__(".data.init")))
 
 #define INIT_CALL_LEVEL(n) __attribute__ ((__section__(".Level" #n ".gbios_init")))
 
