@@ -65,12 +65,13 @@ int __INIT__ heap_init(void)
 	extern unsigned long _end[];
 
 	heap_start = (unsigned long)_end;
+	heap_end   = heap_start + CONFIG_HEAP_SIZE;
 #else
 	extern unsigned long _start[];
 
-	heap_start = (unsigned long)_start - CONFIG_HEAP_SIZE;
+	heap_end   = _start;
+	heap_start = heap_end - CONFIG_HEAP_SIZE;
 #endif
-	heap_end = heap_start + CONFIG_HEAP_SIZE;
 
 	DPRINT("%s(): region = [0x%08x, 0x%08x]\n",
 			__func__, heap_start, heap_end);

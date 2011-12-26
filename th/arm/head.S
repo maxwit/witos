@@ -89,6 +89,7 @@ handle_reset:
 	@ othersize: to verify memory R/W and use r0 to update sp
 	cmp  r0, #0
 	beq  Lm
+	@ stack init
 	mov  sp, r0
 	@ and fp ...
 
