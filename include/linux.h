@@ -156,7 +156,7 @@ struct tag {
 #define for_each_tag(t,base)		\
 	for (t = base; t->hdr.size; t = tag_next(t))
 
-typedef void (*LINUX_KERNEL_ENTRY)(int, int, __u32);
+typedef void (*LINUX_KERNEL_ENTRY)(int, int, unsigned long);
 
 // fixme: remove it!
 struct image_cache;

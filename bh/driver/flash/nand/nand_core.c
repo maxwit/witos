@@ -1417,7 +1417,8 @@ struct nand_ctrl *nand_ctrl_new(void)
 	nfc->chip_delay    = 5;
 	nfc->slaves        = 0;
 	nfc->max_slaves    = 1;
-	nfc->ecc_mode      = CONFIG_NAND_ECC_MODE;
+#warning
+	// nfc->ecc_mode      = CONFIG_NAND_ECC_MODE;
 
 	nfc->cmd_ctrl       = nand_cmd_ctrl;
 	nfc->command        = nand_command_small;

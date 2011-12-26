@@ -1,19 +1,22 @@
-linux.boot_mode      = 0x1234
-linux.root_dev       = 2
-linux.kernel_image   = zImage
-linux.ramdisk_image  = initrd
-linux.nfs_path       = /maxwit/image/boot
-linux.console_device = ttyS
-linux.mach_id        = 0x5000
-linux.cmd_line       = root=/dev/mtdblock3
+linux.boot_mode = 0x1234
+linux.root_dev = 2
+linux.kernel_image = zImage
+linux.ramdisk_image = initrd
+linux.nfs_root = /maxwit/image/boot
+linux.console = ttyO
+linux.mach_id = 0x5000
+linux.cmd_line = root=/dev/mtdblock3
 
-home                 = B
+home = B
 
-net.server           = 10.0.0.1
-net.eth0.address     = 10.0.0.2
-net.eth0.gateway     = 10.0.0.1
-net.eth0.netmask     = 255.255.255.0
-net.eth0.mac         = 00:50:56:c0:00:18
+net.server = 10.0.0.1
+net.eth0.address = 10.0.0.2
+net.eth0.gateway = 10.0.0.1
+net.eth0.netmask = 255.255.255.0
+net.eth0.mac = 00:50:56:c0:00:18
 
-flash.part           = omap2-nand.0:512K(g-bios-th),2M(g-bios-bh),3M(linux),64M(rootfs),64M(user),-(data)
-gth_readonly = true
+flash.part = omap2-nand.0:512K(g-bios-th),2M(g-bios-bh),3M(linux),64M(rootfs),64M(user),-(data)
+global.gth_readonly = true
+display.lcd.model = ?
+flash.nand.ecc_mode = NAND_ECC_HW
+mach_type = 1535
