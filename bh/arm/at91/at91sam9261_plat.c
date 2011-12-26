@@ -1,4 +1,3 @@
-#include <flash/flash.h>
 #include <arm/at91sam926x.h>
 
 // fixme
