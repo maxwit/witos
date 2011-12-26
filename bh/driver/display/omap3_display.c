@@ -52,9 +52,7 @@ static int omap3_set_vmode(struct display *disp, const struct lcd_vmode *vm)
 
 static int __INIT__ omap3_display_init(void)
 {
-	void *va;
-	__u32 dma;
-	const struct lcd_vmode *vm;
+	int ret;
 	struct display *disp;
 
 	// writel(VA(0x48004e00), 7);
@@ -63,34 +61,13 @@ static int __INIT__ omap3_display_init(void)
 	disp = display_create();
 	// if NULL
 
-	vm = lcd_get_vmode_by_name(CONFIG_LCD_MODEL);
-	if (NULL == vm) {
-		printf("No LCD video mode found!\n");
-		return -ENOENT;
-	}
-
-	va = video_mem_alloc(&dma, vm, CONFIG_PIXEL_FORMAT);
-	if(va == NULL) {
-		printf("Fail to dma alloc \n");
-		goto error;
-	}
-
-	DPRINT("DMA = 0x%08x, 0x%p\n", dma, va);
-
-	disp->video_mem_va = va;
-	disp->video_mem_pa = dma;
-	disp->pix_fmt      = CONFIG_PIXEL_FORMAT;
-	disp->set_vmode    = omap3_set_vmode;
-
-	omap3_set_vmode(disp, vm);
+	ret = display_config(disp, omap3_set_vmode);
+	if (ret < 0)
+		return ret;
 
 	display_register(disp);
 
 	return 0;
-
-error:
-	// TODO:
-	return -1;
 }
 
 DRIVER_INIT(omap3_display_init);
