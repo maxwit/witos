@@ -14,7 +14,7 @@ extern char _g_sysconfig[];
 extern unsigned int _g_sysconfig_len;
 
 static struct sysconfig g_config = {
-	.data = _g_sysconfig + 4,
+	.data = _g_sysconfig,
 	.is_dirty = false,
 };
 
@@ -285,7 +285,7 @@ int conf_list_attr()
 void conf_reset(void)
 {
 	*(__u32 *)(g_config.data - 4) = GB_SYSCFG_MAGIC;
-	g_config.size = 0;
+	g_config.size = 4;
 
 	conf_check_default();
 
