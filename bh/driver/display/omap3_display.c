@@ -10,14 +10,12 @@
 static int omap3_set_vmode(struct display *disp, const struct lcd_vmode *vm)
 {
 	__u32 fmt;
-	// __u32 bpp;
 	__u32 dma = disp->video_mem_pa;
 
 	// fixme
 	switch (disp->pix_fmt) {
 	case PIX_RGB16:
 		fmt = 0x6;
-		// bpp = 2;
 		break;
 
 	default:
@@ -30,7 +28,7 @@ static int omap3_set_vmode(struct display *disp, const struct lcd_vmode *vm)
 	lcd_omap3_writel(DISPC_TIMING_H, vm->hbp << 20 | vm->hfp << 8 | vm->hpw);
 	lcd_omap3_writel(DISPC_TIMING_V, vm->vbp << 20 | vm->vfp << 8 | vm->vpw);
 
-	lcd_omap3_writel(DISPC_DIVISOR, 1 << 16 | 2); // fix me
+	lcd_omap3_writel(DISPC_DIVISOR, 1 << 16 | 2); // fixme
 	lcd_omap3_writel(DISPC_SIZE_LCD, (vm->height - 1) << 16 | (vm->width - 1));
 
 	lcd_omap3_writel(DISPC_GFX_BA0, dma);
@@ -52,10 +50,12 @@ static int omap3_set_vmode(struct display *disp, const struct lcd_vmode *vm)
 
 static int __INIT__ omap3_display_init(void)
 {
+	int ret;
 	void *va;
-	__u32 dma;
+	unsigned long dma;
 	const struct lcd_vmode *vm;
 	struct display *disp;
+	char model[CONF_VAL_LEN];
 
 	// writel(VA(0x48004e00), 7);
 	// writel(VA(0x48004e10), 1);
@@ -63,34 +63,39 @@ static int __INIT__ omap3_display_init(void)
 	disp = display_create();
 	// if NULL
 
-	vm = lcd_get_vmode_by_name(CONFIG_LCD_MODEL);
+	ret = conf_get_attr("dispplay.lcd.model", model);
+	if (ret < 0)
+		goto error;
+
+	vm = lcd_get_vmode_by_name(model);
 	if (NULL == vm) {
 		printf("No LCD video mode found!\n");
 		return -ENOENT;
 	}
 
-	va = video_mem_alloc(&dma, vm, CONFIG_PIXEL_FORMAT);
+	va = video_mem_alloc(&dma, vm, disp->pix_fmt);
 	if(va == NULL) {
-		printf("Fail to dma alloc \n");
+		GEN_DGB("video_mem_alloc() failed\n");
 		goto error;
 	}
 
-	DPRINT("DMA = 0x%08x, 0x%p\n", dma, va);
-
 	disp->video_mem_va = va;
 	disp->video_mem_pa = dma;
-	disp->pix_fmt      = CONFIG_PIXEL_FORMAT;
 	disp->set_vmode    = omap3_set_vmode;
 
-	omap3_set_vmode(disp, vm);
+	ret = omap3_set_vmode(disp, vm);
+	if (ret < 0)
+		goto error;
 
-	display_register(disp);
+	ret = display_register(disp);
+	if (ret < 0)
+		goto error;
 
 	return 0;
 
 error:
 	// TODO:
-	return -1;
+	return ret;
 }
 
 DRIVER_INIT(omap3_display_init);

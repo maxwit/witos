@@ -44,7 +44,7 @@ static struct platform_device lan9220_device = {
 #endif
 
 // fixme: __INITDATA__
-static struct platform_device evm3530_devices[] = {
+static struct platform_device *evm3530_devices[] = {
 #ifdef CONFIG_LAN9220
 	&lan9220_device,
 #endif
@@ -55,7 +55,7 @@ static int __INIT__ evm3530_board_init(struct board_desc *board, const struct bo
 	int i, ret;
 
 	for (i = 0; i < ARRAY_ELEM_NUM(evm3530_devices); i++) {
-		ret = platform_device_register(&evm3530_devices[i]);
+		ret = platform_device_register(evm3530_devices[i]);
 		if (ret < 0)
 			return ret;
 	}

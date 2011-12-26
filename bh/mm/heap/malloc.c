@@ -85,7 +85,7 @@ void *malloc(size_t size)
 	struct list_node *iter;
 	size_t alloc_size, reset_size;
 	struct mem_region *curr_region, *succ_region;
-	__UNUSED__ unsigned long psr;
+	unsigned long __UNUSED__ psr;
 
 	lock_irq_psr(psr);
 
@@ -125,7 +125,7 @@ do_alloc:
 void free(void *p)
 {
 	struct mem_region *curr_region, *succ_region;
-	__UNUSED__ unsigned long psr;
+	unsigned long __UNUSED__ psr;
 
 	lock_irq_psr(psr);
 
@@ -176,5 +176,5 @@ void *dma_alloc_coherent(size_t size, unsigned long *pa)
 
 struct list_node *get_heap_head_list(void)
 {
-		return &g_free_region_list;
+	return &g_free_region_list;
 }

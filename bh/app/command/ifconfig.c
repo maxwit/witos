@@ -87,7 +87,7 @@ int main(int argc, char *argv[])
 
 	ndev_list = ndev_get_list();
 	if (list_is_empty(ndev_list)) {
-		printf("There're no net device found!\n");
+		printf("No net device found!\n");
 		return -ENODEV;
 	}
 

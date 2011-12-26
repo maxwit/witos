@@ -150,7 +150,7 @@ static void draw_logo(void * const video_buff, __u32 width, __u32 height, pixel_
 #endif
 }
 
-void *video_mem_alloc(__u32 *phy_addr, const struct lcd_vmode *vm, pixel_format_t pix_format)
+void *video_mem_alloc(unsigned long *phy_addr, const struct lcd_vmode *vm, pixel_format_t pix_format)
 {
 	void *buff;
 	__u32 size = vm->width * vm->height;
@@ -177,18 +177,34 @@ void *video_mem_alloc(__u32 *phy_addr, const struct lcd_vmode *vm, pixel_format_
 		return NULL;
 	}
 
+	DPRINT("DMA: addr = 0x%08x, size = 0x%08x\n", phy_addr, size);
+
 	// fixme: move to upper layer?
 	draw_logo(buff, vm->width, vm->height, pix_format);
 
 	return buff;
 }
 
-struct display* display_create(void)
+struct display *display_create(void)
 {
 	struct display *disp;
+	char conf_pixel[CONF_VAL_LEN];
 
 	disp = zalloc(sizeof(*disp));
-	// if NULL
+	if (!disp)
+		return NULL;
+
+	// fixme!
+	if (conf_get_attr("disp.lcd.pixel", conf_pixel) == 0) {
+		if (strncmp(conf_pixel, "PIX_RGB24", sizeof(conf_pixel)))
+			disp->pix_fmt = PIX_RGB24;
+		else if (strncmp(conf_pixel, "PIX_RGB16", sizeof(conf_pixel)))
+			disp->pix_fmt = PIX_RGB16;
+		else
+			disp->pix_fmt = PIX_RGB15;
+	} else {
+		disp->pix_fmt = PIX_RGB24;
+	}
 
 	return disp;
 }

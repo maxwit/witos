@@ -20,3 +20,4 @@ global.gth_readonly = true
 display.lcd.model = ?
 flash.nand.ecc_mode = NAND_ECC_HW
 mach_type = 1535
+board.id = evm3530

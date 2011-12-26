@@ -48,6 +48,13 @@ SECTIONS
 		g_help_end = .;
 	}
 
+	.gsect.board ALIGN(4):
+	{
+		g_board_start = .;
+		*(.gsect.board)
+		g_board_end = .;
+	}
+
 	.bss ALIGN(4):
 	{
 		bss_begin = .;
