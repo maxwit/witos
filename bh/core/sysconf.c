@@ -10,11 +10,11 @@ struct sysconfig {
 	size_t size;
 };
 
-extern char _maxwit_project_g_bios__sysconfig[];
-extern unsigned int _maxwit_project_g_bios__sysconfig_len;
+extern char _g_sysconfig[];
+extern unsigned int _g_sysconfig_len;
 
 static struct sysconfig g_config = {
-	.data = _maxwit_project_g_bios__sysconfig + 4,
+	.data = _g_sysconfig + 4,
 	.is_dirty = false,
 };
 
@@ -197,12 +197,12 @@ static int conf_check_default()
 
 int conf_load()
 {
-	__u32 *sys_magic = (__u32 *)_maxwit_project_g_bios__sysconfig;
+	__u32 *sys_magic = (__u32 *)_g_sysconfig;
 
 	if (GB_SYSCFG_MAGIC != *sys_magic)
 		return -EINVAL;
 
-	g_config.size = _maxwit_project_g_bios__sysconfig_len;
+	g_config.size = _g_sysconfig_len;
 	DPRINT("sysconf: base = 0x%p, size = %d\n", g_config.data, g_config.size);
 
 	conf_check_default();
@@ -228,7 +228,7 @@ int conf_store()
 		return -ENODEV;
 	}
 
-	conf_base = _maxwit_project_g_bios__sysconfig - _start;
+	conf_base = _g_sysconfig - _start;
 
 	ret = flash_erase(flash, conf_base, g_config.size, EDF_ALLOWBB);
 	if (ret < 0)
