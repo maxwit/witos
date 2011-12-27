@@ -34,6 +34,11 @@ void *memmove(void *, const void*, size_t);
 
 void *memset(void *, int, size_t);
 
+char *strstr(const char *, const char *);
+
+char *strcasestr(const char *, const char *);
+
+
 char *strchr(const char *, int);
 
 char *strrchr(const char *, size_t);

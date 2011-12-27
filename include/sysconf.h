@@ -32,7 +32,7 @@
 // default linux config attribute value
 #define DEFAULT_BOOT_MODE     0x1234
 #define DEFAULT_KCMDLINE      "root=/dev/mtdblock3"
-#define DEFAULT_CONSOLE_DEV   "ttyS0"
+#define CONFIG_CONSOLE_DEV   "ttyS"
 #define DEFAULT_KERNEL_IMG    "zImage"
 #define DEFAULT_RAMDISK       "initrd"
 #define DEFAULT_MACH_ID       0x5000

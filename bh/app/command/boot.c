@@ -162,123 +162,93 @@ L1:
 }
 
 // fixme: for debug stage while no flash driver available
-static int build_command_line(char *cmd_line, size_t max_len)
+static int build_command_line(char *cmd_line, size_t max_len, int boot_mode)
 {
-#if 0
 	int ret = 0;
 	char *str = cmd_line;
-	struct net_config   *net_conf;
-	struct linux_config *linux_conf;
 	struct flash_chip       *flash;
 	char local_ip[IPV4_STR_LEN], server_ip[IPV4_STR_LEN], net_mask[IPV4_STR_LEN];
-	const char *mtd_dev;
-	char part_list[512], *part_str = part_list;
+	char part_list[CONF_ATTR_LEN], *part_str = part_list;
+	char flash_part[CONF_ATTR_LEN];
 	int part_num;
 	int mtd_root = 0, root_idx;
 	struct part_attr attr_tab[MAX_FLASH_PARTS];
-	__u32 part_idx;
 #ifdef CONFIG_MERGE_GB_PARTS
 	__u32 gb_base, gb_size;
 #endif
 	__u32 client_ip, client_mask; // fixme
+	struct net_device *ndev;
+	char attr_val[CONF_VAL_LEN];
+	char *p;
+	char *console_dev;
 
 	memset(cmd_line, 0, max_len);
 
-	net_conf = sysconf_get_net_info();
-	linux_conf = sysconf_get_linux_param();
+	// fixme
+	ndev = ndev_get_first();
+	if (ndev_ioctl(ndev, NIOC_GET_IP, &client_ip) == 0)
+		ip_to_str(local_ip, client_ip);
+	else
+		strncpy(local_ip, CONFIG_LOCAL_IP, sizeof(local_ip));
 
-	ndev_ioctl(NULL, NIOC_GET_IP, &client_ip);
-	ndev_ioctl(NULL, NIOC_GET_MASK, &client_mask);
+	if (ndev_ioctl(ndev, NIOC_GET_MASK, &client_mask) == 0)
+		ip_to_str(net_mask, client_mask);
+	else
+		strncpy(net_mask, CONFIG_NET_MASK, sizeof(net_mask));
 
-	ip_to_str(local_ip, client_ip);
-	ip_to_str(server_ip, server_ip);
-	ip_to_str(net_mask, client_mask);
+	if (conf_get_attr("net.server", attr_val) == 0)
+		strncpy(server_ip, attr_val, sizeof(server_ip));
+	else
+		strncpy(server_ip, CONFIG_SERVER_IP, sizeof(server_ip));
 
-	root_idx = root_dev;
+	// fixme
+	if ((conf_get_attr("linux.root_dev", attr_val) < 0) ||
+			str_to_val(attr_val, (__u32 *)&root_idx) < 0)
+		root_idx = 3;
 
-	flash = flash_open(BOOT_FLASH_ID);
+	if (conf_get_attr("linux.boot_flash", attr_val) < 0)
+		return -EINVAL;
+
+	if (conf_get_attr("flash.part", flash_part) < 0)
+		return -EINVAL;
+
+	p = strstr((const char *)flash_part, (const char *)attr_val);
+	if (p == NULL)
+		return -EINVAL;
+
+	flash = flash_open_by_id((const char *)attr_val);
 	if (NULL == flash) {
 		ret = -ENODEV;
 		printf("fail to open flash %d\n", BOOT_FLASH_ID);
 		goto L1;
 	}
 
-	mtd_dev = flash_get_mtd_name(flash);
-	if (mtd_dev == NULL) {
-		printf("fail to get mtd name!\n");
-		goto L2;
+	part_str += sprintf(part_str, "mtdparts=%s:", flash->name);
+	part_num = 1;
+	while (*p && *p != ';') {
+		if (*p == ',')
+			part_num++;
+		*part_str = *p;
+		part_str++;
+		p++;
 	}
-
-	// MARK_MAXWIT_TRAINING {
-	part_num = part_tab_read(flash, attr_tab, MAX_FLASH_PARTS);
-	if (part_num < 0) {
-		printf("fail to read part table! (ret = %d)\n", part_num);
-		ret = part_num;
-		goto L2;
-	}
-
-	part_str += sprintf(part_str, "mtdparts=%s:", mtd_dev);
-
-	for (part_idx = 0; part_idx < part_num; part_idx++) {
-		struct part_attr *attr = attr_tab + part_idx;
-
-		switch (attr->part_type) {
-		default:
-#ifdef CONFIG_FS_PARTS_ONLY
-			break;
-#elif defined(CONFIG_MERGE_GB_PARTS)
-		case PT_BL_GTH:
-			gb_base = attr->base;
-			gb_size += attr->size;
-			break;
-
-		case PT_BL_GBH:
-			if (gb_base > attr->base)
-				gb_base = attr->base;
-			gb_size += attr->size;
-			break;
-
-		case PT_BL_GCONF: // must be defined and the the last GB partition
-			if (gb_base > attr->base)
-				gb_base = attr->base;
-			gb_size += attr->size;
-
-			part_str += sprintf(part_str, "0x%x@0x%x(g-bios),", gb_size, gb_base);
-			mtd_root++;
-
-			break;
-#endif
-
-		case PT_FS_JFFS2:
-		case PT_FS_YAFFS:
-		case PT_FS_YAFFS2:
-		case PT_FS_CRAMFS:
-		case PT_FS_UBIFS:
-			part_str += sprintf(part_str, "0x%x@0x%x(%s),",
-							attr->size,
-							attr->base,
-							attr->label);
-
-			if (part_idx < root_idx)
-				mtd_root++;
-
-			break;
-
-		case PT_BAD:
-			break;
-		}
-	}
-
-	*--part_str = '\0';
-	// } MARK_MAXWIT_TRAINING
+	*part_str = '\0';
 
 	assert(root_idx < part_num);
 
+	// fixme!!!
 	if (boot_mode & BM_NFS) {
+		char *nfs_root;
+
+		if (conf_get_attr("linux.nfs_root", attr_val) < 0)
+			nfs_root = CONFIG_NFS_ROOT;
+		else
+			nfs_root = attr_val;
+
 		str += sprintf(str, "root=/dev/nfs rw nfsroot=%s:%s",
-					server_ip, nfs_path);
+					server_ip, nfs_root);
 	} else if (boot_mode & BM_FLASHDISK) {
-		int root_type = attr_tab[root_idx].part_type;
+		int root_type = PT_FS_JFFS2;
 
 		switch (root_type) {
 		case PT_FS_CRAMFS:
@@ -286,7 +256,7 @@ static int build_command_line(char *cmd_line, size_t max_len)
 		case PT_FS_YAFFS:
 		case PT_FS_YAFFS2:
 			str += sprintf(str, "root=/dev/mtdblock%d rw rootfstype=%s", // fixme
-						mtd_root, part_type2str(root_type));
+						mtd_root, "jffs2");
 			break;
 		case PT_FS_UBIFS:
 			str += sprintf(str, "ubi.mtd=%d root=ubi0_0 rootfstype=ubifs", root_idx);
@@ -308,15 +278,18 @@ static int build_command_line(char *cmd_line, size_t max_len)
 				local_ip, server_ip, server_ip, net_mask);
 #endif
 
-	str += sprintf(str, " console=%s", console_device);
+	// fixme
+	if (conf_get_attr("linux.console", attr_val) < 0)
+		console_dev = CONFIG_CONSOLE_DEV;
+	else
+		console_dev = attr_val;
+
+	str += sprintf(str, " console=%s", console_dev);
 
 L2:
 	flash_close(flash);
 L1:
 	return ret;
-
-#endif
-	return 0;
 }
 
 static int show_boot_args(void *tag_base)
@@ -487,7 +460,7 @@ int main(int argc, char *argv[])
 	}
 
 	if (auto_gen)
-		build_command_line(cmd_line, DEFAULT_KCMDLINE_LEN);
+		build_command_line(cmd_line, DEFAULT_KCMDLINE_LEN, boot_mode);
 
 	if (argc > 2 || (2 == argc && false == show_args))
 		conf_store();
