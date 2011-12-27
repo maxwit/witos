@@ -54,9 +54,9 @@ include/autoconf.h: .config
 # fixme
 $(DEFCONFIG_LIST):
 	@echo "configure for board \"$(@:%_defconfig=%)\""
-	@./build/generate/defconfig.py $@
 	@grep -w "^sysG" $(DEFCONFIG_PATH)/$(@:%_defconfig=%_sysconfig) || echo sysG > .sysconfig && echo >> .sysconfig
 	@cat $(DEFCONFIG_PATH)/$(@:%_defconfig=%_sysconfig) >> .sysconfig
+	@./build/generate/defconfig.py $@
 	@echo
 
 install:

@@ -5,6 +5,26 @@
 
 static DECL_INIT_LIST(g_bdev_list);
 
+const char *fs_type_to_str(int type)
+{
+	switch (type) {
+	case PT_FS_CRAMFS:
+		return "cramfs";
+
+	case PT_FS_JFFS2:
+		return "jffs2";
+
+	case PT_FS_YAFFS:
+		return "yaffs";
+
+	case PT_FS_YAFFS2:
+		return "yaffs2";
+
+	default:
+		return NULL;
+	}
+}
+
 struct block_device *get_bdev_by_name(const char *name)
 {
 	struct list_node *iter;

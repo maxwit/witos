@@ -26,19 +26,6 @@
 #define CONF_VAL_LEN 512
 #define CONF_ATTR_LEN 128
 
-// default net config attribute value
-#define DEFAULT_NAME_IFX(n)   "eth"#n
-
-// default linux config attribute value
-#define DEFAULT_BOOT_MODE     0x1234
-#define DEFAULT_KCMDLINE      "root=/dev/mtdblock3"
-#define CONFIG_CONSOLE_DEV   "ttyS"
-#define DEFAULT_KERNEL_IMG    "zImage"
-#define DEFAULT_RAMDISK       "initrd"
-#define DEFAULT_MACH_ID       0x5000
-#define DEFAULT_NFS_PATH      "/maxwit/image/boot"
-#define DEFAULT_ROOT_DEV      2
-
 void set_load_mem_addr(__u32 *addr);
 __u32 get_load_mem_addr();
 

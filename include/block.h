@@ -85,3 +85,4 @@ int block_device_register(struct block_device *bdev);
 
 struct block_device *get_bdev_by_name(const char *name);
 struct block_device *get_bdev_by_volume(char vol);
+const char *fs_type_to_str(int type);

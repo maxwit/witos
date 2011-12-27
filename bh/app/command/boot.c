@@ -164,77 +164,26 @@ L1:
 // fixme: for debug stage while no flash driver available
 static int build_command_line(char *cmd_line, size_t max_len, int boot_mode)
 {
-	int ret = 0;
 	char *str = cmd_line;
-	struct flash_chip       *flash;
 	char local_ip[IPV4_STR_LEN], server_ip[IPV4_STR_LEN], net_mask[IPV4_STR_LEN];
-	char part_list[CONF_ATTR_LEN], *part_str = part_list;
 	char flash_part[CONF_ATTR_LEN];
-	int part_num;
-	int mtd_root = 0, root_idx;
+	int root_idx;
 	struct part_attr attr_tab[MAX_FLASH_PARTS];
 #ifdef CONFIG_MERGE_GB_PARTS
 	__u32 gb_base, gb_size;
 #endif
 	__u32 client_ip, client_mask; // fixme
 	struct net_device *ndev;
+	char attr[CONF_ATTR_LEN];
 	char attr_val[CONF_VAL_LEN];
-	char *p;
-	char *console_dev;
 
 	memset(cmd_line, 0, max_len);
 
-	// fixme
-	ndev = ndev_get_first();
-	if (ndev_ioctl(ndev, NIOC_GET_IP, &client_ip) == 0)
-		ip_to_str(local_ip, client_ip);
-	else
-		strncpy(local_ip, CONFIG_LOCAL_IP, sizeof(local_ip));
-
-	if (ndev_ioctl(ndev, NIOC_GET_MASK, &client_mask) == 0)
-		ip_to_str(net_mask, client_mask);
-	else
-		strncpy(net_mask, CONFIG_NET_MASK, sizeof(net_mask));
-
 	if (conf_get_attr("net.server", attr_val) == 0)
 		strncpy(server_ip, attr_val, sizeof(server_ip));
-	else
-		strncpy(server_ip, CONFIG_SERVER_IP, sizeof(server_ip));
-
-	// fixme
-	if ((conf_get_attr("linux.root_dev", attr_val) < 0) ||
-			str_to_val(attr_val, (__u32 *)&root_idx) < 0)
-		root_idx = 3;
-
-	if (conf_get_attr("linux.boot_flash", attr_val) < 0)
-		return -EINVAL;
-
-	if (conf_get_attr("flash.part", flash_part) < 0)
-		return -EINVAL;
-
-	p = strstr((const char *)flash_part, (const char *)attr_val);
-	if (p == NULL)
-		return -EINVAL;
-
-	flash = flash_open_by_id((const char *)attr_val);
-	if (NULL == flash) {
-		ret = -ENODEV;
-		printf("fail to open flash %d\n", BOOT_FLASH_ID);
-		goto L1;
+	else {
+		conf_get_attr("default.net.server_ip", server_ip);
 	}
-
-	part_str += sprintf(part_str, "mtdparts=%s:", flash->name);
-	part_num = 1;
-	while (*p && *p != ';') {
-		if (*p == ',')
-			part_num++;
-		*part_str = *p;
-		part_str++;
-		p++;
-	}
-	*part_str = '\0';
-
-	assert(root_idx < part_num);
 
 	// fixme!!!
 	if (boot_mode & BM_NFS) {
@@ -250,46 +199,64 @@ static int build_command_line(char *cmd_line, size_t max_len, int boot_mode)
 	} else if (boot_mode & BM_FLASHDISK) {
 		int root_type = PT_FS_JFFS2;
 
+		if (conf_get_attr("linux.root_dev", attr_val) < 0) {
+			conf_get_attr("default.linux.root_dev", attr_val);
+		}
+		str_to_val(attr_val, (__u32 *)&root_idx);
+
 		switch (root_type) {
 		case PT_FS_CRAMFS:
 		case PT_FS_JFFS2:
 		case PT_FS_YAFFS:
 		case PT_FS_YAFFS2:
 			str += sprintf(str, "root=/dev/mtdblock%d rw rootfstype=%s", // fixme
-						mtd_root, "jffs2");
+						root_idx, fs_type_to_str(root_type));
 			break;
 		case PT_FS_UBIFS:
 			str += sprintf(str, "ubi.mtd=%d root=ubi0_0 rootfstype=ubifs", root_idx);
 			break;
 		default:
-			ret = -EINVAL;
 			printf("partition %d (%s) is NOT set for filesystem!\n",
 				root_idx, attr_tab[root_idx].label);
-			goto L2;
+			return -EINVAL;
 		}
 	}
 
-	str += sprintf(str, " %s", part_list);
+	if (conf_get_attr("flash.part", flash_part) < 0)
+		return -EINVAL;
 
-#ifdef CONFIG_DHCP
-	str += sprintf(str, " ip=dhcp");
-#else
-	str += sprintf(str, " ip=%s:%s:%s:%s:maxwit.googlecode.com:eth0:off",
-				local_ip, server_ip, server_ip, net_mask);
-#endif
+	str += sprintf(str, " mtdparts=%s", attr_val);
 
-	// fixme
-	if (conf_get_attr("linux.console", attr_val) < 0)
-		console_dev = CONFIG_CONSOLE_DEV;
-	else
-		console_dev = attr_val;
+	ndev = ndev_get_first();
+	if (ndev == NULL)
+		return -ENODEV;
 
-	str += sprintf(str, " console=%s", console_dev);
+	snprintf(attr, sizeof(attr), "net.%s.method", ndev->ifx_name);
+	if (!conf_get_attr(attr, attr_val) && !strncmp(attr_val, "static", sizeof(attr_val))) {
+		str += sprintf(str, " ip=dhcp");
+	} else {
+		if (ndev_ioctl(ndev, NIOC_GET_IP, &client_ip) == 0)
+			ip_to_str(local_ip, client_ip);
+		else
+			conf_get_attr("default.net.local_ip", local_ip);
 
-L2:
-	flash_close(flash);
-L1:
-	return ret;
+		if (ndev_ioctl(ndev, NIOC_GET_MASK, &client_mask) == 0)
+			ip_to_str(net_mask, client_mask);
+		else
+			conf_get_attr("default.net.mask", net_mask);
+
+
+		str += sprintf(str, " ip=%s:%s:%s:%s:maxwit.googlecode.com:eth0:off",
+					local_ip, server_ip, server_ip, net_mask);
+	}
+
+	if (conf_get_attr("linux.console", attr_val) < 0) {
+		printf("Warning: console device is not set, \"ttyS\" will be used\n");
+		str += sprintf(str, " console=ttyS%d", CONFIG_UART_INDEX);
+	} else
+		str += sprintf(str, " console=%s%d", attr_val, CONFIG_UART_INDEX);
+
+	return 0;
 }
 
 static int show_boot_args(void *tag_base)
