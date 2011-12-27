@@ -216,24 +216,31 @@ int display_config(struct display *disp,
 	void *va;
 	unsigned long dma;
 	const struct lcd_vmode *vm;
-	char lcd_mode[CONF_ATTR_LEN];
+	char attr_val[CONF_VAL_LEN];
 	pixel_format_t pixel_format;
 
-	if (conf_get_attr("display.lcd.model", lcd_mode) < 0) {
+	if (conf_get_attr("display.lcd.model", attr_val) < 0) {
 		DPRINT("%s(): fail to get lcd model\n", __func__);
 		return -EINVAL;
 	}
 
-	vm = lcd_get_vmode_by_name(lcd_mode);
+	vm = lcd_get_vmode_by_name(attr_val);
 	if (NULL == vm) {
 		printf("No LCD video mode found!\n");
 		return -ENOENT;
 	}
 
-	if (conf_get_attr("display.lcd.pixel_format", (char *)&pixel_format) < 0) {
+	if (conf_get_attr("display.lcd.pixel_format", attr_val) < 0) {
 		DPRINT("%s(): fail to get lcd pixel format\n", __func__);
 		return -EINVAL;
 	}
+
+	if (strncmp(attr_val, "PIX_RGB16", sizeof(attr_val)))
+		pixel_format = PIX_RGB16;
+	else if (strncmp(attr_val, "PIX_RGB16", sizeof(attr_val)))
+		pixel_format = PIX_RGB15;
+	else
+		pixel_format = PIX_RGB24;
 
 	va = video_mem_alloc(&dma, vm, pixel_format);
 	if(va == NULL) {
