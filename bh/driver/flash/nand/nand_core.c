@@ -1475,7 +1475,7 @@ static int probe_nand_chip(struct nand_chip *nand)
 			flash->chip_size = g_nand_device_id[i].chip_size << 20;
 			nand->flags = g_nand_device_id[i].flags;
 
-			strcpy(flash->name, g_nand_device_id[i].name);
+			nand->name = g_nand_device_id[i].name;
 
 			//
 			if (PAGE_SIZE_AUTODETECT != g_nand_device_id[i].write_size) {
@@ -1492,7 +1492,8 @@ static int probe_nand_chip(struct nand_chip *nand)
 				ext_id[1] = nfc->read_byte(nfc);
 #endif
 
-				DPRINT("%s(): Extend ID of %s is 0x%02x\n", __func__, flash->name, ext_id[1]);
+				DPRINT("%s(): Extend ID of nand[%d] is 0x%02x (\"%s\")\n",
+					__func__, nand->bus_idx, ext_id[1], nand->name);
 
 				flash->write_size = 1024 << (ext_id[1] & 0x3);
 				ext_id[1] >>= 2;
@@ -1779,13 +1780,16 @@ int nand_register(struct nand_chip *nand)
 
 	flash = NAND_TO_FLASH(nand);
 
+	snprintf(flash->name, sizeof(flash->name), "%s.%d",
+		nfc->name, nand->bus_idx /* fixme */);
+
 	val_to_hr_str(flash->chip_size, chip_size);
 	val_to_hr_str(flash->erase_size, block_size);
 	val_to_hr_str(flash->write_size, write_size);
 
 	printf("NAND[%d] is detected! flash details:\n"
 		"    vendor ID  = 0x%02x (%s)\n"
-		"    device ID  = 0x%02x (%s)\n"
+		"    device ID  = 0x%02x (\"%s\")\n"
 		"    chip size  = 0x%08x (%s)\n"
 		"    block size = 0x%08x (%s)\n"
 		"    page size  = 0x%08x (%s)\n"
@@ -1793,7 +1797,7 @@ int nand_register(struct nand_chip *nand)
 		"    bus width  = %d bits\n",
 		nand->bus_idx,
 		nand->vendor_id, vendor_name,
-		nand->device_id, flash->name,
+		nand->device_id, nand->name,
 		flash->chip_size, chip_size,
 		flash->erase_size, block_size,
 		flash->write_size, write_size,

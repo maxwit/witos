@@ -39,8 +39,6 @@ static int __INIT__ flash_parse_part(struct flash_chip *host,
 	if (!p)
 		goto error;
 
-	strncpy(host->mtd_id, part_def, min((p - part_def), MTD_ID_NAME_LEN));
-
 	p++;
 
 	while (*p && *p != ';') {

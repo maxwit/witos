@@ -418,47 +418,38 @@ int part_show(const struct flash_chip *flash)
 	return index;
 }
 
-static const char *get_mtd_id_by_bdev(struct block_device *bdev)
-{
-	struct flash_chip *flash;
-
-	if (bdev == NULL)
-		return NULL;
-
-	flash = container_of(bdev, struct flash_chip, bdev);
-
-	if (flash->master == NULL)
-		return flash->mtd_id;
-
-	return flash->master->mtd_id;
-}
-
 int set_bdev_file_attr(struct bdev_file *file)
 {
 	char file_attr[CONF_ATTR_LEN];
 	char file_val[CONF_VAL_LEN];
-	char *pn;
+	const char *part_num;
 	const char *mtd_id;
 	struct block_device *bdev;
+	struct flash_chip *flash;
 
 	assert(file != NULL);
 
 	bdev = file->bdev;
-	pn = bdev->name + sizeof(BDEV_NAME_FLASH) - 1;
 
-	mtd_id = get_mtd_id_by_bdev(bdev);
+	flash = container_of(bdev, struct flash_chip, bdev);
 
-	if (mtd_id == NULL)
-		return -ENODEV;
+	if (flash->master == NULL)
+		mtd_id = flash->name;
+	else
+		mtd_id = flash->master->name;
+
+	part_num = bdev->name + sizeof(BDEV_NAME_FLASH) - 1;
+
+	printf("mtd_id : %s\n", mtd_id);
 
 	// set file name
-	snprintf(file_attr, CONF_ATTR_LEN, "%s.p%c.file.name", mtd_id, *pn);
+	snprintf(file_attr, CONF_ATTR_LEN, "%s.p%c.file.name", mtd_id, *part_num);
 	if (conf_set_attr(file_attr, file->name) < 0) {
 		conf_add_attr(file_attr, file->name);
 	}
 
 	// set file size
-	snprintf(file_attr, CONF_ATTR_LEN, "%s.p%c.file.size", mtd_id, *pn);
+	snprintf(file_attr, CONF_ATTR_LEN, "%s.p%c.file.size", mtd_id, *part_num);
 	val_to_dec_str(file_val, file->size);
 	if (conf_set_attr(file_attr, file_val) < 0) {
 		conf_add_attr(file_attr, file_val);
@@ -471,22 +462,27 @@ int get_bdev_file_attr(struct bdev_file * file)
 {
 	char file_attr[CONF_ATTR_LEN];
 	char file_val[CONF_VAL_LEN];
-	char *pn;
+	char *part_num;
 	const char *mtd_id;
 	struct block_device *bdev;
+	struct flash_chip *flash;
 
 	assert(file != NULL);
 
 	bdev = file->bdev;
-	pn = bdev->name + sizeof(BDEV_NAME_FLASH) - 1;
+	part_num = bdev->name + sizeof(BDEV_NAME_FLASH) - 1;
 
-	mtd_id = get_mtd_id_by_bdev(bdev);
+	flash = container_of(bdev, struct flash_chip, bdev);
 
-	if (mtd_id == NULL)
-		return -ENODEV;
+	if (flash->master == NULL)
+		mtd_id = flash->name;
+	else
+		mtd_id = flash->master->name;
+
+	printf("mtd_id : %s\n", mtd_id);
 
 	// get file name
-	snprintf(file_attr, CONF_ATTR_LEN, "%s.p%c.file.name", mtd_id, *pn);
+	snprintf(file_attr, CONF_ATTR_LEN, "%s.p%c.file.name", mtd_id, *part_num);
 	if (conf_get_attr(file_attr, file_val) < 0) {
 		file->name[0] = '\0';
 		file->size = 0;
@@ -496,7 +492,7 @@ int get_bdev_file_attr(struct bdev_file * file)
 	}
 
 	// get file size
-	snprintf(file_attr, CONF_ATTR_LEN, "%s.p%c.file.size", mtd_id, *pn);
+	snprintf(file_attr, CONF_ATTR_LEN, "%s.p%c.file.size", mtd_id, *part_num);
 	if (conf_get_attr(file_attr, file_val) < 0 || str_to_val(file_val, &file->size) < 0) {
 		file->name[0] = '\0';
 		file->size = 0;

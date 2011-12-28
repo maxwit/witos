@@ -4,8 +4,7 @@
 #define LP_OPTIONS16 (LP_OPTIONS | NAND_BUSWIDTH_16)
 
 // Nand ID table (copy from linux kernel source)
-const struct nand_device_desc g_nand_device_id[] =
-{
+const struct nand_device_desc g_nand_device_id[] = {
 	{"NAND 16MB 1.8V 8-bit",	0x33, 512, 16, 0x4000, 0},
 	{"NAND 16MB 3.3V 8-bit",	0x73, 512, 16, 0x4000, 0},
 	{"NAND 16MB 1.8V 16-bit",	0x43, 512, 16, 0x4000, NAND_BUSWIDTH_16},
@@ -83,8 +82,7 @@ const struct nand_device_desc g_nand_device_id[] =
 	{NULL,}
 };
 
-const struct nand_vendor_name g_nand_vendor_id[] =
-{
+const struct nand_vendor_name g_nand_vendor_id[] = {
 	{NAND_MFR_TOSHIBA,  "Toshiba"},
 	{NAND_MFR_SAMSUNG,  "Samsung"},
 	{NAND_MFR_FUJITSU,  "Fujitsu"},
@@ -96,4 +94,3 @@ const struct nand_vendor_name g_nand_vendor_id[] =
 	{NAND_MFR_AMD,      "AMD"},
 	{0x0,               "Unknown"}
 };
-

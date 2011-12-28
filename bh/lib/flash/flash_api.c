@@ -1,41 +1,6 @@
 #include <stdio.h>
 #include <flash/flash.h>
 
-struct flash_chip * flash_open_by_id(const char *mtd_id)
-{
-	struct block_device *bdev;
-	struct flash_chip *flash, *host;
-	char bdev_name[BLOCK_DEV_NAME_LEN];
-	int i;
-
-	i = 0;
-	while (1)
-	{
-		i++;
-		snprintf(bdev_name, sizeof(bdev_name), "mtdblock%d", i);
-
-		bdev = get_bdev_by_name(bdev_name);
-
-		if (bdev == NULL)
-			return NULL;
-
-		flash = container_of(bdev, struct flash_chip, bdev);
-		if (flash->master)
-			host = flash->master;
-		else
-			host = flash;
-
-		if (strcmp(host->mtd_id, mtd_id) == 0) {
-			host->callback_func = NULL;
-			host->oob_mode = FLASH_OOB_PLACE;
-
-			return host;
-		}
-	}
-
-	return NULL;
-}
-
 struct flash_chip *flash_open(const char *name)
 {
 	struct flash_chip *flash;

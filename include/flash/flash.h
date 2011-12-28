@@ -127,8 +127,7 @@ struct flash_chip {
 	};
 
 	int   type;
-	char  name[BLOCK_DEV_NAME_LEN];
-	char  mtd_id[MTD_ID_NAME_LEN];
+	char  name[MTD_ID_NAME_LEN];
 
 	size_t write_size;
 	size_t erase_size;
@@ -156,11 +155,8 @@ struct flash_chip {
 
 	int (*block_is_bad)(struct flash_chip *, __u32);
 	int (*block_mark_bad)(struct flash_chip *, __u32);
-	int (*scan_bad_block)(struct flash_chip *);
-	// #ifdef CONFIG_SUPPORT_LINUX
-	int (*get_mtd_name)(const struct flash_chip *, char []);
+	int (*scan_bad_block)(struct flash_chip *); // fixme: to be removed
 
-	// fixme all! (not only for multi-thread)
 	OOB_MODE oob_mode;
 };
 
@@ -197,7 +193,6 @@ int flash_fops_init(struct block_device *bdev);
 int set_bdev_file_attr(struct bdev_file * file);
 
 int get_bdev_file_attr(struct bdev_file * file);
-struct flash_chip * flash_open_by_id(const char *mtd_id);
 
 struct flash_chip *flash_open(const char *name);
 

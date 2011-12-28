@@ -287,7 +287,7 @@ struct nand_chip {
 	struct nand_bad_blk *bad_blk_patt;
 
 	__u32 bus_idx;
-	const char *name; // [MTD_DEV_NAME_LEN];
+	const char *name; // id or just name?
 
 	struct list_node nand_node;
 #endif
