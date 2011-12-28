@@ -422,8 +422,6 @@ int set_bdev_file_attr(struct bdev_file *file)
 {
 	char file_attr[CONF_ATTR_LEN];
 	char file_val[CONF_VAL_LEN];
-	const char *part_num;
-	const char *mtd_id;
 	struct block_device *bdev;
 	struct flash_chip *flash;
 
@@ -431,23 +429,14 @@ int set_bdev_file_attr(struct bdev_file *file)
 
 	bdev = file->bdev;
 
-	flash = container_of(bdev, struct flash_chip, bdev);
-
-	if (flash->master == NULL)
-		mtd_id = flash->name;
-	else
-		mtd_id = flash->master->name;
-
-	part_num = bdev->name + sizeof(BDEV_NAME_FLASH) - 1;
-
 	// set file name
-	snprintf(file_attr, CONF_ATTR_LEN, "%s.p%c.file.name", mtd_id, *part_num);
+	snprintf(file_attr, CONF_ATTR_LEN, "bdev.%s.image.name", bdev->name);
 	if (conf_set_attr(file_attr, file->name) < 0) {
 		conf_add_attr(file_attr, file->name);
 	}
 
 	// set file size
-	snprintf(file_attr, CONF_ATTR_LEN, "%s.p%c.file.size", mtd_id, *part_num);
+	snprintf(file_attr, CONF_ATTR_LEN, "bdev.%s.image.size", bdev->name);
 	val_to_dec_str(file_val, file->size);
 	if (conf_set_attr(file_attr, file_val) < 0) {
 		conf_add_attr(file_attr, file_val);
@@ -460,35 +449,25 @@ int get_bdev_file_attr(struct bdev_file * file)
 {
 	char file_attr[CONF_ATTR_LEN];
 	char file_val[CONF_VAL_LEN];
-	char *part_num;
-	const char *mtd_id;
 	struct block_device *bdev;
 	struct flash_chip *flash;
 
 	assert(file != NULL);
 
 	bdev = file->bdev;
-	part_num = bdev->name + sizeof(BDEV_NAME_FLASH) - 1;
-
-	flash = container_of(bdev, struct flash_chip, bdev);
-
-	if (flash->master == NULL)
-		mtd_id = flash->name;
-	else
-		mtd_id = flash->master->name;
 
 	// get file name
-	snprintf(file_attr, CONF_ATTR_LEN, "%s.p%c.file.name", mtd_id, *part_num);
+	snprintf(file_attr, CONF_ATTR_LEN, "bdev.%s.image.name", bdev->name);
 	if (conf_get_attr(file_attr, file_val) < 0) {
 		file->name[0] = '\0';
 		file->size = 0;
 		return 0;
-	} else {
-		strncpy(file->name, file_val, MAX_FILE_NAME_LEN);
 	}
 
+	strncpy(file->name, file_val, MAX_FILE_NAME_LEN);
+
 	// get file size
-	snprintf(file_attr, CONF_ATTR_LEN, "%s.p%c.file.size", mtd_id, *part_num);
+	snprintf(file_attr, CONF_ATTR_LEN, "bdev.%s.image.name", bdev->name);
 	if (conf_get_attr(file_attr, file_val) < 0 || str_to_val(file_val, &file->size) < 0) {
 		file->name[0] = '\0';
 		file->size = 0;
