@@ -25,6 +25,7 @@
 #define MAX_MODE_LEN 12
 #define MAX_PATH_LEN 12
 
+// to add: max_size for load_buff
 struct tftp_opt {
 	bool  verbose;
 	__u32 server_ip; // const char *server;

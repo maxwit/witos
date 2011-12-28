@@ -1,18 +1,19 @@
+#include <stdio.h>
 
 int main(int argc, char *argv[])
 {
-	__u32 addr;
+	void (*go)(void);
 
-	if (argc == 1)
-		addr = get_load_mem_addr();
-	else if (str_to_val(argv[1], &addr) < 0) {
-			usage();
-			return -EINVAL;
+	if (argc == 1) {
+		go = go_get_addr();
+	} else if (str_to_val(argv[1], (__u32 *)&go) < 0) {
+		usage();
+		return -EINVAL;
 	}
 
-	printf("goto 0x%08x ...\n", addr);
+	printf("goto 0x%p ...\n", go);
 
-	((void (*)(void))addr)();
+	go();
 
 	return -EIO;
 }

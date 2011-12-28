@@ -3,9 +3,7 @@
 #include <fs/fs.h>
 #include <uart/uart.h>
 #include <uart/kermit.h>
-#ifdef CONFIG_DEBUG
 #include <stdio.h>
-#endif
 
 #define MARK_START  0x1
 #define MARK_EXIT   0x3
@@ -74,7 +72,7 @@ int kermit_load(struct loader_opt *opt)
 		curr_addr = opt->load_addr;
 	}
 
-	set_load_mem_addr((__u32 *)curr_addr);
+	go_set_addr(curr_addr);
 
 	opt->load_size = 0;
 
@@ -172,10 +170,8 @@ int kermit_load(struct loader_opt *opt)
 		/* checksum */
 		curr_char = buff[index++];
 		if (curr_char != (KERM_KEY_SPACE + (0x3f & (checksum + (0x03 & (checksum >> 6)))))) {
-#ifdef CONFIG_DEBUG
 			// while (1)
-				printf("Checksum error!\n");
-#endif
+				DPRINT("Checksum error!\n");
 			send_ack_packet(real_seq, KERM_TYPE_NACK);
 			continue;
 		}
@@ -183,7 +179,7 @@ int kermit_load(struct loader_opt *opt)
 		/* terminator */
 		curr_char = buff[index++];
 		if (curr_char != KERM_KEY_TERM)
-			goto Error;
+			goto error;
 
 #ifndef CONFIG_GTH
 		if (opt->file)
@@ -203,7 +199,7 @@ int kermit_load(struct loader_opt *opt)
 
 	return opt->load_size;
 
-Error:
+error:
 	return -EFAULT;
 }
 

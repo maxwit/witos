@@ -18,16 +18,6 @@ static struct sysconfig g_config = {
 	.is_dirty = false,
 };
 
-__u32 get_load_mem_addr()
-{
-	return 0;
-}
-
-void set_load_mem_addr(__u32 *addr)
-{
-	return;
-}
-
 static char *search_attr(const char *str)
 {
 	int i, j;

@@ -50,7 +50,7 @@ static struct platform_device *evm3530_devices[] = {
 #endif
 };
 
-static int __INIT__ evm3530_board_init(struct board_desc *board, const struct board_id *id)
+static int __INIT__ evm3530_init(struct board_desc *board, const struct board_id *id)
 {
 	int i, ret;
 
@@ -64,8 +64,8 @@ static int __INIT__ evm3530_board_init(struct board_desc *board, const struct bo
 }
 
 static struct board_id evm3530_idt[] = {
-	BOARD_ID("evm3530", 0x0),
+	BOARD_ID("EVM3530", 0x0),
 	{}
 };
 
-BOARD_DESC("EVM3530", evm3530_idt, evm3530_board_init);
+BOARD_DESC("evm3530", evm3530_idt, evm3530_init);

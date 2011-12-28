@@ -36,7 +36,7 @@ static struct platform_device *devkit8000_devices[] = {
 #endif
 };
 
-static int __INIT__ devkit8000_board_init(struct board_desc *board, const struct board_id *id)
+static int __INIT__ devkit8000_init(struct board_desc *board, const struct board_id *id)
 {
 	int i, ret;
 
@@ -50,8 +50,8 @@ static int __INIT__ devkit8000_board_init(struct board_desc *board, const struct
 }
 
 static struct board_id devkit8000_idt[] = {
-	BOARD_ID("devkit8000", 0x0),
+	BOARD_ID("DevKit8000", 0x0),
 	{}
 };
 
-BOARD_DESC("DevKit8000", devkit8000_idt, devkit8000_board_init);
+BOARD_DESC("devkit8000", devkit8000_idt, devkit8000_init);

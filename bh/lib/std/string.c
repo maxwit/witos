@@ -129,6 +129,7 @@ char *strncat(char *dst, const char *src, size_t count)
 	return dst;
 }
 
+// why not use the KMP algo?
 char *strstr(const char *haystack, const char *needle)
 {
 	const char *p, *q;

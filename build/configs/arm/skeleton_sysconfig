@@ -1,5 +1,5 @@
 linux.boot_mode = ?
-linux.root_dev = ?
+linux.root = /dev/mtdblock4
 linux.kernel_image = zImage
 linux.ramdisk_image = initrd
 linux.nfs_root = /maxwit/image/boot

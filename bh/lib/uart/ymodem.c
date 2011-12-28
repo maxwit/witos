@@ -60,7 +60,7 @@ int ymodem_load(struct loader_opt *opt)
 		curr_addr = opt->load_addr;
 	}
 
-	set_load_mem_addr((__u32 *)curr_addr);
+	go_set_addr((__u32 *)curr_addr);
 
 	opt->load_size = 0;
 

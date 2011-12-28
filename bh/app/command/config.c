@@ -46,6 +46,8 @@ static int do_config(int option, const char *arg, const char *val)
 	return ret;
 }
 
+
+// space support?
 int main(int argc, char *argv[])
 {
 	int i, j, opt, ret;

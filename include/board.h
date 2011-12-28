@@ -1,7 +1,8 @@
 #include <types.h>
 
 #define __BOARD__  __attribute__((__section__(".gsect.board")))
-#define BOARD_ID(id1, id2) {.name = id1, .mach_id = id2}  
+
+#define BOARD_ID(id1, id2) {.name = id1, .mach_id = id2}
 
 struct board_id {
 	const char *name;
@@ -23,4 +24,4 @@ struct board_desc {
 
 int __INIT__ board_init(void);
 
-struct board_desc *board_get_active();
+const struct board_id *board_get_active();

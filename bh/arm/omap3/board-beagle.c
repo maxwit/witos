@@ -38,7 +38,7 @@ static struct platform_device *beagle_devices[] = {
 #endif
 };
 
-static int __INIT__ beagle_board_init(struct board_desc *board, const struct board_id *id)
+static int __INIT__ beagle_init(struct board_desc *board, const struct board_id *id)
 {
 	int i, ret;
 
@@ -56,4 +56,4 @@ static struct board_id beagle_idt[] = {
 	{}
 };
 
-BOARD_DESC("Beagle", beagle_idt, beagle_board_init);
+BOARD_DESC("beagle", beagle_idt, beagle_init);

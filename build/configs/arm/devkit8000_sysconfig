@@ -1,5 +1,5 @@
 linux.boot_mode = 0x1234
-linux.root_dev = 2
+linux.root = /dev/mtdblock4
 linux.kernel_image = zImage
 linux.ramdisk_image = initrd
 linux.nfs_root = /maxwit/image/boot
