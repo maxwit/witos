@@ -4,140 +4,227 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define LINE_LEN 512
+
 struct sysconfig {
 	char* const data;
 	bool is_dirty;
 	size_t size;
+	int offset;
 };
 
 extern char _g_sysconfig[];
 extern unsigned int _g_sysconfig_len;
 
 static struct sysconfig g_config = {
-	.data = _g_sysconfig + 4,
+	.data = _g_sysconfig,
 	.is_dirty = false,
 };
 
-static char *search_attr(const char *str)
+static struct sysconfig *_syscfg_get()
 {
-	int i, j;
-	int len = strlen(str);
-	int is_attr = 1;
-	const char *data = g_config.data;
+	return &g_config;
+}
 
-	for (i = 0; i < g_config.size; i++) {
-		if (is_attr) {
-			if (data[i] != ' ') {
-				for (j = 0; j < len && data[i + j] == str[j]; j++);
+static struct sysconfig *_syscfg_open()
+{
+	struct sysconfig *cfg;
 
-				if (j == len && (data[i + j] == ' ' || data[i + j] == '=')) {
-					return (char *)data + i;
-				}
+	cfg = _syscfg_get();
+	cfg->offset = 0;
 
-				is_attr = 0;
-			}
-		}
+	return cfg;
+}
 
-		if (data[i] == '\n')
-			is_attr = 1;
+static int _syscfg_close(struct sysconfig *cfg)
+{
+	cfg->offset = 0;
+
+	return 0;
+}
+
+__u32 get_load_mem_addr()
+{
+	return 0;
+}
+
+void set_load_mem_addr(__u32 *addr)
+{
+	return;
+}
+
+static int _syscfg_read_line(struct sysconfig *cfg, char line[], size_t line_len)
+{
+	int i;
+	const char *base;
+	size_t size;
+
+	if (cfg == NULL)
+		return -ENODEV;
+
+	base = cfg->data + cfg->offset;
+	size = cfg->size - cfg->offset;
+
+	if (size == 0)
+		return -ENODATA;
+
+	for (i = 0; i < size && i < line_len; i++) {
+		if (base[i] == '\n')
+			break;
+
+		line[i] = base[i];
 	}
 
-	return NULL;
+	line[i] = '\0';
+
+	if (base[i] == '\n')
+		cfg->offset += i + 1;
+	else
+		cfg->offset += i;
+
+	return i;
+}
+
+static int _is_attr_string(const char *attr, const char *string)
+{
+	const char *p = string;
+	size_t len = strlen(attr);
+
+	while (*p) {
+		if (!strncmp(attr, p, len)) {
+			if (p[len] == ' ' || p[len] == '=')
+				return 1;
+		}
+
+		p++;
+	}
+
+	return 0;
+}
+
+static int search_attr(struct sysconfig *cfg, const char *str)
+{
+	char line[LINE_LEN];
+	int ret;
+
+	while ((ret = _syscfg_read_line(cfg, line, LINE_LEN)) >= 0) {
+		if (_is_attr_string(str, line)) {
+			break;
+		}
+	}
+
+	return ret;
 }
 
 int conf_del_attr(const char *attr)
 {
-	char *p, *q;
+	struct sysconfig *cfg;
+	int ret = 0;
+	int len;
 
-	p = search_attr(attr);
-	if (p == NULL) {
-		DPRINT("Attribute \"%s\" does not exists, del attr error!\n", attr);
-		return -1;
+	cfg = _syscfg_open();
+
+	len = search_attr(cfg, attr);
+
+	if (len <= 0) {
+		DPRINT("Attribute \"%s\" is not exist, del attr error!\n", attr);
+		ret = -ENODATA;
+		goto L1;
 	}
 
-	q = strchr(p, '\n');
-	q++;
+	len += 1;
 
-	while (q < g_config.data + g_config.size) {
-		*p = *q;
-		p++;
-		q++;
-	}
+	memcpy(cfg->data + cfg->offset - len, cfg->data + cfg->offset, cfg->size - cfg->offset);
 
-	g_config.size = p - g_config.data;
+	cfg->size -= len;
 
-	g_config.is_dirty = true;
+	cfg->is_dirty = true;
+L1:
+	_syscfg_close(cfg);
 
-	return 0;
+	return ret;
 }
 
 int conf_add_attr(const char *attr, const char *val)
 {
-	char *p;
-	int len;
+	struct sysconfig *cfg;
+	int ret = 0;
 
-	p = search_attr(attr);
-	if (p != NULL) {
+	cfg = _syscfg_open();
+
+	if (search_attr(cfg, attr) > 0) {
 		DPRINT("Fail to add attribute \"%s\"! (already exists)\n", attr);
-		return -EBUSY;
+		ret = -EBUSY;
+		goto L1;
 	}
 
-	p = g_config.data + g_config.size;
+	cfg->size += sprintf(cfg->data + cfg->offset, "%s = %s\n", attr, val);
 
-	len = sprintf(p, "%s = %s\n", attr, val);
-	g_config.size += len;
+	cfg->is_dirty = true;
 
-	g_config.is_dirty = true;
+L1:
+	_syscfg_close(cfg);
 
-	return 0;
+	return ret;
 }
 
 int conf_set_attr(const char *attr, const char *val)
 {
-	char *p, *q;
-	int cur_len, new_len;
-	int t;
+	int old_len, new_len;
+	struct sysconfig *cfg;
+	char line[LINE_LEN];
+	int ret = 0;
 
-	p = search_attr(attr);
-	if (p == NULL) {
+	cfg = _syscfg_open();
+
+	if ((old_len = search_attr(cfg, attr))) {
 		DPRINT("Attribute \"%s\" does not exists, set attr error\n", attr);
-		return -1;
+		ret = -ENODATA;
+		goto L1;
 	}
 
-	p = strchr(p, '=');
-	p++;
-	q = strchr(p, '\n');
+	old_len += 1; // add  '\n'
 
-	cur_len = q - p;
-	new_len = strlen(val);
+	new_len = snprintf(line, sizeof(line), "%s = %s\n", attr, val);
 
-	t = new_len - cur_len;
-
-	if (t != 0) {
-		memmove(q + t, q, g_config.size - (q - g_config.data));
-		g_config.size += t;
+	if (new_len != old_len) {
+		memmove(cfg->data + cfg->offset - old_len + new_len,
+			cfg->data + cfg->offset, cfg->size - cfg->offset);
+		cfg->size += new_len - old_len;
 	}
 
-	memcpy(p, val, new_len);
-	g_config.is_dirty = true;
+	memcpy(cfg->data + cfg->offset - old_len, val, new_len);
 
-	return 0;
+	cfg->is_dirty = true;
+
+L1:
+	_syscfg_close(cfg);
+
+	return ret;
 }
 
 int conf_get_attr(const char *attr, char val[])
 {
 	const char *p;
+	struct sysconfig *cfg;
+	char line[LINE_LEN];
+	int len;
+	int ret = 0;
 
-	p = search_attr(attr);
-	if (p == NULL) {
+	cfg = _syscfg_open();
+
+	if ((len = search_attr(cfg, attr)) <= 0) {
 		DPRINT("Attribute \"%s\" does not exists, get attr error!\n", attr);
-		return -ENOENT;
+		ret = -ENODATA;
+		goto L1;
 	}
 
-	p = strchr(p, '=');
+	cfg->offset -= len + 1;
+	_syscfg_read_line(cfg, line, sizeof(line));
+	p = strchr(line, '=');
 	p++;
 
-	while (*p != '\n') {
+	while (*p) {
 		if (*p != ' ')
 			*val++ = *p;
 
@@ -146,7 +233,10 @@ int conf_get_attr(const char *attr, char val[])
 
 	*val = '\0';
 
-	return 0;
+L1:
+	_syscfg_close(cfg);
+
+	return ret;
 }
 
 // fixme
@@ -187,13 +277,13 @@ static int conf_check_default()
 
 int conf_load()
 {
-	__u32 *sys_magic = (__u32 *)_g_sysconfig;
+	struct sysconfig *cfg = _syscfg_get();
 
-	if (GB_SYSCFG_MAGIC != *sys_magic)
+	if (GB_SYSCFG_MAGIC != *(__u32 *)cfg->data)
 		return -EINVAL;
 
-	g_config.size = _g_sysconfig_len;
-	DPRINT("sysconf: base = 0x%p, size = %d\n", g_config.data, g_config.size);
+	cfg->size = _g_sysconfig_len;
+	DPRINT("sysconf: base = 0x%p, size = %d\n", cfg->data, cfg->size);
 
 	conf_check_default();
 
@@ -207,8 +297,9 @@ int conf_store()
 	__u32 conf_base;
 	struct flash_chip *flash;
 	extern char _start[];
+	struct sysconfig *cfg = _syscfg_get();
 
-	if (!g_config.is_dirty)
+	if (!cfg->is_dirty)
 		return 0;
 
 	// fixme
@@ -218,17 +309,17 @@ int conf_store()
 		return -ENODEV;
 	}
 
-	conf_base = _g_sysconfig - _start;
+	conf_base = cfg->data - _start;
 
-	ret = flash_erase(flash, conf_base, g_config.size, EDF_ALLOWBB);
+	ret = flash_erase(flash, conf_base, cfg->size, EDF_ALLOWBB);
 	if (ret < 0)
 		goto L1;
 
-	ret = flash_write(flash, g_config.data, g_config.size, conf_base);
+	ret = flash_write(flash, cfg->data, cfg->size, conf_base);
 	if (ret < 0)
 		goto L1;
 
-	g_config.is_dirty = false;
+	cfg->is_dirty = false;
 
 L1:
 	flash_close(flash);
@@ -237,36 +328,13 @@ L1:
 
 int conf_list_attr()
 {
-	char attr[CONF_VAL_LEN];
-	char val[CONF_VAL_LEN];
-	int i, j;
-	char *p;
-	int is_attr = 1;
+	struct sysconfig *cfg;
+	char line[LINE_LEN];
 
-	p = g_config.data;
-	i = j = 0;
-	while (i < g_config.size) {
-		if (is_attr) {
-			if (p[i] != ' ' && p[i] != '=') {
-				attr[j++] = p[i];
-			} else if (p[i] == '=') {
-				is_attr = 0;
-				attr[j] = '\0';
-				printf("%s = ", attr);
-				j = 0;
-			}
-		} else {
-			if (p[i] != ' ' && p[i] != '\n') {
-				val[j++] = p[i];
-			} else if (p[i] == '\n') {
-				is_attr = 1;
-				val[j] = '\0';
-				printf("%s\n", val);
-				j = 0;
-			}
-		}
+	cfg = _syscfg_open();
 
-		i++;
+	while (_syscfg_read_line(cfg, line, sizeof(line)) >= 0) {
+		printf("%s\n", line);
 	}
 
 	return 0;
@@ -274,10 +342,12 @@ int conf_list_attr()
 
 void conf_reset(void)
 {
-	*(__u32 *)(g_config.data - 4) = GB_SYSCFG_MAGIC;
-	g_config.size = 0;
+	struct sysconfig *cfg = _syscfg_get();
+
+	*(__u32 *)cfg->data = GB_SYSCFG_MAGIC;
+	cfg->size = 4;
 
 	conf_check_default();
 
-	g_config.is_dirty = true;
+	cfg->is_dirty = true;
 }

@@ -440,8 +440,6 @@ int set_bdev_file_attr(struct bdev_file *file)
 
 	part_num = bdev->name + sizeof(BDEV_NAME_FLASH) - 1;
 
-	printf("mtd_id : %s\n", mtd_id);
-
 	// set file name
 	snprintf(file_attr, CONF_ATTR_LEN, "%s.p%c.file.name", mtd_id, *part_num);
 	if (conf_set_attr(file_attr, file->name) < 0) {
@@ -478,8 +476,6 @@ int get_bdev_file_attr(struct bdev_file * file)
 		mtd_id = flash->name;
 	else
 		mtd_id = flash->master->name;
-
-	printf("mtd_id : %s\n", mtd_id);
 
 	// get file name
 	snprintf(file_attr, CONF_ATTR_LEN, "%s.p%c.file.name", mtd_id, *part_num);
