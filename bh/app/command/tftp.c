@@ -39,7 +39,7 @@ static int explain_url(const char *buf, struct tftp_opt *dlopt)
 	int ret;
 	int i = 0;
 	int port;
-	char tmp[MAX_FILE_NAME_LEN + IPV4_STR_LEN + PORT_LEN];
+	char tmp[FILE_NAME_SIZE + IPV4_STR_LEN + PORT_LEN];
 
 	ip = dlopt->server_ip;
 	while (*buf != ':' && *buf != '/' && *buf) {
@@ -56,7 +56,7 @@ static int explain_url(const char *buf, struct tftp_opt *dlopt)
 		dlopt->server_ip = ip;
 		goto L1;
 	} else if (ret < 0 && *buf == '\0') {
-		if (i > MAX_FILE_NAME_LEN) {
+		if (i > FILE_NAME_SIZE) {
 			return ret;
 		}
 		strncpy(dlopt->file_name, tmp, i);
@@ -95,7 +95,7 @@ static int explain_url(const char *buf, struct tftp_opt *dlopt)
 	i = 0;
 	while (*buf) {
 		tmp[i++] = *buf++;
-		if (i >= MAX_FILE_NAME_LEN)
+		if (i >= FILE_NAME_SIZE)
 			return -1;
 	}
 	tmp[i] = '\0';
@@ -217,8 +217,8 @@ static int tftp_get_file(int argc, char **argv)
 
 	if (optind < argc) {
 		if (optind + 1 == argc && !dlopt.file_name[0]) {
-			strncpy(dlopt.file_name, argv[optind], MAX_FILE_NAME_LEN);
-			dlopt.file_name[MAX_FILE_NAME_LEN - 1] = '\0';
+			strncpy(dlopt.file_name, argv[optind], FILE_NAME_SIZE);
+			dlopt.file_name[FILE_NAME_SIZE - 1] = '\0';
 		} else {
 			usage();
 			return -EINVAL;
@@ -241,7 +241,7 @@ static int tftp_get_file(int argc, char **argv)
 	}
 
 	if (dlopt.file) {
-		strncpy(dlopt.file->name, dlopt.file_name, MAX_FILE_NAME_LEN);
+		strncpy(dlopt.file->name, dlopt.file_name, FILE_NAME_SIZE);
 		dlopt.file->size = dlopt.xmit_size;
 		set_bdev_file_attr(dlopt.file);
 	}
@@ -322,8 +322,8 @@ static int tftp_put_file(int argc, char **argv)
 
 	if (optind < argc) {
 		if (optind + 1 == argc && !opt.file_name[0]) {
-			strncpy(opt.file_name, argv[optind], MAX_FILE_NAME_LEN);
-			opt.file_name[MAX_FILE_NAME_LEN - 1] = '\0';
+			strncpy(opt.file_name, argv[optind], FILE_NAME_SIZE);
+			opt.file_name[FILE_NAME_SIZE - 1] = '\0';
 		} else {
 			usage();
 			return -EINVAL;
@@ -355,28 +355,28 @@ static int get_default_file_name(struct block_device *cur_bdev, char file_name[]
 		cur_bdev = get_bdev_by_volume(vol);
 	}
 
-	PART_TYPE type = str2part_type(cur_bdev->file->img_type);
+	image_t type = str2part_type(cur_bdev->file->img_type);
 
 	switch (type) {
 	case PT_BL_GTH:
-		strncpy(file_name, "g-bios-th.bin", MAX_FILE_NAME_LEN);
-		file_name[MAX_FILE_NAME_LEN - 1] = '\0';
+		strncpy(file_name, "g-bios-th.bin", FILE_NAME_SIZE);
+		file_name[FILE_NAME_SIZE - 1] = '\0';
 		break;
 	case PT_BL_GBH:
-		strncpy(file_name, "g-bios-bh.bin", MAX_FILE_NAME_LEN);
-		file_name[MAX_FILE_NAME_LEN - 1] = '\0';
+		strncpy(file_name, "g-bios-bh.bin", FILE_NAME_SIZE);
+		file_name[FILE_NAME_SIZE - 1] = '\0';
 		break;
 	case PT_BL_GCONF:
-		strncpy(file_name, "sys_conf.bin", MAX_FILE_NAME_LEN);
-		file_name[MAX_FILE_NAME_LEN - 1] = '\0';
+		strncpy(file_name, "sys_conf.bin", FILE_NAME_SIZE);
+		file_name[FILE_NAME_SIZE - 1] = '\0';
 		break;
 	case PT_OS_LINUX:
-		strncpy(file_name, "zImage", MAX_FILE_NAME_LEN);
-		file_name[MAX_FILE_NAME_LEN - 1] = '\0';
+		strncpy(file_name, "zImage", FILE_NAME_SIZE);
+		file_name[FILE_NAME_SIZE - 1] = '\0';
 		break;
 	case PT_BL_UBOOT:
-		strncpy(file_name, "uboot", MAX_FILE_NAME_LEN);
-		file_name[MAX_FILE_NAME_LEN - 1] = '\0';
+		strncpy(file_name, "uboot", FILE_NAME_SIZE);
+		file_name[FILE_NAME_SIZE - 1] = '\0';
 		break;
 	default:
 		usage();

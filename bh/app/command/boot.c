@@ -48,7 +48,7 @@ static int build_command_line(char *cmd_line, size_t max_len)
 	} else {
 		if (!strncmp(config, "mtdblock", 8)) {
 			struct block_device *bdev;
-			PART_TYPE type;
+			image_t type;
 			const char *rootfs; // fixme
 
 			bdev = get_bdev_by_name(config);
@@ -58,14 +58,14 @@ static int build_command_line(char *cmd_line, size_t max_len)
 			}
 
 			// fixme
-			type = PT_FS_JFFS2; // get_image_type(bdev->file);
+			type = IMG_JFFS2; // get_image_type(bdev->file);
 			switch (type) {
-			case PT_FS_JFFS2:
+			case IMG_JFFS2:
 			default:
 				rootfs = "jffs2";
 				break;
 
-			case PT_FS_UBIFS:
+			case IMG_UBIFS:
 				// TODO: add ubix_y
 				break;
 			}

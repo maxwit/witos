@@ -203,7 +203,7 @@ static struct fat_dentry *fat_lookup(struct fat_fs *fs, __u32 parent, const char
 {
 	struct fat_dentry *dir;
 	int ret;
-	char sname[MAX_FILE_NAME_LEN];
+	char sname[FILE_NAME_SIZE];
 
 	dir = (struct fat_dentry *)malloc(sizeof(*dir));
 	if (dir == NULL) {

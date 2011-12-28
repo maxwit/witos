@@ -4,8 +4,7 @@
 #include <list.h>
 #include <device.h>
 
-#define PART_NAME_LEN 32
-#define MAX_FILE_NAME_LEN   64
+#define LABEL_NAME_SIZE  32
 
 #define BDEV_NAME_FLASH  "mtdblock"
 #define BDEV_NAME_MMC    "mmcblock"
@@ -13,32 +12,12 @@
 #define BDEV_NAME_ATA    "hd" // fixme
 #define BDEV_NAME_NBD    "nbd"
 
-typedef enum {
-	PT_NONE,
-	PT_BAD,
-	PT_FREE,
-	PT_BL_GTH,
-	PT_BL_GBH,
-	PT_BL_GCONF,
-	PT_BL_UBOOT,
-	PT_OS_LINUX,
-	PT_OS_WINCE,
-	PT_FS_RAMDISK,
-	PT_FS_CRAMFS,
-	PT_FS_BEGIN = PT_FS_CRAMFS,
-	PT_FS_JFFS2,
-	PT_FS_YAFFS,
-	PT_FS_YAFFS2,
-	PT_FS_UBIFS,
-	PT_FS_END = PT_FS_UBIFS
-} PART_TYPE;
-
 struct block_device;
 
 struct part_attr {
 	__u32 base;
 	__u32 size;
-	char  label[PART_NAME_LEN];
+	char  label[LABEL_NAME_SIZE];
 };
 
 struct block_buff {
@@ -54,10 +33,10 @@ struct bdev_file {
 
 	size_t cur_pos;
 	const char *img_type;
-	char name[MAX_FILE_NAME_LEN];
+	char name[FILE_NAME_SIZE];
 	size_t size;
 
-	int (*open)(struct bdev_file *, const char *);
+	int (*open)(struct bdev_file *, int);
 	int (*close)(struct bdev_file *);
 
 	ssize_t (*read)(struct bdev_file *, void *, size_t);
@@ -71,7 +50,7 @@ struct block_device {
 	// part_attr
 	size_t base;
 	size_t size;
-	char   label[PART_NAME_LEN];
+	char   label[LABEL_NAME_SIZE];
 
 	// fixme!
 	void *fs;
@@ -85,4 +64,3 @@ int block_device_register(struct block_device *bdev);
 
 struct block_device *get_bdev_by_name(const char *name);
 struct block_device *get_bdev_by_volume(char vol);
-const char *fs_type_to_str(int type);

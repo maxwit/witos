@@ -1,3 +1,4 @@
+#include <image.h>
 #include <block.h>
 #include <flash/flash.h>
 
@@ -7,13 +8,7 @@ static inline void blk_buf_init(struct block_buff *blk_buf, void *buff, size_t s
 	blk_buf->blk_size = size;
 }
 
-static inline PART_TYPE get_image_type(const struct bdev_file *file)
-{
-#warning
-	return PT_FS_JFFS2;
-}
-
-static int flash_bdev_open(struct bdev_file *file, const char *type)
+static int flash_bdev_open(struct bdev_file *file, int flags)
 {
 	void *buff;
 	size_t size;
@@ -23,11 +18,7 @@ static int flash_bdev_open(struct bdev_file *file, const char *type)
 
 	flash = container_of(file->bdev, struct flash_chip, bdev);
 
-	if (!strcmp(type, "yaffs") || !strcmp(type, "yaffs2"))
-		size = (flash->write_size + flash->oob_size) << \
-				(flash->erase_shift - flash->write_shift);
-	else // fixme!
-		size = flash->erase_size;
+	size = flash->erase_size;
 
 	buff = malloc(size);
 	if (!buff)
@@ -35,7 +26,6 @@ static int flash_bdev_open(struct bdev_file *file, const char *type)
 
 	blk_buf_init(&file->blk_buf, buff, size);
 	file->cur_pos = 0;
-	file->img_type = type;
 
 	return 0;
 }
@@ -63,11 +53,11 @@ static int flash_bdev_close(struct bdev_file *file)
 		//printf("%s(): pos = 0x%08x, blk_base = 0x%08x, blk_off = 0x%08x, rest = 0x%08x\n",
 			// __func__, file->cur_pos + file->attr->base, blk_buff->blk_base, blk_buff->blk_off, rest);
 
-		type = get_image_type(file);
+		type = image_type_detect(blk_buff->blk_base, rest);
 
 		switch (type) {
-		case PT_FS_YAFFS:
-		case PT_FS_YAFFS2:
+		case IMG_YAFFS:
+		case IMG_YAFFS2:
 			pos_adj = file->cur_pos / (flash->write_size + flash->oob_size) * flash->write_size;
 			flash_pos = pos_adj;
 			ret = flash_erase(flash, flash_pos, bdev->size - pos_adj, eflag);
@@ -79,7 +69,7 @@ static int flash_bdev_close(struct bdev_file *file)
 			ret = flash_erase(flash, flash_pos, rest, eflag);
 			break;
 #endif
-		case PT_FS_JFFS2:
+		case IMG_JFFS2:
 			// eflag |= EDF_JFFS2;
 		default: // fixme
 			flash_pos = file->cur_pos;
@@ -96,12 +86,12 @@ static int flash_bdev_close(struct bdev_file *file)
 			memset(blk_buff->blk_off, 0xFF, blk_buff->blk_size - rest);
 
 			switch (type) {
-			case PT_FS_YAFFS:
+			case IMG_YAFFS:
 				ret = flash_ioctl(flash, FLASH_IOCS_OOB_MODE, (void *)FLASH_OOB_RAW);
 				ret = flash_write(flash, blk_buff->blk_base, rest, flash_pos);
 				break;
 
-			case PT_FS_YAFFS2:
+			case IMG_YAFFS2:
 				ret = flash_ioctl(flash, FLASH_IOCS_OOB_MODE, (void *)FLASH_OOB_AUTO);
 				ret = flash_write(flash, blk_buff->blk_base, blk_buff->blk_size, flash_pos);
 				break;
@@ -138,7 +128,7 @@ static ssize_t flash_bdev_write(struct bdev_file *file, const void *buff, __u32 
 	int ret = 0;
 	__u32 buff_room, flash_pos;
 	__u32 eflag = EDF_ALLOWBB;
-	PART_TYPE part_type;
+	image_t img_type;
 	struct flash_chip   *flash;
 	struct block_buff   *blk_buff;
 	struct block_device *bdev;
@@ -151,8 +141,6 @@ static ssize_t flash_bdev_write(struct bdev_file *file, const void *buff, __u32 
 	bdev  = file->bdev;
 	flash = container_of(bdev, struct flash_chip, bdev);
 
-	part_type = get_image_type(file);
-
 	if (size + file->cur_pos > bdev->size) {
 		char tmp[32];
 
@@ -164,6 +152,8 @@ static ssize_t flash_bdev_write(struct bdev_file *file, const void *buff, __u32 
 
 	blk_buff  = &file->blk_buf;
 	buff_room = blk_buff->blk_size - (blk_buff->blk_off - blk_buff->blk_base);
+
+	img_type = image_type_detect(blk_buff->blk_base, buff_room);
 
 	while (size > 0) {
 		if (size >= buff_room) {
@@ -178,8 +168,8 @@ static ssize_t flash_bdev_write(struct bdev_file *file, const void *buff, __u32 
 
 #ifdef CONFIG_IMAGE_CHECK
 			if (file->cur_pos < blk_buff->blk_size) {
-				if (false == check_image_type(part_type, blk_buff->blk_base)) {
-					printf("\nImage part_type mismatch!"
+				if (false == check_image_type(img_type, blk_buff->blk_base)) {
+					printf("\nImage img_type mismatch!"
 						"Please check the image name and the target bdev_file!\n");
 
 					return -EINVAL;
@@ -189,14 +179,14 @@ static ssize_t flash_bdev_write(struct bdev_file *file, const void *buff, __u32 
 
 			size_adj = blk_buff->blk_size;
 
-			switch (part_type) {
-			case PT_FS_YAFFS:
+			switch (img_type) {
+			case IMG_YAFFS:
 				// fixme: use macro: RATIO_TO_PAGE(n)
 				size_adj = blk_buff->blk_size / (flash->write_size + flash->oob_size) << flash->write_shift;
 				flash_pos = file->cur_pos / (flash->write_size + flash->oob_size) << flash->write_shift;
 				break;
 
-			case PT_FS_YAFFS2:
+			case IMG_YAFFS2:
 				// fixme: use macro: RATIO_TO_PAGE(n)
 				size_adj = blk_buff->blk_size / (flash->write_size + flash->oob_size) << flash->write_shift;
 				flash_pos = file->cur_pos / (flash->write_size + flash->oob_size) << flash->write_shift;
@@ -206,7 +196,7 @@ static ssize_t flash_bdev_write(struct bdev_file *file, const void *buff, __u32 
 				flash_pos = base + (CONFIG_GBH_START_BLK << flash->erase_shift) + file->cur_pos;
 				break;
 #endif
-			case PT_FS_JFFS2:
+			case IMG_JFFS2:
 				// eflag |= EDF_JFFS2;
 			default:
 				flash_pos = file->cur_pos;
@@ -219,13 +209,13 @@ static ssize_t flash_bdev_write(struct bdev_file *file, const void *buff, __u32 
 				goto L1;
 			}
 
-			switch (part_type) {
-			case PT_FS_YAFFS:
+			switch (img_type) {
+			case IMG_YAFFS:
 				ret = flash_ioctl(flash, FLASH_IOCS_OOB_MODE, (void *)FLASH_OOB_RAW);
 				ret = flash_write(flash, blk_buff->blk_base, blk_buff->blk_size, flash_pos);
 				break;
 
-			case PT_FS_YAFFS2:
+			case IMG_YAFFS2:
 				ret = flash_ioctl(flash, FLASH_IOCS_OOB_MODE, (void *)FLASH_OOB_AUTO);
 				ret = flash_write(flash, blk_buff->blk_base, blk_buff->blk_size, flash_pos);
 				break;
@@ -257,69 +247,7 @@ L1:
 }
 
 #if 0
-
-static struct part_attr *PartGetAttr(struct part_info *pt_info, int nFreeIndex)
-{
-	if (nFreeIndex > pt_info->parts)
-		return NULL;
-
-	return pt_info->attr_tab + nFreeIndex;
-}
-
-static bool inline PartProtected(PART_TYPE epart_type)
-{
-	return PT_BL_GTH == epart_type;
-}
-
-int GuPartCreate(struct part_info *pt_info, int nFreeIndex, __u32 size, PART_TYPE part_type)
-{
-	struct part_attr *pFreeAttr;
-
-	pFreeAttr = PartGetAttr(pt_info, nFreeIndex);
-	if (NULL == pFreeAttr)
-		return -ENODEV;
-
-	// (size & (host->erase_size - 1)) || // fixme
-	if (0 == size || size > pFreeAttr->size)
-		return -EINVAL;
-
-	if (PartProtected(part_type))  // reasonable ?
-		return -EPERM;
-
-	if (PT_FREE == part_type || PT_FREE != pFreeAttr->part_type)
-		return -EINVAL;
-
-	// move to AdjustXXX()?
-	if (pt_info->parts == MAX_FLASH_PARTS && size != pFreeAttr->size)
-		size = pFreeAttr->size;
-
-	if (size < pFreeAttr->size) {
-		struct part_attr *pCurrAttr;
-
-		pCurrAttr = pt_info->attr_tab + pt_info->parts;
-
-		while (pCurrAttr > pFreeAttr) {
-			*pCurrAttr = *(pCurrAttr - 1);
-
-			pCurrAttr--;
-		}
-
-		pFreeAttr[1].base += size;
-		pFreeAttr[1].size -= size;
-
-		pFreeAttr->size = size;
-
-		pt_info->parts++;
-	}
-
-	pFreeAttr->part_type = part_type;
-
-	return 0;
-}
-#endif
-
-#if 0
-const char *part_type2str(__u32 type)
+const char *img_type2str(__u32 type)
 {
 	switch(type) {
 	case PT_FREE:
@@ -340,22 +268,22 @@ const char *part_type2str(__u32 type)
 	case PT_OS_WINCE:
 		return PT_STR_WINCE;
 
-	case PT_FS_RAMDISK:
+	case IMG_RAMDISK:
 		return PT_STR_RAMDISK;
 
-	case PT_FS_CRAMFS:
+	case IMG_CRAMFS:
 		return PT_STR_CRAMFS;
 
-	case PT_FS_JFFS2:
+	case IMG_JFFS2:
 		return PT_STR_JFFS2;
 
-	case PT_FS_YAFFS:
+	case IMG_YAFFS:
 		return PT_STR_YAFFS;
 
-	case PT_FS_YAFFS2:
+	case IMG_YAFFS2:
 		return PT_STR_YAFFS2;
 
-	case PT_FS_UBIFS:
+	case IMG_UBIFS:
 		return PT_STR_UBIFS;
 
 	default:
@@ -408,7 +336,7 @@ int part_show(const struct flash_chip *flash)
 			attr_tab[nIndex].base,
 			attr_tab[nIndex].base + attr_tab[nIndex].size,
 			szPartSize,
-			part_type2str(attr_tab[nIndex].part_type),
+			img_type2str(attr_tab[nIndex].img_type),
 			part_get_name(&attr_tab[nIndex]));
 	}
 
@@ -462,7 +390,7 @@ int get_bdev_file_attr(struct bdev_file * file)
 		return 0;
 	}
 
-	strncpy(file->name, file_val, MAX_FILE_NAME_LEN);
+	strncpy(file->name, file_val, FILE_NAME_SIZE);
 
 	// get file size
 	snprintf(file_attr, CONF_ATTR_LEN, "bdev.%s.image.name", bdev->name);

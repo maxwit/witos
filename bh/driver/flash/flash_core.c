@@ -201,7 +201,7 @@ int flash_register(struct flash_chip *flash)
 			if (NULL == slave)
 				return -ENOMEM;
 
-			snprintf(slave->bdev.name, PART_NAME_LEN, BDEV_NAME_FLASH "%d", i + 1);
+			snprintf(slave->bdev.name, LABEL_NAME_SIZE, BDEV_NAME_FLASH "%d", i + 1);
 
 			slave->bdev.base = part_tab[i].base;
 			slave->bdev.size = part_tab[i].size;

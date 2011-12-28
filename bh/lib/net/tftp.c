@@ -104,7 +104,7 @@ int tftp_download(struct tftp_opt *opt)
 	blk_num  = 1;
 
 	if (file) {
-		ret = file->open(file, opt->type);
+		ret = file->open(file, 0);
 		if (ret < 0) {
 			printf("fail to open \"%s\"!\n", file->bdev->name);
 			goto L1;

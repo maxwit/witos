@@ -29,7 +29,7 @@ enum {
 #define BLOCK_DEV_NAME_LEN  32
 #define MTD_ID_NAME_LEN     32
 
-#define IS_FS_PART(type) (PT_FS_BEGIN <= (type) && (type) <= PT_FS_END)
+#define IS_FS_PART(type) (IMG_BEGIN <= (type) && (type) <= IMG_END)
 
 struct flash_chip;
 
@@ -109,7 +109,7 @@ struct oob_opt {
 };
 
 struct image_info {
-	char  image_name[MAX_FILE_NAME_LEN];
+	char  image_name[FILE_NAME_SIZE];
 	__u32 image_size;
 };
 
@@ -127,7 +127,7 @@ struct flash_chip {
 	};
 
 	int   type;
-	char  name[MTD_ID_NAME_LEN];
+	char  name[MTD_ID_NAME_LEN]; // fixme: no need for slaves
 
 	size_t write_size;
 	size_t erase_size;
@@ -173,8 +173,6 @@ static __u32 inline flash_erase_is_align(struct flash_chip *flash, __u32 size)
 int flash_register(struct flash_chip *flash);
 
 int flash_unregister(struct flash_chip *flash);
-
-bool check_image_type(PART_TYPE type, const __u8 *data);
 
 typedef enum {
 	NAND_ECC_NONE,

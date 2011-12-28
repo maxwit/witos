@@ -53,7 +53,7 @@ typedef enum {false, true} bool;
 // #define PRINT_ARG_FORMAT __attribute__((format (printf, 1, 2)))
 
 #define DECL_RESET(func) \
-	void __attribute__((alias(#func))) reset(void)
+	void reset(void) __attribute__((alias(#func)))
 
 #define NULL              ((void *)0)
 #define KB(n)             ((n) << 10)

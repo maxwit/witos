@@ -20,7 +20,7 @@ static int uart_load(int argc, char *argv[])
 	bdev = get_bdev_by_volume(get_curr_volume());
 	ld_opt.file = bdev->file;
 	// fixme
-	bdev->file->open(bdev->file, "jffs2");
+	bdev->file->open(bdev->file, 0);
 
 	while ((opt = getopt(argc, argv, "m::p:f:i:vh")) != -1) {
 		switch (opt) {
@@ -75,7 +75,7 @@ static int uart_load(int argc, char *argv[])
 	}
 
 	if (ld_opt.file && size > 0) {
-		strncpy(ld_opt.file->name, ld_opt.file_name, MAX_FILE_NAME_LEN);
+		strncpy(ld_opt.file->name, ld_opt.file_name, FILE_NAME_SIZE);
 		ld_opt.file->size = size;
 
 		set_bdev_file_attr(ld_opt.file);

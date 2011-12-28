@@ -96,39 +96,27 @@ static bool check_yaffs1_image(const void *imagebuf)
 	return true;
 }
 
-bool check_image_type(PART_TYPE type, const __u8 *image_data)
+image_t image_type_detect(const void *data, size_t size)
 {
-	switch (type) {
-	case PT_BL_GTH:
-		return GTH_MAGIC == *(__u32 *)(image_data + GTH_MAGIC_OFFSET);
+	if (GTH_MAGIC == *(const __u32 *)(data + GTH_MAGIC_OFFSET))
+		return IMG_GTH;
 
-	case PT_BL_GBH:
-		return GBH_MAGIC == *(__u32 *)(image_data + GBH_MAGIC_OFFSET);
+	if (GBH_MAGIC == *(const __u32 *)(data + GBH_MAGIC_OFFSET))
+		return IMG_GBH;
 
-	case PT_BL_GCONF: // fixme
-		break;
+	if (LINUX_MAGIC == *(const __u32 *)(data + LINUX_MAGIC_OFFSET))
+		return IMG_LINUX;
 
-	case PT_OS_LINUX:
-		return LINUX_MAGIC == *(__u32 *)(image_data + LINUX_MAGIC_OFFSET);
+	if (JFFS2_MAGIC == *(const __u16 *)(data + JFFS2_MAGIC_OFFSET))
+		return IMG_JFFS2;
 
-	case PT_FS_JFFS2:
-		return JFFS2_MAGIC == *(__u16 *)(image_data + JFFS2_MAGIC_OFFSET);
+	if (UBIFS_MAGIC == *(const __u32 *)(data + UBIFS_MAGIC_OFFSET))
+		return IMG_UBIFS;
 
-	case PT_FS_YAFFS:
-		return check_yaffs1_image(image_data + YAFFS_OOB_SIZE);
+	if (check_yaffs1_image(data + YAFFS_OOB_SIZE))
+		return IMG_YAFFS;
 
-	case PT_FS_YAFFS2:
-		break;
+	// TODO: check other image types
 
-	case PT_FS_CRAMFS:
-		return true; //fixme
-
-	case PT_FS_UBIFS:
-		return (UBIFS_MAGIC == *(__u32 *)(image_data + UBIFS_MAGIC_OFFSET));
-
-	default:
-		return true; // tmp, fixme!!!
-	}
-
-	return true; // fixme!
+	return IMG_UNKNOWN;
 }

@@ -1,3 +1,4 @@
+#include <go.h>
 #include <loader.h>
 #include <fs/fs.h>
 #include <uart/uart.h>

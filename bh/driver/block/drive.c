@@ -86,7 +86,7 @@ int disk_drive_register(struct disk_drive *drive)
 		if (NULL == slave)
 			return -ENOMEM;
 
-		snprintf(slave->bdev.name, PART_NAME_LEN, "%sp%d",
+		snprintf(slave->bdev.name, LABEL_NAME_SIZE, "%sp%d",
 			drive->bdev.name, i + 1);
 
 		slave->bdev.base = part_tab[i].base;
@@ -118,15 +118,9 @@ int disk_drive_register(struct disk_drive *drive)
 	return ret;
 }
 
-#ifdef CONFIG_HOST_DEMO
-int disk_drive_init(void)
-#else
 static int __INIT__ disk_drive_init(void)
-#endif
 {
 	return 0;
 }
 
-#ifndef CONFIG_HOST_DEMO
 SUBSYS_INIT(disk_drive_init);
-#endif

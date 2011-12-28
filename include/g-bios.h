@@ -6,6 +6,9 @@
 #warning "depricated"
 #endif
 
+// fixme
+#define FILE_NAME_SIZE   256
+
 #ifndef __ASSEMBLY__
 #include <types.h>
 #include <errno.h>
@@ -15,13 +18,7 @@
 
 void udelay(__u32 n);
 void mdelay(__u32 n);
-
-// fixme: to be moved
-void *go_get_addr();
-void go_set_addr(void *);
 #endif
-
-#include <image.h>
 
 #ifdef CONFIG_GTH
 

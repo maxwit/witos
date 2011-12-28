@@ -1,9 +1,10 @@
+#include <go.h>
 #include <errno.h>
 #include <loader.h>
+#include <stdio.h>
 #include <fs/fs.h>
 #include <uart/uart.h>
 #include <uart/kermit.h>
-#include <stdio.h>
 
 #define MARK_START  0x1
 #define MARK_EXIT   0x3

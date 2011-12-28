@@ -168,7 +168,7 @@ static int get_file_to_flash(int data_fd)
 
 	file->bdev = bdev;
 
-	file->open(file,"jffs2");
+	file->open(file, 0);
 
 	while (1) {
 		ret = recv(data_fd, buff, BUF_LEN, 0);

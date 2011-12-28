@@ -12,11 +12,6 @@
 
 #define __GBIOS_LOADER__    __attribute__((section(".gbios_loader")))
 
-// fixme
-#ifndef MAX_FILE_NAME_LEN
-#define MAX_FILE_NAME_LEN   64
-#endif
-
 struct loader_opt {
 	void *load_addr; // fixme: void *load_addr[2];
 	int  load_flash;
@@ -26,7 +21,7 @@ struct loader_opt {
 	char ckey[2];
 	int (*main)(struct loader_opt *opt);
 #else
-	char file_name[MAX_FILE_NAME_LEN];
+	char file_name[FILE_NAME_SIZE];
 	struct bdev_file *file;
 #endif
 };

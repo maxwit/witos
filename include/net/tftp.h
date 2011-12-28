@@ -2,11 +2,6 @@
 
 #include <block.h>
 
-// fixme
-#ifndef MAX_FILE_NAME_LEN
-#define MAX_FILE_NAME_LEN   64
-#endif
-
 #define TFTP_RRQ   CPU_TO_BE16(1)
 #define TFTP_WRQ   CPU_TO_BE16(2)
 #define TFTP_DAT   CPU_TO_BE16(3)
@@ -29,7 +24,7 @@
 struct tftp_opt {
 	bool  verbose;
 	__u32 server_ip; // const char *server;
-	char  file_name[MAX_FILE_NAME_LEN];
+	char  file_name[FILE_NAME_SIZE];
 	char  path[MAX_PATH_LEN];
 	char  mode[MAX_MODE_LEN];
 	void  *load_addr;
@@ -40,4 +35,3 @@ struct tftp_opt {
 
 int tftp_download(struct tftp_opt *opt);
 int tftp_upload(struct tftp_opt *opt);
-PART_TYPE str2part_type(const char *str);

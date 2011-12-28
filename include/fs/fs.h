@@ -6,11 +6,8 @@
 // #define O_RDONLY 0
 // #define O_RDWD   1
 
-#define MAX_FILE_NAME_LEN 64
-
 struct file_operations;
 
-/////////////////////////////////
 struct file_system_type {
 	const char *name;
 	const struct file_operations *fops;
@@ -39,7 +36,6 @@ int gb_mount(const char *type, unsigned long flags, const char *bdev_name, const
 int gb_umount(const char *mnt);
 #endif
 
-//////////////////////////////////
 struct file {
 	size_t pos;
 	int mode;
@@ -55,7 +51,6 @@ struct file_operations {
 	// ...
 };
 
-///////////
 #ifdef __G_BIOS__
 int open(const char *const name, int flags, ...);
 int close(int fd);

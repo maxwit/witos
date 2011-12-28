@@ -91,6 +91,8 @@ static int __INIT__ mw61_init(void)
 	return 0;
 }
 
+PLAT_INIT(mw61_init);
+
 static void s3c6410_reset(void)
 {
 	__u32 val;
@@ -100,4 +102,4 @@ static void s3c6410_reset(void)
 	writel(VA(RST_BASE + RST_STAT), val);
 }
 
-PLAT_INIT(mw61_init);
+DECL_RESET(s3c6410_reset);
