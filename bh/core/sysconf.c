@@ -220,6 +220,7 @@ int conf_get_attr(const char *attr, char val[])
 	cfg->offset -= len + 1;
 	_syscfg_read_line(cfg, line, sizeof(line));
 	p = strchr(line, '=');
+	p++;
 
 	while (*p) {
 		if (*p != ' ')
