@@ -165,9 +165,6 @@ def parse_parts(parts_string):
 
 if __name__ == "__main__":
 	argv_len = len(sys.argv)
-	if argv_len < 6:
-		usage()
-		sys.exit()
 
 	nang_img = nand_image_t()
 
