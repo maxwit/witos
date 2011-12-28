@@ -10,7 +10,7 @@ static inline void blk_buf_init(struct block_buff *blk_buf, void *buff, size_t s
 static inline PART_TYPE get_image_type(const struct bdev_file *file)
 {
 #warning
-	return PT_FREE;
+	return PT_FS_JFFS2;
 }
 
 static int flash_bdev_open(struct bdev_file *file, const char *type)
@@ -423,7 +423,6 @@ int set_bdev_file_attr(struct bdev_file *file)
 	char file_attr[CONF_ATTR_LEN];
 	char file_val[CONF_VAL_LEN];
 	struct block_device *bdev;
-	struct flash_chip *flash;
 
 	assert(file != NULL);
 
@@ -450,7 +449,6 @@ int get_bdev_file_attr(struct bdev_file * file)
 	char file_attr[CONF_ATTR_LEN];
 	char file_val[CONF_VAL_LEN];
 	struct block_device *bdev;
-	struct flash_chip *flash;
 
 	assert(file != NULL);
 

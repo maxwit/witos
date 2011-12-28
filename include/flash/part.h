@@ -1,5 +1,6 @@
 #pragma once
 
+#warning
 #include <flash/flash.h>
 
 #define PT_STR_GB_TH    "g-bios-th"
@@ -14,5 +15,3 @@
 #define PT_STR_YAFFS2   "yaffs2"
 #define PT_STR_UBIFS    "ubifs"
 #define PT_STR_FREE     "free"
-
-const char *part_type2str(__u32 type);

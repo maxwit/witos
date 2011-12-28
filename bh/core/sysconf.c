@@ -203,6 +203,9 @@ L1:
 	return ret;
 }
 
+// TODO: add ex version:
+// int conf_get_attr_ex(char val[], const char *fmt, ...)
+
 int conf_get_attr(const char *attr, char val[])
 {
 	const char *p;

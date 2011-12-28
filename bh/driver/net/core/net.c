@@ -744,8 +744,9 @@ int net_get_server_ip(__u32 *ip)
 	int ret;
 	char buff[CONF_VAL_LEN];
 
-	if (conf_get_attr("net.server", buff) < 0)
-		conf_get_attr("default.net.server", buff);
+	ret = conf_get_attr("net.server", buff);
+	if (ret < 0)
+		return ret;
 
 	ret = str_to_ip((__u8 *)ip, buff);
 

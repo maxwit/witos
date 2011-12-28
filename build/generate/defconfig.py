@@ -135,7 +135,7 @@ if __name__ == "__main__":
 		exit(1)
 
 	for x in sys_config:
-		fd_sys_cfg.write('default.net.' + x + ' = ' + sys_config[x] + '\n')
+		fd_sys_cfg.write('net.' + x + ' = ' + sys_config[x] + '\n')
 
 	fd_sys_cfg.close()
 

@@ -8,7 +8,7 @@
 #include <linux.h>
 #include <board.h>
 
-#define KERNEL_SIZE   MB(8)
+#define KERNEL_SIZE   MB(4)
 
 // fixme: for debug stage while no flash driver available
 static int build_command_line(char *cmd_line, size_t max_len)
@@ -16,24 +16,25 @@ static int build_command_line(char *cmd_line, size_t max_len)
 	int ret;
 	char *str = cmd_line;
 	char local_ip[IPV4_STR_LEN], server_ip[IPV4_STR_LEN], net_mask[IPV4_STR_LEN];
-#ifdef CONFIG_MERGE_GB_PARTS
-	__u32 gb_base, gb_size;
-#endif
 	__u32 client_ip, client_mask; // fixme
-	struct net_device *ndev;
 	char config[CONF_VAL_LEN];
 	const char *console;
+	char attr[CONF_ATTR_LEN];
 
 	// fixme: to be removed
 	memset(cmd_line, 0, max_len);
 
+	// set root
 	ret = conf_get_attr("linux.root", config);
 	if (ret < 0) {
-		// fixme
+		// TODO: search the root device
 		strcpy(config, "mtdblock4");
 	}
 
-	str += sprintf(str, "root=/dev/%s", config);
+	if (!strncmp(config, "/dev/", 5))
+		str += sprintf(str, "root=%s", config);
+	else
+		str += sprintf(str, "root=/dev/%s", config);
 
 	if (!strncmp(config, "nfs", 3)) {
 		ret = conf_get_attr("linux.nfsroot", config);
@@ -43,38 +44,72 @@ static int build_command_line(char *cmd_line, size_t max_len)
 			strcat(config, ":/maxwit/image/rootfs");
 		}
 
-		str += sprintf(str, "nfsroot=%s", config);
-	} else if (!strncmp(config, "mtdblock", 8)) {
-		const char *rootfs = "jffs2"; // fixme
-
-		str += sprintf(str, " rootfstype=%s", rootfs);
-
-		if (conf_get_attr("flash.part", config) >= 0)
-			str += sprintf(str, " mtdparts=%s", config);
+		str += sprintf(str, " nfsroot=%s", config);
 	} else {
-		printf("%s not supported yet!\n", config);
-		return -EINVAL;
+		if (!strncmp(config, "mtdblock", 8)) {
+			struct block_device *bdev;
+			PART_TYPE type;
+			const char *rootfs; // fixme
+
+			bdev = get_bdev_by_name(config);
+			if (!bdev) {
+				printf("fail to open block device \"%s\"!\n", config);
+				return -ENODEV;
+			}
+
+			// fixme
+			type = PT_FS_JFFS2; // get_image_type(bdev->file);
+			switch (type) {
+			case PT_FS_JFFS2:
+			default:
+				rootfs = "jffs2";
+				break;
+
+			case PT_FS_UBIFS:
+				// TODO: add ubix_y
+				break;
+			}
+
+			str += sprintf(str, " rootfstype=%s", rootfs);
+		}
 	}
 
-	ret = conf_get_attr("net.eth0.method", config);
-	// if ret < 0
+	// TODO: merge partitions for booting Android
+	if (conf_get_attr("flash.part", config) >= 0)
+		str += sprintf(str, " mtdparts=%s", config);
 
-	if (!strcmp(config, "dhcp")) {
+	// set IP
+	ret = conf_get_attr("net.server", server_ip);
+	// if ret < 0 ...
+
+	const char *ifx = "eth0";
+
+	sprintf(attr, "net.%s.method", ifx);
+	ret = conf_get_attr(attr, config);
+
+	if (ret < 0 || !strcmp(config, "dhcp")) {
 		str += sprintf(str, " ip=dhcp");
 	} else {
-		// set IP
-		ndev = ndev_get_first();
-		// if (!ndev)
-		
-		if (ndev_ioctl(ndev, NIOC_GET_IP, &client_ip) == 0)
-			ip_to_str(local_ip, client_ip);
-		else
-			;
-		
-		if (ndev_ioctl(ndev, NIOC_GET_MASK, &client_mask) == 0)
-			ip_to_str(net_mask, client_mask);
-		else
-			;
+		struct net_device *ndev;
+		struct list_node *list_head, *iter;
+
+		list_head = ndev_get_list();
+		list_for_each(iter, list_head) {
+			ndev = container_of(iter, struct net_device, ndev_node);
+			if (!strcmp(ndev->ifx_name, ifx))
+				break;
+		}
+
+		if (iter != list_head) {
+			if (ndev_ioctl(ndev, NIOC_GET_IP, &client_ip) == 0)
+				ip_to_str(local_ip, client_ip);
+
+			if (ndev_ioctl(ndev, NIOC_GET_MASK, &client_mask) == 0)
+				ip_to_str(net_mask, client_mask);
+		} else {
+			GEN_DGB("NOt supportted now!\n");
+			// TODO: read from sysconfig
+		}
 
 		str += sprintf(str, " ip=%s:%s:%s:%s:maxwit.googlecode.com:eth0:off",
 				local_ip, server_ip, server_ip, net_mask);
@@ -86,7 +121,7 @@ static int build_command_line(char *cmd_line, size_t max_len)
 	else
 		console = config;
 
-	str += sprintf(str, " console=%s%d", console, CONFIG_UART_INDEX);
+	str += sprintf(str, " console=%s%d\0", console, CONFIG_UART_INDEX);
 
 	ret = str - cmd_line;
 
@@ -192,7 +227,7 @@ static inline int preboot()
 int main(int argc, char *argv[])
 {
 	int ret = -EIO, opt;
-	enum {BA_SLIENT, BA_SHOW, BA_VERBOSE} verbose = BA_SLIENT;
+	enum {BA_SLIENT, BA_STOP, BA_VERBOSE} verbose = BA_SLIENT;
 	char config[CONF_VAL_LEN], cmd_line[512];
 	void *initrd;
 	LINUX_KERNEL_ENTRY linux_kernel;
@@ -202,7 +237,7 @@ int main(int argc, char *argv[])
 	while ((opt = getopt(argc, argv, "t::sr::f::n::m:c:vl:h")) != -1) {
 		switch (opt) {
 		case 's':
-			verbose = BA_SHOW;
+			verbose = BA_STOP;
 			break;
 
 		case 'v':
@@ -227,7 +262,7 @@ int main(int argc, char *argv[])
 	arm_tag = begin_setup_atag(VA(ATAG_BASE));
 
 	// parse command line
-	ret = conf_get_attr("linux.cmdline", config);
+	ret = conf_get_attr("linux.cmd_line", config);
 	if (ret < 0 || !strcmp(config, "auto"))
 		build_command_line(cmd_line, sizeof(cmd_line));
 	else
@@ -235,13 +270,14 @@ int main(int argc, char *argv[])
 
 	arm_tag = setup_cmdline_atag(arm_tag, cmd_line);
 
+	// setup mem tag
 	if (strstr(cmd_line, "mem=") == NULL)	
 		arm_tag = setup_mem_atag(arm_tag);
 
 	// load initrd
 	ret = conf_get_attr("linux.initrd", config);
 	if (ret >= 0) {
-		if (BA_SHOW == verbose) {
+		if (BA_STOP == verbose) {
 			arm_tag = setup_initrd_atag(arm_tag, config, 0);
 		} else {
 			initrd = malloc(MB(8)); // fixme
@@ -252,19 +288,21 @@ int main(int argc, char *argv[])
 
 			ret = load_image(initrd, config);
 			if (ret <= 0) {
-				// BA_SHOW == verbose args;
+				// BA_STOP == verbose args;
 				return ret;
 			}
 
+			// TODO: check the initrd.img
 			arm_tag = setup_initrd_atag(arm_tag, initrd, ret);
 		}
 	}
 
+	// tag end
 	end_setup_atag(arm_tag);
 
 	if (verbose != BA_SLIENT) {
 		show_boot_args(VA(ATAG_BASE));
-		if (BA_SHOW == verbose)
+		if (BA_STOP == verbose)
 			return 0;
 	}
 
@@ -278,7 +316,7 @@ int main(int argc, char *argv[])
 	ret = conf_get_attr("linux.kernel", config);
 	if (ret < 0) {
 		// set to default
-		strcpy(config, "mtdblock4"); // fixme
+		strcpy(config, "mtdblock3"); // fixme
 	}
 
 	printf("Loading Linux kernel from %s to 0x%p ...\n", config, linux_kernel);

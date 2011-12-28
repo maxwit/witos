@@ -59,9 +59,9 @@ $(DEFCONFIG_LIST):
 	@./build/generate/defconfig.py $@
 	@echo
 
-install:
+install: th/g-bios-th.bin bh/g-bios-bh.bin
 	@mkdir -p $(IMG_DIR)
-	@for fn in $(wildcard [tb]h/g-bios-*.bin); do \
+	@for fn in $^; do \
 		cp -v $$fn $(IMG_DIR); \
 	done
 	@echo

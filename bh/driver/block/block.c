@@ -40,6 +40,7 @@ struct block_device *get_bdev_by_name(const char *name)
 	return NULL;
 }
 
+#warning
 struct block_device *get_bdev_by_volume(char vol)
 {
 	struct list_node *iter;

@@ -96,6 +96,9 @@ bss_init:
 	bl    heap_init
 
 	bl    main
+
+	mov   r0, #'n'
+	bl	  uart_send_byte
 0:
 	b     0b
 
