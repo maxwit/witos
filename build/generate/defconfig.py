@@ -11,6 +11,7 @@ import os, sys, re, random, socket, fcntl, struct
 from xml.etree import ElementTree
 
 config = {}
+sys_config = {}
 
 def traverse(node):
 	if node.tag == 'choice':
@@ -108,24 +109,35 @@ if __name__ == "__main__":
 
 	fd_def_cfg.close()
 
-	if config.has_key('MAC_ADDR') == False:
+	if config.has_key('mac_addr') == False:
 		mac1 = hex(random.randint(0, 255))[2:]
 		mac2 = hex(random.randint(1, 255))[2:]
 		mac3 = hex(random.randint(1, 255))[2:]
 		mac4 = hex(random.randint(1, 255))[2:]
 		mac5 = hex(random.randint(1, 255))[2:]
-		config['MAC_ADDR'] = '"10:' + mac1 + ':' + mac2 + ':' + \
+		sys_config['mac_addr'] = '"10:' + mac1 + ':' + mac2 + ':' + \
 							mac3 + ':' + mac4 + ':' + str(mac5) + '"'
 
 	# fixme:
 	# (1) netmask issue;
 	# (2) assert(local != server)
-	if config.has_key('SERVER_IP') == False:
+	if config.has_key('server_ip') == False:
 		server_ip = get_ip_address('eth0') # fixme
-		config['SERVER_IP'] = '"' + server_ip + '"'
+		sys_config['server_ip'] = '"' + server_ip + '"'
 		local_ip = server_ip.rsplit(".", 1)[0] + "." + str(random.randint(1, 254))
-		config['LOCAL_IP'] = '"' + local_ip + '"'
-		config['NET_MASK'] = "\"255.255.255.0\""
+		sys_config['local_ip'] = '"' + local_ip + '"'
+		sys_config['net_mask'] = "\"255.255.255.0\""
+
+	try:
+		fd_sys_cfg = open('.sysconfig', 'aw')
+	except:
+		print 'fail to open .sysconfig file'
+		exit(1)
+
+	for x in sys_config:
+		fd_sys_cfg.write('default.net.' + x + ' = ' + sys_config[x] + '\n')
+
+	fd_sys_cfg.close()
 
 	parse_config("build/configs/configs.xml")
 

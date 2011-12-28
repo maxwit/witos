@@ -7,6 +7,7 @@ struct platform_id {
 struct platform_device {
 	struct device dev;
 	const char *name;
+	int (*init)(struct platform_device *);
 };
 
 struct platform_driver {
@@ -19,7 +20,7 @@ struct platform_driver {
 // fixme
 static inline unsigned long platform_get_memory(struct platform_device *plat_dev)
 {
-	return plat_dev->dev.memio;
+	return plat_dev->dev.mem;
 }
 
 static inline unsigned long platform_get_irq(struct platform_device *plat_dev)

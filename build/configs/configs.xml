@@ -63,6 +63,7 @@
 		<config name="NOR" bool="n">
 		</config>
 		<config name="NAND" bool="n">
+			<config name="GBH_LOAD_SIZE" int="0x80000"/>
 			<config name="NAND_AT91" bool="n">
 				<config name="NAND_ECC_MODE" string="NAND_ECC_SW"/>
 			</config>

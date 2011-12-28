@@ -178,6 +178,7 @@ int conf_set_attr(const char *attr, const char *val)
 	cfg = _syscfg_open();
 
 	if ((old_len = search_attr(cfg, attr))) {
+		DPRINT("Attribute \"%s\" does not exists, set attr error\n", attr);
 		ret = -ENODATA;
 		goto L1;
 	}
@@ -213,6 +214,7 @@ int conf_get_attr(const char *attr, char val[])
 	cfg = _syscfg_open();
 
 	if ((len = search_attr(cfg, attr)) <= 0) {
+		DPRINT("Attribute \"%s\" does not exists, get attr error!\n", attr);
 		ret = -ENODATA;
 		goto L1;
 	}

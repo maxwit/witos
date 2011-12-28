@@ -338,7 +338,7 @@ static int mem_free(int argc, char *argv[])
 	while ((ch = getopt(argc, argv, "dh")) != -1) {
 		switch (ch) {
 		case 'd':
-			printf("heap totle size: %d  used : %d unused %d\n", HEAP_SIZE, HEAP_SIZE - sum_curr_size, sum_curr_size);
+			printf("heap totle size: %d  used : %d unused %d\n", CONFIG_HEAP_SIZE, CONFIG_HEAP_SIZE - sum_curr_size, sum_curr_size);
 			return 0;
 
 		default:
@@ -348,7 +348,7 @@ static int mem_free(int argc, char *argv[])
 			return ret;
 		}
 	}
-	printf("heap totle size: 0x%x  used : 0x%x unused 0x%x\n", HEAP_SIZE, HEAP_SIZE - sum_curr_size, sum_curr_size);
+	printf("heap totle size: 0x%x  used : 0x%x unused 0x%x\n", CONFIG_HEAP_SIZE, CONFIG_HEAP_SIZE - sum_curr_size, sum_curr_size);
 
 	return 0;
 }

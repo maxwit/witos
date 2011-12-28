@@ -1,7 +1,6 @@
 #include <irq.h>
 #include <init.h>
 #include <arm/s3c24x0.h>
-#include <flash/flash.h>
 
 static int __INIT__ s3c2440_init(void)
 {

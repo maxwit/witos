@@ -1,4 +1,6 @@
-obj-y = init.o irq.o timer.o task.o sysconf.o device.o confdata.o
+obj-y = init.o delay.o irq.o task.o sysconf.o device.o confdata.o board.o
+
+obj-$(CONFIG_TIMER_SUPPORT) += timer.o
 
 $(path)/confdata.c: $(TOP_DIR)/.sysconfig
 	@xxd -i $< > $@

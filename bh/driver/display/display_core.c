@@ -1,6 +1,7 @@
 #include <malloc.h>
 #include <graphic/display.h>
 #include <djpeg/djpeg.h>
+#include <errno.h>
 
 static struct display* g_system_display;
 
@@ -150,7 +151,7 @@ static void draw_logo(void * const video_buff, __u32 width, __u32 height, pixel_
 #endif
 }
 
-void *video_mem_alloc(__u32 *phy_addr, const struct lcd_vmode *vm, pixel_format_t pix_format)
+void *video_mem_alloc(unsigned long *phy_addr, const struct lcd_vmode *vm, pixel_format_t pix_format)
 {
 	void *buff;
 	__u32 size = vm->width * vm->height;
@@ -177,20 +178,87 @@ void *video_mem_alloc(__u32 *phy_addr, const struct lcd_vmode *vm, pixel_format_
 		return NULL;
 	}
 
+	DPRINT("DMA: addr = 0x%08x, size = 0x%08x\n", phy_addr, size);
+
 	// fixme: move to upper layer?
 	draw_logo(buff, vm->width, vm->height, pix_format);
 
 	return buff;
 }
 
-struct display* display_create(void)
+struct display *display_create(void)
 {
 	struct display *disp;
+	char conf_pixel[CONF_VAL_LEN];
 
 	disp = zalloc(sizeof(*disp));
-	// if NULL
+	if (!disp)
+		return NULL;
+
+	// fixme!
+	if (conf_get_attr("disp.lcd.pixel", conf_pixel) == 0) {
+		if (strncmp(conf_pixel, "PIX_RGB24", sizeof(conf_pixel)))
+			disp->pix_fmt = PIX_RGB24;
+		else if (strncmp(conf_pixel, "PIX_RGB16", sizeof(conf_pixel)))
+			disp->pix_fmt = PIX_RGB16;
+		else
+			disp->pix_fmt = PIX_RGB15;
+	} else {
+		disp->pix_fmt = PIX_RGB24;
+	}
 
 	return disp;
+}
+
+int display_config(struct display *disp,
+		int (*set_vmode)(struct display *, const struct lcd_vmode *))
+{
+	void *va;
+	unsigned long dma;
+	const struct lcd_vmode *vm;
+	char attr_val[CONF_VAL_LEN];
+	pixel_format_t pixel_format;
+
+	if (conf_get_attr("display.lcd.model", attr_val) < 0) {
+		DPRINT("%s(): fail to get lcd model\n", __func__);
+		return -EINVAL;
+	}
+
+	vm = lcd_get_vmode_by_name(attr_val);
+	if (NULL == vm) {
+		printf("No LCD video mode found!\n");
+		return -ENOENT;
+	}
+
+	if (conf_get_attr("display.lcd.pixel_format", attr_val) < 0) {
+		DPRINT("%s(): fail to get lcd pixel format\n", __func__);
+		return -EINVAL;
+	}
+
+	if (strncmp(attr_val, "PIX_RGB16", sizeof(attr_val)))
+		pixel_format = PIX_RGB16;
+	else if (strncmp(attr_val, "PIX_RGB16", sizeof(attr_val)))
+		pixel_format = PIX_RGB15;
+	else
+		pixel_format = PIX_RGB24;
+
+	va = video_mem_alloc(&dma, vm, pixel_format);
+	if(va == NULL) {
+		printf("Fail to dma alloc \n");
+		return -ENOMEM;
+	}
+
+	DPRINT("DMA = 0x%08x, 0x%p\n", dma, va);
+
+	// disp->mmio = VA(LCD_BASE);
+	disp->video_mem_va = va;
+	disp->video_mem_pa = dma;
+	disp->pix_fmt      = pixel_format;
+	disp->set_vmode    = set_vmode;
+
+	set_vmode(disp, vm);
+
+	return 0;
 }
 
 int display_register(struct display* disp)

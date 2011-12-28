@@ -201,7 +201,7 @@ if __name__ == "__main__":
 
 		# check img_names
 		if os.path.exists(opt) == False:
-			print img, "is not exists"
+			print img, "does not exists"
 			usage()
 			sys.exit()
 		img_names[index] = opt
@@ -211,7 +211,7 @@ if __name__ == "__main__":
 		print "create image ..."
 		nang_img.create()  # make image
 	else:
-		print nang_img.flash_image_name, "is exists"
+		print nang_img.flash_image_name, "exists"
 		ret = raw_input("Remaster (y or n): ")
 		if ret == "y":
 			print "create image ..."

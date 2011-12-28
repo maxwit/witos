@@ -1,15 +1,5 @@
 #include <arm/s3c6410.h>
 
-// fixme!!!
-#ifdef CONFIG_GTH
-void udelay(__u32 n)
-{
-	volatile __u32 m = n * (HCLK_RATE >> 20) >> 6;
-
-	while (m-- > 0);
-}
-#endif
-
 // init clock, gpio, wdt, etc.
 int soc_init(void)
 {

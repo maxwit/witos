@@ -41,40 +41,27 @@ include build/rules/common.mk
 
 dir-y := th bh
 
-all: $(dir-y) build/g-bios-sys.bin
+all: $(dir-y)
 
 $(dir-y): include/autoconf.h
 	@make $(img_build)$@
 
 include/autoconf.h: .config
 	@build/generate/autoconf.py $< $@
-	@sed -i '/CONFIG_CROSS_COMPILE/d' $@
+	@sed -i -e '/CONFIG_CROSS_COMPILE/d' -e '/CONFIG_ARCH_VER\>/d'  $@
 	@sed -i '/^$$/d' $@
 
 # fixme
 $(DEFCONFIG_LIST):
 	@echo "configure for board \"$(@:%_defconfig=%)\""
+	@grep -w "^sysG" $(DEFCONFIG_PATH)/$(@:%_defconfig=%_sysconfig) || echo sysG > .sysconfig && echo >> .sysconfig
+	@cat $(DEFCONFIG_PATH)/$(@:%_defconfig=%_sysconfig) >> .sysconfig
 	@./build/generate/defconfig.py $@
-	@cp $(DEFCONFIG_PATH)/$(@:%_defconfig=%_sysconfig) .sysconfig
 	@echo
-
-# IMAGE_UTILITY = build/generate/sys_img_creat
-
-# fixme
-# $(IMAGE_UTILITY): $(IMAGE_UTILITY).c
-#	gcc -Wall $< -o $@
-
-# fixme
-# build/g-bios-sys.bin: .sysconfig $(IMAGE_UTILITY)
-# 	$(IMAGE_UTILITY) $< $@
-# 	@echo
-
-build/g-bios-sys.bin: .sysconfig
-	@cp $< $@
 
 install:
 	@mkdir -p $(IMG_DIR)
-	@for fn in $(wildcard [tb]h/g-bios-*.bin) build/g-bios-sys.bin; do \
+	@for fn in $(wildcard [tb]h/g-bios-*.bin); do \
 		cp -v $$fn $(IMG_DIR); \
 	done
 	@echo
@@ -84,7 +71,6 @@ clean:
 		make $(img_build)$$dir clean; \
 		rm -vf $$dir/g-bios-$$dir.*; \
 	 done
-	@rm -vf build/g-bios-sys.bin
 	@echo
 
 distclean: clean

@@ -2,12 +2,8 @@
 #include <loader.h>
 #include <flash/nand.h>
 
-// fixme
-#define CONFIG_GBH_DEF_LEN   KB(512)
-
 #define TIMEOUT_COUNT        (1 << 14)
 #define IS_LARGE_PAGE(flash) (flash->write_size >= KB(1))
-#define IS_POW2(n)           ((n) && ((n) & ((n) - 1)) == 0)
 
 static const __u8 nand_ids[] = {
 	0x33, 0x35, 0x36, 0x39, 0x43, 0x45, 0x46, 0x49, 0x53, 0x55,
@@ -203,7 +199,7 @@ int __WEAK__ nand_load(struct nand_chip *flash, __u32 block, void *mem)
 		printf("g-bios-bh found.\n");
 #endif
 	} else {
-		load_size = CONFIG_GBH_DEF_LEN;
+		load_size = CONFIG_GBH_LOAD_SIZE;
 #ifdef CONFIG_DEBUG
 		printf("g-bios-bh NOT found!\n");
 #endif

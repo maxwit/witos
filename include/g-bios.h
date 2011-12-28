@@ -2,7 +2,9 @@
 
 #include <autoconf.h>
 
-#define HEAP_SIZE   (8 << 20)
+#ifdef CONFIG_NORMAL_SPACE
+#warning "depricated"
+#endif
 
 #ifndef __ASSEMBLY__
 #include <types.h>
@@ -10,6 +12,10 @@
 #include <timer.h>
 #include <io.h>
 #include <sysconf.h>
+
+void udelay(__u32 n);
+void mdelay(__u32 n);
+
 #endif
 
 #include <image.h>
@@ -17,8 +23,6 @@
 #ifdef CONFIG_GTH
 
 #ifndef __ASSEMBLY__
-
-// #define GBH_LOAD_SIZE     MB(2)
 
 int cpu_init(void);
 

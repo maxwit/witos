@@ -8,7 +8,7 @@ void free(void *p);
 
 void *zalloc(size_t);
 
-void *dma_alloc_coherent(size_t size, __u32 *pa);
+void *dma_alloc_coherent(size_t size, unsigned long *pa);
 
 struct list_node *get_heap_head_list(void);
 

@@ -129,6 +129,29 @@ char *strncat(char *dst, const char *src, size_t count)
 	return dst;
 }
 
+char *strstr(const char *haystack, const char *needle)
+{
+	const char *p, *q;
+
+	p = haystack;
+	q = needle;
+	while (*p) {
+		int i = 0;
+		while (q[i] && q[i] == p[i]) i++;
+		if (q[i] == '\0')
+			return (char *)p;
+		p++;
+	}
+
+	return NULL;
+}
+
+// fixme
+char *strcasestr(const char *haystack, const char *needle)
+{
+	return NULL;
+}
+
 char *strchr(const char *src, int c)
 {
 	const char *iter;

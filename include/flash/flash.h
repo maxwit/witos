@@ -197,6 +197,7 @@ int flash_fops_init(struct block_device *bdev);
 int set_bdev_file_attr(struct bdev_file * file);
 
 int get_bdev_file_attr(struct bdev_file * file);
+struct flash_chip * flash_open_by_id(const char *mtd_id);
 
 struct flash_chip *flash_open(const char *name);
 

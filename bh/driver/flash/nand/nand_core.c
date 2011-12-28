@@ -1414,10 +1414,10 @@ struct nand_ctrl *nand_ctrl_new(void)
 
 	list_head_init(&nfc->nand_list);
 
-	nfc->chip_delay    = 5;
-	nfc->slaves        = 0;
-	nfc->max_slaves    = 1;
-	nfc->ecc_mode      = CONFIG_NAND_ECC_MODE;
+	nfc->chip_delay     = 5;
+	nfc->slaves         = 0;
+	nfc->max_slaves     = 1;
+	nfc->ecc_mode       = NAND_ECC_SW;
 
 	nfc->cmd_ctrl       = nand_cmd_ctrl;
 	nfc->command        = nand_command_small;

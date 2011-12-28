@@ -1,5 +1,3 @@
-#ifdef CONFIG_TIMER_SUPPORT
-
 #define DEFAULT_LOOPS_PERJIFFIES (1 << 8)
 
 static volatile __u32 g_tick_count = 1;
@@ -82,17 +80,3 @@ void udelay(__u32 n)
 {
 	__udelay(loops_perusec * n);
 }
-
-#else
-void udelay(__u32 n)
-{
-	volatile __u32 m = n * (HCLK_RATE >> 20) >> 6;
-
-	while (m-- > 0);
-}
-
-void mdelay(__u32 n)
-{
-	udelay(1000 * n);
-}
-#endif

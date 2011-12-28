@@ -112,17 +112,17 @@ if __name__ == "__main__":
 	if os.path.exists("g-bios-th.bin"):
 		th_image = "g-bios-th.bin"
 	else:
-		print "g-bios-th.bin is not exists"
+		print "g-bios-th.bin does not exists"
 		sys.exit()
 
 	if os.path.exists("g-bios-bh.bin"):
 		bh_image = "g-bios-bh.bin"
 	else:
-		print "g-bios-bh.bin is not exists"
+		print "g-bios-bh.bin does not exists"
 		sys.exit()
 
 	if os.path.exists(sd_image_name):
-		print sd_image_name, "is exists"
+		print sd_image_name, "exists"
 	else:
 		print "create image ..."
 		create(sd_image_name)
@@ -132,14 +132,14 @@ if __name__ == "__main__":
 		print "add zImage to image"
 		zImage = "zImage"
 	else:
-		print "zImage is not exists"
+		print "zImage does not exists"
 		zImage = ""
 
 	if os.path.exists("rootfs"):
 		print "add rootfs to image"
 		rootfs = "rootfs"
 	else:
-		print "rootfs is not exists"
+		print "rootfs does not exists"
 		rootfs = ""
 
 	# choose File system

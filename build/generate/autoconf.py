@@ -48,16 +48,15 @@ def generate_autoconf(dot_conf, auto_conf, plat_info):
 
 if __name__ == "__main__":
 	if len(sys.argv) != 3:
-		print sys.argv[0] + ' .config autoconf.h'
+		print "usage: " + sys.argv[0] + ' .config autoconf.h'
 		sys.exit()
-	DOT_CONFIG = sys.argv[1]
-	AUTO_CONFIG= sys.argv[2]
 
-	print DOT_CONFIG + AUTO_CONFIG
+	dot_config = sys.argv[1]
+	auto_config= sys.argv[2]
 
-	PLAT = get_plat()
-	if PLAT == "null":
+	plat = get_plat()
+	if plat == "null":
 		print "Platform not specified!"
 		sys.exit()
 
-	generate_autoconf(DOT_CONFIG, AUTO_CONFIG, PLAT)
+	generate_autoconf(dot_config, auto_config, plat)
