@@ -52,7 +52,7 @@ static int __INIT__ beagle_init(struct board_desc *board, const struct board_id 
 }
 
 static struct board_id beagle_idt[] = {
-	BOARD_ID("beagle", 0x0),
+	BOARD_ID("beagle", 1546),
 	{}
 };
 

@@ -50,7 +50,7 @@ static int __INIT__ devkit8000_init(struct board_desc *board, const struct board
 }
 
 static struct board_id devkit8000_idt[] = {
-	BOARD_ID("DevKit8000", 0x0),
+	BOARD_ID("DevKit8000", 2330),
 	{}
 };
 

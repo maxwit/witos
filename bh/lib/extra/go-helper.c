@@ -2,7 +2,7 @@
 
 static void go_helper()
 {
-	printf("The jump address is NOT set!\n");
+	printf("No valid jump address is set!\n");
 }
 
 static void *g_jump_addr = go_helper;

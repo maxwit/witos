@@ -8,7 +8,7 @@
 #include <linux.h>
 #include <board.h>
 
-#define KERNEL_SIZE   MB(4)
+#define KERNEL_MAX_SIZE   (CONFIG_HEAP_SIZE / 4)
 
 // fixme: for debug stage while no flash driver available
 static int build_command_line(char *cmd_line, size_t max_len)
@@ -157,7 +157,7 @@ static ssize_t load_image(void *dst, const char *src)
 				return -ENODEV;
 			}
 
-			ret = flash_read(flash, dst, 0, KERNEL_SIZE /* fixme */);
+			ret = flash_read(flash, dst, 0, KERNEL_MAX_SIZE /* fixme */);
 			if (ret < 0) {
 				GEN_DGB("fail to load kernel image from %s!\n", src);
 				return ret;
@@ -215,7 +215,7 @@ static int show_boot_args(struct tag *arm_tag)
 	return 0;
 }
 
-static inline int preboot()
+static inline int prepare()
 {
 	irq_disable();
 
@@ -234,18 +234,20 @@ int main(int argc, char *argv[])
 	const struct board_id *board;
 	struct tag *arm_tag;
 
-	while ((opt = getopt(argc, argv, "t::sr::f::n::m:c:vl:h")) != -1) {
+	while ((opt = getopt(argc, argv, "v::h")) != -1) {
 		switch (opt) {
-		case 's':
-			verbose = BA_STOP;
-			break;
-
 		case 'v':
-			verbose = BA_VERBOSE;
+			if (optarg)
+				verbose = BA_VERBOSE;
+			else
+				verbose = BA_STOP;
 			break;
 
 		default:
-			break;
+			printf("Invalid option \'%c\'\n", opt);
+		case 'h':
+			usage();
+			return 0;
 		}
 	}
 
@@ -307,7 +309,7 @@ int main(int argc, char *argv[])
 	}
 
 	// load kernel image
-	linux_kernel = malloc(KERNEL_SIZE);
+	linux_kernel = malloc(KERNEL_MAX_SIZE);
 	if (!linux_kernel) {
 		ret = -ENOMEM;
 		goto error;
@@ -329,7 +331,7 @@ int main(int argc, char *argv[])
 	// TODO: check the kernel image
 	printf("Done! 0x%08x bytes loaded.\n", ret);
 
-	preboot();
+	prepare();
 
 	linux_kernel(0, board->mach_id, ATAG_BASE);
 

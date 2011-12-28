@@ -64,7 +64,7 @@ static int __INIT__ evm3530_init(struct board_desc *board, const struct board_id
 }
 
 static struct board_id evm3530_idt[] = {
-	BOARD_ID("EVM3530", 0x0),
+	BOARD_ID("EVM3530", 1535),
 	{}
 };
 

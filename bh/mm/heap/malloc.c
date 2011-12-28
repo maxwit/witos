@@ -73,8 +73,8 @@ int __INIT__ heap_init(void)
 	heap_start = heap_end - CONFIG_HEAP_SIZE;
 #endif
 
-	DPRINT("%s(): region = [0x%08x, 0x%08x]\n",
-			__func__, heap_start, heap_end);
+	DPRINT("%s(): region = [0x%08x, 0x%08x], size = 0x%08x\n",
+			__func__, heap_start, heap_end, heap_end - heap_start);
 
 	return __heap_init(heap_start, heap_end);
 }

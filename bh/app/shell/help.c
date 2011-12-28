@@ -27,7 +27,8 @@ int usage(void)
 	argv = current->argv;
 	help = current->help;
 	if (!help) {
-		printf("%s: help infomation not available.\n", argv[0]);
+		printf("%s: help infomation not available.\n"
+			"Please refer to g-bios user manual.\n", argv[0]);
 		return -ENOENT;
 	}
 
