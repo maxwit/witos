@@ -57,8 +57,9 @@ static int build_command_line(char *cmd_line, size_t max_len)
 				return -ENODEV;
 			}
 
+#warning
 			// fixme
-			type = IMG_JFFS2; // get_image_type(bdev->file);
+			type = IMG_JFFS2; // image_type_detect()
 			switch (type) {
 			case IMG_JFFS2:
 			default:
@@ -70,7 +71,10 @@ static int build_command_line(char *cmd_line, size_t max_len)
 				break;
 			}
 
-			str += sprintf(str, " rootfstype=%s", rootfs);
+			if (rootfs)
+				str += sprintf(str, " rootfstype=%s", rootfs);
+		} else if (!strncmp(config, "mmcblk", 6)) {
+			str += sprintf(str, " rootwait");
 		}
 	}
 
@@ -107,7 +111,7 @@ static int build_command_line(char *cmd_line, size_t max_len)
 			if (ndev_ioctl(ndev, NIOC_GET_MASK, &client_mask) == 0)
 				ip_to_str(net_mask, client_mask);
 		} else {
-			GEN_DGB("NOt supportted now!\n");
+			GEN_DGB("Not supportted now!\n");
 			// TODO: read from sysconfig
 		}
 

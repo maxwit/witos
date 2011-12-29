@@ -98,25 +98,39 @@ static bool check_yaffs1_image(const void *imagebuf)
 
 image_t image_type_detect(const void *data, size_t size)
 {
-	if (GTH_MAGIC == *(const __u32 *)(data + GTH_MAGIC_OFFSET))
+	return IMG_JFFS2;
+#warning
+	if (GTH_MAGIC == *(const __u32 *)(data + GTH_MAGIC_OFFSET)) {
+		GEN_DGB("g-bios-th image\n");
 		return IMG_GTH;
+	}
 
-	if (GBH_MAGIC == *(const __u32 *)(data + GBH_MAGIC_OFFSET))
+	if (GBH_MAGIC == *(const __u32 *)(data + GBH_MAGIC_OFFSET)) {
+		GEN_DGB("g-bios-bh image\n");
 		return IMG_GBH;
+	}
 
-	if (LINUX_MAGIC == *(const __u32 *)(data + LINUX_MAGIC_OFFSET))
+	if (LINUX_MAGIC == *(const __u32 *)(data + LINUX_MAGIC_OFFSET)) {
+		GEN_DGB("Linux kernel image\n");
 		return IMG_LINUX;
+	}
 
-	if (JFFS2_MAGIC == *(const __u16 *)(data + JFFS2_MAGIC_OFFSET))
+	if (JFFS2_MAGIC == *(const __u16 *)(data + JFFS2_MAGIC_OFFSET)) {
+		GEN_DGB("JFFS2 image\n");
 		return IMG_JFFS2;
+	}
 
-	if (UBIFS_MAGIC == *(const __u32 *)(data + UBIFS_MAGIC_OFFSET))
+	if (UBIFS_MAGIC == *(const __u32 *)(data + UBIFS_MAGIC_OFFSET)) {
+		GEN_DGB("UBIFS image\n");
 		return IMG_UBIFS;
+	}
 
-	if (check_yaffs1_image(data + YAFFS_OOB_SIZE))
+	if (check_yaffs1_image(data + YAFFS_OOB_SIZE)) {
+		GEN_DGB("YAFFS1 image\n");
 		return IMG_YAFFS;
+	}
 
 	// TODO: check other image types
-
+	GEN_DGB("Unknown image type!\n");
 	return IMG_UNKNOWN;
 }

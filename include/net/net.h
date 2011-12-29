@@ -164,7 +164,7 @@ struct eth_addr *getaddr(__u32 nip);
 struct eth_addr *gethostaddr(const __u32 nip);
 
 void arp_send_packet(const __u8 nip[], const __u8 *mac, __u16 op_code);
-void ip_send_packet(struct sock_buff *skb, __u8 bProtocal);
+int ip_send_packet(struct sock_buff *skb, __u8 proto);
 void udp_send_packet(struct sock_buff *skb);
 void tcp_send_packet(struct sock_buff *skb, __u8 flags, struct tcp_option *opt);
 

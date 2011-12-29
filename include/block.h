@@ -7,7 +7,7 @@
 #define LABEL_NAME_SIZE  32
 
 #define BDEV_NAME_FLASH  "mtdblock"
-#define BDEV_NAME_MMC    "mmcblock"
+#define BDEV_NAME_MMC    "mmcblk"
 #define BDEV_NAME_SCSI   "sd"
 #define BDEV_NAME_ATA    "hd" // fixme
 #define BDEV_NAME_NBD    "nbd"
@@ -32,7 +32,6 @@ struct bdev_file {
 	struct block_buff blk_buf;
 
 	size_t cur_pos;
-	const char *img_type;
 	char name[FILE_NAME_SIZE];
 	size_t size;
 

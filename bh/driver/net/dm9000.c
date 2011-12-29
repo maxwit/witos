@@ -9,6 +9,12 @@
 
 // TODO: support 16-bit BW
 
+#if 0
+#define DM9K_INFO printf
+#else
+#define DM9K_INFO(args ...)
+#endif
+
 static __u8 dm9000_readb(__u8 reg)
 {
 	writeb(VA(DM9000_INDEX_PORT), reg);
@@ -151,7 +157,7 @@ static int dm9000_recv_packet(struct net_device *ndev)
 		rx_size = readw(VA(DM9000_DATA_PORT));
 
 		// TODO: check the size
-		DPRINT("stat = 0x%04x, size = 0x%04x\n", rx_stat, rx_size);
+		DM9K_INFO("stat = 0x%04x, size = 0x%04x\n", rx_stat, rx_size);
 
 		if ((rx_stat & 0xbf00) || (skb = skb_alloc(0, (rx_size + 1) & ~1)) == NULL) {
 			for (i = 0; i < rx_size; i += 2)
@@ -164,7 +170,7 @@ static int dm9000_recv_packet(struct net_device *ndev)
 
 			for (i = 0; i < rx_size; i += 2) {
 				*rx_data = readw(VA(DM9000_DATA_PORT));
-				DPRINT("%04x", *rx_data);
+				DM9K_INFO("%04x", *rx_data);
 				rx_data++;
 			}
 
@@ -234,7 +240,7 @@ static int dm9000_isr(__u32 irq, void *dev)
 
 	dm9000_writeb(DM9000_ISR, irq_stat);
 
-	DPRINT("%s() line %d: irq_stat = 0x%08x\n",
+	DM9K_INFO("%s() line %d: irq_stat = 0x%08x\n",
 		__func__, __LINE__, irq_stat);
 
 	if (irq_stat & 0x1) {

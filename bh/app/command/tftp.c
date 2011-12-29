@@ -15,10 +15,6 @@ struct sub_cmd_info {
 static int tftp_get_file(int argc, char **argv);
 static int tftp_put_file(int argc, char **argv);
 
-#if 0
-static int get_default_file_name(struct block_device *cur_bdev, char file_name[]);
-#endif
-
 static int port_atoi(const char *str)
 {
 	const char *iter;
@@ -343,46 +339,3 @@ static int tftp_put_file(int argc, char **argv)
 
 	return ret;
 }
-
-#if 0
-static int get_default_file_name(struct block_device *cur_bdev, char file_name[])
-{
-	char vol;
-
-	if (NULL == cur_bdev) {
-		vol = get_curr_volume();
-
-		cur_bdev = get_bdev_by_volume(vol);
-	}
-
-	image_t type = str2part_type(cur_bdev->file->img_type);
-
-	switch (type) {
-	case PT_BL_GTH:
-		strncpy(file_name, "g-bios-th.bin", FILE_NAME_SIZE);
-		file_name[FILE_NAME_SIZE - 1] = '\0';
-		break;
-	case PT_BL_GBH:
-		strncpy(file_name, "g-bios-bh.bin", FILE_NAME_SIZE);
-		file_name[FILE_NAME_SIZE - 1] = '\0';
-		break;
-	case PT_BL_GCONF:
-		strncpy(file_name, "sys_conf.bin", FILE_NAME_SIZE);
-		file_name[FILE_NAME_SIZE - 1] = '\0';
-		break;
-	case PT_OS_LINUX:
-		strncpy(file_name, "zImage", FILE_NAME_SIZE);
-		file_name[FILE_NAME_SIZE - 1] = '\0';
-		break;
-	case PT_BL_UBOOT:
-		strncpy(file_name, "uboot", FILE_NAME_SIZE);
-		file_name[FILE_NAME_SIZE - 1] = '\0';
-		break;
-	default:
-		usage();
-		return -EINVAL;
-	}
-
-	return 0;
-}
-#endif

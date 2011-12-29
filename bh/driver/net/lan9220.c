@@ -244,7 +244,7 @@ static int lan9220_isr(__u32 irq, void *dev)
 
 	// IRQ status issue
 	status = lan9220_readl(lan9220, INT_STS);
-#if 0
+#if 1
 	printf("%s() line %d status = 0x%08x\n", __func__, __LINE__, status);
 #endif
 	status &= lan9220->int_mask;

@@ -469,7 +469,7 @@ int ip_layer_deliver(struct sock_buff *skb)
 	return ip_hdr->up_prot;
 }
 
-void ip_send_packet(struct sock_buff *skb, __u8 prot)
+int ip_send_packet(struct sock_buff *skb, __u8 prot)
 {
 	__u8 mac[MAC_ADR_LEN];
 	__u8 *pmac = NULL;
@@ -510,8 +510,13 @@ void ip_send_packet(struct sock_buff *skb, __u8 prot)
 		if (NULL == remote_addr) {
 			remote_addr = gethostaddr(sock->saddr[SA_DST].sin_addr.s_addr);
 			if (NULL == remote_addr) {
-				DPRINT("%s(): addr error!\n", __func__);
-				return;
+				const __u8 *ip;
+
+				ip = (const __u8 *)&sock->saddr[SA_DST].sin_addr.s_addr;
+				printf("%s(): host \"%d.%d.%d.%d\" not found!\n",
+					__func__, ip[0], ip[1], ip[2], ip[3]);
+
+				return -EIO;
 			}
 		}
 
@@ -519,6 +524,7 @@ void ip_send_packet(struct sock_buff *skb, __u8 prot)
 	}
 
 	ether_send_packet(skb, pmac, ETH_TYPE_IP);
+	return 0;
 }
 
 //------------------------ ARP Layer -------------------------

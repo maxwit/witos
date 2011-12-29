@@ -43,16 +43,6 @@ static int _syscfg_close(struct sysconfig *cfg)
 	return 0;
 }
 
-__u32 get_load_mem_addr()
-{
-	return 0;
-}
-
-void set_load_mem_addr(__u32 *addr)
-{
-	return;
-}
-
 static int _syscfg_read_line(struct sysconfig *cfg, char line[], size_t line_len)
 {
 	int i;
@@ -243,7 +233,7 @@ int conf_get_attr(const char *attr, char val[])
 L1:
 	_syscfg_close(cfg);
 
-	return ret;
+	return ret < 0 ? ret : 0;
 }
 
 // fixme
