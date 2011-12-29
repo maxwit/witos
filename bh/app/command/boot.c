@@ -32,9 +32,9 @@ static int build_command_line(char *cmd_line, size_t max_len)
 	}
 
 	if (!strncmp(config, "/dev/", 5))
-		str += sprintf(str, "root=%s", config);
-	else
-		str += sprintf(str, "root=/dev/%s", config);
+		strcpy(config, config + 5);
+
+	str += sprintf(str, "root=/dev/%s", config);
 
 	if (!strncmp(config, "nfs", 3)) {
 		ret = conf_get_attr("linux.nfsroot", config);
@@ -321,7 +321,7 @@ int main(int argc, char *argv[])
 		strcpy(config, "mtdblock3"); // fixme
 	}
 
-	printf("Loading Linux kernel from %s to 0x%p ...\n", config, linux_kernel);
+	printf("Loading Linux kernel from %s to %p ...\n", config, linux_kernel);
 	ret = load_image(linux_kernel, config);
 	if (ret < 0) {
 		printf("failed to load kernel!\n");

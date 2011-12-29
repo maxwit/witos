@@ -5,7 +5,6 @@ linux.ramdisk_image = initrd
 linux.nfs_root = /maxwit/image/boot
 linux.console = ttyO
 linux.mach_id = 0x5000
-linux.cmd_line = root=/dev/mtdblock3
 
 home = B
 

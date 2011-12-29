@@ -109,11 +109,11 @@ static int search_attr(struct sysconfig *cfg, const char *str)
 
 	while ((ret = _syscfg_read_line(cfg, line, LINE_LEN)) >= 0) {
 		if (_is_attr_string(str, line)) {
-			break;
+			return ret;
 		}
 	}
 
-	return ret;
+	return -ENODATA;
 }
 
 int conf_del_attr(const char *attr)
@@ -124,15 +124,13 @@ int conf_del_attr(const char *attr)
 
 	cfg = _syscfg_open();
 
-	len = search_attr(cfg, attr);
-
-	if (len <= 0) {
+	ret = search_attr(cfg, attr);
+	if (ret < 0) {
 		DPRINT("Attribute \"%s\" is not exist, del attr error!\n", attr);
-		ret = -ENODATA;
 		goto L1;
 	}
 
-	len += 1;
+	len = ret + 1;
 
 	memcpy(cfg->data + cfg->offset - len, cfg->data + cfg->offset, cfg->size - cfg->offset);
 
@@ -177,15 +175,16 @@ int conf_set_attr(const char *attr, const char *val)
 
 	cfg = _syscfg_open();
 
-	if ((old_len = search_attr(cfg, attr))) {
+	ret = search_attr(cfg, attr);
+	if (ret < 0) {
 		DPRINT("Attribute \"%s\" does not exists, set attr error\n", attr);
-		ret = -ENODATA;
 		goto L1;
 	}
 
-	old_len += 1; // add  '\n'
+	old_len = ret + 1; // add  '\n'
 
 	new_len = snprintf(line, sizeof(line), "%s = %s\n", attr, val);
+	printf("new attr = %s\n", line);
 
 	if (new_len != old_len) {
 		memmove(cfg->data + cfg->offset - old_len + new_len,
@@ -193,7 +192,7 @@ int conf_set_attr(const char *attr, const char *val)
 		cfg->size += new_len - old_len;
 	}
 
-	memcpy(cfg->data + cfg->offset - old_len, val, new_len);
+	memcpy(cfg->data + cfg->offset - old_len, line, new_len);
 
 	cfg->is_dirty = true;
 
@@ -208,30 +207,35 @@ L1:
 
 int conf_get_attr(const char *attr, char val[])
 {
-	const char *p;
+	const char *start, *end;
 	struct sysconfig *cfg;
 	char line[LINE_LEN];
-	int len;
 	int ret = 0;
 
 	cfg = _syscfg_open();
 
-	if ((len = search_attr(cfg, attr)) <= 0) {
+	ret = search_attr(cfg, attr);
+	if (ret < 0) {
 		DPRINT("Attribute \"%s\" does not exists, get attr error!\n", attr);
-		ret = -ENODATA;
 		goto L1;
 	}
 
-	cfg->offset -= len + 1;
+	cfg->offset -= ret + 1;
 	_syscfg_read_line(cfg, line, sizeof(line));
-	p = strchr(line, '=');
-	p++;
+	start = strchr(line, '=');
+	start++;
 
-	while (*p) {
-		if (*p != ' ')
-			*val++ = *p;
+	while (*start == ' ') start++;
+	if (*start == '"') start++;
 
-		p++;
+	end = line + strlen(line);
+	while (end > line && *end == ' ') end--;
+
+	if (*end == '"') end--;
+
+	while (start <= end) {
+		*val++ = *start;
+		start++;
 	}
 
 	*val = '\0';
