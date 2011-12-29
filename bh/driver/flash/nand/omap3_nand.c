@@ -40,7 +40,8 @@ static int omap3_nand_calc_hwecc(struct nand_chip *nand, const __u8 *data, __u8 
 
 static inline __u32 gen_true_ecc(__u8 *ecc_buf)
 {
-	return ecc_buf[0] | (ecc_buf[1] << 16) | ((ecc_buf[2] & 0xF0) << 20) | ((ecc_buf[2] & 0x0F) << 8);
+	return ecc_buf[0] | (ecc_buf[1] << 16) | \
+		(ecc_buf[2] & 0xF0) << 20 | (ecc_buf[2] & 0x0F) << 8;
 }
 
 static int omap3_nand_correct_data(struct nand_chip *nand,
@@ -58,7 +59,7 @@ static int omap3_nand_correct_data(struct nand_chip *nand,
 	return -EIO;
 }
 
-static int omap3_nand_init(struct nand_ctrl *nfc)
+static int __INIT__ omap3_nand_init(struct nand_ctrl *nfc)
 {
 	writel(VA(GPMC_BASE + SYSCONFIG), 0x10);
 	writel(VA(GPMC_BASE + IRQENABLE), 0x0);

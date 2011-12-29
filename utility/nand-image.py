@@ -25,7 +25,7 @@ class switch(object):
 			return False
 
 # make image class
-class nand_image_t:
+class nand_image:
 	def __init__ (self):
 		self.flash_image_name = ""
 
@@ -166,7 +166,7 @@ def parse_parts(parts_string):
 if __name__ == "__main__":
 	argv_len = len(sys.argv)
 
-	nang_img = nand_image_t()
+	nand_img = nand_image()
 
 	try:
 		opts, srgs = getopt.getopt(sys.argv[1:], "o:p:h")
@@ -187,12 +187,12 @@ if __name__ == "__main__":
 			sys.exit()
 
 		if opt == '-o':
-			nang_img.flash_image_name = srgs[(srgs.index(opt) + 1)]
+			nand_img.flash_image_name = srgs[(srgs.index(opt) + 1)]
 			opt_is_used = 1
 			continue
 
 		if opt == '-p':
-			nang_img.flash_page_size = int(srgs[(srgs.index(opt) + 1)])
+			nand_img.flash_page_size = int(srgs[(srgs.index(opt) + 1)])
 			opt_is_used = 1
 			continue
 
@@ -204,26 +204,26 @@ if __name__ == "__main__":
 		img_names[index] = opt
 		index = index + 1
 
-	if os.path.exists(nang_img.flash_image_name) == False:
+	if os.path.exists(nand_img.flash_image_name) == False:
 		print "create image ..."
-		nang_img.create()  # make image
+		nand_img.create()  # make image
 	else:
-		print nang_img.flash_image_name, "exists"
+		print nand_img.flash_image_name, "exists"
 		ret = raw_input("Remaster (y or n): ")
 		if ret == "y":
 			print "create image ..."
-			nang_img.create()  # make image
+			nand_img.create()  # make image
 
-	print "image name : " + nang_img.flash_image_name
-	print "page_size  : " + str(nang_img.flash_page_size)
-	print "block_size : " + str(nang_img.flash_block_size)
-	print "oob_size   : " + str(nang_img.flash_oob_size)
+	print "image name : " + nand_img.flash_image_name
+	print "page_size  : " + str(nand_img.flash_page_size)
+	print "block_size : " + str(nand_img.flash_block_size)
+	print "oob_size   : " + str(nand_img.flash_oob_size)
 
 	parts = get_parts()
 
 	offset = 0
 	for index in img_names:
 		print "add " + img_names[index] + " into image"
-		nang_img.put_no_oob(img_names[index], offset)
-		offset = offset + up_align(parts[index], nang_img.flash_block_size)
+		nand_img.put_no_oob(img_names[index], offset)
+		offset = offset + up_align(parts[index], nand_img.flash_block_size)
 		print "put " + img_names[index] + " into flash image done!"

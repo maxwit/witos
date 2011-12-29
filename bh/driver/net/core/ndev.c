@@ -49,7 +49,7 @@ static int ndev_config(struct net_device *ndev)
 
 	// set mac address
 	sprintf(attr, "net.%s.mac", ndev->ifx_name);
-	if (conf_get_attr(attr, buff) < 0 || str_to_ip(mac, buff) < 0) {
+	if (conf_get_attr(attr, buff) < 0 || str_to_mac(mac, buff) < 0) {
 		int i;
 
 		mac[0] = 0x20;

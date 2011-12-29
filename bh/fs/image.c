@@ -72,12 +72,10 @@ static int yaffs_check_ecc_ontags(YAFFS_TAGS * tags)
 
 static bool check_yaffs1_image(const void *imagebuf)
 {
-	__u8 free_oob_buff[YAFFS_OOB_SIZE];
-	struct oob_free_region *free;
-	__u32 offset = 0;
-	__u32 bytes = 0;
 	int ret;
-	__u8 *oob_buf = free_oob_buff;
+	__u32 offset = 0, bytes = 0;
+	__u8 free_oob_buff[YAFFS_OOB_SIZE], *oob_buf = free_oob_buff;
+	struct oob_free_region *free;
 
 	memset(free_oob_buff, 0, YAFFS_OOB_SIZE);
 
@@ -98,8 +96,6 @@ static bool check_yaffs1_image(const void *imagebuf)
 
 image_t image_type_detect(const void *data, size_t size)
 {
-	return IMG_JFFS2;
-#warning
 	if (GTH_MAGIC == *(const __u32 *)(data + GTH_MAGIC_OFFSET)) {
 		GEN_DGB("g-bios-th image\n");
 		return IMG_GTH;

@@ -206,7 +206,7 @@ int conf_get_attr(const char *attr, char val[])
 
 	ret = search_attr(cfg, attr);
 	if (ret < 0) {
-		DPRINT("Attribute \"%s\" does not exists, get attr error!\n", attr);
+		DPRINT("Attribute \"%s\" does not exists.\n", attr);
 		goto L1;
 	}
 

@@ -5,6 +5,13 @@
 #include <platform.h>
 #include "lan9220.h"
 
+#ifdef CONFIG_LAN9220_DEBUG
+#define LAN9X_INFO(fmt, args ...) \
+	printf("%s() line %d" fmt, __func__, __LINE__, ##args)
+#else
+#define LAN9X_INFO(fmt, args ...)
+#endif
+
 struct lan9220_chip {
 	void *iomem;
 #ifdef CONFIG_IRQ_SUPPORT
@@ -244,9 +251,7 @@ static int lan9220_isr(__u32 irq, void *dev)
 
 	// IRQ status issue
 	status = lan9220_readl(lan9220, INT_STS);
-#if 1
-	printf("%s() line %d status = 0x%08x\n", __func__, __LINE__, status);
-#endif
+	LAN9X_INFO("status = 0x%08x\n", status);
 	status &= lan9220->int_mask;
 	if (0 == status)
 		return IRQ_NONE;

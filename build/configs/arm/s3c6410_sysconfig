@@ -1,21 +1,7 @@
-linux.boot_mode = 0x1234
 linux.root = /dev/mtdblock4
-linux.kernel_image = zImage
-linux.ramdisk_image = initrd
-linux.nfs_root = /maxwit/image/boot
 linux.console = ttySAC
-linux.mach_id = 0x5000
-linux.cmd_line = root=/dev/mtdblock3
 
-home = B
-
-net.server = 10.0.0.1
-net.eth0.address = 10.0.0.2
-net.eth0.gateway = 10.0.0.1
-net.eth0.netmask = 255.255.255.0
-net.eth0.mac = 00:50:56:c0:00:18
-global.gth_readonly = true
-display.lcd.model = P043F1A4
 flash.nand.ecc_mode = NAND_ECC_SW
-mach_type = 2696
+
 display.lcd.pixel_format = PIX_RGB24
+display.lcd.model = P043F1A4

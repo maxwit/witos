@@ -9,7 +9,7 @@
 
 int hex_str_to_val(const char *str, __u32 *val)
 {
-	int iLen = 0;
+	int len = 0;
 	__u32 tmp = 0;
 
 	while (*str != '\0') {
@@ -26,14 +26,14 @@ int hex_str_to_val(const char *str, __u32 *val)
 			return	-EINVAL;
 
 		str++;
-		iLen++;
-		if (iLen > MAX_HEX_STR_LEN)
+		len++;
+		if (len > MAX_HEX_STR_LEN)
 			return -EINVAL;
 	}
 
 	*val = tmp;
 
-	return iLen;
+	return len;
 }
 
 #define MAX_DEC_LEN 32
@@ -236,12 +236,13 @@ int str_to_ip(__u8 ip_val[], const char *ip_str)
 {
 	int dot = 0;
 	unsigned int num = 0;
+	const char *iter = ip_str;
 
 #if 1
-	while (*ip_str) {
-		if (ISDIGIT(*ip_str)) {
-			num = 10 * num + *ip_str - '0';
-		} else if ('.' == *ip_str && num <= 255 && dot < 3) {
+	while (*iter) {
+		if (ISDIGIT(*iter)) {
+			num = 10 * num + *iter - '0';
+		} else if ('.' == *iter && num <= 255 && dot < 3) {
 			ip_val[dot] = (__u8)num;
 			dot++;
 			num = 0;
@@ -251,7 +252,7 @@ int str_to_ip(__u8 ip_val[], const char *ip_str)
 			return -EINVAL;
 		}
 
-		ip_str++;
+		iter++;
 	}
 
 	if (dot < 3 || num > 255)
@@ -261,9 +262,9 @@ int str_to_ip(__u8 ip_val[], const char *ip_str)
 
 #else
 	while (1) {
-		switch (*ip_str) {
+		switch (*iter) {
 		case '0' ... '9':
-			num = 10 * num + *ip_str - '0';
+			num = 10 * num + *iter - '0';
 			break;
 
 		case '.':
@@ -286,7 +287,7 @@ int str_to_ip(__u8 ip_val[], const char *ip_str)
 			return -EINVAL;
 		}
 
-		ip_str++;
+		iter++;
 	}
 #endif
 

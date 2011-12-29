@@ -111,7 +111,7 @@ static int __INIT__ flash_scan_part(struct flash_chip *host,
 	int ret;
 	char part_def[CONF_VAL_LEN];
 
-	ret = conf_get_attr("flash.part", part_def);
+	ret = conf_get_attr("flash.parts", part_def);
 	if (ret < 0) {
 		return ret;
 	}

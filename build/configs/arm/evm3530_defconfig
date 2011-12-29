@@ -51,3 +51,5 @@ CONFIG_LAN9220=y
 
 #File systems
 CONFIG_FS = y
+
+CONFIG_DEBUG = y

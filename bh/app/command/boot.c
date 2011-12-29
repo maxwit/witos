@@ -42,6 +42,8 @@ static int build_command_line(char *cmd_line, size_t max_len)
 			conf_get_attr("net.server", config);
 			// add image path
 			strcat(config, ":/maxwit/image/rootfs");
+		} else {
+			// TODO: parse nfsroot config here
 		}
 
 		str += sprintf(str, " nfsroot=%s", config);
@@ -79,7 +81,7 @@ static int build_command_line(char *cmd_line, size_t max_len)
 	}
 
 	// TODO: merge partitions for booting Android
-	if (conf_get_attr("flash.part", config) >= 0)
+	if (conf_get_attr("flash.parts", config) >= 0)
 		str += sprintf(str, " mtdparts=%s", config);
 
 	// set IP
@@ -268,7 +270,7 @@ int main(int argc, char *argv[])
 	arm_tag = begin_setup_atag(VA(ATAG_BASE));
 
 	// parse command line
-	ret = conf_get_attr("linux.cmd_line", config);
+	ret = conf_get_attr("linux.cmdline", config);
 	if (ret < 0 || !strcmp(config, "auto"))
 		build_command_line(cmd_line, sizeof(cmd_line));
 	else
@@ -332,7 +334,8 @@ int main(int argc, char *argv[])
 		goto error;
 	}
 
-	// TODO: check the kernel image
+	if (image_type_detect(linux_kernel, KERNEL_MAX_SIZE) != IMG_LINUX)
+		printf("Warning: invalid linux kernel image!\n");
 	printf("Done! 0x%08x bytes loaded.\n", ret);
 
 	prepare();

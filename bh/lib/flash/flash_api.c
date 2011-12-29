@@ -47,6 +47,9 @@ int flash_ioctl(struct flash_chip *flash, int cmd, void *arg)
 
 		return ret;
 
+	case FLASH_IOCG_SIZE:
+		*(size_t *)arg = flash->bdev.size;
+
 	default:
 		return -ENOTSUPP;
 	}
