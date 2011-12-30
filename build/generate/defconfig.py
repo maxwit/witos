@@ -117,28 +117,29 @@ def parse_sysconfig(sys_cfg_file):
 	if attr == None:
 		nic = get_active_nic()
 		sysconfig['net.server'] = get_ip_address(nic)
+		server = sysconfig['net.server'];
 		def_netmask = get_net_mask(nic)
+	else:
+		server = attr
 
 	attr = get_attr('net.eth0.netmask', sys_cfg_fd)
 	if attr == None:
 		if def_netmask <> None:
 			sysconfig['net.eth0.netmask'] = def_netmask
 		else:
-			sysconfig['net.eth0.netmask'] = generate_netmask(sysconfig['net.server'])
+			sysconfig['net.eth0.netmask'] = generate_netmask(server)
 
 	attr = get_attr('net.eth0.address', sys_cfg_fd)
 	if attr == None:
-		ip_str = sysconfig['net.server']
-		while 1:
-			address = ip_str.rsplit('.', 1)[0] + '.' + str(random.randint(1, 254))
-			if address != ip_str:
-				break
+		address = server
+		while address == server:
+			address = server.rsplit('.', 1)[0] + '.' + str(random.randint(1, 254))
 
 		sysconfig['net.eth0.address'] = address
 
 	attr = get_attr('net.eth0.gateway', sys_cfg_fd)
 	if attr == None:
-		sysconfig['net.eth0.gateway'] = sysconfig['net.server']
+		sysconfig['net.eth0.gateway'] = server
 
 	attr = get_attr('net.eth0.mac', sys_cfg_fd)
 	if attr == None:
