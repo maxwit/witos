@@ -194,11 +194,17 @@ int flash_erase(struct flash_chip *flash, __u32 start, __u32 size, __u32 flags)
 	struct erase_opt opt;
 
 	memset(&opt, 0, sizeof(opt));
+
 	opt.estart = start;
 	opt.esize  = size;
-	ALIGN_UP(opt.esize, flash->erase_size);
-	opt.for_jffs2 = !!(flags & EDF_JFFS2);
-	opt.bad_allow = !!(flags & EDF_ALLOWBB);
+	opt.flags  = flags;
+
+	if (opt.esize & (flash->erase_size - 1)) {
+		ALIGN_UP(opt.esize, flash->erase_size);
+		GEN_DGB("size (0x%08x) not aligned with flash erase size (0x%08x)!"
+			" adjusted to 0x%08x\n",
+			size, flash->erase_size, opt.esize);
+	}
 
 	ret = flash->erase(flash, &opt);
 

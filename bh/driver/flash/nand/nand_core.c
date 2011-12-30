@@ -1274,7 +1274,7 @@ int nand_erase(struct nand_chip *nand, struct erase_opt *opt)
 	opt->estate = FLASH_ERASING;
 
 	while (erase_count) {
-		if (!opt->bad_allow) {	// fixme!
+		if (!(opt->flags & EDF_ALLOWBB)) {	// fixme!
 			if (nand_check_blk_bad(nand, page_index << flash->write_shift, false)) {
 				printf("\n%s(): try to erase a bad block at 0x%08x!\n",
 					__func__, page_index << flash->write_shift);
@@ -1303,10 +1303,9 @@ int nand_erase(struct nand_chip *nand, struct erase_opt *opt)
 		if (bbt_masked_page != 0xffffffff && (page_index & BBT_PAGE_MASK) == bbt_masked_page)
 			rewrite_bbt[chipnr] = page_index << flash->write_shift;
 
-		if (opt->for_jffs2) {
+		if (opt->flags & EDF_JFFS2) {
 			// fixme
-			static struct jffs2_clean_mark cleanmark =
-			{
+			static struct jffs2_clean_mark cleanmark = {
 				0x1985,
 				0x2003
 			};
@@ -1317,7 +1316,7 @@ int nand_erase(struct nand_chip *nand, struct erase_opt *opt)
 				break;
 
 			default: // 64?
-				BUG();
+				GEN_DGB("oob_size (%d) not supported now!\n", flash->oob_size);
 				break;
 			};
 

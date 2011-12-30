@@ -12,6 +12,8 @@
 #define BDEV_NAME_ATA    "hd" // fixme
 #define BDEV_NAME_NBD    "nbd"
 
+#define BDF_RDONLY       (1 << 0)
+
 struct block_device;
 
 struct part_attr {
@@ -45,6 +47,8 @@ struct bdev_file {
 struct block_device {
 	// struct device dev;
 	char name[MAX_DEV_NAME]; // mmcblockXpY, mtdblockN, sdaN
+
+	__u32 flags;
 
 	// part_attr
 	size_t base;

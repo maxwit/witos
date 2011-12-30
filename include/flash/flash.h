@@ -78,16 +78,15 @@ typedef struct {
 
 #define MAX_ECC_STEPS  16
 
-// fixme!
+// Flash erase flags
 #define EDF_NORMAL     0
 #define EDF_JFFS2      (1 << 0)
-#define EDF_ALLOWBB    (1 << 1)
+#define EDF_ALLOWBB    (1 << 8)
 
 struct erase_opt {
 	__u32 estart;
 	__u32 esize;
-	int for_jffs2;
-	int bad_allow;
+	__u32 flags;
 	__u32 fail_addr;
 	__u8  estate;
 };
