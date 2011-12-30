@@ -5,12 +5,10 @@
 #include <net/net.h>
 
 // negative hex skipped
-#define MAX_HEX_STR_LEN (sizeof(__u32) * 2)
-
-int hex_str_to_val(const char *str, __u32 *val)
+int hex_str_to_val(const char *str, unsigned long *val)
 {
 	int len = 0;
-	__u32 tmp = 0;
+	unsigned long tmp = 0;
 
 	while (*str != '\0') {
 		if (*str >= '0' && *str <= '9') {
@@ -27,7 +25,7 @@ int hex_str_to_val(const char *str, __u32 *val)
 
 		str++;
 		len++;
-		if (len > MAX_HEX_STR_LEN)
+		if (len > sizeof(tmp) * 2)
 			return -EINVAL;
 	}
 
@@ -93,7 +91,7 @@ int val_to_hex_str(char *str, __u32 val)
 	return j;
 }
 
-int dec_str_to_val(const char *str, int *val)
+int dec_str_to_val(const char *str, long *val)
 {
 	long tmp = 0;
 	const char *num = str;
@@ -189,15 +187,15 @@ error:
 	return -EINVAL;
 }
 
-int str_to_val(const char *str, __u32 *val)
+int str_to_val(const char *str, unsigned long *val)
 {
 	int ret;
-	__u32 tmp;
+	unsigned long tmp;
 
 	if ('0' == *str && ('x' == *(str + 1) || 'X' == *(str + 1)))
 		ret = hex_str_to_val(str + 2, &tmp);
 	else
-		ret = dec_str_to_val(str, (int *)&tmp);
+		ret = dec_str_to_val(str, (long *)&tmp);
 
 	if (ret >= 0)
 		*val = tmp;

@@ -18,45 +18,6 @@ struct flash_chip *flash_open(const char *name)
 	return flash;
 }
 
-int flash_ioctl(struct flash_chip *flash, int cmd, void *arg)
-{
-	int ret;
-	FLASH_CALLBACK *callback;
-
-	switch (cmd) {
-	case FLASH_IOCS_OOB_MODE:
-		flash->oob_mode = (OOB_MODE)arg;
-		break;
-
-	case FLASH_IOCS_CALLBACK:
-		callback = (FLASH_CALLBACK *)arg;
-		flash->callback_func = callback->func;
-		flash->callback_args = callback->args;
-		break;
-
-	case FLASH_IOC_SCANBB:
-		if (NULL == flash->scan_bad_block)
-			return -EINVAL;
-
-		ret = flash->scan_bad_block(flash);
-
-#ifdef CONFIG_DEBUG
-		if (ret < 0)
-			printf("%s() failed! (errno = %d)\n", __func__, ret);
-#endif
-
-		return ret;
-
-	case FLASH_IOCG_SIZE:
-		*(size_t *)arg = flash->bdev.size;
-
-	default:
-		return -ENOTSUPP;
-	}
-
-	return 0;
-}
-
 int flash_close(struct flash_chip *flash)
 {
 	return 0;

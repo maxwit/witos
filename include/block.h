@@ -3,6 +3,7 @@
 #include <types.h>
 #include <list.h>
 #include <device.h>
+#include <bdev_file.h>
 
 #define LABEL_NAME_SIZE  32
 
@@ -22,28 +23,6 @@ struct part_attr {
 	char  label[LABEL_NAME_SIZE];
 };
 
-struct block_buff {
-	// __u32  blk_id;
-	__u32  blk_size;
-	__u8  *blk_base;
-	__u8  *blk_off;
-};
-
-struct bdev_file {
-	struct block_device *bdev;
-	struct block_buff blk_buf;
-
-	size_t cur_pos;
-	char name[FILE_NAME_SIZE];
-	size_t size;
-
-	int (*open)(struct bdev_file *, int);
-	int (*close)(struct bdev_file *);
-
-	ssize_t (*read)(struct bdev_file *, void *, size_t);
-	ssize_t (*write)(struct bdev_file *, const void *, size_t);
-};
-
 struct block_device {
 	// struct device dev;
 	char name[MAX_DEV_NAME]; // mmcblockXpY, mtdblockN, sdaN
@@ -58,7 +37,7 @@ struct block_device {
 	// fixme!
 	void *fs;
 	char volume;
-	struct bdev_file *file;
+	struct bdev_fops *fops;
 
 	struct list_node bdev_node;
 };

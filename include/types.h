@@ -9,8 +9,10 @@
 
 typedef unsigned char  __u8, byte;
 typedef unsigned short __u16;
-typedef unsigned int   __u32, size_t;
+typedef unsigned int   __u32;
+typedef unsigned long  size_t, loff_t;
 typedef signed int     ssize_t;
+
 // fixme
 typedef unsigned short __le16;
 typedef unsigned int   __le32;

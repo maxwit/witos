@@ -8,7 +8,7 @@ static inline void blk_buf_init(struct block_buff *blk_buf, void *buff, size_t s
 	blk_buf->blk_size = size;
 }
 
-static int flash_bdev_open(struct bdev_file *file, int flags)
+static int flash_bdev_open(struct bdev_file *file, int flags, int mode)
 {
 	void *buff;
 	size_t size;
@@ -26,6 +26,52 @@ static int flash_bdev_open(struct bdev_file *file, int flags)
 
 	blk_buf_init(&file->blk_buf, buff, size);
 	file->cur_pos = 0;
+
+	return 0;
+}
+
+int flash_bdev_ioctl(struct bdev_file *fp, int cmd, unsigned long arg)
+{
+	int ret;
+	FLASH_CALLBACK *callback;
+	struct flash_chip *flash;
+
+	switch (cmd) {
+	case FLASH_IOCS_OOB_MODE:
+		switch (arg) {
+		
+		default:
+			return -EINVAL;			
+		}
+
+		flash->oob_mode = (OOB_MODE)arg;
+		break;
+
+	case FLASH_IOCS_CALLBACK:
+		callback = (FLASH_CALLBACK *)arg;
+		flash->callback_func = callback->func;
+		flash->callback_args = callback->args;
+		break;
+
+	case FLASH_IOC_SCANBB:
+		if (NULL == flash->scan_bad_block)
+			return -EINVAL;
+
+		ret = flash->scan_bad_block(flash);
+
+#ifdef CONFIG_DEBUG
+		if (ret < 0)
+			printf("%s() failed! (errno = %d)\n", __func__, ret);
+#endif
+
+		return ret;
+
+	case FLASH_IOCG_SIZE:
+		*(size_t *)arg = flash->bdev.size;
+
+	default:
+		return -ENOTSUPP;
+	}
 
 	return 0;
 }
@@ -211,20 +257,19 @@ static ssize_t flash_bdev_write(struct bdev_file *file, const void *buff, __u32 
 
 			switch (img_type) {
 			case IMG_YAFFS:
-				ret = flash_ioctl(flash, FLASH_IOCS_OOB_MODE, (void *)FLASH_OOB_RAW);
-				ret = flash_write(flash, blk_buff->blk_base, blk_buff->blk_size, flash_pos);
+				ret = flash_ioctl(flash, FLASH_IOCS_OOB_MODE, FLASH_OOB_RAW);
 				break;
 
 			case IMG_YAFFS2:
-				ret = flash_ioctl(flash, FLASH_IOCS_OOB_MODE, (void *)FLASH_OOB_AUTO);
-				ret = flash_write(flash, blk_buff->blk_base, blk_buff->blk_size, flash_pos);
+				ret = flash_ioctl(flash, FLASH_IOCS_OOB_MODE, FLASH_OOB_AUTO);
 				break;
 
 			default:
-				ret = flash_ioctl(flash, FLASH_IOCS_OOB_MODE, (void *)FLASH_OOB_PLACE);
-				ret = flash_write(flash, blk_buff->blk_base, blk_buff->blk_size, flash_pos);
+				ret = flash_ioctl(flash, FLASH_IOCS_OOB_MODE, FLASH_OOB_PLACE);
 				break;
 			}
+
+			ret = flash_write(flash, blk_buff->blk_base, blk_buff->blk_size, flash_pos);
 
 			if (ret < 0) {
 				DPRINT("%s(), line %d\n", __func__, __LINE__);
@@ -290,13 +335,11 @@ const char *img_type2str(__u32 type)
 		return "Unknown";
 	}
 }
-#endif
 
 // fixme
 int part_show(const struct flash_chip *flash)
 {
 	int index = 0;
-#if 0
 	struct part_attr attr_tab[MAX_FLASH_PARTS];
 	__u32 nIndex, nRootIndex;
 	const char *pBar = "--------------------------------------------------------------------";
@@ -342,9 +385,9 @@ int part_show(const struct flash_chip *flash)
 
 	printf("%s\n", pBar);
 
-#endif
 	return index;
 }
+#endif
 
 int set_bdev_file_attr(struct bdev_file *file)
 {
@@ -394,7 +437,8 @@ int get_bdev_file_attr(struct bdev_file * file)
 
 	// get file size
 	snprintf(file_attr, CONF_ATTR_LEN, "bdev.%s.image.size", bdev->name);
-	if (conf_get_attr(file_attr, file_val) < 0 || str_to_val(file_val, &file->size) < 0) {
+	if (conf_get_attr(file_attr, file_val) < 0 || \
+		str_to_val(file_val, &file->size) < 0) {
 		file->name[0] = '\0';
 		file->size = 0;
 	}
