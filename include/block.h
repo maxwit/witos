@@ -34,10 +34,15 @@ struct block_device {
 	size_t size;
 	char   label[LABEL_NAME_SIZE];
 
-	// fixme!
-	void *fs;
+	// fixme: to be moved here from lower layer
+	// struct block_device *master;
+	// struct list_node slave_list;
+	// ...
+
+	// fixme: to be removed
 	char volume;
-	struct bdev_fops *fops;
+	struct file_system *fs;
+	const struct file_operations *fops;
 
 	struct list_node bdev_node;
 };
