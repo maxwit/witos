@@ -30,7 +30,7 @@ typedef enum {
 	// FS
 	IMG_INITRD,
 	IMG_JFFS2,
-	IMG_YAFFS,
+	IMG_YAFFS1,
 	IMG_YAFFS2,
 	IMG_CRAMFS,
 	IMG_UBIFS,

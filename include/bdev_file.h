@@ -5,8 +5,9 @@ struct block_device;
 // fixme: to be removed
 struct block_buff {
 	// __u32  blk_id;
-	__u32  blk_size;
-	__u8  *blk_base;
+	__u8   *blk_base;
+	size_t  blk_size;
+	size_t  max_size;
 	__u8  *blk_off;
 };
 

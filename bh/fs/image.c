@@ -123,7 +123,7 @@ image_t image_type_detect(const void *data, size_t size)
 
 	if (check_yaffs1_image(data + YAFFS_OOB_SIZE)) {
 		GEN_DGB("YAFFS1 image\n");
-		return IMG_YAFFS;
+		return IMG_YAFFS1;
 	}
 
 	// TODO: check other image types
