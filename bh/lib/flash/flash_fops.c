@@ -393,7 +393,7 @@ int get_bdev_file_attr(struct bdev_file * file)
 	strncpy(file->name, file_val, FILE_NAME_SIZE);
 
 	// get file size
-	snprintf(file_attr, CONF_ATTR_LEN, "bdev.%s.image.name", bdev->name);
+	snprintf(file_attr, CONF_ATTR_LEN, "bdev.%s.image.size", bdev->name);
 	if (conf_get_attr(file_attr, file_val) < 0 || str_to_val(file_val, &file->size) < 0) {
 		file->name[0] = '\0';
 		file->size = 0;

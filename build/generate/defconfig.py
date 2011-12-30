@@ -11,7 +11,6 @@ import os, sys, re, random, socket, fcntl, struct
 from xml.etree import ElementTree
 
 config = {}
-sys_config = {}
 
 def traverse(node):
 	if node.tag == 'choice':
@@ -84,6 +83,80 @@ def parse_config(fn):
 	for n in lst:
 		traverse(n)
 
+def get_attr(substr, fd):
+	for line in fd:
+		if re.match(substr, line) <> None:
+			elem = re.split('\s*=\s*', line.replace('\n',''))
+			return elem[1]
+	return None
+
+#fixme
+def get_active_nic():
+	return "eth0"
+
+#fixme
+def get_net_mask(nic):
+	return "255.255.255.0"
+
+def generate_netmask(ip):
+	return "255.255.255.0"
+
+def parse_sysconfig(sys_cfg_file):
+	sysconfig = {}
+	try:
+		sys_cfg_fd = open(sys_cfg_file, 'aw+')
+	except:
+		print 'fail to open "%s"' % sys_cfg_file
+		exit(1)
+
+	attr = get_attr('net.eth0.method', sys_cfg_fd)
+	if attr == "dhcp":
+		return
+
+	attr = get_attr('net.server', sys_cfg_fd);
+	if attr == None:
+		nic = get_active_nic()
+		sysconfig['net.server'] = get_ip_address(nic)
+		def_netmask = get_net_mask(nic)
+
+	attr = get_attr('net.eth0.netmask', sys_cfg_fd)
+	if attr == None:
+		if def_netmask <> None:
+			sysconfig['net.eth0.netmask'] = def_netmask
+		else:
+			sysconfig['net.eth0.netmask'] = generate_netmask(sysconfig['net.server'])
+
+	attr = get_attr('net.eth0.address', sys_cfg_fd)
+	if attr == None:
+		ip_str = sysconfig['net.server']
+		while 1:
+			address = ip_str.rsplit('.', 1)[0] + '.' + str(random.randint(1, 254))
+			if address != ip_str:
+				break
+
+		sysconfig['net.eth0.address'] = address
+
+	attr = get_attr('net.eth0.gateway', sys_cfg_fd)
+	if attr == None:
+		sysconfig['net.eth0.gateway'] = sysconfig['net.server']
+
+	attr = get_attr('net.eth0.mac', sys_cfg_fd)
+	if attr == None:
+		mac1 = hex(random.randint(0, 255))[2:]
+		mac2 = hex(random.randint(1, 255))[2:]
+		mac3 = hex(random.randint(1, 255))[2:]
+		mac4 = hex(random.randint(1, 255))[2:]
+		mac5 = hex(random.randint(1, 255))[2:]
+		sysconfig['net.eth0.mac'] = '10:' + str(mac1) + ':' + str(mac2) + ':' + \
+							str(mac3) + ':' + str(mac4) + ':' + str(mac5)
+
+
+	for x in sysconfig:
+		sys_cfg_fd.write(x + ' = ' + sysconfig[x] + '\n')
+
+	sys_cfg_fd.close()
+
+
 if __name__ == "__main__":
 	if os.getenv('USER') == 'root':
 		print 'cannot run as root!'
@@ -109,36 +182,6 @@ if __name__ == "__main__":
 
 	fd_def_cfg.close()
 
-	if config.has_key('mac_addr') == False:
-		mac1 = hex(random.randint(0, 255))[2:]
-		mac2 = hex(random.randint(1, 255))[2:]
-		mac3 = hex(random.randint(1, 255))[2:]
-		mac4 = hex(random.randint(1, 255))[2:]
-		mac5 = hex(random.randint(1, 255))[2:]
-		sys_config['mac_addr'] = '"10:' + mac1 + ':' + mac2 + ':' + \
-							mac3 + ':' + mac4 + ':' + str(mac5) + '"'
-
-	# fixme:
-	# (1) netmask issue;
-	# (2) assert(local != server)
-	if config.has_key('server_ip') == False:
-		server_ip = get_ip_address('eth0') # fixme
-		sys_config['server_ip'] = '"' + server_ip + '"'
-		local_ip = server_ip.rsplit(".", 1)[0] + "." + str(random.randint(1, 254))
-		sys_config['local_ip'] = '"' + local_ip + '"'
-		sys_config['net_mask'] = "\"255.255.255.0\""
-
-	try:
-		fd_sys_cfg = open('.sysconfig', 'aw')
-	except:
-		print 'fail to open .sysconfig file'
-		exit(1)
-
-	for x in sys_config:
-		fd_sys_cfg.write('net.' + x + ' = ' + sys_config[x] + '\n')
-
-	fd_sys_cfg.close()
-
 	parse_config("build/configs/configs.xml")
 
 	# print config
@@ -154,3 +197,5 @@ if __name__ == "__main__":
 		fd_dot_cfg.write('CONFIG_' + x + ' = ' + config[x] + '\n')
 
 	fd_dot_cfg.close()
+
+	parse_sysconfig('.sysconfig')

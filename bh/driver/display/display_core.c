@@ -196,7 +196,7 @@ struct display *display_create(void)
 		return NULL;
 
 	// fixme!
-	if (conf_get_attr("disp.lcd.pixel", conf_pixel) == 0) {
+	if (conf_get_attr("display.lcd.pixel", conf_pixel) == 0) {
 		if (strncmp(conf_pixel, "PIX_RGB24", sizeof(conf_pixel)))
 			disp->pix_fmt = PIX_RGB24;
 		else if (strncmp(conf_pixel, "PIX_RGB16", sizeof(conf_pixel)))
@@ -230,7 +230,7 @@ int display_config(struct display *disp,
 		return -ENOENT;
 	}
 
-	if (conf_get_attr("display.lcd.pixel_format", attr_val) < 0) {
+	if (conf_get_attr("display.lcd.pixel", attr_val) < 0) {
 		DPRINT("%s(): fail to get lcd pixel format\n", __func__);
 		return -EINVAL;
 	}
