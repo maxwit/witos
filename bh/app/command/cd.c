@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
 	case 2:
 		vol = argv[1];
 
-		if (dec_str_to_val(vol, &index) >= 0 && index > 0)
+		if (dec_str_to_val(vol, (long *)&index) >= 0 && index > 0)
 			bdev = get_bdev_by_volume('A' + index - 1);
 		else
 			bdev = get_bdev_by_name(vol);

@@ -367,7 +367,7 @@ static int ext2_close(struct file *fp)
 	return 0;
 }
 
-static ssize_t ext2_read(struct file *fp, void *buff, size_t size)
+static ssize_t ext2_read(struct file *fp, void *buff, size_t size, loff_t *off)
 {
 	ssize_t i, len;
 	size_t blocks;
@@ -377,7 +377,7 @@ static ssize_t ext2_read(struct file *fp, void *buff, size_t size)
 	struct ext2_dir_entry_2 *de;
 
 	fs = fp->mnt->bdev->fs->ext;
-	de = fp->de;
+	de = (struct ext2_dir_entry_2 *)fp->de;
 
 	inode = ext2_read_inode(fs, de->inode);
 
@@ -413,7 +413,7 @@ static ssize_t ext2_read(struct file *fp, void *buff, size_t size)
 	return real_size;
 }
 
-static int ext2_write(struct file *fp, const void *buff, size_t size)
+static int ext2_write(struct file *fp, const void *buff, size_t size, loff_t *off)
 {
 	return 0;
 }

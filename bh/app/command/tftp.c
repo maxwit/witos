@@ -339,15 +339,6 @@ static int tftp_put_file(int argc, char **argv)
 		}
 	}
 
-	// fixme
-	if (!opt.file_name[0]) {
-#if 1
-		strcpy(opt.file_name, "a");
-#else
-		get_default_file_name(cur_bdev, opt->file_name);
-#endif
-	}
-
 	ret = tftp_upload(&opt);
 
 	return ret;

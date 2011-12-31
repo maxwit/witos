@@ -144,10 +144,10 @@ static int ftp_send_cmd(int cmd_fd, const char *cmd, const char *arg)
 }
 
 //download to flash
+#if 0
 static int get_file_to_flash(int data_fd)
 {
 	return -1;
-#if 0
 	int ret;
 	char buff[BUF_LEN];
 	char cur_vol;
@@ -186,9 +186,10 @@ static int get_file_to_flash(int data_fd)
 	}
 
 	return 0;
-#endif
 }
+#endif
 
+#if 0
 static int get_file_to_mem(int data_fd, const struct ftp_opt *fopt)
 {
 	__u32 addr;
@@ -230,6 +231,7 @@ static int get_file_to_mem(int data_fd, const struct ftp_opt *fopt)
 
 	return 0;
 }
+#endif
 
 static int ftp_download_file(int cmd_fd, struct ftp_opt *fopt)
 {

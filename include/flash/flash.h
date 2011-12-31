@@ -186,9 +186,3 @@ typedef enum {
 int flash_set_ecc_mode(struct flash_chip *flash, ECC_MODE newMode, ECC_MODE *pOldMode);
 
 int flash_fops_init(struct block_device *bdev);
-
-// user APIs
-
-int set_bdev_file_attr(struct file * file);
-
-int get_bdev_file_attr(struct file * file);

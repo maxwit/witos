@@ -201,7 +201,7 @@ static int mem_set(int argc, char *argv[])
 			break;
 
 		case 'l':
-			if ((hr_str_to_val(optarg, (__u32 *)&i)) < 0) {
+			if ((hr_str_to_val(optarg, (unsigned long *)&i)) < 0) {
 				printf("Invaild argument\n");
 				usage();
 				return -EINVAL;
@@ -289,7 +289,7 @@ static int mem_copy_move(int argc, char *argv[])
 			break;
 
 		case 'l':
-			if ((hr_str_to_val(optarg, &val)) != 0) {
+			if ((hr_str_to_val(optarg, (unsigned long *)&val)) != 0) {
 				printf("INvaild argument\n");
 				return -EINVAL;
 			}

@@ -218,7 +218,7 @@ int close(int fd)
 	return fp->fops->close(fp);
 }
 
-int read(int fd, void *buff, size_t size)
+ssize_t read(int fd, void *buff, size_t size)
 {
 	struct file *fp;
 
@@ -233,7 +233,7 @@ int read(int fd, void *buff, size_t size)
 	return fp->fops->read(fp, buff, size, &fp->pos);
 }
 
-int write(int fd, const void *buff, size_t size)
+ssize_t write(int fd, const void *buff, size_t size)
 {
 	struct file *fp;
 

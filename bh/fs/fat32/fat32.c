@@ -1,6 +1,7 @@
 #include <malloc.h>
 #include <errno.h>
 #include <string.h>
+#include <types.h>
 #include <fs/fs.h>
 #include <fs/fat32.h>
 
@@ -269,14 +270,14 @@ static int fat_close(struct file *fp)
 	return 0;
 }
 
-static int fat_read(struct file *fp, void *buff, size_t size)
+static ssize_t fat_read(struct file *fp, void *buff, size_t size, loff_t *off)
 {
 	__u32 clus_num, clus_size;
 	size_t pos;
 	size_t count = 0;
 	size_t tmp_size;
 	struct fat_fs *fs = fp->mnt->bdev->fs->ext;
-	struct fat_dentry *de = fp->de;
+	struct fat_dentry *de = (struct fat_dentry *)fp->de;
 
 	clus_size = fs->clus_size;
 	clus_num = de->clus_hi << 16 | de->clus_lo;
@@ -317,7 +318,7 @@ static int fat_read(struct file *fp, void *buff, size_t size)
 	return count;
 }
 
-static int fat_write(struct file *fp, const void *buff, size_t size)
+static ssize_t fat_write(struct file *fp, const void *buff, size_t size, loff_t *off)
 {
 	return 0;
 }

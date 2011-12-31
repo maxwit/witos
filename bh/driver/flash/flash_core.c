@@ -56,7 +56,7 @@ static int __INIT__ flash_parse_part(struct flash_chip *host,
 				buff[i] = *p;
 			buff[i] = '\0';
 
-			ret = hr_str_to_val(buff, &part->size);
+			ret = hr_str_to_val(buff, (unsigned long *)&part->size);
 			if (ret < 0)
 				goto error;
 
@@ -69,7 +69,7 @@ static int __INIT__ flash_parse_part(struct flash_chip *host,
 				buff[i] = *p;
 			buff[i] = '\0';
 
-			ret = hr_str_to_val(buff, &part->base);
+			ret = hr_str_to_val(buff, (unsigned long *)&part->base);
 			if (ret < 0)
 				goto error;
 
