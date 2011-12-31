@@ -50,30 +50,49 @@ static int build_command_line(char *cmd_line, size_t max_len)
 		str += sprintf(str, " nfsroot=%s", config);
 	} else {
 		if (!strncmp(config, "mtdblock", 8)) {
-			image_t type;
-			const char *fstype = NULL;
 			int fd;
+			ssize_t ret;
+			image_t type;
+			char image_buff[KB(8)], attr[CONF_ATTR_LEN];
+			const char *fstype;
 
-			fd = open(config);
+			fd = open(config, O_RDONLY);
 			if (fd < 0) {
 				printf("fail to open block device \"%s\"!\n", config);
 				return -ENODEV;
 			}
 
+			ret = read(fd, image_buff, sizeof(image_buff));
+			assert(ret >= 0);
+
 			close(fd);
 
-#warning
-			// fixme
-			type = IMG_JFFS2; // image_type_detect()
-			switch (type) {
-			case IMG_JFFS2:
-			default:
-				fstype = "jffs2";
-				break;
+			snprintf(attr, "%s.fstype", config);
+			if (conf_get_attr(attr, config) >= 0) {
+				fstype = config;
+			} else {
+				// fixme: check it always
+				type = image_type_detect(image_buff, sizeof(image_buff));
+				switch (type) {
+				case IMG_YAFFS1:
+					fstype = "yafs";
+					break;
 
-			case IMG_UBIFS:
-				// TODO: add ubix_y
-				break;
+				case IMG_YAFFS2:
+					fstype = "yafs2";
+					break;
+
+				case IMG_JFFS2:
+					fstype = "jffs2";
+					break;
+
+				case IMG_UBIFS:
+					fstype = "ubifs";
+					break;
+
+				default:
+					fstype = NULL;
+				}
 			}
 
 			if (fstype)

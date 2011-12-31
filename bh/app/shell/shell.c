@@ -1,6 +1,6 @@
 #include <unistd.h>
 #include <shell.h>
-#include <block.h>
+#include <dirent.h>
 // fixme: to be removed
 #include <net/net.h>
 #include <uart/uart.h>
@@ -699,14 +699,22 @@ static inline int shell_init(void)
 
 	// check HOME and set CWD
 	if (conf_get_attr("HOME", home) < 0 /* && conf_get_attr("home", home) < 0 */) {
-		struct block_device *bdev;
+		DIR *dir;
+		struct dirent *de;
 
-		bdev = get_bdev_by_index(1);
-		if (bdev) {
-			strncpy(home, bdev->name, sizeof(home));
-		} else {
-			strcpy(home, "SYS");
+		home[0] = '\0';
+
+		dir = opendir("/dev");
+		if (dir) {
+			de = readdir(dir);
+			if (de)
+				strncpy(home, de->d_name, sizeof(home));
+
+			closedir(dir);
 		}
+
+		if ('\0' == home[0])
+			strcpy(home, "<system>");
 
 		conf_add_attr("HOME", home);
 	}

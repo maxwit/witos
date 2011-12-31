@@ -2,6 +2,9 @@
 
 #define MAX_DENT_NAME_SIZE  256
 
+// g-bios system standard directory
+#define DEV_ROOT   "/dev"
+
 typedef struct {
 	const struct list_node *list, *iter;
 	struct list_node hash_list;
