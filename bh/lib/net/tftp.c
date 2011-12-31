@@ -269,7 +269,7 @@ int tftp_upload(struct tftp_opt *opt)
 	if (ret < 0)
 		goto L1;
 
-	printf("putting file \"%s\" to %s\n", opt->file_name, server_ip);
+	printf("putting file \"%s\" to %s\n", opt->file_name, opt->dst);
 
 	dat_len = tftp_make_req((__u8 *)tftp_pkt, TFTP_WRQ, opt->file_name,
 				opt->mode[0] ? opt->mode : TFTP_MODE_OCTET);
