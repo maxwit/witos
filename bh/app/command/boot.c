@@ -52,13 +52,15 @@ static int build_command_line(char *cmd_line, size_t max_len)
 		if (!strncmp(config, "mtdblock", 8)) {
 			image_t type;
 			const char *fstype = NULL;
-			struct block_device *bdev;
+			int fd;
 
-			bdev = get_bdev_by_name(config);
-			if (!bdev) {
+			fd = open(config);
+			if (fd < 0) {
 				printf("fail to open block device \"%s\"!\n", config);
 				return -ENODEV;
 			}
+
+			close(fd);
 
 #warning
 			// fixme
