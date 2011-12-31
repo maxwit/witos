@@ -8,16 +8,15 @@ int chdir(const char *path)
 	struct dirent *de;
 
 	dir = opendir("/dev");
-	// if ()
+	if (!dir)
+		return -ENOENT;
 
 	while ((de = readdir(dir))) {
-		if (!strcmp(path, de->d_name))
-			break;
-	}
-
-	if (de) {
-		g_cwd = (char *)path;
-		return 0;
+		if (!strcmp(path, de->d_name)) {
+			g_cwd = (char *)path;
+			closedir(dir);
+			return 0;
+		}
 	}
 
 	return -ENOENT;
@@ -31,7 +30,6 @@ char *getcwd(/* fixme */)
 DIR *opendir(const char *name)
 {
 	DIR *dir;
-	const struct list_node *bdev_get_list(); // fixme: to be removed
 
 	dir = zalloc(sizeof(*dir));
 	if (!dir)

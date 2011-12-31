@@ -11,6 +11,20 @@ static struct file_system_type *fs_type_list;
 static struct mount_point *g_mnt_list;
 static struct file *fd_array[MAX_FDS];
 
+static inline struct block_device *seach_device(const char *name)
+{
+	struct list_node *iter;
+	struct block_device *bdev;
+
+	list_for_each(iter, bdev_get_list()) {
+		bdev = container_of(iter, struct block_device, bdev_node);
+		if (!strcmp(bdev->name, name))
+			return bdev;
+	}
+
+	return NULL;
+}
+
 int file_system_type_register(struct file_system_type *fs_type)
 {
 	struct file_system_type **p;
@@ -45,7 +59,7 @@ int mount(const char *type, unsigned long flags, const char *bdev_name, const ch
 	struct file_system_type *fs_type;
 	struct mount_point *mnt;
 
-	bdev = get_bdev_by_name(bdev_name);
+	bdev = seach_device(bdev_name);
 	if (NULL == bdev) {
 		DPRINT("fail to open block device \"%s\"!\n", bdev_name);
 		return -ENODEV;
@@ -136,8 +150,8 @@ static int bdev_open(struct file *fp, const char *name)
 {
 	struct block_device *bdev;
 
-	bdev = get_bdev_by_name(name);
-	if (!bdev)
+	bdev = seach_device(name);
+	if (NULL == bdev)
 		return -ENODEV;
 
 	fp->bdev = bdev;

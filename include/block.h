@@ -46,3 +46,6 @@ struct block_device {
 };
 
 int block_device_register(struct block_device *bdev);
+
+// fixme: to be removed
+const struct list_node *bdev_get_list();
