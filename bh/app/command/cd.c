@@ -1,37 +1,56 @@
 #include <string.h>
 #include <unistd.h>
-#include <block.h> // fixme
+#include <dirent.h>
+
+static int get_bdev_by_index(int index, char name[], size_t size)
+{
+	DIR *dir;
+	struct dirent *de;
+
+	dir = opendir(DEV_ROOT);
+	if (!dir)
+		return -ENOENT;
+
+	while ((de = readdir(dir))) {
+		int i = 1, num = 0;
+		const char *postfix;
+
+		postfix = de->d_name + strlen(de->d_name);
+
+		while (postfix >= de->d_name) {
+			if (!ISDIGIT(*postfix))
+				break;
+
+			num += i * *postfix;
+			i *= 10;
+			postfix--;
+		}
+
+		if (num == index) {
+			strncpy(name, de->d_name, size);
+			return 0;
+		}
+	}
+
+	closedir(dir);
+	return -ENODEV;
+}
 
 int main(int argc, char *argv[])
 {
 	int index, ret;
-	const char *dir;
-	char home[CONF_VAL_LEN];
-	struct block_device *bdev;
+	const char *path;
+	char str[CONF_VAL_LEN];
 
 	switch (argc) {
 	case 1:
-		ret = conf_get_attr("HOME", home);
+		ret = conf_get_attr(HOME, str);
 		assert(ret <= 0); // should never fail!
-		dir = home;
-		break;
+		path = str;
+		goto L1;
 
 	case 2:
-		ret = dec_str_to_val(argv[1], &index);
-		if (ret >= 0) {
-			if (index >= 0) {
-				bdev = get_bdev_by_index(index);
-				if (bdev) {
-					dir = bdev->name;
-					break;
-				}
-			}
-
-			usage();
-			return -ENOENT;
-		}
-
-		dir = argv[1];
+		path = argv[1];
 		break;
 
 	default:
@@ -39,7 +58,25 @@ int main(int argc, char *argv[])
 		return -EINVAL;
 	}
 
-	ret = chdir(dir);
+	ret = dec_str_to_val(path, &index);
+	if (ret >= 0) {
+		if (index >= 0) {
+			ret = get_bdev_by_index(index, str, sizeof(str));
+			if (!ret) {
+				path = str;
+				goto L1; // found
+			}
+		}
+
+		usage();
+		return -ENOENT;
+	}
+
+L1:
+	if (!strcmp(path, getcwd()))
+		return 0;
+
+	ret = chdir(path);
 	if (ret < 0) {
 		printf("cd failed, errno = %d!\n", ret);
 		return ret;

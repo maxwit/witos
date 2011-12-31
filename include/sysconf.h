@@ -21,7 +21,8 @@
 #define BM_MMC         (8 << 8)
 #define BM_TFTP        (16 << 8)
 
-/////////////////////////////
+// standard configuration
+#define HOME  "HOME"
 
 #define CONF_VAL_LEN 512
 #define CONF_ATTR_LEN 128

@@ -1,4 +1,6 @@
 #include <unistd.h>
+#include <dirent.h>
+#include <block.h> //  fixme: to be removed!
 
 static char *g_cwd; // fixme: with const
 
