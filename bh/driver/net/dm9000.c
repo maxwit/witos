@@ -187,7 +187,8 @@ static int dm9000_recv_packet(struct net_device *ndev)
 
 static int dm9000_link_change(struct net_device *ndev)
 {
-	__u8 link, stat;
+	__u8 link;
+	__u16 stat;
 	struct mii_phy *phy;
 
 	if (list_is_empty(&ndev->phy_list))
@@ -197,6 +198,8 @@ static int dm9000_link_change(struct net_device *ndev)
 	link = dm9000_readb(DM9000_NSR);
 	if (link & (1 << 6)) {
 		ndev->link.connected = true;
+
+		while(!(ndev->mdio_read(ndev,phy->addr,MII_REG_BMS) & 0x20));
 
 		stat = ndev->mdio_read(ndev, phy->addr, MII_REG_STAT);
 		switch (stat >> 12) {
