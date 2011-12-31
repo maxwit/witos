@@ -2,6 +2,10 @@
 #include <net/net.h>
 #include <net/tftp.h>
 #include <net/socket.h>
+#include <image.h>
+#include <fs/fs.h>
+#include <flash/flash.h>
+#include <fcntl.h>
 
 #define TFTP_DEBUG
 // fixme: to be removed
@@ -47,16 +51,6 @@ static int tftp_send_ack(const int fd, const __u16 blk, struct sockaddr_in *remo
 	tftp_pkt.block = htons(blk);
 	ret = sendto(fd, &tftp_pkt, TFTP_HDR_LEN, 0,
 			(struct sockaddr *)remote_addr, sizeof(*remote_addr));
-
-	return ret;
-}
-
-static int image_write(int fd, const void *buff, size_t size, image_t img_type)
-{
-	int ret;
-
-
-	ret = bdev_write(fd, buff, size);
 
 	return ret;
 }
@@ -114,7 +108,7 @@ int tftp_download(struct tftp_opt *opt)
 	blk_num  = 1;
 
 	if (opt->bdev) {
-		fd_bdev = bdev_open(opt->bdev->name, O_WRONLY);
+		fd_bdev = open(opt->bdev->name, O_WRONLY);
 		if (fd_bdev < 0) {
 			printf("fail to open \"%s\"!\n", opt->bdev->name);
 			goto L1;
@@ -147,7 +141,7 @@ int tftp_download(struct tftp_opt *opt)
 				break;
 			}
 
-		ret = bdev_ioctl(fd_bdev, FLASH_IOCS_OOB_MODE, oob_mode);
+		ret = ioctl(fd_bdev, FLASH_IOCS_OOB_MODE, oob_mode);
 		if (ret < 0)
 			goto L2;
 		}
@@ -203,12 +197,12 @@ int tftp_download(struct tftp_opt *opt)
 							break;
 						}
 
-						ret = bdev_ioctl(fd_bdev, FLASH_IOCS_OOB_MODE, oob_mode);
+						ret = ioctl(fd_bdev, FLASH_IOCS_OOB_MODE, oob_mode);
 						if (ret < 0)
 							goto L2;
 					}
 
-					ret = bdev_write(fd_bdev, tftp_pkt->data, pkt_len, img_type);
+					ret = write(fd_bdev, tftp_pkt->data, pkt_len);
 					if (ret < 0)
 						goto L2;
 				}
@@ -244,7 +238,7 @@ L2:
 	printf("\n");
 #endif
 
-	bdev_close(fd_bdev);
+	close(fd_bdev);
 L1:
 	sk_close(sockfd);
 	return ret;
@@ -302,7 +296,7 @@ int tftp_upload(struct tftp_opt *opt)
 
 #ifdef FILE_READ_SUPPORT
 	if (opt->bdev) {
-		fd_bdev = bdev_open(file, O_RDONLY);
+		fd_bdev = open(file, O_RDONLY);
 		if (fd_bdev < 0) {
 			printf("fail to open \"%s\"!\n", file->bdev->name);
 			goto L1;

@@ -3,6 +3,7 @@
 #include <string.h>
 #include <bar.h>
 #include <task.h>
+#include <fcntl.h>
 
 #warning "fix the world!"
 
@@ -20,10 +21,10 @@ static int flash_str_to_val(char * str, __u32 * val, char *unit)
 		*unit = 'p'; // page
 		p[len - 4] = '\0';
 	} else if (len > 1 && strchr("kKmMgG", str[len - 1])) {
-		return hr_str_to_val(str, val);
+		return hr_str_to_val(str, (unsigned long *)val);
 	}
 
-	return str_to_val(str, val);
+	return str_to_val(str, (unsigned long *)val);
 }
 
 static struct flash_chip *get_current_flash()
@@ -81,10 +82,13 @@ static int info(int argc, char *argv[])
 
 static int read_write(int argc, char *argv[])
 {
+	return 0;
+#if 0
 	int ch, ret, flag = 0;
 	__u32 start = 0, size = 1024;
 	char start_unit = 0, size_unit = 0;
 	void *buff = NULL;
+	int fd_bdev;
 	struct flash_chip *flash;
 	struct block_device *bdev;
 
@@ -113,7 +117,7 @@ static int read_write(int argc, char *argv[])
 			break;
 
 		case 'm':
-			if (str_to_val(optarg, (__u32 *)&buff) < 0) {
+			if (str_to_val(optarg, (unsigned long *)&buff) < 0) {
 				printf("Invalid argument: \"%s\"\n", optarg);
 				usage();
 				return -EINVAL;
@@ -140,7 +144,7 @@ static int read_write(int argc, char *argv[])
 
 	// fixme
 	bdev = get_bdev_by_volume(get_curr_volume());
-	flash = flash_open(bdev->name);
+	flash = container_of(bdev, struct flash_chip, bdev);
 	assert(flash);
 
 	// -a xxxblock or -a xxxpage
@@ -160,35 +164,42 @@ static int read_write(int argc, char *argv[])
 	if (start + size >= flash->chip_size) {
 		printf("Address 0x%08x overflow!\n", start + size);
 		ret = -EINVAL;
-		goto error;
+		goto L1;
 	}
 
+	fd_bdev = open(bdev->name, O_RDWR);
+	if (fd_bdev < 0) {
+		goto L1;
+	}
+
+	lseek(fd_bdev, start, SEEK_SET);
 	if (0 == strcmp(argv[0], "read")) {
-		ret = flash_read(flash, buff, start, size);
+		ret = read(fd_bdev, buff, size);
 		if (ret < 0) {
 			printf("please check argument!\n");
 			usage();
 
 			ret = -EINVAL;
-			goto error;
+			goto L2;
 		}
 		printf("Read 0x%08x bytes data to mem 0x%08x from flash 0x%08x\n", size, (__u32)buff, start);
 	} else {
-		ret = flash_write(flash, buff, size, start);
+		ret = write(fd_bdev, buff, size);
 		if (ret < 0) {
 			printf("please check argument!\n");
 			usage();
 
 			ret = -EINVAL;
-			goto error;
+			goto L2;
 		}
 		printf("write 0x%08x bytes data to flash 0x%08x from mem 0x%08x\n", size, start, (__u32)buff);
 	}
 
-error:
-	flash_close(flash);
-
+L2:
+	close(fd_bdev);
+L1:
 	return ret;
+#endif
 }
 
 #if 0
@@ -213,15 +224,18 @@ static int flash_parterase_process(struct flash_chip *flash, FLASH_HOOK_PARAM *p
 // TODO: add process bar
 static int scanbb(int argc, char *argv[])
 {
+	return 0;
+#if 0
 	int ret;
 	struct flash_chip *flash;
 	__u32 part_num = -1;
 	int ch;
+	int fd;
 
 	while ((ch = getopt(argc, argv, "p:")) != -1) {
 		switch (ch) {
 		case 'p':
-			if (str_to_val(optarg, &part_num) < 0) {
+			if (str_to_val(optarg, (unsigned long *)&part_num) < 0) {
 				printf("Invalid argument: \"%s\"\n", optarg);
 				return -EINVAL;
 			}
@@ -244,15 +258,19 @@ static int scanbb(int argc, char *argv[])
 		// fixme
 	}
 
-	flash_ioctl(flash, FLASH_IOC_SCANBB, &part_num);
+	fd = open(const char * path,int flags,...)
+	ioctl(flash, FLASH_IOC_SCANBB, &part_num);
 
-	flash_close(flash);
+	close(flash);
 L1:
 	return ret;
+#endif
 }
 
 static int dump(int argc, char *argv[])
 {
+	return 0;
+#if 0
 	__u8 *p, *buff;
 	int ch;
 	int ret = 0;
@@ -319,10 +337,10 @@ static int dump(int argc, char *argv[])
 
 	ALIGN_UP(size, flash->write_size + flash->oob_size);
 
-	ret = flash_ioctl(flash, FLASH_IOCG_SIZE, &flash_size);
+	ret = ioctl(flash, FLASH_IOCG_SIZE, &flash_size);
 	if (start + size >= flash_size) {
 		printf("Address 0x%08x overflow!\n", start);
-		flash_close(flash);
+		close(flash);
 		return -EINVAL;
 	}
 
@@ -334,12 +352,12 @@ static int dump(int argc, char *argv[])
 
 	start &= ~(flash->write_size - 1);
 
-	ret = flash_ioctl(flash, FLASH_IOCS_OOB_MODE, (void *)FLASH_OOB_RAW);
+	ret = ioctl(flash, FLASH_IOCS_OOB_MODE, (void *)FLASH_OOB_RAW);
 	// if ret < 0
-	ret = flash_read(flash, buff, start, size);
+	ret = read(flash, buff, start, size);
 
 	if (ret < 0) {
-		printf("%s(): line %d execute flash_read_raw() error!\n"
+		printf("%s(): line %d execute read_raw() error!\n"
 			"error = %d\n", __func__, __LINE__, ret);
 
 		goto L1;
@@ -389,15 +407,18 @@ static int dump(int argc, char *argv[])
 L1:
 	free(buff);
 no_mem:
-	flash_close(flash);
+	close(flash);
 
 	return ret;
+#endif
 }
 
 
 // fixme: bad logic!
 static int erase(int argc, char *argv[])
 {
+	return 0;
+#if 0
 	int ch;
 	int arg_flag = 0;
 	int ret = 0;
@@ -433,7 +454,7 @@ static int erase(int argc, char *argv[])
 			break;
 
 		case 'p':
-			if (arg_flag == 1 || (optarg && str_to_val(optarg, &dev_num) < 0)) {
+			if (arg_flag == 1 || (optarg && str_to_val(optarg, (unsigned long *)&dev_num) < 0)) {
 				printf("Invalid argument: \"%s\"\n", optarg);
 				usage();
 				return -EINVAL;
@@ -462,7 +483,7 @@ static int erase(int argc, char *argv[])
 	flash = get_current_flash();
 	assert(flash);
 
-	ret = flash_ioctl(flash, FLASH_IOCG_SIZE, &flash_size);
+	ret = ioctl(flash, FLASH_IOCG_SIZE, &flash_size);
 
 	// if option is "-p" erase the whole partiton or default current partition with no option
 	if (0 == size) {
@@ -495,9 +516,10 @@ static int erase(int argc, char *argv[])
 	printf("[0x%08x : 0x%08x]\n", start, size);
 	ret = flash_erase(flash, start, size, erase_flags);
 
-	flash_close(flash);
+	close(flash);
 
 	return ret;
+#endif
 }
 
 int main(int argc, char *argv[])

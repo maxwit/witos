@@ -34,7 +34,7 @@ static int mem_dump(int argc, char *argv[])
 	while ((ch = getopt(argc, argv, "a:l:d:h")) != -1) {
 		switch(ch) {
 		case 'a':
-			if ((str_to_val(optarg, (__u32 *)&p)) < 0) {
+			if ((str_to_val(optarg, (unsigned long *)&p)) < 0) {
 				printf("Invaild argument\n");
 				usage();
 				return -EINVAL;
@@ -43,7 +43,7 @@ static int mem_dump(int argc, char *argv[])
 			break;
 
 		case 'l':
-			if ((str_to_val(optarg, (__u32 *)&i)) < 0) {
+			if ((str_to_val(optarg, (unsigned long *)&i)) < 0) {
 				printf("Invaild argument\n");
 				usage();
 				return -EINVAL;
@@ -129,7 +129,7 @@ static int mem_write(int argc, char *argv[])
 	while ((ch = getopt(argc, argv, "a::w:h")) != -1) {
 		switch (ch) {
 		case 'a':
-			if ((str_to_val(optarg, (__u32 *)&p)) < 0) {
+			if ((str_to_val(optarg, (unsigned long *)&p)) < 0) {
 				printf("Invaild argument\n");
 				return -EINVAL;
 			}
@@ -139,7 +139,7 @@ static int mem_write(int argc, char *argv[])
 			break;
 
 		case 'w':
-			if ((str_to_val(optarg, (__u32 *)&unit)) < 0) {
+			if ((str_to_val(optarg, (unsigned long *)&unit)) < 0) {
 				printf("Invaild argument\n");
 				return -EINVAL;
 			}
@@ -160,7 +160,7 @@ static int mem_write(int argc, char *argv[])
 	}
 
 	while (i < val_count) {
-		if ((str_to_val(argv[optind + i], &val[i])) < 0) {
+		if ((str_to_val(argv[optind + i], (unsigned long *)&val[i])) < 0) {
 			printf("Invaild argument\n");
 			usage();
 			return -EINVAL;
@@ -192,7 +192,7 @@ static int mem_set(int argc, char *argv[])
 	while ((ch = getopt(argc, argv, "a:v:l:w:h")) != -1) {
 		switch(ch) {
 		case 'a':
-			if ((str_to_val(optarg, (__u32 *)&p)) < 0) {
+			if ((str_to_val(optarg, (unsigned long *)&p)) < 0) {
 				printf("Invaild argument\n");
 				usage();
 				return -EINVAL;
@@ -209,7 +209,7 @@ static int mem_set(int argc, char *argv[])
 			break;
 
 		case 'w':
-			if ((str_to_val(optarg, (__u32 *)&unit)) < 0) {
+			if ((str_to_val(optarg, (unsigned long *)&unit)) < 0) {
 				printf("Invaild argument\n");
 				usage();
 				return -EINVAL;
@@ -217,7 +217,7 @@ static int mem_set(int argc, char *argv[])
 			break;
 
 		case 'v':
-			if ((str_to_val(optarg, (__u32 *)&val)) < 0) {
+			if ((str_to_val(optarg, (unsigned long *)&val)) < 0) {
 				printf("Invaild argument\n");
 				usage();
 				return -EINVAL;
@@ -272,7 +272,7 @@ static int mem_copy_move(int argc, char *argv[])
 	while ((ch = getopt(argc, argv, "s:d:l:")) != -1) {
 		switch (ch) {
 		case 's':
-			if ((str_to_val(optarg, (__u32*)&src)) < 0) {
+			if ((str_to_val(optarg, (unsigned long *)&src)) < 0) {
 				printf("Invaild argument\n");
 
 				return -EINVAL;
@@ -281,7 +281,7 @@ static int mem_copy_move(int argc, char *argv[])
 			break;
 
 		case 'd':
-			if ((str_to_val(optarg, (__u32*)&dest)) < 0) {
+			if ((str_to_val(optarg, (unsigned long *)&dest)) < 0) {
 				printf("Invaild argument\n");
 				return -EINVAL;
 			}

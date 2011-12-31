@@ -4,6 +4,7 @@
 #include <net/tftp.h>
 #include <uart/uart.h>
 #include <fs/fs.h>
+#include <fcntl.h>
 #include <flash/flash.h>
 #include <linux.h>
 #include <board.h>

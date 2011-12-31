@@ -3,6 +3,9 @@
 #include <loader.h>
 #include <stdio.h>
 #include <fs/fs.h>
+#include <image.h>
+#include <fcntl.h>
+#include <flash/flash.h>
 #include <uart/uart.h>
 #include <uart/kermit.h>
 
@@ -81,8 +84,8 @@ int kermit_load(struct loader_opt *opt)
 	opt->load_size = 0;
 
 #ifndef CONFIG_GTH
-	if (opt->dev) {
-		fd_bdev = bdev_open(opt->dev->name, O_WRONLY);
+	if (opt->bdev) {
+		fd_bdev = open(opt->bdev->name, O_WRONLY);
 		if (fd_bdev < 0)
 			return fd_bdev;
 	}
@@ -194,7 +197,7 @@ int kermit_load(struct loader_opt *opt)
 			goto error;
 
 #ifndef CONFIG_GTH
-		if (opt->dev) {
+		if (opt->bdev) {
 			if (img_type == IMG_MAX) {
 				OOB_MODE oob_mode;
 				img_type = image_type_detect(curr_addr, count);
@@ -213,12 +216,12 @@ int kermit_load(struct loader_opt *opt)
 					break;
 				}
 
-				ret = bdev_ioctl(fd_bdev, FLASH_IOCS_OOB_MODE, oob_mode);
+				ret = ioctl(fd_bdev, FLASH_IOCS_OOB_MODE, oob_mode);
 				if (ret < 0)
-					goto L2;
+					goto error;
 			}
 
-			ret = bdev_write(fd_bdev, curr_addr, count, img_type);
+			ret = write(fd_bdev, curr_addr, count);
 			if (ret < 0)
 				goto error;
 		}
@@ -240,8 +243,8 @@ int kermit_load(struct loader_opt *opt)
 error:
 
 #ifndef CONFIG_GTH
-	if (opt->dev) {
-		bdev_close(fd_bdev);
+	if (opt->bdev) {
+		close(fd_bdev);
 	}
 #endif
 

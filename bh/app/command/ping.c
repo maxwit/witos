@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
 	while ((ch = getopt(argc, argv, "c:")) != -1) {
 		switch(ch) {
 		case 'c':
-			if (str_to_val(optarg, (__u32 *)&ping_times) < 0) {
+			if (str_to_val(optarg, (unsigned long *)&ping_times) < 0) {
 				printf("Invalid argument: \"%s\"\n", optarg);
 				return -EINVAL;
 			}

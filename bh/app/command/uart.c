@@ -22,7 +22,7 @@ static int uart_load(int argc, char *argv[])
 		switch (opt) {
 		case 'm':
 			if (optarg != NULL) {
-				ret = str_to_val(optarg, (__u32 *)&ld_opt.load_addr);
+				ret = str_to_val(optarg, (unsigned long *)&ld_opt.load_addr);
 				if (ret < 0) {
 					printf("Input a invalied address!\n");
 
@@ -135,7 +135,7 @@ static int uart_send(int argc ,char *argv[])
 		switch (opt) {
 		case 'm':
 			if (optarg != NULL) {
-				het = str_to_val(optarg, (__u32 *)&ld_opt.load_addr);
+				het = str_to_val(optarg, (unsigned long *)&ld_opt.load_addr);
 				if (het < 0) {
 					printf("Input a invalied address!\n");
 
@@ -180,7 +180,7 @@ static int uart_test(int argc ,char *argv[])
 		switch (opt) {
 		case 'm':
 			if (optarg != NULL) {
-				het = str_to_val(optarg, (__u32 *)&ld_opt.load_addr);
+				het = str_to_val(optarg, (unsigned long *)&ld_opt.load_addr);
 				if (het < 0) {
 					printf("Input a invalied address!\n");
 

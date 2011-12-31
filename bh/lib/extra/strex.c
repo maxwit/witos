@@ -62,15 +62,15 @@ int val_to_dec_str(char *str, long val)
 	return j;
 }
 
-#define MAX_HEX_LEN (sizeof(__u32) * 2 + 1)
+#define MAX_HEX_LEN (sizeof(unsigned long) * 2 + 1)
 
-int val_to_hex_str(char *str, __u32 val)
+int val_to_hex_str(char *str, unsigned long val)
 {
 	char buff[MAX_HEX_LEN];
 	int i = MAX_HEX_LEN - 1, j = 0;
 
 	while (val) {
-		__u32 num = val & 0xf;
+		unsigned long num = val & 0xf;
 
 		if (num < 0xa)
 			buff[i] = (char)num + '0';
@@ -124,7 +124,7 @@ int dec_str_to_val(const char *str, long *val)
 #define M_MARK (1 << 6)
 #define K_MARK (1 << 5)
 
-int hr_str_to_val(const char *str, __u32 *val)
+int hr_str_to_val(const char *str, unsigned long *val)
 {
 	__u8  mark = 0;
 	__u32 num = 0, tmp = 0;
@@ -204,8 +204,7 @@ int str_to_val(const char *str, unsigned long *val)
 }
 
 #define KB_MASK ((1 << 10) - 1)
-
-int val_to_hr_str(__u32 val, char str[])
+int val_to_hr_str(unsigned long val, char str[])
 {
 	char *ch = str;
 	__u32 sect;
@@ -313,7 +312,7 @@ int str_to_mac(__u8 mac[], const char *str)
 	for (i = j = 0; i <= MAC_STR_LEN && j < MAC_ADR_LEN; i++) {
 		if (':' == buf[i]|| '\0' == buf[i]) {
 			buf[i] = '\0';
-			if (hex_str_to_val(p, &num) <= 0 || num > 255)
+			if (hex_str_to_val(p, (unsigned long *)&num) <= 0 || num > 255)
 				goto error;
 
 			mac[j++] = num;

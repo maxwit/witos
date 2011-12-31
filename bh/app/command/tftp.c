@@ -143,7 +143,7 @@ static int tftp_get_file(int argc, char **argv)
 	while ((ch = getopt(argc, argv, "a:m:r:l:t:v:")) != -1) {
 		switch(ch) {
 		case 'a':
-			ret = str_to_val(optarg, (__u32 *)&dlopt.load_addr);
+			ret = str_to_val(optarg, (unsigned long *)&dlopt.load_addr);
 			if (ret < 0) {
 				usage();
 				return ret;
@@ -242,13 +242,13 @@ static int tftp_get_file(int argc, char **argv)
 
 	if (dlopt.bdev) {
 		// set file name
-		snprintf(conf_attr, CONF_ATTR_LEN, "bdev.%s.image.name", dlopt->bdev->name);
+		snprintf(conf_attr, CONF_ATTR_LEN, "bdev.%s.image.name", dlopt.bdev->name);
 		if (conf_set_attr(conf_attr, dlopt.file_name) < 0) {
 			conf_add_attr(conf_attr, dlopt.file_name);
 		}
 
 		// set file size
-		snprintf(conf_attr, CONF_ATTR_LEN, "bdev.%s.image.size", bdev->name);
+		snprintf(conf_attr, CONF_ATTR_LEN, "bdev.%s.image.size", dlopt.bdev->name);
 		val_to_dec_str(conf_val, dlopt.xmit_size);
 		if (conf_set_attr(conf_attr, conf_val) < 0) {
 			conf_add_attr(conf_attr, conf_val);
@@ -276,7 +276,7 @@ static int tftp_put_file(int argc, char **argv)
 	while ((ch = getopt(argc, argv, "a:m:r:l:t:v:")) != -1) {
 		switch(ch) {
 		case 'a':
-			ret = str_to_val(optarg, (__u32 *)&opt.load_addr);
+			ret = str_to_val(optarg, (unsigned long *)&opt.load_addr);
 
 			if (ret < 0) {
 				usage();
