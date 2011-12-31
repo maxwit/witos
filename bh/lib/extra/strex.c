@@ -91,9 +91,35 @@ int val_to_hex_str(char *str, unsigned long val)
 	return j;
 }
 
-int dec_str_to_val(const char *str, long *val)
+// fixme: merge the following 2 functions into 1
+int dec_str_to_long(const char *str, long *val)
 {
 	long tmp = 0;
+	const char *num = str;
+
+	if ('-' == *num)
+		num++;
+
+	while (*num != '\0') {
+		if (ISDIGIT(*num))
+			tmp = 10 * tmp + *num - '0';
+		else
+			return -EINVAL;
+
+		num++;
+	}
+
+	if ('-' == *str)
+		*val = -tmp;
+	else
+		*val = tmp;
+
+	return num - str;
+}
+
+int dec_str_to_int(const char *str, int *val)
+{
+	int tmp = 0;
 	const char *num = str;
 
 	if ('-' == *num)
@@ -195,7 +221,7 @@ int str_to_val(const char *str, unsigned long *val)
 	if ('0' == *str && ('x' == *(str + 1) || 'X' == *(str + 1)))
 		ret = hex_str_to_val(str + 2, &tmp);
 	else
-		ret = dec_str_to_val(str, (long *)&tmp);
+		ret = dec_str_to_long(str, (long *)&tmp);
 
 	if (ret >= 0)
 		*val = tmp;

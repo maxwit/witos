@@ -8,21 +8,21 @@
 static int uart_load(int argc, char *argv[])
 {
 	int size, ret;
-	struct loader_opt ld_opt;
+	struct loader_opt ldr_opt;
 	char *pro = NULL;
 	int opt;
 
 	size = 0;
 
-	memset(&ld_opt, 0x0, sizeof(ld_opt));
+	memset(&ldr_opt, 0x0, sizeof(ldr_opt));
 
-	ld_opt.bdev = get_bdev_by_index(getcwd());
+	ldr_opt.dst = getcwd();
 
 	while ((opt = getopt(argc, argv, "m::p:f:i:vh")) != -1) {
 		switch (opt) {
 		case 'm':
 			if (optarg != NULL) {
-				ret = str_to_val(optarg, (unsigned long *)&ld_opt.load_addr);
+				ret = str_to_val(optarg, (unsigned long *)&ldr_opt.load_addr);
 				if (ret < 0) {
 					printf("Input a invalied address!\n");
 
@@ -30,7 +30,7 @@ static int uart_load(int argc, char *argv[])
 				}
 			}
 
-			ld_opt.bdev = NULL;
+			ldr_opt.dst = NULL;
 
 			break;
 
@@ -61,25 +61,25 @@ static int uart_load(int argc, char *argv[])
 
 	if (0 == strcmp(pro, "k")) {
 		printf("load kermit....:");
-		size = kermit_load(&ld_opt);
+		size = kermit_load(&ldr_opt);
 	} else if (0 == strcmp(pro, "y")) {
 		printf("load ymode....:");
-		size = ymodem_load(&ld_opt);
+		size = ymodem_load(&ldr_opt);
 	} else {
 		usage();
 		return -EINVAL;
 	}
 
-	if (ld_opt.bdev && size > 0) {
+	if (ldr_opt.dst && size > 0) {
 		char conf_attr[CONF_ATTR_LEN], conf_val[CONF_VAL_LEN];
 
-		snprintf(conf_attr, CONF_ATTR_LEN, "bdev.%s.image.name", ld_opt.bdev->name);
-		if (conf_set_attr(conf_attr, ld_opt.file_name) < 0) {
-			conf_add_attr(conf_attr, ld_opt.file_name);
+		snprintf(conf_attr, CONF_ATTR_LEN, "bdev.%s.image.name", ldr_opt.dst);
+		if (conf_set_attr(conf_attr, ldr_opt.file_name) < 0) {
+			conf_add_attr(conf_attr, ldr_opt.file_name);
 		}
 
 		// set file size
-		snprintf(conf_attr, CONF_ATTR_LEN, "bdev.%s.image.size", ld_opt.bdev->name);
+		snprintf(conf_attr, CONF_ATTR_LEN, "bdev.%s.image.size", ldr_opt.dst);
 		val_to_dec_str(conf_val, size);
 		if (conf_set_attr(conf_attr, conf_val) < 0) {
 			conf_add_attr(conf_attr, conf_val);
@@ -128,14 +128,14 @@ static int uart_send(int argc ,char *argv[])
 	int opt;
 	int het;
 	int ret = 0;
-	struct loader_opt ld_opt;
+	struct loader_opt ldr_opt;
 
-	memset(&ld_opt, 0x0, sizeof(ld_opt));
+	memset(&ldr_opt, 0x0, sizeof(ldr_opt));
 	while ((opt = getopt(argc, argv, "m::p:f:i:vh")) != -1) {
 		switch (opt) {
 		case 'm':
 			if (optarg != NULL) {
-				het = str_to_val(optarg, (unsigned long *)&ld_opt.load_addr);
+				het = str_to_val(optarg, (unsigned long *)&ldr_opt.load_addr);
 				if (het < 0) {
 					printf("Input a invalied address!\n");
 
@@ -173,14 +173,14 @@ static int uart_test(int argc ,char *argv[])
 	int opt;
 	int het;
 	int ret = 0;
-	struct loader_opt ld_opt;
+	struct loader_opt ldr_opt;
 
-	memset(&ld_opt, 0x0, sizeof(ld_opt));
+	memset(&ldr_opt, 0x0, sizeof(ldr_opt));
 	while ((opt = getopt(argc, argv, "m::p:f:i:vh")) != -1) {
 		switch (opt) {
 		case 'm':
 			if (optarg != NULL) {
-				het = str_to_val(optarg, (unsigned long *)&ld_opt.load_addr);
+				het = str_to_val(optarg, (unsigned long *)&ldr_opt.load_addr);
 				if (het < 0) {
 					printf("Input a invalied address!\n");
 

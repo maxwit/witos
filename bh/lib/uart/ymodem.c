@@ -71,8 +71,8 @@ int ymodem_load(struct loader_opt *opt)
 
 	opt->load_size = 0;
 #ifndef CONFIG_GTH
-		if (opt->bdev) {
-			fd_bdev = open(opt->bdev->name, O_WRONLY);
+		if (opt->dst) {
+			fd_bdev = open(opt->dst, O_WRONLY);
 			if (fd_bdev < 0)
 				return fd_bdev;
 		}
@@ -176,7 +176,7 @@ int ymodem_load(struct loader_opt *opt)
 		ret = uart_recv_byte_timeout(&crc[1], MODEM_TIMEOUT);
 
 #ifndef CONFIG_GTH
-		if (opt->bdev) {
+		if (opt->dst) {
 			if (img_type == IMG_MAX) {
 				OOB_MODE oob_mode;
 				img_type = image_type_detect(curr_addr, count);
@@ -224,7 +224,7 @@ L1:
 error:
 
 #ifndef CONFIG_GTH
-	if (opt->bdev) {
+	if (opt->dst) {
 		close(fd_bdev);
 	}
 #endif

@@ -61,13 +61,11 @@ int kermit_load(struct loader_opt *opt)
 {
 	__u8 buff[KERM_BUF_LEN];
 	__u8 curr_char;
+	__u8 *curr_addr = (__u8 *)opt->load_addr;
 	int index, count, checksum, len, seq, real_seq = 0;
 	int type = KERM_TYPE_BREAK; // fixme
-	__u8 *curr_addr = (__u8 *)opt->load_addr;
-	int fd_bdev;
+	int fd, ret, i;
 	image_t img_type = IMG_MAX;
-	int i;
-	int ret;
 
 #ifndef CONFIG_GTH
 	if (!opt->load_addr) {
@@ -84,10 +82,10 @@ int kermit_load(struct loader_opt *opt)
 	opt->load_size = 0;
 
 #ifndef CONFIG_GTH
-	if (opt->bdev) {
-		fd_bdev = open(opt->bdev->name, O_WRONLY);
-		if (fd_bdev < 0)
-			return fd_bdev;
+	if (opt->dst) {
+		fd = open(opt->dst, O_WRONLY);
+		if (fd < 0)
+			return fd;
 	}
 #endif
 
@@ -197,7 +195,7 @@ int kermit_load(struct loader_opt *opt)
 			goto error;
 
 #ifndef CONFIG_GTH
-		if (opt->bdev) {
+		if (opt->dst) {
 			if (img_type == IMG_MAX) {
 				OOB_MODE oob_mode;
 				img_type = image_type_detect(curr_addr, count);
@@ -216,12 +214,12 @@ int kermit_load(struct loader_opt *opt)
 					break;
 				}
 
-				ret = ioctl(fd_bdev, FLASH_IOCS_OOB_MODE, oob_mode);
+				ret = ioctl(fd, FLASH_IOCS_OOB_MODE, oob_mode);
 				if (ret < 0)
 					goto error;
 			}
 
-			ret = write(fd_bdev, curr_addr, count);
+			ret = write(fd, curr_addr, count);
 			if (ret < 0)
 				goto error;
 		}
@@ -243,8 +241,8 @@ int kermit_load(struct loader_opt *opt)
 error:
 
 #ifndef CONFIG_GTH
-	if (opt->bdev) {
-		close(fd_bdev);
+	if (opt->dst) {
+		close(fd);
 	}
 #endif
 

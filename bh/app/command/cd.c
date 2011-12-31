@@ -38,7 +38,7 @@ static int get_bdev_by_index(int index, char name[], size_t size)
 
 int main(int argc, char *argv[])
 {
-	int index, ret;
+	int ret, index;
 	const char *path;
 	char str[CONF_VAL_LEN];
 
@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
 		return -EINVAL;
 	}
 
-	ret = dec_str_to_val(path, &index);
+	ret = dec_str_to_int(path, &index);
 	if (ret >= 0) {
 		if (index >= 0) {
 			ret = get_bdev_by_index(index, str, sizeof(str));
