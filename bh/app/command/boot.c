@@ -67,7 +67,7 @@ static int build_command_line(char *cmd_line, size_t max_len)
 
 			close(fd);
 
-			snprintf(attr, "%s.fstype", config);
+			snprintf(attr, sizeof(attr), "%s.fstype", config);
 			if (conf_get_attr(attr, config) >= 0) {
 				fstype = config;
 			} else {
@@ -166,7 +166,7 @@ static ssize_t load_image(void *dst, const char *src)
 
 		memset(&dlopt, 0x0, sizeof(dlopt));
 
-		net_get_server_ip(&dlopt.server_ip);
+		net_get_server_ip((__u32 *)&dlopt.src);
 		strcpy(dlopt.file_name, image);
 		dlopt.load_addr = dst;
 
