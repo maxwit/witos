@@ -52,7 +52,7 @@ int ymodem_load(struct loader_opt *opt)
 	char blk = 0;
 	__u8 stx, blk_num[2], crc[2];
 	__u8 *curr_addr;
-	int fd_bdev;
+	int fd_bdev = 0;
 	image_t img_type = IMG_MAX;
 
 #ifndef CONFIG_GTH

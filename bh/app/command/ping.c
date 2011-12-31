@@ -1,5 +1,5 @@
 #include <net/net.h>
-#include <getopt.h>
+#include <unistd.h>
 
 #define PING_LEN 8
 #define MAX_LEN 512

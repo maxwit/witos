@@ -1,6 +1,6 @@
 #include <mmc/mmc.h>
 #include <mmc/mmc_ops.h>
-#include <getopt.h>
+#include <unistd.h>
 #include <string.h>
 #include <shell.h>
 #include <task.h>

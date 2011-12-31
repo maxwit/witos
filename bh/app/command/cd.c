@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
 		if (ret >= 0) {
 			if (index >= 0) {
 				bdev = get_bdev_by_index(index);
-				if (bdev) {					
+				if (bdev) {
 					dir = bdev->name;
 					break;
 				}

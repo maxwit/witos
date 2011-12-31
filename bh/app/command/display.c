@@ -1,4 +1,4 @@
-#include <getopt.h>
+#include <unistd.h>
 #include <graphic/display.h>
 
 #define PIXEL_DESC(pix_fmt) \

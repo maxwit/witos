@@ -1,4 +1,4 @@
-#include <getopt.h>
+#include <unistd.h>
 
 #define LEN 128
 // fixme

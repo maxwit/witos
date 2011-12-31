@@ -1,4 +1,4 @@
-#include <getopt.h>
+#include <unistd.h>
 #include <image.h>
 #include <net/net.h>
 #include <net/tftp.h>

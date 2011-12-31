@@ -1,7 +1,7 @@
 #include <block.h>
 #include <shell.h>
 #include <drive.h>
-#include <getopt.h>
+#include <unistd.h>
 #include <flash/flash.h>
 
 static int show_info(int verbose)

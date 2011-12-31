@@ -1,4 +1,4 @@
-#include <getopt.h>
+#include <unistd.h>
 #include <net/net.h>
 #include <net/tftp.h>
 #include <net/socket.h>
@@ -6,6 +6,8 @@
 #include <fs/fs.h>
 #include <flash/flash.h>
 #include <fcntl.h>
+#include <block.h>
+#include <shell.h>
 
 #define TFTP_DEBUG
 // fixme: to be removed
@@ -65,7 +67,7 @@ int tftp_download(struct tftp_opt *opt)
 	socklen_t addrlen;
 	__u8 buf[TFTP_BUF_LEN];
 	size_t  pkt_len, load_len;
-	int fd_bdev;
+	int fd_bdev = 0;
 	struct tftp_packet *tftp_pkt = (struct tftp_packet *)buf;
 	struct sockaddr_in local_addr, remote_addr;
 	char server_ip[IPV4_STR_LEN];
@@ -244,9 +246,29 @@ L1:
 	return ret;
 }
 
+static int get_def_file_size()
+{
+	struct block_device *bdev;
+
+	bdev = get_bdev_by_index(getcwd());
+
+	return bdev->size;
+}
+
+static int get_def_file_name(char *name, size_t size)
+{
+	struct block_device *bdev;
+
+	bdev = get_bdev_by_index(getcwd());
+
+	snprintf(name, size, "%s.bin", bdev->name);
+
+	return 0;
+}
+
 int tftp_upload(struct tftp_opt *opt)
 {
-	int ret;
+	int ret = 0;
 	int sockfd;
 	__u16 blk_num;
 	char *buff_ptr;
@@ -256,7 +278,9 @@ int tftp_upload(struct tftp_opt *opt)
 	struct tftp_packet *tftp_pkt = (struct tftp_packet *)buf;
 	struct sockaddr_in local_addr, remote_addr;
 	char server_ip[IPV4_STR_LEN];
-	int fd_bdev;
+	int fd_bdev = 0;
+	char conf_attr[CONF_ATTR_LEN], conf_val[CONF_VAL_LEN];
+	int file_size = 0;
 
 	if (ip_to_str(server_ip, opt->server_ip) < 0) {
 		printf("Error: Server IP!\n");
@@ -267,6 +291,38 @@ int tftp_upload(struct tftp_opt *opt)
 	if (sockfd <= 0) {
 		printf("%s(): error @ line %d!\n", __func__, __LINE__);
 		return -EIO;
+	}
+
+	if (opt->bdev) {
+		fd_bdev = open(opt->bdev->name, O_RDONLY);
+		if (fd_bdev < 0) {
+			printf("fail to open \"%s\"!\n", opt->bdev->name);
+			goto L1;
+		}
+
+		if (opt->file_name[0] == '\0') {
+			snprintf(conf_attr, CONF_ATTR_LEN, "bdev.%s.image.name", opt->bdev->name);
+			ret = conf_get_attr(conf_attr, conf_val);
+			if (ret < 0) {
+				get_def_file_name(opt->file_name, sizeof(opt->file_name));
+			}
+
+			strncpy(opt->file_name, conf_val, sizeof(opt->file_name));
+		}
+
+		snprintf(conf_attr, CONF_ATTR_LEN, "bdev.%s.image.size", opt->bdev->name);
+		ret = conf_get_attr(conf_attr, conf_val);
+		if (ret < 0 || str_to_val(conf_val, (unsigned long *)&file_size)) {
+			file_size = get_def_file_size();
+		}
+	}
+
+	if (opt->file_name[0] == '\0') {
+		get_def_file_name(opt->file_name, sizeof(opt->file_name));
+	}
+
+	if (file_size == 0) {
+		file_size = get_def_file_size();
 	}
 
 	memset(&local_addr, 0, sizeof(local_addr));
@@ -292,17 +348,6 @@ int tftp_upload(struct tftp_opt *opt)
 	buff_ptr = opt->load_addr;
 	send_len = 0;
 	blk_num  = 0;
-	int file_size = 10230; //fixme!! ?
-
-#ifdef FILE_READ_SUPPORT
-	if (opt->bdev) {
-		fd_bdev = open(file, O_RDONLY);
-		if (fd_bdev < 0) {
-			printf("fail to open \"%s\"!\n", file->bdev->name);
-			goto L1;
-		}
-	}
-#endif
 
 	do {
 		pkt_len = recvfrom(sockfd, tftp_pkt, TFTP_BUF_LEN, 0,
@@ -314,9 +359,8 @@ int tftp_upload(struct tftp_opt *opt)
 		case TFTP_ACK:
 			if (ntohs(tftp_pkt->block) == blk_num) {
 				dat_len = file_size > TFTP_PKT_LEN ? TFTP_PKT_LEN : file_size;
-#ifdef FILE_READ_SUPPORT
 				if (opt->bdev) {
-					ret = bdev_read(fd_bdev, tftp_pkt->data, dat_len);
+					ret = read(fd_bdev, tftp_pkt->data, dat_len);
 					if (ret < 0)
 						goto L2;
 					blk_num++;
@@ -325,9 +369,7 @@ int tftp_upload(struct tftp_opt *opt)
 					tftp_pkt->block= htons(blk_num);
 
 					pkt_len += TFTP_HDR_LEN;
-				} else
-#endif
-				if (NULL != buff_ptr) {
+				} else if (NULL != buff_ptr) {
 					blk_num++;
 
 					// make TFTP data packet
@@ -385,10 +427,8 @@ L2:
 	printf("\n");
 #endif
 
-#ifdef FILE_READ_SUPPORT
 	if (opt->bdev)
-		bdev_close(fd_bdev);
-#endif
+		close(fd_bdev);
 
 L1:
 	sk_close(sockfd);

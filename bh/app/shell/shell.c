@@ -1,4 +1,3 @@
-#include <getopt.h>
 #include <unistd.h>
 #include <shell.h>
 #include <block.h>

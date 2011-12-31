@@ -308,7 +308,7 @@ static ssize_t flash_write(struct file *fp, const void *buff, size_t size, loff_
 
 	while (size > 0) {
 		if (size >= buff_room) {
-			__u32 size_adj;
+			// __u32 size_adj;
 
 			memcpy(blk_buff->blk_off, buff, buff_room);
 
@@ -321,13 +321,13 @@ static ssize_t flash_write(struct file *fp, const void *buff, size_t size, loff_
 			case FLASH_OOB_RAW:
 			case FLASH_OOB_AUTO:
 				// fixme: use macro: RATIO_TO_PAGE(n)
-				size_adj = blk_buff->blk_size / (flash->write_size + flash->oob_size) << flash->write_shift;
+				// size_adj = blk_buff->blk_size / (flash->write_size + flash->oob_size) << flash->write_shift;
 				flash_pos = fp->pos / (flash->write_size + flash->oob_size) << flash->write_shift;
 				break;
 
 			case FLASH_OOB_PLACE:
 			default:
-				size_adj = blk_buff->blk_size;
+				// size_adj = blk_buff->blk_size;
 				flash_pos = fp->pos;
 				break;
 			}
@@ -444,38 +444,6 @@ int set_bdev_file_attr(struct file *fp)
 	val_to_dec_str(file_val, fp->size);
 	if (conf_set_attr(file_attr, file_val) < 0) {
 		conf_add_attr(file_attr, file_val);
-	}
-#endif
-	return 0;
-}
-
-int get_bdev_file_attr(struct file * fp)
-{
-#if 0
-	char file_attr[CONF_ATTR_LEN];
-	char file_val[CONF_VAL_LEN];
-	struct block_device *bdev;
-
-	assert(fp != NULL);
-
-	bdev = fp->bdev;
-
-	// get fp name
-	snprintf(file_attr, CONF_ATTR_LEN, "bdev.%s.image.name", bdev->name);
-	if (conf_get_attr(file_attr, file_val) < 0) {
-		fp->name[0] = '\0';
-		fp->size = 0;
-		return 0;
-	}
-
-	strncpy(fp->name, file_val, FILE_NAME_SIZE);
-
-	// get fp size
-	snprintf(file_attr, CONF_ATTR_LEN, "bdev.%s.image.size", bdev->name);
-	if (conf_get_attr(file_attr, file_val) < 0 || \
-		str_to_val(file_val, &fp->size) < 0) {
-		fp->name[0] = '\0';
-		fp->size = 0;
 	}
 #endif
 	return 0;
