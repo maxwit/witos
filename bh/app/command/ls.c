@@ -1,21 +1,20 @@
-#include <block.h>
-#include <shell.h>
-#include <drive.h>
 #include <unistd.h>
-#include <flash/flash.h>
+#include <fcntl.h>
+#include <block.h>
 
 static int show_info(int verbose)
 {
-	char vol;
-	struct disk_drive *disk;
-	struct flash_chip *flash;
-	struct block_device *bdev;
+	int fd, ret;
+	const char *cwd;
+	struct part_attr part;
 
-	vol = getcwd();
-	bdev = get_bdev_by_index(vol);
-	if (bdev == NULL)
-		return -ENODEV;
+	cwd = getcwd();
+	fd = open(cwd, O_RDONLY);
 
+	ret = ioctl(fd, 0 /* fixme */, &part);
+
+	close(fd);
+#if 0
 	if (verbose == 1) {
 		printf("device      : %s\n"
 			   "label       : %s\n"
@@ -43,6 +42,7 @@ static int show_info(int verbose)
 	} else {
 		printf("\ndevice: %s (%s)\n", bdev->name, bdev->label);
 	}
+#endif
 
 	return 0;
 }
@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if ((verbose == 0 && argc == 2) || argc > 2) {
+	if (optind < argc) {
 		usage();
 		return -EINVAL;
 	}

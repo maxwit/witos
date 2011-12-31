@@ -19,16 +19,16 @@ struct block_device;
 struct part_attr {
 	__u32 base;
 	__u32 size;
-	char  label[LABEL_NAME_SIZE];
+	char  label[LABEL_NAME_SIZE];	
+	__u32 flags;
 };
 
 struct block_device {
 	// struct device dev;
 	char name[MAX_DEV_NAME]; // mmcblockXpY, mtdblockN, sdaN
 
-	__u32 flags;
-
-	// part_attr
+	// use part_attr instead?
+	__u32  flags;
 	size_t base;
 	size_t size;
 	char   label[LABEL_NAME_SIZE];

@@ -26,39 +26,22 @@ static int flash_str_to_val(char * str, __u32 * val, char *unit)
 	return str_to_val(str, (unsigned long *)val);
 }
 
-static struct flash_chip *get_current_flash()
-{
-	char v;
-	struct block_device *bdev;
-	struct flash_chip *flash;
-
-	v = getcwd();
-	bdev = get_bdev_by_index(v);
-	if (strncmp(bdev->name, "mtdblock", strlen("mtdblock"))) {
-		printf("The current volume is not a flash device!\n");
-		return NULL;
-	}
-
-	flash = container_of(bdev, struct flash_chip, bdev);
-	return flash;
-}
-
-static int is_master(struct flash_chip *flash)
-{
-	if (NULL == strchr(flash->bdev.name, 'p'))
-		return 1;
-
-	return 0;
-}
-
 static int info(int argc, char *argv[])
 {
-	struct flash_chip *flash;
+	int ret, fd;
+	struct part_attr part;
+	const char *dev;
+	
+	dev = getcwd();
+	fd = open(dev, O_RDONLY);
 
-	flash = get_current_flash();
-	if (flash == NULL) {
-		return -ENODEV;
+	ret = ioctl(fd, 0 /*fixme*/, &part);
+	if (ret < 0) {
+		printf("fail to get parition info! (ret = %d)\n", ret);
+		// return ret;
 	}
+
+	close(fd);
 
 	printf(
 		"label      %s\n"
@@ -68,13 +51,14 @@ static int info(int argc, char *argv[])
 		"size:      0x%08X\n"
 		"pagesize:  0x%08X\n"
 		"blocksize: 0x%08x\n",
-		flash->bdev.label,
-		is_master(flash) ? flash->name : flash->master->name,
-		flash->bdev.name,
-		flash->bdev.base,
-		flash->bdev.size,
-		flash->write_size,
-		flash->erase_size);
+		part.label,
+		"??",
+		"??", // part.name,
+		part.base,
+		part.size,
+		0, // write_size,
+		0 // erase_size
+		);
 
 	return 0;
 }
@@ -523,45 +507,42 @@ static int erase(int argc, char *argv[])
 
 int main(int argc, char *argv[])
 {
-	int i;
+	int ret, i;
 
 	struct command cmd[] = {
 		{
 			.name = "info",
 			.main = info
-		},
-		{
+		}, {
 			.name = "dump",
 			.main = dump
-		},
-		{
+		}, {
 			.name = "erase",
 			.main = erase
-		},
-		{
+		}, {
 			.name = "read",
 			.main = read_write
-		},
-		{
+		}, {
 			.name = "write",
 			.main = read_write
-		},
-		{
+		}, {
 			.name = "scanbb",
 			.main = scanbb
 		},
 	};
 
-	if (argc >= 2) {
-		for (i = 0; i < ARRAY_ELEM_NUM(cmd); i++) {
-			if (0 == strcmp(argv[1], cmd[i].name)) {
-				cmd[i].main(argc - 1, argv + 1);
-				return 0;
-			}
+	if (1 == argc) {
+		usage();
+		return -EINVAL;
+	}
+
+	for (i = 0; i < ARRAY_ELEM_NUM(cmd); i++) {
+		if (0 == strcmp(argv[1], cmd[i].name)) {
+			ret = cmd[i].main(argc - 1, argv + 1);
+			break;
 		}
 	}
 
-	usage();
-
-	return 0;
+L1:
+	return ret;
 }
