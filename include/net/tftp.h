@@ -27,10 +27,11 @@ struct tftp_opt {
 	char  file_name[FILE_NAME_SIZE];
 	char  path[MAX_PATH_LEN];
 	char  mode[MAX_MODE_LEN];
-	void  *load_addr;
+	void *load_addr;
+	// fixme: const char *fn;
+	struct block_device *bdev;
 	size_t xmit_size;
 	const char *type; // only for image
-	struct block_device *bdev;
 };
 
 int tftp_download(struct tftp_opt *opt);

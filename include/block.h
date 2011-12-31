@@ -3,7 +3,6 @@
 #include <types.h>
 #include <list.h>
 #include <device.h>
-#include <bdev_file.h>
 
 #define LABEL_NAME_SIZE  32
 
@@ -47,6 +46,3 @@ struct block_device {
 };
 
 int block_device_register(struct block_device *bdev);
-
-struct block_device *get_bdev_by_name(const char *name);
-struct block_device *get_bdev_by_index(int index);

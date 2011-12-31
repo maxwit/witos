@@ -1,1 +1,1 @@
-obj-y = cwd.o
+obj-y = dir.o

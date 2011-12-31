@@ -9,7 +9,7 @@
 
 struct sub_cmd_info {
 	const char *name;
-	int (*cmd)(int, char **);
+	int (*cmd)(int, char *[]);
 };
 
 static int tftp_get_file(int argc, char **argv);
@@ -29,7 +29,7 @@ static int port_atoi(const char *str)
 	return interger;
 }
 
-static int explain_url(const char *buf, struct tftp_opt *dlopt)
+static int parse_url(const char *buf, struct tftp_opt *dlopt)
 {
 	__u32 ip;
 	int ret;
@@ -173,7 +173,7 @@ static int tftp_get_file(int argc, char **argv)
 			};
 			break;
 		case 'r':
-			ret = explain_url(optarg, &dlopt);
+			ret = parse_url(optarg, &dlopt);
 			if (ret < 0) {
 				usage();
 				return -ret;
@@ -306,7 +306,7 @@ static int tftp_put_file(int argc, char **argv)
 			break;
 
 		case 'r':
-			ret = explain_url(optarg, &opt);
+			ret = parse_url(optarg, &opt);
 			if (ret < 0) {
 				usage();
 				return -ret;

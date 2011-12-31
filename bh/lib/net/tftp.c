@@ -7,11 +7,8 @@
 #include <flash/flash.h>
 #include <fcntl.h>
 #include <block.h>
-#include <shell.h>
 
 #define TFTP_DEBUG
-// fixme: to be removed
-// #define FILE_READ_SUPPORT
 
 struct tftp_packet {
 	__u16 op_code;
@@ -61,13 +58,12 @@ static int tftp_send_ack(const int fd, const __u16 blk, struct sockaddr_in *remo
 int tftp_download(struct tftp_opt *opt)
 {
 	int ret;
-	int sockfd;
+	int sockfd, fd;
 	__u16 blk_num;
 	__u8 *buff_ptr;
 	socklen_t addrlen;
 	__u8 buf[TFTP_BUF_LEN];
 	size_t  pkt_len, load_len;
-	int fd_bdev = 0;
 	struct tftp_packet *tftp_pkt = (struct tftp_packet *)buf;
 	struct sockaddr_in local_addr, remote_addr;
 	char server_ip[IPV4_STR_LEN];
@@ -110,8 +106,8 @@ int tftp_download(struct tftp_opt *opt)
 	blk_num  = 1;
 
 	if (opt->bdev) {
-		fd_bdev = open(opt->bdev->name, O_WRONLY);
-		if (fd_bdev < 0) {
+		fd = open(opt->bdev->name, O_WRONLY);
+		if (fd < 0) {
 			printf("fail to open \"%s\"!\n", opt->bdev->name);
 			goto L1;
 		}
@@ -143,9 +139,9 @@ int tftp_download(struct tftp_opt *opt)
 				break;
 			}
 
-		ret = ioctl(fd_bdev, FLASH_IOCS_OOB_MODE, oob_mode);
-		if (ret < 0)
-			goto L2;
+			ret = ioctl(fd, FLASH_IOCS_OOB_MODE, oob_mode);
+			if (ret < 0)
+				goto L2;
 		}
 	}
 
@@ -199,12 +195,12 @@ int tftp_download(struct tftp_opt *opt)
 							break;
 						}
 
-						ret = ioctl(fd_bdev, FLASH_IOCS_OOB_MODE, oob_mode);
+						ret = ioctl(fd, FLASH_IOCS_OOB_MODE, oob_mode);
 						if (ret < 0)
 							goto L2;
 					}
 
-					ret = write(fd_bdev, tftp_pkt->data, pkt_len);
+					ret = write(fd, tftp_pkt->data, pkt_len);
 					if (ret < 0)
 						goto L2;
 				}
@@ -226,7 +222,7 @@ int tftp_download(struct tftp_opt *opt)
 			goto L2;
 
 		default:
-			printf("\n%s(): Unsupported opcode 0x%02x! (CurBlkNum = %d)\n",
+			printf("\n%s(): Unsupported opcode 0x%02x! (block = %d)\n",
 				__func__, ntohs(tftp_pkt->op_code), blk_num);
 
 			ret = -EIO;
@@ -240,7 +236,7 @@ L2:
 	printf("\n");
 #endif
 
-	close(fd_bdev);
+	close(fd);
 L1:
 	sk_close(sockfd);
 	return ret;
@@ -278,7 +274,7 @@ int tftp_upload(struct tftp_opt *opt)
 	struct tftp_packet *tftp_pkt = (struct tftp_packet *)buf;
 	struct sockaddr_in local_addr, remote_addr;
 	char server_ip[IPV4_STR_LEN];
-	int fd_bdev = 0;
+	int fd = 0;
 	char conf_attr[CONF_ATTR_LEN], conf_val[CONF_VAL_LEN];
 	int file_size = 0;
 
@@ -294,8 +290,8 @@ int tftp_upload(struct tftp_opt *opt)
 	}
 
 	if (opt->bdev) {
-		fd_bdev = open(opt->bdev->name, O_RDONLY);
-		if (fd_bdev < 0) {
+		fd = open(opt->bdev->name, O_RDONLY);
+		if (fd < 0) {
 			printf("fail to open \"%s\"!\n", opt->bdev->name);
 			goto L1;
 		}
@@ -360,7 +356,7 @@ int tftp_upload(struct tftp_opt *opt)
 			if (ntohs(tftp_pkt->block) == blk_num) {
 				dat_len = file_size > TFTP_PKT_LEN ? TFTP_PKT_LEN : file_size;
 				if (opt->bdev) {
-					ret = read(fd_bdev, tftp_pkt->data, dat_len);
+					ret = read(fd, tftp_pkt->data, dat_len);
 					if (ret < 0)
 						goto L2;
 					blk_num++;
@@ -428,7 +424,7 @@ L2:
 #endif
 
 	if (opt->bdev)
-		close(fd_bdev);
+		close(fd);
 
 L1:
 	sk_close(sockfd);
