@@ -40,7 +40,6 @@ struct block_device {
 	// ...
 
 	// fixme: to be removed
-	char volume;
 	struct file_system *fs;
 	const struct file_operations *fops;
 
@@ -50,4 +49,4 @@ struct block_device {
 int block_device_register(struct block_device *bdev);
 
 struct block_device *get_bdev_by_name(const char *name);
-struct block_device *get_bdev_by_volume(char vol);
+struct block_device *get_bdev_by_index(int index);

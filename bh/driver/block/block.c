@@ -20,19 +20,28 @@ struct block_device *get_bdev_by_name(const char *name)
 	return NULL;
 }
 
-struct block_device *get_bdev_by_volume(char vol)
+struct block_device *get_bdev_by_index(int index)
 {
 	struct list_node *iter;
-	struct block_device *bdev;
-
-	if (vol >= 'a')
-		vol -= 'a' - 'A';
-
-	assert(vol >= 'A' && vol <= 'Z');
 
 	list_for_each(iter, &g_bdev_list) {
+		int i = 1, num = 0;
+		const char *postfix;
+		struct block_device *bdev;
+
 		bdev = container_of(iter, struct block_device, bdev_node);
-		if (bdev->volume == vol)
+		postfix = bdev->name + strlen(bdev->name);
+
+		while (postfix >= bdev->name) {
+			if (!ISDIGIT(*postfix))
+				break;
+
+			num += i * *postfix;
+			i *= 10;
+			postfix--;
+		}
+
+		if (num == index)
 			return bdev;
 	}
 
@@ -41,12 +50,6 @@ struct block_device *get_bdev_by_volume(char vol)
 
 int block_device_register(struct block_device *bdev)
 {
-	static char vol = 'A';
-
-	if (vol > 'Z')
-		return -EBUSY;
-
-	bdev->volume = vol++;
 	list_add_tail(&bdev->bdev_node, &g_bdev_list);
 
 	printf("    0x%08x - 0x%08x %s (%s)\n",

@@ -16,7 +16,7 @@ static int uart_load(int argc, char *argv[])
 
 	memset(&ld_opt, 0x0, sizeof(ld_opt));
 
-	ld_opt.bdev = get_bdev_by_volume(get_curr_volume());
+	ld_opt.bdev = get_bdev_by_index(getcwd());
 
 	while ((opt = getopt(argc, argv, "m::p:f:i:vh")) != -1) {
 		switch (opt) {

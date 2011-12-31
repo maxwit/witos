@@ -11,8 +11,8 @@ static int show_info(int verbose)
 	struct flash_chip *flash;
 	struct block_device *bdev;
 
-	vol = get_curr_volume();
-	bdev = get_bdev_by_volume(vol);
+	vol = getcwd();
+	bdev = get_bdev_by_index(vol);
 	if (bdev == NULL)
 		return -ENODEV;
 

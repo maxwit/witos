@@ -199,15 +199,15 @@ static int tftp_get_file(int argc, char **argv)
 	if (mem_only == false) {
 		if (dlopt.type) {
 			// get_bdev_by_type()?
-			cur_bdev = get_bdev_by_volume('A');
+			cur_bdev = get_bdev_by_index('A');
 		} else {
 			if (dlopt.path[0]) {
 				vol = dlopt.path[0];
 			} else {
-				vol = get_curr_volume();
+				vol = getcwd();
 			}
 
-			cur_bdev = get_bdev_by_volume(vol);
+			cur_bdev = get_bdev_by_index(vol);
 		}
 
 		dlopt.bdev = cur_bdev;

@@ -190,6 +190,8 @@ int flash_register(struct flash_chip *flash)
 		snprintf(flash->bdev.name, MAX_DEV_NAME,
 			BDEV_NAME_FLASH "%c", 'A' + g_flash_count);
 
+		strncpy(flash->bdev.label, "flash", sizeof(flash->bdev.label));
+
 		flash_fops_init(&flash->bdev); // fixme: not here!
 		ret = block_device_register(&flash->bdev);
 		// if ret < 0 ...

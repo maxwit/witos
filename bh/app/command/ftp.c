@@ -154,9 +154,9 @@ static int get_file_to_flash(int data_fd)
 	struct block_device *bdev;
 	struct bdev_file *file;
 
-	cur_vol = get_curr_volume();
+	cur_vol = getcwd();
 
-	bdev = get_bdev_by_volume(cur_vol);
+	bdev = get_bdev_by_index(cur_vol);
 	if (NULL== bdev) {
 		printf("bdev null\n");
 		return -1;

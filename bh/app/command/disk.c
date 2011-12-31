@@ -116,9 +116,9 @@ static int dump(int argc, char *argv[])
 		unit_size = DEFAULT_UNIT_SIZE;
 	}
 
-	vol = get_home_volume();
+	// vol = get_home_volume();
 
-	bdev = get_bdev_by_volume(vol);
+	// bdev = get_bdev_by_index(vol);
 	if (!bdev) {
 		printf("fail to change to \"%c\", no such block device!\n", vol);
 		return -ENODEV;
@@ -197,11 +197,11 @@ static int write(int argc, char *argv[])
 		}
 	}
 
-	volume = get_home_volume();
+	// volume = get_home_volume();
 
 	printf("volume: %c\n", volume);
 
-	bdev = get_bdev_by_volume(volume);
+	// bdev = get_bdev_by_index(volume);
 	if (!bdev) {
 		printf("fail to get bdev \"%c\", no such block device!\n", volume);
 
@@ -274,11 +274,11 @@ static int read(int argc, char *argv[])
 		}
 	}
 
-	volume = get_home_volume();
+	// volume = get_home_volume();
 
 	printf("volume: %c\n", volume);
 
-	bdev = get_bdev_by_volume(volume);
+	// bdev = get_bdev_by_index(volume);
 	if (!bdev) {
 		printf("fail to get bdev \"%c\", no such block device!\n", volume);
 

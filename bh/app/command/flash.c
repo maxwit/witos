@@ -1,9 +1,8 @@
-#include <flash/flash.h>
-#include <getopt.h>
+#include <unistd.h>
 #include <string.h>
-#include <bar.h>
-#include <task.h>
 #include <fcntl.h>
+#include <task.h>
+#include <flash/flash.h>
 
 #warning "fix the world!"
 
@@ -33,8 +32,8 @@ static struct flash_chip *get_current_flash()
 	struct block_device *bdev;
 	struct flash_chip *flash;
 
-	v = get_curr_volume();
-	bdev = get_bdev_by_volume(v);
+	v = getcwd();
+	bdev = get_bdev_by_index(v);
 	if (strncmp(bdev->name, "mtdblock", strlen("mtdblock"))) {
 		printf("The current volume is not a flash device!\n");
 		return NULL;
@@ -62,14 +61,14 @@ static int info(int argc, char *argv[])
 	}
 
 	printf(
-		"volume     %c:\n"
+		"label      %s\n"
 		"flash:     %s\n"
 		"device:    %s\n"
 		"base:      0x%08X\n"
 		"size:      0x%08X\n"
 		"pagesize:  0x%08X\n"
 		"blocksize: 0x%08x\n",
-		flash->bdev.volume,
+		flash->bdev.label,
 		is_master(flash) ? flash->name : flash->master->name,
 		flash->bdev.name,
 		flash->bdev.base,
@@ -143,7 +142,7 @@ static int read_write(int argc, char *argv[])
 	}
 
 	// fixme
-	bdev = get_bdev_by_volume(get_curr_volume());
+	bdev = get_bdev_by_index(getcwd());
 	flash = container_of(bdev, struct flash_chip, bdev);
 	assert(flash);
 
