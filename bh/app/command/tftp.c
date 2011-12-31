@@ -131,14 +131,12 @@ int main(int argc, char *argv[])
 static int tftp_get_file(int argc, char **argv)
 {
 	int ret, ch;
-	char vol;
 	bool mem_only = false;
 	struct tftp_opt dlopt;
-	struct block_device *cur_bdev = NULL;
 	char conf_attr[CONF_ATTR_LEN], conf_val[CONF_VAL_LEN];
 
 	memset(&dlopt, 0x0, sizeof(dlopt));
-	net_get_server_ip(&dlopt.server_ip);
+	net_get_server_ip((__u32 *)&dlopt.src);
 
 	while ((ch = getopt(argc, argv, "a:m:r:l:t:v:")) != -1) {
 		switch(ch) {
@@ -165,8 +163,7 @@ static int tftp_get_file(int argc, char **argv)
 		case 'l':
 			if (IS_ALPHBIT(optarg[0]) && \
 			('\0' == optarg[1] || (':' == optarg[1] && '\0' == optarg[2]))) {
-				strncpy(dlopt.path, optarg, MAX_PATH_LEN);
-				dlopt.path[MAX_PATH_LEN - 1] = '\0';
+				dlopt->dst = optarg;
 			} else {
 				usage();
 				return -EINVAL;
@@ -196,26 +193,8 @@ static int tftp_get_file(int argc, char **argv)
 		}
 	}
 
-	if (mem_only == false) {
-		if (dlopt.type) {
-			// get_bdev_by_type()?
-			cur_bdev = get_bdev_by_index('A');
-		} else {
-			if (dlopt.path[0]) {
-				vol = dlopt.path[0];
-			} else {
-				vol = getcwd();
-			}
-
-			cur_bdev = get_bdev_by_index(vol);
-		}
-
-		dlopt.bdev = cur_bdev;
-		dlopt.type = "jffs2"; // fixme
-	}
-
 	if (optind < argc) {
-		if (optind + 1 == argc && !dlopt.file_name[0]) {
+		if (optind + 1 == argc) {
 			strncpy(dlopt.file_name, argv[optind], FILE_NAME_SIZE);
 			dlopt.file_name[FILE_NAME_SIZE - 1] = '\0';
 		} else {
@@ -232,6 +211,12 @@ static int tftp_get_file(int argc, char **argv)
 		}
 
 		strncpy(dlopt.file_name, conf_val, sizeof(dlopt.file_name));
+	}
+
+	if (mem_only == false) {
+		if (!dlopt->dst) {
+			dlopt->dst = getcwd();
+		}
 	}
 
 	ret = tftp_download(&dlopt);
@@ -270,7 +255,7 @@ static int tftp_put_file(int argc, char **argv)
 #endif
 
 	memset(&opt, 0x0, sizeof(opt));
-	net_get_server_ip(&opt.server_ip);
+	net_get_server_ip((__u32 *)&opt.dst);
 
 	// fixme
 	while ((ch = getopt(argc, argv, "a:m:r:l:t:v:")) != -1) {
@@ -297,8 +282,7 @@ static int tftp_put_file(int argc, char **argv)
 		case 'l':
 			if (IS_ALPHBIT(optarg[0]) && \
 			('\0' == optarg[1] || (':' == optarg[1] && '\0' == optarg[2]))) {
-				strncpy(opt.path, optarg, MAX_PATH_LEN);
-				opt.path[MAX_PATH_LEN - 1] = '\0';
+				opt->src = optarg;
 			} else {
 				usage();
 				return -EINVAL;

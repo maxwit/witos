@@ -69,7 +69,7 @@ int tftp_download(struct tftp_opt *opt)
 	char server_ip[IPV4_STR_LEN];
 	image_t img_type = IMG_MAX;
 
-	if (ip_to_str(server_ip, opt->server_ip) < 0) {
+	if (ip_to_str(server_ip, (const __u32)opt->src) < 0) {
 		printf("Error: Server IP!\n");
 		return -EINVAL;
 	}
@@ -93,7 +93,7 @@ int tftp_download(struct tftp_opt *opt)
 				opt->mode[0] ? opt->mode : TFTP_MODE_OCTET);
 
 	memset(&remote_addr, 0, sizeof(remote_addr));
-	remote_addr.sin_addr.s_addr = opt->server_ip; // bigendian
+	remote_addr.sin_addr.s_addr = (const __u32)opt->src; // bigendian
 	remote_addr.sin_port = htons(STD_PORT_TFTP);
 
 	ret = sendto(sockfd, tftp_pkt, pkt_len, 0,
@@ -105,10 +105,10 @@ int tftp_download(struct tftp_opt *opt)
 	load_len = 0;
 	blk_num  = 1;
 
-	if (opt->bdev) {
-		fd = open(opt->bdev->name, O_WRONLY);
+	if (opt->dst) {
+		fd = open(opt->dst, O_WRONLY);
 		if (fd < 0) {
-			printf("fail to open \"%s\"!\n", opt->bdev->name);
+			printf("fail to open \"%s\"!\n", opt->dst);
 			goto L1;
 		}
 
@@ -175,7 +175,7 @@ int tftp_download(struct tftp_opt *opt)
 					buff_ptr += pkt_len;
 				}
 
-				if (opt->bdev) {
+				if (opt->dst) {
 					if (img_type == IMG_MAX) {
 						OOB_MODE oob_mode;
 
@@ -235,50 +235,29 @@ L2:
 #ifdef TFTP_VERBOSE
 	printf("\n");
 #endif
-
-	close(fd);
+	if (opt->dst)
+		close(fd);
 L1:
 	sk_close(sockfd);
 	return ret;
 }
 
-static int get_def_file_size()
-{
-	struct block_device *bdev;
-
-	bdev = get_bdev_by_index(getcwd());
-
-	return bdev->size;
-}
-
-static int get_def_file_name(char *name, size_t size)
-{
-	struct block_device *bdev;
-
-	bdev = get_bdev_by_index(getcwd());
-
-	snprintf(name, size, "%s.bin", bdev->name);
-
-	return 0;
-}
-
 int tftp_upload(struct tftp_opt *opt)
 {
-	int ret = 0;
-	int sockfd;
+	int ret;
+	int sockfd, fd;
 	__u16 blk_num;
-	char *buff_ptr;
 	socklen_t addrlen;
 	__u8 buf[TFTP_BUF_LEN];
-	size_t pkt_len, send_len, dat_len;
+	size_t dat_len, send_len;
 	struct tftp_packet *tftp_pkt = (struct tftp_packet *)buf;
 	struct sockaddr_in local_addr, remote_addr;
 	char server_ip[IPV4_STR_LEN];
-	int fd = 0;
-	char conf_attr[CONF_ATTR_LEN], conf_val[CONF_VAL_LEN];
-	int file_size = 0;
 
-	if (ip_to_str(server_ip, opt->server_ip) < 0) {
+	if (!opt->src)
+		return -EINVAL;
+
+	if (ip_to_str(server_ip, (const __u32)opt->dst) < 0) {
 		printf("Error: Server IP!\n");
 		return -EINVAL;
 	}
@@ -289,36 +268,11 @@ int tftp_upload(struct tftp_opt *opt)
 		return -EIO;
 	}
 
-	if (opt->bdev) {
-		fd = open(opt->bdev->name, O_RDONLY);
-		if (fd < 0) {
-			printf("fail to open \"%s\"!\n", opt->bdev->name);
-			goto L1;
-		}
-
-		if (opt->file_name[0] == '\0') {
-			snprintf(conf_attr, CONF_ATTR_LEN, "bdev.%s.image.name", opt->bdev->name);
-			ret = conf_get_attr(conf_attr, conf_val);
-			if (ret < 0) {
-				get_def_file_name(opt->file_name, sizeof(opt->file_name));
-			}
-
-			strncpy(opt->file_name, conf_val, sizeof(opt->file_name));
-		}
-
-		snprintf(conf_attr, CONF_ATTR_LEN, "bdev.%s.image.size", opt->bdev->name);
-		ret = conf_get_attr(conf_attr, conf_val);
-		if (ret < 0 || str_to_val(conf_val, (unsigned long *)&file_size)) {
-			file_size = get_def_file_size();
-		}
-	}
-
-	if (opt->file_name[0] == '\0') {
-		get_def_file_name(opt->file_name, sizeof(opt->file_name));
-	}
-
-	if (file_size == 0) {
-		file_size = get_def_file_size();
+	fd = open(opt->src, O_RDONLY);
+	if (fd < 0) {
+		printf("fail to open \"%s\"!\n", opt->src);
+		ret = fd;
+		goto L1;
 	}
 
 	memset(&local_addr, 0, sizeof(local_addr));
@@ -329,61 +283,48 @@ int tftp_upload(struct tftp_opt *opt)
 
 	printf("putting file \"%s\" to %s\n", opt->file_name, server_ip);
 
-	pkt_len = tftp_make_req((__u8 *)tftp_pkt, TFTP_WRQ, opt->file_name,
+	dat_len = tftp_make_req((__u8 *)tftp_pkt, TFTP_WRQ, opt->file_name,
 				opt->mode[0] ? opt->mode : TFTP_MODE_OCTET);
 
 	memset(&remote_addr, 0, sizeof(remote_addr));
-	remote_addr.sin_addr.s_addr = opt->server_ip; // bigendian
+	remote_addr.sin_addr.s_addr = (__u32)opt->dst; // bigendian
 	remote_addr.sin_port = htons(STD_PORT_TFTP);
 
-	ret = sendto(sockfd, tftp_pkt, pkt_len, 0,
+	ret = sendto(sockfd, tftp_pkt, dat_len, 0,
 		(struct sockaddr *)&remote_addr, sizeof(remote_addr));
 	if (ret < 0)
 		goto L1;
 
-	buff_ptr = opt->load_addr;
 	send_len = 0;
 	blk_num  = 0;
 
-	do {
-		pkt_len = recvfrom(sockfd, tftp_pkt, TFTP_BUF_LEN, 0,
+	while (1) {
+		ret = recvfrom(sockfd, tftp_pkt, TFTP_BUF_LEN, 0,
 						(struct sockaddr *)&remote_addr, &addrlen);
-		if(0 == pkt_len)
+		if(ret <= 0)
 			goto L2;
 
 		switch (tftp_pkt->op_code) {
 		case TFTP_ACK:
 			if (ntohs(tftp_pkt->block) == blk_num) {
-				dat_len = file_size > TFTP_PKT_LEN ? TFTP_PKT_LEN : file_size;
-				if (opt->bdev) {
-					ret = read(fd, tftp_pkt->data, dat_len);
-					if (ret < 0)
-						goto L2;
-					blk_num++;
+				ret = read(fd, tftp_pkt->data, TFTP_PKT_LEN);
+				if (ret <= 0)
+					goto L2;
+				blk_num++;
 
-					tftp_pkt->op_code = TFTP_DAT;
-					tftp_pkt->block= htons(blk_num);
+				tftp_pkt->op_code = TFTP_DAT;
+				tftp_pkt->block= htons(blk_num);
 
-					pkt_len += TFTP_HDR_LEN;
-				} else if (NULL != buff_ptr) {
-					blk_num++;
+				dat_len = ret;
 
-					// make TFTP data packet
-					tftp_pkt->op_code = TFTP_DAT;
-					tftp_pkt->block   = htons(blk_num);
-					memcpy(tftp_pkt->data, buff_ptr, dat_len);
-				}
-
-				ret = sendto(sockfd, tftp_pkt, pkt_len, 0,
+				ret = sendto(sockfd, tftp_pkt, dat_len + TFTP_HDR_LEN, 0,
 					(struct sockaddr *)&remote_addr, sizeof(remote_addr));
-				// if ret < 0
+				// if (ret != dat_len + TFTP_HDR_LEN)
 
-				send_len  += dat_len;
-				file_size -= dat_len;
-				buff_ptr  += dat_len;
+				send_len += dat_len;
 
 #ifdef TFTP_VERBOSE
-				if ((send_len & 0x3fff) == 0 || TFTP_PKT_LEN != pkt_len) {
+				if ((send_len & 0x3fff) == 0 || TFTP_PKT_LEN != dat_len) {
 					char tmp[32];
 
 					val_to_hr_str(send_len, tmp);
@@ -395,8 +336,7 @@ int tftp_upload(struct tftp_opt *opt)
 				printf("\t%s(): LOST Packet = 0x%x (0x%x).\r",
 					__func__, blk_num, ntohs(tftp_pkt->block));
 #endif
-				pkt_len = recvfrom(sockfd, tftp_pkt, TFTP_BUF_LEN, 0,
-								(struct sockaddr *)&remote_addr, &addrlen);
+				// TODO:  Resend
 			}
 
 			break;
@@ -415,7 +355,7 @@ int tftp_upload(struct tftp_opt *opt)
 			ret = -EIO;
 			goto L2;
 		}
-	} while (file_size > 0);
+	}
 
 	opt->xmit_size = send_len;
 L2:
@@ -423,8 +363,7 @@ L2:
 	printf("\n");
 #endif
 
-	if (opt->bdev)
-		close(fd);
+	close(fd);
 
 L1:
 	sk_close(sockfd);
