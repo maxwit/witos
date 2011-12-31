@@ -31,7 +31,7 @@ static int info(int argc, char *argv[])
 	int ret, fd;
 	struct part_attr part;
 	const char *dev;
-	
+
 	dev = getcwd();
 	fd = open(dev, O_RDONLY);
 

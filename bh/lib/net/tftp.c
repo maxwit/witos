@@ -66,16 +66,10 @@ int tftp_download(struct tftp_opt *opt)
 	size_t  pkt_len, load_len;
 	struct tftp_packet *tftp_pkt = (struct tftp_packet *)buf;
 	struct sockaddr_in local_addr, remote_addr;
-	char server_ip[IPV4_STR_LEN];
 	image_t img_type = IMG_MAX;
 
-	if (ip_to_str(server_ip, (const __u32)opt->src) < 0) {
-		printf("Error: Server IP!\n");
-		return -EINVAL;
-	}
-
 	// printf(" \"%s\": %s => %s\n", opt->file_name, server_ip, local_ip);
-	printf("loading file \"%s\" from %s\n", opt->file_name, server_ip);
+	printf("loading file \"%s\" from %s\n", opt->file_name, opt->src);
 
 	sockfd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (sockfd <= 0) {
@@ -93,7 +87,7 @@ int tftp_download(struct tftp_opt *opt)
 				opt->mode[0] ? opt->mode : TFTP_MODE_OCTET);
 
 	memset(&remote_addr, 0, sizeof(remote_addr));
-	remote_addr.sin_addr.s_addr = (const __u32)opt->src; // bigendian
+	str_to_ip((__u8 *)&remote_addr.sin_addr.s_addr, opt->src); // bigendian
 	remote_addr.sin_port = htons(STD_PORT_TFTP);
 
 	ret = sendto(sockfd, tftp_pkt, pkt_len, 0,
@@ -252,15 +246,9 @@ int tftp_upload(struct tftp_opt *opt)
 	size_t dat_len, send_len;
 	struct tftp_packet *tftp_pkt = (struct tftp_packet *)buf;
 	struct sockaddr_in local_addr, remote_addr;
-	char server_ip[IPV4_STR_LEN];
 
 	if (!opt->src)
 		return -EINVAL;
-
-	if (ip_to_str(server_ip, (const __u32)opt->dst) < 0) {
-		printf("Error: Server IP!\n");
-		return -EINVAL;
-	}
 
 	sockfd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (sockfd <= 0) {
@@ -287,7 +275,7 @@ int tftp_upload(struct tftp_opt *opt)
 				opt->mode[0] ? opt->mode : TFTP_MODE_OCTET);
 
 	memset(&remote_addr, 0, sizeof(remote_addr));
-	remote_addr.sin_addr.s_addr = (__u32)opt->dst; // bigendian
+	str_to_ip((__u8 *)&remote_addr.sin_addr.s_addr, opt->dst); // bigendian
 	remote_addr.sin_port = htons(STD_PORT_TFTP);
 
 	ret = sendto(sockfd, tftp_pkt, dat_len, 0,

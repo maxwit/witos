@@ -15,6 +15,7 @@ struct sub_cmd_info {
 static int tftp_get_file(int argc, char **argv);
 static int tftp_put_file(int argc, char **argv);
 
+#if 0
 static int port_atoi(const char *str)
 {
 	const char *iter;
@@ -28,75 +29,44 @@ static int port_atoi(const char *str)
 
 	return interger;
 }
+#endif
 
-static int parse_url(const char *buf, struct tftp_opt *dlopt)
+/*
+url:
+1. tftp://ip/fn
+2. ip/fn
+3. ip
+4. fn
+
+ */
+static int parse_url(const char *url, char * const ip, char * const fn)
 {
-	__u32 ip;
-	int ret;
-	int i = 0;
-	int port;
-	char tmp[FILE_NAME_SIZE + IPV4_STR_LEN + PORT_LEN];
+	const char *end, *start;
 
-	ip = dlopt->server_ip;
-	while (*buf != ':' && *buf != '/' && *buf) {
-		tmp[i++] = *buf++;
-	}
-	tmp[i] = '\0';
-	ret = str_to_ip((__u8 *)&dlopt->server_ip, tmp);
-	if (ret < 0 && (*buf == ':' || *buf == '/')) {
-		while(*buf) {
-			tmp[i++] = *buf++;
-		}
-		tmp[i] = '\0';
-		strncpy(dlopt->file_name, tmp, i);
-		dlopt->server_ip = ip;
-		goto L1;
-	} else if (ret < 0 && *buf == '\0') {
-		if (i > FILE_NAME_SIZE) {
-			return ret;
-		}
-		strncpy(dlopt->file_name, tmp, i);
-		dlopt->server_ip = ip;
-		goto L1;
-	}
-	if (*buf == '\0')
-		goto L1;
+	end = strstr(url, "://");
+	if (end != NULL) {
+		if (strcmp(url, "tftp://"))
+			return -EINVAL;
 
-	if (*buf == ':') {
-		buf++;
+		end += 3;
+	} else {
+		end = url;
 	}
 
-	i = 0;
-	while (*buf != '/' && *buf) {
-		if (*buf >= '0' && *buf <= '9') {
-			tmp[i++] = *buf++;
-			if (i == PORT_LEN) {
-				// fixme
-				printf("port length too long\n");
-				return -1;
-			}
-		} else {
-			// fixme
-			printf("Error, the port must be num\n");
-			return -1;
-		}
-	}
-	tmp[i] = '\0';
-	buf++;
-	port = port_atoi(tmp);
-	if (port == 0) {
-		// fixme
+	start = end;
+
+	end = strchr(start, '/');
+	if (end == NULL) {
+		*fn = '\0';
+		strcpy(ip, start);
+	} else {
+		strncpy(ip, start, end - start);
+		ip[end - start] = '\0';
+
+		end++;
+		strcpy(fn, end);
 	}
 
-	i = 0;
-	while (*buf) {
-		tmp[i++] = *buf++;
-		if (i >= FILE_NAME_SIZE)
-			return -1;
-	}
-	tmp[i] = '\0';
-	strncpy(dlopt->file_name, tmp, i);
-L1:
 	return 0;
 }
 
@@ -133,7 +103,10 @@ static int tftp_get_file(int argc, char **argv)
 	int ret, ch;
 	bool mem_only = false;
 	struct tftp_opt dlopt;
+	char ip[IPV4_STR_LEN];
+	const char *url = NULL;
 	char conf_attr[CONF_ATTR_LEN], conf_val[CONF_VAL_LEN];
+	const char *src = NULL;
 
 	memset(&dlopt, 0x0, sizeof(dlopt));
 	net_get_server_ip((__u32 *)&dlopt.src);
@@ -163,18 +136,14 @@ static int tftp_get_file(int argc, char **argv)
 		case 'l':
 			if (IS_ALPHBIT(optarg[0]) && \
 			('\0' == optarg[1] || (':' == optarg[1] && '\0' == optarg[2]))) {
-				dlopt->dst = optarg;
+				dlopt.dst = optarg;
 			} else {
 				usage();
 				return -EINVAL;
 			};
 			break;
 		case 'r':
-			ret = parse_url(optarg, &dlopt);
-			if (ret < 0) {
-				usage();
-				return -ret;
-			}
+			url = optarg;
 			break;
 
 		case 't':
@@ -195,16 +164,36 @@ static int tftp_get_file(int argc, char **argv)
 
 	if (optind < argc) {
 		if (optind + 1 == argc) {
-			strncpy(dlopt.file_name, argv[optind], FILE_NAME_SIZE);
-			dlopt.file_name[FILE_NAME_SIZE - 1] = '\0';
+			url = argv[optind];
 		} else {
 			usage();
 			return -EINVAL;
 		}
 	}
 
+	if (url) {
+		ret = parse_url(url, ip, dlopt.file_name);
+		if (ret < 0) {
+			printf("Invalid URL: \"%s\"\n", url);
+			return -ret;
+		}
+
+		if (ip[0] != '\0')
+			src = ip;
+	}
+
+	if (!src) {
+		if (conf_get_attr("net.server", ip) < 0) {
+			printf("Please set the server address!\n");
+			return -EINVAL;
+		}
+
+		src = ip;
+	}
+
 	if (!dlopt.file_name[0]) {
-		snprintf(conf_attr, CONF_ATTR_LEN, "bdev.%s.image.name", dlopt.bdev->name);
+		dlopt.dst = getcwd();
+		snprintf(conf_attr, CONF_ATTR_LEN, "bdev.%s.image.name", dlopt.dst);
 		if (conf_get_attr(conf_attr, conf_val) < 0) {
 			printf("Please sepcify the filename!\n");
 			return -EINVAL;
@@ -214,10 +203,12 @@ static int tftp_get_file(int argc, char **argv)
 	}
 
 	if (mem_only == false) {
-		if (!dlopt->dst) {
-			dlopt->dst = getcwd();
+		if (!dlopt.dst) {
+			dlopt.dst = getcwd();
 		}
 	}
+
+	dlopt.src = src;
 
 	ret = tftp_download(&dlopt);
 	if (ret < 0) {
@@ -225,15 +216,16 @@ static int tftp_get_file(int argc, char **argv)
 		return ret;
 	}
 
-	if (dlopt.bdev) {
+	// fixme: check file type
+	if (dlopt.dst) {
 		// set file name
-		snprintf(conf_attr, CONF_ATTR_LEN, "bdev.%s.image.name", dlopt.bdev->name);
+		snprintf(conf_attr, CONF_ATTR_LEN, "bdev.%s.image.name", dlopt.dst);
 		if (conf_set_attr(conf_attr, dlopt.file_name) < 0) {
 			conf_add_attr(conf_attr, dlopt.file_name);
 		}
 
 		// set file size
-		snprintf(conf_attr, CONF_ATTR_LEN, "bdev.%s.image.size", dlopt.bdev->name);
+		snprintf(conf_attr, CONF_ATTR_LEN, "bdev.%s.image.size", dlopt.dst);
 		val_to_dec_str(conf_val, dlopt.xmit_size);
 		if (conf_set_attr(conf_attr, conf_val) < 0) {
 			conf_add_attr(conf_attr, conf_val);
@@ -250,12 +242,12 @@ static int tftp_put_file(int argc, char **argv)
 {
 	int ret, ch;
 	struct tftp_opt opt;
+	char ip[IPV4_STR_LEN];
 #if 0
 	struct block_device *cur_bdev;
 #endif
 
 	memset(&opt, 0x0, sizeof(opt));
-	net_get_server_ip((__u32 *)&opt.dst);
 
 	// fixme
 	while ((ch = getopt(argc, argv, "a:m:r:l:t:v:")) != -1) {
@@ -282,7 +274,7 @@ static int tftp_put_file(int argc, char **argv)
 		case 'l':
 			if (IS_ALPHBIT(optarg[0]) && \
 			('\0' == optarg[1] || (':' == optarg[1] && '\0' == optarg[2]))) {
-				opt->src = optarg;
+				opt.src = optarg;
 			} else {
 				usage();
 				return -EINVAL;
@@ -290,11 +282,12 @@ static int tftp_put_file(int argc, char **argv)
 			break;
 
 		case 'r':
-			ret = parse_url(optarg, &opt);
+			ret = parse_url(optarg, ip, opt.file_name);
 			if (ret < 0) {
 				usage();
 				return -ret;
 			}
+			str_to_ip((__u8 *)&opt.dst, ip);
 			break;
 
 		case 't':
@@ -312,6 +305,9 @@ static int tftp_put_file(int argc, char **argv)
 			return -EINVAL;
 		}
 	}
+
+	if (!opt.dst)
+		net_get_server_ip((__u32 *)&opt.dst);
 
 	if (optind < argc) {
 		if (optind + 1 == argc && !opt.file_name[0]) {

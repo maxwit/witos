@@ -160,6 +160,8 @@ struct eth_addr {
 	__u8  mac[6];
 };
 
+static bool check_ip_addr(const char *ip, int ver);
+
 struct eth_addr *getaddr(__u32 nip);
 struct eth_addr *gethostaddr(const __u32 nip);
 
