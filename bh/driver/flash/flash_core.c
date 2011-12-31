@@ -105,18 +105,44 @@ error:
 	return ret;
 }
 
+static size_t remove_blank_space(const char *src, char *dst, size_t size)
+{
+	char *p = dst;
+
+	while (*src) {
+		if (*src != ' ') {
+			*p = *src;
+			p++;
+		}
+
+		src++;
+	}
+
+	*p = '\0';
+
+	return p - dst;
+}
+
 static int __INIT__ flash_scan_part(struct flash_chip *host,
 						struct part_attr part[])
 {
 	int ret;
 	char part_def[CONF_VAL_LEN];
+	char conf_val[CONF_VAL_LEN];
+	const char *match_parts;
 
-	ret = conf_get_attr("flash.parts", part_def);
+	ret = conf_get_attr("flash.parts", conf_val);
 	if (ret < 0) {
 		return ret;
 	}
 
-	// TODO: add code here!
+	match_parts = strstr(conf_val, host->name);
+	if (!match_parts) {
+		// TODO: add hint here
+		return -ENOENT;
+	}
+
+	remove_blank_space(match_parts, part_def, sizeof(part_def));
 
 	return flash_parse_part(host, part, part_def);
 }
