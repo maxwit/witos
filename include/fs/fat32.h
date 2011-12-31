@@ -57,11 +57,3 @@ struct fat_fs {
 	struct fat_boot_sector dbr;
 	struct block_device *bdev;
 };
-
-struct fat_file {
-	struct file f;
-
-	struct fat_dentry *dent;
-	// fixme: remove it
-	struct fat_fs *fs;
-};

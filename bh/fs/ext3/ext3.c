@@ -1,7 +1,3 @@
-#if 0
-#include <unistd.h>
-#include <fcntl.h>
-#endif
 #include <stdio.h>
 #include <malloc.h>
 #include <string.h>
@@ -231,14 +227,15 @@ struct ext2_file_system *ext2_get_file_system(const char *name)
 
 static int ext2_mount(struct file_system_type *fs_type, unsigned long flags, struct block_device *bdev)
 {
-	struct ext2_file_system *fs = malloc(sizeof(*fs));
+	int ret;
+	int blk_is;
+	int gdt_num;
+	struct ext2_file_system *fs = zalloc(sizeof(*fs));
+	struct file_system *gfs = zalloc(sizeof(*gfs));
 	struct ext2_super_block *sb = &fs->sb;
 	struct ext2_dir_entry_2 *root;
 	struct ext2_group_desc *gdt;
 	struct disk_drive *drive = container_of(bdev, struct disk_drive, bdev);
-	int gdt_num;
-	int blk_is;
-	int ret;
 	char buff[drive->sect_size];
 
 	ret = drive->get_block(drive, 2 * drive->sect_size, buff);
@@ -262,7 +259,9 @@ static int ext2_mount(struct file_system_type *fs_type, unsigned long flags, str
 		sb->s_inode_size, (1 << (sb->s_log_block_size + 10)), blk_is);
 
 	fs->bdev = bdev;
-	bdev->fs = fs;
+
+	gfs->ext = fs;
+	bdev->fs = gfs;
 
 	gdt_num = (sb->s_blocks_count + sb->s_blocks_per_group - 1) / sb->s_blocks_per_group;;
 	gdt = malloc(gdt_num * sizeof(struct ext2_group_desc));
@@ -308,7 +307,7 @@ static int ext2_umount(const char *path)
 }
 #endif
 
-static struct ext2_dir_entry_2 *ext2_lookup(struct ext2_inode *parent, const char *name)
+static struct ext2_dir_entry_2 *ext2_real_lookup(struct ext2_inode *parent, const char *name)
 {
 	struct ext2_dir_entry_2 *d_match;
 	struct ext2_dir_entry_2 *dentry;
@@ -358,54 +357,15 @@ static inline int mnt_of_path(const char *path, char mnt[])
 	return 0;
 }
 
-static struct file *ext2_open(void *file_sys, const char *name, int flags, int mode)
+static int ext2_open(struct file *fp, int flags, int mode)
 {
-	struct ext2_file_system *fs = file_sys;
-	struct ext2_dir_entry_2 *dir, *de;
-	struct ext2_inode *parent;
-	struct ext2_file *ext2_fp;
-
-	dir = fs->root;
-
-	parent = ext2_read_inode(fs, dir->inode);
-	//
-
-	de = ext2_lookup(parent, name);
-	if (NULL == de)
-		return NULL;
-
-	ext2_fp = malloc(sizeof(*ext2_fp));
-	// if
-
-	ext2_fp->dentry = de;
-	ext2_fp->fs = fs;
-
-	return &ext2_fp->f;
+	return 0;
 }
 
 static int ext2_close(struct file *fp)
 {
-	struct ext2_file *ext2_fp = container_of(fp, struct ext2_file, f);
-
-	// free(inode, dentry, ...)
-	free(ext2_fp);
-
 	return 0;
 }
-
-#if 0
-// fixme: to support "where"
-ssize_t ext2_lseek(struct ext2_file *file, ssize_t off, int where)
-{
-	switch (where) {
-	default:
-		file->pos += off;
-		break;
-	}
-
-	return file->pos;
-}
-#endif
 
 static ssize_t ext2_read(struct file *fp, void *buff, size_t size)
 {
@@ -414,11 +374,12 @@ static ssize_t ext2_read(struct file *fp, void *buff, size_t size)
 	size_t offset, real_size, block_size;
 	struct ext2_inode *inode;
 	struct ext2_file_system *fs;
-	struct ext2_file *ext2_fp = container_of(fp, struct ext2_file, f);
+	struct ext2_dir_entry_2 *de;
 
-	fs = ext2_fp->fs;
+	fs = fp->mnt->bdev->fs->ext;
+	de = fp->de;
 
-	inode = ext2_read_inode(fs, ext2_fp->dentry->inode);
+	inode = ext2_read_inode(fs, de->inode);
 
 	if (fp->pos == inode->i_size)
 		return 0;
@@ -457,30 +418,47 @@ static int ext2_write(struct file *fp, const void *buff, size_t size)
 	return 0;
 }
 
-static const struct file_operations ext2_fops =
+static struct dentry *ext2_lookup(struct file_system *fs, const char *name)
 {
+	struct ext2_file_system *ext2_fs = fs->ext;
+	struct ext2_dir_entry_2 *root, *ext2_de;
+	struct ext2_inode *parent;
+	struct dentry *de;
+
+	de = zalloc(sizeof(*de));
+	if (!de)
+		return NULL;
+
+	root = ext2_fs->root;
+
+	parent = ext2_read_inode(ext2_fs, root->inode);
+	// ...
+
+	ext2_de = ext2_real_lookup(parent, name);
+	// ...
+
+	de->ext = ext2_de;
+
+	return de;
+}
+
+static const struct file_operations ext2_fops = {
 	.open  = ext2_open,
 	.close = ext2_close,
 	.read  = ext2_read,
 	.write = ext2_write,
 };
 
-static struct file_system_type ext2_fs_type =
-{
-	.name  = "ext2",
-	.mount = ext2_mount,
-	.fops  = &ext2_fops,
+static struct file_system_type ext2_fs_type = {
+	.name   = "ext2",
+	.fops	= &ext2_fops,
+	.mount  = ext2_mount,
+	.lookup = ext2_lookup,
 };
 
-#ifdef __G_BIOS__
 static int __INIT__ ext3_init(void)
-#else
-int ext3_init(void)
-#endif
 {
 	return file_system_type_register(&ext2_fs_type);
 }
 
-#ifdef __G_BIOS__
 SUBSYS_INIT(ext3_init);
-#endif

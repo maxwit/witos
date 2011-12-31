@@ -1,8 +1,9 @@
-#include <net/net.h>
-#include <flash/flash.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <fcntl.h>
+#include <net/net.h>
+#include <flash/flash.h>
 
 #define LINE_LEN 512
 
@@ -287,39 +288,54 @@ int conf_load()
 	return 0;
 }
 
+const char *__get_config_file(void)
+{
+	// fixme
+	return "mtdblock2";
+}
+
 // fixme: to support other storage, such as MMC, ATA, ...
 int conf_store()
 {
-	int ret;
-	__u32 conf_base;
-	struct flash_chip *flash;
+	int ret, fd;
+	size_t conf_base;
+	const char *fn;
 	extern char _start[];
 	struct sysconfig *cfg = _syscfg_get();
+	struct erase_opt opt;
 
 	if (!cfg->is_dirty)
 		return 0;
 
-	// fixme
-	flash = flash_open("mtdblock2");
-	if (NULL == flash) {
+	fn = __get_config_file();
+
+	fd = open(fn, O_WRONLY);
+	if (fd < 0) {
 		printf("Fail to open flash!\n");
-		return -ENODEV;
+		return fd;
 	}
 
 	conf_base = cfg->data - _start;
 
-	ret = flash_erase(flash, conf_base, cfg->size, EDF_ALLOWBB);
+	memset(&opt, 0, sizeof(opt));
+	opt.estart = conf_base;
+	opt.esize = cfg->size;
+	opt.flags = EDF_ALLOWBB;
+
+	ret = ioctl(fd, FLASH_IOC_ERASE, &opt);
 	if (ret < 0)
 		goto L1;
 
-	ret = flash_write(flash, cfg->data, cfg->size, conf_base);
+	lseek(fd, conf_base, SEEK_SET);
+
+	ret = write(fd, cfg->data, cfg->size);
 	if (ret < 0)
 		goto L1;
 
 	cfg->is_dirty = false;
 
 L1:
-	flash_close(flash);
+	close(fd);
 	return ret;
 }
 

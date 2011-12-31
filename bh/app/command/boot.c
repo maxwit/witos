@@ -49,9 +49,9 @@ static int build_command_line(char *cmd_line, size_t max_len)
 		str += sprintf(str, " nfsroot=%s", config);
 	} else {
 		if (!strncmp(config, "mtdblock", 8)) {
-			struct block_device *bdev;
 			image_t type;
-			const char *rootfs; // fixme
+			const char *fstype = NULL;
+			struct block_device *bdev;
 
 			bdev = get_bdev_by_name(config);
 			if (!bdev) {
@@ -65,7 +65,7 @@ static int build_command_line(char *cmd_line, size_t max_len)
 			switch (type) {
 			case IMG_JFFS2:
 			default:
-				rootfs = "jffs2";
+				fstype = "jffs2";
 				break;
 
 			case IMG_UBIFS:
@@ -73,8 +73,8 @@ static int build_command_line(char *cmd_line, size_t max_len)
 				break;
 			}
 
-			if (rootfs)
-				str += sprintf(str, " rootfstype=%s", rootfs);
+			if (fstype)
+				str += sprintf(str, " rootfstype=%s", fstype);
 		} else if (!strncmp(config, "mmcblk", 6)) {
 			str += sprintf(str, " rootwait");
 		}
@@ -143,18 +143,19 @@ static ssize_t load_image(void *dst, const char *src)
 		struct tftp_opt dlopt;
 
 		memset(&dlopt, 0x0, sizeof(dlopt));
-	
+
 		net_get_server_ip(&dlopt.server_ip);
 		strcpy(dlopt.file_name, image);
 		dlopt.load_addr = dst;
-	
+
 		ret = tftp_download(&dlopt);
 		if (ret < 0) {
 			printf("fail to download %s!\n", image);
 			return ret;
 		}
 	} else {
-		if (!strncmp(src, "mtdblock", 8)) {			
+#if 0
+		if (!strncmp(src, "mtdblock", 8)) {
 			struct flash_chip *flash;
 
 			flash = flash_open(src);
@@ -174,6 +175,22 @@ static ssize_t load_image(void *dst, const char *src)
 			printf("file \"%s\" NOT supported now:(\n", src);
 			return -EINVAL;
 		}
+#endif
+		int fd;
+
+		fd = open(src, O_RDONLY);
+		if (fd < 0) {
+			printf("fail to open \"%s\" (ret = %d)!\n", src, fd);
+			return fd;
+		}
+
+		ret = read(fd, dst, KERNEL_MAX_SIZE /* fixme */);
+		if (ret < 0) {
+			GEN_DGB("fail to load kernel image from %s!\n", src);
+			return ret;
+		}
+
+		close(fd);
 	}
 
 	return ret;
@@ -279,7 +296,7 @@ int main(int argc, char *argv[])
 	arm_tag = setup_cmdline_atag(arm_tag, cmd_line);
 
 	// setup mem tag
-	if (strstr(cmd_line, "mem=") == NULL)	
+	if (strstr(cmd_line, "mem=") == NULL)
 		arm_tag = setup_mem_atag(arm_tag);
 
 	// load initrd

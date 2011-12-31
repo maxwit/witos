@@ -1,1 +1,1 @@
-obj-y = flash_api.o flash_fops.o
+obj-y = flash_fops.o

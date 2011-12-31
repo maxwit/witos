@@ -23,8 +23,9 @@ enum {
 	FLASH_IOCS_OOB_MODE,
 	FLASH_IOCG_OOB_MODE,
 	FLASH_IOCS_CALLBACK,
-	FLASH_IOC_SCANBB,
 	FLASH_IOCG_SIZE,
+	FLASH_IOC_SCANBB,
+	FLASH_IOC_ERASE,
 };
 
 #define BLOCK_DEV_NAME_LEN  32
@@ -87,7 +88,7 @@ struct erase_opt {
 	__u32 estart;
 	__u32 esize;
 	__u32 flags;
-	__u32 fail_addr;
+	__u32 fail_addr; // fail_at, faddr
 	__u8  estate;
 };
 
@@ -188,18 +189,6 @@ int flash_fops_init(struct block_device *bdev);
 
 // user APIs
 
-int set_bdev_file_attr(struct bdev_file * file);
+int set_bdev_file_attr(struct file * file);
 
-int get_bdev_file_attr(struct bdev_file * file);
-
-struct flash_chip *flash_open(const char *name);
-
-int flash_close(struct flash_chip *flash);
-
-int flash_read(struct flash_chip *flash, void *buf, int start, int count);
-
-long flash_write(struct flash_chip *flash, const void *buf, __u32 count, __u32 ppos);
-
-int flash_erase(struct flash_chip *flash, __u32 nStartAddr, __u32 nLen, __u32 flags);
-
-int flash_ioctl(struct flash_chip *flash, int cmd, void *arg);
+int get_bdev_file_attr(struct file * file);
