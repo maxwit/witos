@@ -48,8 +48,10 @@ char *strrchr(const char *, size_t);
 int hex_str_to_val(const char *str, unsigned long *val);
 int val_to_hex_str(char *str, unsigned long val);
 
-int dec_str_to_val(const char *str, long *val);
+int dec_str_to_long(const char *str, long *val);
 int val_to_dec_str(char *str, long val);
+
+int dec_str_to_int(const char *str, int *val);
 
 int hr_str_to_val(const char *str, unsigned long *val);
 int val_to_hr_str(unsigned long val, char str[]);

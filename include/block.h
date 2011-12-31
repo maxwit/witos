@@ -19,7 +19,7 @@ struct block_device;
 struct part_attr {
 	__u32 base;
 	__u32 size;
-	char  label[LABEL_NAME_SIZE];	
+	char  label[LABEL_NAME_SIZE];
 	__u32 flags;
 };
 

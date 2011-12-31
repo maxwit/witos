@@ -24,7 +24,7 @@
 struct tftp_opt {
 	bool  verbose;
 	char  file_name[FILE_NAME_SIZE];
-	const char *dst;	
+	const char *dst;
 	const char *src;
 	char  mode[MAX_MODE_LEN];
 	void *load_addr;
