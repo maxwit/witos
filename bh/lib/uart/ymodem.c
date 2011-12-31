@@ -49,6 +49,8 @@ int ymodem_load(struct loader_opt *opt)
 	char blk = 0;
 	__u8 stx, blk_num[2], crc[2];
 	__u8 *curr_addr;
+	int fd_bdev;
+	image_t img_type = IMG_MAX;
 
 #ifndef CONFIG_GTH
 	if (!opt->load_addr) {
@@ -56,14 +58,22 @@ int ymodem_load(struct loader_opt *opt)
 
 		curr_addr = data;
 	}
+	else
 #endif
-	else {
+	{
 		curr_addr = opt->load_addr;
 	}
 
 	go_set_addr((__u32 *)curr_addr);
 
 	opt->load_size = 0;
+#ifndef CONFIG_GTH
+		if (opt->dev) {
+			fd_bdev = bdev_open(opt->dev->name, O_WRITE);
+			if (fd_bdev < 0)
+				return fd_bdev;
+		}
+#endif
 
 	while (1) {
 		uart_send_byte('C');
@@ -163,9 +173,34 @@ int ymodem_load(struct loader_opt *opt)
 		ret = uart_recv_byte_timeout(&crc[1], MODEM_TIMEOUT);
 
 #ifndef CONFIG_GTH
-		//part_write(opt->part, curr_addr, count);
-		if (opt->file)
-			opt->file->write(opt->file, curr_addr, count);
+		if (opt->dev) {
+			if (img_type == IMG_MAX) {
+				OOB_MODE oob_mode;
+				img_type = image_type_detect(curr_addr, count);
+
+				switch (img_type) {
+				case IMG_YAFFS1:
+					oob_mode = FLASH_OOB_RAW;
+					break;
+
+				case IMG_YAFFS2:
+					oob_mode = FLASH_OOB_AUTO;
+					break;
+
+				default:
+					oob_mode = FLASH_OOB_PLACE;
+					break;
+				}
+
+				ret = bdev_ioctl(fd_bdev, FLASH_IOCS_OOB_MODE, oob_mode);
+				if (ret < 0)
+					goto error;
+			}
+
+			ret = bdev_write(fd_bdev, curr_addr, count, img_type);
+			if (ret < 0)
+				goto error;
+		}
 
 		if (opt->load_addr)
 #endif
@@ -182,7 +217,15 @@ int ymodem_load(struct loader_opt *opt)
 L1:
 	modem_end_rx();
 
-	return opt->load_size;
+	ret = opt->load_size;
+error:
+
+#ifndef CONFIG_GTH
+	if (opt->dev) {
+		bdev_close(fd_bdev);
+	}
+#endif
+	return ret;
 }
 
 REGISTER_LOADER(y, ymodem_load, "Y-modem");

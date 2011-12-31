@@ -135,6 +135,7 @@ static int tftp_get_file(int argc, char **argv)
 	bool mem_only = false;
 	struct tftp_opt dlopt;
 	struct block_device *cur_bdev = NULL;
+	char conf_attr[CONF_ATTR_LEN], conf_val[CONF_VAL_LEN];
 
 	memset(&dlopt, 0x0, sizeof(dlopt));
 	net_get_server_ip(&dlopt.server_ip);
@@ -195,21 +196,23 @@ static int tftp_get_file(int argc, char **argv)
 		}
 	}
 
-	if (dlopt.type) {
-		// get_bdev_by_type()?
-		cur_bdev = get_bdev_by_volume('A');
-	} else {
-		if (dlopt.path[0]) {
-			vol = dlopt.path[0];
+	if (mem_only == false) {
+		if (dlopt.type) {
+			// get_bdev_by_type()?
+			cur_bdev = get_bdev_by_volume('A');
 		} else {
-			vol = get_curr_volume();
+			if (dlopt.path[0]) {
+				vol = dlopt.path[0];
+			} else {
+				vol = get_curr_volume();
+			}
+
+			cur_bdev = get_bdev_by_volume(vol);
 		}
 
-		cur_bdev = get_bdev_by_volume(vol);
+		dlopt.bdev = cur_bdev;
+		dlopt.type = "jffs2"; // fixme
 	}
-
-	dlopt.file = (struct bdev_file *)cur_bdev->file;
-	dlopt.type = "jffs2";
 
 	if (optind < argc) {
 		if (optind + 1 == argc && !dlopt.file_name[0]) {
@@ -222,12 +225,13 @@ static int tftp_get_file(int argc, char **argv)
 	}
 
 	if (!dlopt.file_name[0]) {
-		if (cur_bdev->file->name[0] == '\0') {
+		snprintf(conf_attr, CONF_ATTR_LEN, "bdev.%s.image.name", dlopt.bdev->name);
+		if (conf_get_attr(conf_attr, conf_val) < 0) {
 			printf("Please sepcify the filename!\n");
 			return -EINVAL;
 		}
 
-		strcpy(dlopt.file_name, cur_bdev->file->name);
+		strncpy(dlopt.file_name, conf_val, sizeof(dlopt.file_name));
 	}
 
 	ret = tftp_download(&dlopt);
@@ -236,10 +240,19 @@ static int tftp_get_file(int argc, char **argv)
 		return ret;
 	}
 
-	if (dlopt.file) {
-		strncpy(dlopt.file->name, dlopt.file_name, FILE_NAME_SIZE);
-		dlopt.file->size = dlopt.xmit_size;
-		set_bdev_file_attr(dlopt.file);
+	if (dlopt.bdev) {
+		// set file name
+		snprintf(conf_attr, CONF_ATTR_LEN, "bdev.%s.image.name", dlopt->bdev->name);
+		if (conf_set_attr(conf_attr, dlopt.file_name) < 0) {
+			conf_add_attr(conf_attr, dlopt.file_name);
+		}
+
+		// set file size
+		snprintf(conf_attr, CONF_ATTR_LEN, "bdev.%s.image.size", bdev->name);
+		val_to_dec_str(conf_val, dlopt.xmit_size);
+		if (conf_set_attr(conf_attr, conf_val) < 0) {
+			conf_add_attr(conf_attr, conf_val);
+		}
 	}
 
 	if (false == mem_only)

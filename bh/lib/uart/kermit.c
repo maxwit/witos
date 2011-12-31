@@ -61,7 +61,10 @@ int kermit_load(struct loader_opt *opt)
 	int index, count, checksum, len, seq, real_seq = 0;
 	int type = KERM_TYPE_BREAK; // fixme
 	__u8 *curr_addr = (__u8 *)opt->load_addr;
+	int fd_bdev;
+	image_t img_type = IMG_MAX;
 	int i;
+	int ret;
 
 #ifndef CONFIG_GTH
 	if (!opt->load_addr) {
@@ -76,6 +79,14 @@ int kermit_load(struct loader_opt *opt)
 	go_set_addr(curr_addr);
 
 	opt->load_size = 0;
+
+#ifndef CONFIG_GTH
+	if (opt->dev) {
+		fd_bdev = bdev_open(opt->dev->name, O_WRONLY);
+		if (fd_bdev < 0)
+			return fd_bdev;
+	}
+#endif
 
 	do {
 		while (MARK_START != uart_recv_byte());
@@ -183,8 +194,34 @@ int kermit_load(struct loader_opt *opt)
 			goto error;
 
 #ifndef CONFIG_GTH
-		if (opt->file)
-			opt->file->write(opt->file, curr_addr, count);
+		if (opt->dev) {
+			if (img_type == IMG_MAX) {
+				OOB_MODE oob_mode;
+				img_type = image_type_detect(curr_addr, count);
+
+				switch (img_type) {
+				case IMG_YAFFS1:
+					oob_mode = FLASH_OOB_RAW;
+					break;
+
+				case IMG_YAFFS2:
+					oob_mode = FLASH_OOB_AUTO;
+					break;
+
+				default:
+					oob_mode = FLASH_OOB_PLACE;
+					break;
+				}
+
+				ret = bdev_ioctl(fd_bdev, FLASH_IOCS_OOB_MODE, oob_mode);
+				if (ret < 0)
+					goto L2;
+			}
+
+			ret = bdev_write(fd_bdev, curr_addr, count, img_type);
+			if (ret < 0)
+				goto error;
+		}
 
 		if (opt->load_addr)
 #endif
@@ -201,6 +238,13 @@ int kermit_load(struct loader_opt *opt)
 	return opt->load_size;
 
 error:
+
+#ifndef CONFIG_GTH
+	if (opt->dev) {
+		bdev_close(fd_bdev);
+	}
+#endif
+
 	return -EFAULT;
 }
 

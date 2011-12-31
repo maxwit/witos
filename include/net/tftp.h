@@ -30,7 +30,7 @@ struct tftp_opt {
 	void  *load_addr;
 	size_t xmit_size;
 	const char *type; // only for image
-	struct bdev_file *file;
+	struct block_device *bdev;
 };
 
 int tftp_download(struct tftp_opt *opt);

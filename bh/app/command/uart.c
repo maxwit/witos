@@ -9,7 +9,6 @@ static int uart_load(int argc, char *argv[])
 {
 	int size, ret;
 	struct loader_opt ld_opt;
-	struct block_device *bdev;
 	char *pro = NULL;
 	int opt;
 
@@ -17,10 +16,7 @@ static int uart_load(int argc, char *argv[])
 
 	memset(&ld_opt, 0x0, sizeof(ld_opt));
 
-	bdev = get_bdev_by_volume(get_curr_volume());
-	ld_opt.file = bdev->file;
-	// fixme
-	bdev->file->open(bdev->file, 0);
+	ld_opt.bdev = get_bdev_by_volume(get_curr_volume());
 
 	while ((opt = getopt(argc, argv, "m::p:f:i:vh")) != -1) {
 		switch (opt) {
@@ -34,7 +30,7 @@ static int uart_load(int argc, char *argv[])
 				}
 			}
 
-			ld_opt.file = NULL;
+			ld_opt.bdev = NULL;
 
 			break;
 
@@ -74,11 +70,21 @@ static int uart_load(int argc, char *argv[])
 		return -EINVAL;
 	}
 
-	if (ld_opt.file && size > 0) {
-		strncpy(ld_opt.file->name, ld_opt.file_name, FILE_NAME_SIZE);
-		ld_opt.file->size = size;
+	if (ld_opt.bdev && size > 0) {
+		char conf_attr[CONF_ATTR_LEN], conf_val[CONF_VAL_LEN];
 
-		set_bdev_file_attr(ld_opt.file);
+		snprintf(conf_attr, CONF_ATTR_LEN, "bdev.%s.image.name", ld_opt.bdev->name);
+		if (conf_set_attr(conf_attr, ld_opt.file_name) < 0) {
+			conf_add_attr(conf_attr, ld_opt.file_name);
+		}
+
+		// set file size
+		snprintf(conf_attr, CONF_ATTR_LEN, "bdev.%s.image.size", ld_opt.bdev->name);
+		val_to_dec_str(conf_val, size);
+		if (conf_set_attr(conf_attr, conf_val) < 0) {
+			conf_add_attr(conf_attr, conf_val);
+		}
+
 	}
 
 	return size;

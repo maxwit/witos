@@ -51,6 +51,16 @@ static int tftp_send_ack(const int fd, const __u16 blk, struct sockaddr_in *remo
 	return ret;
 }
 
+static int image_write(int fd, const void *buff, size_t size, image_t img_type)
+{
+	int ret;
+
+
+	ret = bdev_write(fd, buff, size);
+
+	return ret;
+}
+
 // fixme
 int tftp_download(struct tftp_opt *opt)
 {
@@ -61,10 +71,11 @@ int tftp_download(struct tftp_opt *opt)
 	socklen_t addrlen;
 	__u8 buf[TFTP_BUF_LEN];
 	size_t  pkt_len, load_len;
-	struct bdev_file *file;
+	int fd_bdev;
 	struct tftp_packet *tftp_pkt = (struct tftp_packet *)buf;
 	struct sockaddr_in local_addr, remote_addr;
 	char server_ip[IPV4_STR_LEN];
+	image_t img_type = IMG_MAX;
 
 	if (ip_to_str(server_ip, opt->server_ip) < 0) {
 		printf("Error: Server IP!\n");
@@ -98,16 +109,47 @@ int tftp_download(struct tftp_opt *opt)
 	if (ret < 0)
 		goto L1;
 
-	file     = opt->file;
 	buff_ptr = opt->load_addr;
 	load_len = 0;
 	blk_num  = 1;
 
-	if (file) {
-		ret = file->open(file, 0);
-		if (ret < 0) {
-			printf("fail to open \"%s\"!\n", file->bdev->name);
+	if (opt->bdev) {
+		fd_bdev = bdev_open(opt->bdev->name, O_WRONLY);
+		if (fd_bdev < 0) {
+			printf("fail to open \"%s\"!\n", opt->bdev->name);
 			goto L1;
+		}
+
+		if (opt->type) {
+			OOB_MODE oob_mode;
+
+			if (!strcmp(opt->type, "jffs2")) {
+				img_type = IMG_JFFS2;
+			} else if (!strcmp(opt->type, "yffs2")) {
+				img_type = IMG_YAFFS2;
+			} else if (!strcmp(opt->type, "yffs1")) {
+				img_type = IMG_YAFFS1;
+			} else {
+				img_type = IMG_UNKNOWN;
+			}
+
+			switch (img_type) {
+			case IMG_YAFFS1:
+				oob_mode = FLASH_OOB_RAW;
+				break;
+
+			case IMG_YAFFS2:
+				oob_mode = FLASH_OOB_AUTO;
+				break;
+
+			default:
+				oob_mode = FLASH_OOB_PLACE;
+				break;
+			}
+
+		ret = bdev_ioctl(fd_bdev, FLASH_IOCS_OOB_MODE, oob_mode);
+		if (ret < 0)
+			goto L2;
 		}
 	}
 
@@ -118,9 +160,6 @@ int tftp_download(struct tftp_opt *opt)
 			goto L2;
 
 		pkt_len -= TFTP_HDR_LEN;
-
-		if (pkt_len > TFTP_PKT_LEN)  // fixme
-			pkt_len = TFTP_PKT_LEN;
 
 		switch (tftp_pkt->op_code) {
 		case TFTP_DAT:
@@ -144,8 +183,32 @@ int tftp_download(struct tftp_opt *opt)
 					buff_ptr += pkt_len;
 				}
 
-				if (file) {
-					ret = file->write(file, tftp_pkt->data, pkt_len);
+				if (opt->bdev) {
+					if (img_type == IMG_MAX) {
+						OOB_MODE oob_mode;
+
+						img_type = image_type_detect(tftp_pkt->data, pkt_len);
+
+						switch (img_type) {
+						case IMG_YAFFS1:
+							oob_mode = FLASH_OOB_RAW;
+							break;
+
+						case IMG_YAFFS2:
+							oob_mode = FLASH_OOB_AUTO;
+							break;
+
+						default:
+							oob_mode = FLASH_OOB_PLACE;
+							break;
+						}
+
+						ret = bdev_ioctl(fd_bdev, FLASH_IOCS_OOB_MODE, oob_mode);
+						if (ret < 0)
+							goto L2;
+					}
+
+					ret = bdev_write(fd_bdev, tftp_pkt->data, pkt_len, img_type);
 					if (ret < 0)
 						goto L2;
 				}
@@ -181,8 +244,7 @@ L2:
 	printf("\n");
 #endif
 
-	if (file)
-		file->close(file);
+	bdev_close(fd_bdev);
 L1:
 	sk_close(sockfd);
 	return ret;
@@ -200,6 +262,7 @@ int tftp_upload(struct tftp_opt *opt)
 	struct tftp_packet *tftp_pkt = (struct tftp_packet *)buf;
 	struct sockaddr_in local_addr, remote_addr;
 	char server_ip[IPV4_STR_LEN];
+	int fd_bdev;
 
 	if (ip_to_str(server_ip, opt->server_ip) < 0) {
 		printf("Error: Server IP!\n");
@@ -232,18 +295,15 @@ int tftp_upload(struct tftp_opt *opt)
 	if (ret < 0)
 		goto L1;
 
-#ifdef FILE_READ_SUPPORT
-	file = opt->file;
-#endif
 	buff_ptr = opt->load_addr;
 	send_len = 0;
 	blk_num  = 0;
 	int file_size = 10230; //fixme!! ?
 
 #ifdef FILE_READ_SUPPORT
-	if (file) {
-		ret = file->open(file, opt->type);
-		if (ret < 0) {
+	if (opt->bdev) {
+		fd_bdev = bdev_open(file, O_RDONLY);
+		if (fd_bdev < 0) {
 			printf("fail to open \"%s\"!\n", file->bdev->name);
 			goto L1;
 		}
@@ -261,13 +321,17 @@ int tftp_upload(struct tftp_opt *opt)
 			if (ntohs(tftp_pkt->block) == blk_num) {
 				dat_len = file_size > TFTP_PKT_LEN ? TFTP_PKT_LEN : file_size;
 #ifdef FILE_READ_SUPPORT
-				ret = file->read(file, tftp_pkt->data, dat_len);
-				blk_num++;
+				if (opt->bdev) {
+					ret = bdev_read(fd_bdev, tftp_pkt->data, dat_len);
+					if (ret < 0)
+						goto L2;
+					blk_num++;
 
-				tftp_pkt->op_code = TFTP_DAT;
-				tftp_pkt->block= htons(blk_num);
+					tftp_pkt->op_code = TFTP_DAT;
+					tftp_pkt->block= htons(blk_num);
 
-				pkt_len += TFTP_HDR_LEN;
+					pkt_len += TFTP_HDR_LEN;
+				} else
 #endif
 				if (NULL != buff_ptr) {
 					blk_num++;
@@ -320,7 +384,7 @@ int tftp_upload(struct tftp_opt *opt)
 			goto L2;
 		}
 	} while (file_size > 0);
-	
+
 	opt->xmit_size = send_len;
 L2:
 #ifdef TFTP_VERBOSE
@@ -328,8 +392,8 @@ L2:
 #endif
 
 #ifdef FILE_READ_SUPPORT
-	if (file)
-		file->close(file);
+	if (opt->bdev)
+		bdev_close(fd_bdev);
 #endif
 
 L1:
