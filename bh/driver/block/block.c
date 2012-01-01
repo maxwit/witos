@@ -2,6 +2,7 @@
 #include <string.h>
 #include <block.h>
 #include <list.h>
+#include <fs/fs.h>
 
 static DECL_INIT_LIST(g_bdev_list);
 
@@ -17,6 +18,8 @@ int block_device_register(struct block_device *bdev)
 	printf("    0x%08x - 0x%08x %s (%s)\n",
 		bdev->base, bdev->base + bdev->size, bdev->name,
 		bdev->label[0] ? bdev->label : "N/A");
+
+	device_create(&bdev->devfs_node);
 
 	return 0;
 }

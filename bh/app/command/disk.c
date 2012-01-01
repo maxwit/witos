@@ -2,10 +2,8 @@
 #include <mmc/mmc_ops.h>
 #include <unistd.h>
 #include <string.h>
-#include <shell.h>
 #include <task.h>
 #include <types.h>
-#include <shell.h>
 #include <drive.h>
 #include <block.h>
 

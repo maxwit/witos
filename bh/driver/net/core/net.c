@@ -772,7 +772,8 @@ int net_set_server_ip(__u32 ip)
 	return 0;
 }
 
-static bool check_ip_addr(const char *ip, int ver)
+#if 0
+bool check_ip_addr(const char *ip, int ver)
 {
 	int dotn = 1;
 	__u8 num;
@@ -796,6 +797,7 @@ static bool check_ip_addr(const char *ip, int ver)
 
 	return false;
 }
+#endif
 
 static int __INIT__ net_init(void)
 {

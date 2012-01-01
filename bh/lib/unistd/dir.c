@@ -4,12 +4,13 @@
 
 static char *g_cwd; // fixme: with const
 
+// fixme
 int chdir(const char *path)
 {
 	DIR *dir;
 	struct dirent *de;
 
-	dir = opendir("/dev");
+	dir = opendir(DEV_ROOT);
 	if (!dir)
 		return -ENOENT;
 

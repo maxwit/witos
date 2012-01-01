@@ -704,7 +704,7 @@ static inline int shell_init(void)
 
 		home[0] = '\0';
 
-		dir = opendir("/dev");
+		dir = opendir(DEV_ROOT);
 		if (dir) {
 			de = readdir(dir);
 			if (de)

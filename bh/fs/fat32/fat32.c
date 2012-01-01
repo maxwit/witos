@@ -43,29 +43,23 @@ static __u32 fat_get_fat_table(struct fat_fs *fs, __u32 fat_num)
 	return fat_catch[fat_num % (fs->clus_size / sizeof(fat_num))];
 }
 
-static int fat_mount(struct file_system_type *fs_type, unsigned long flags, struct block_device *bdev)
+static struct dentry *fat_mount(struct file_system_type *fs_type, unsigned long flags, struct block_device *bdev)
 {
 	int ret;
 	__u16 blk_size;
 	__u32 clus_size;
 	__u32 data_off;
 	__u32 root;
+	struct dentry *root_dir;
+	struct inode *root_ino;
 	struct fat_fs *fat_fs;
 	struct fat_boot_sector *dbr;
-	struct file_system *fs;
 	struct disk_drive *drive = container_of(bdev, struct disk_drive, bdev);
 
 	fat_fs = zalloc(sizeof(*fat_fs));
 	if (fat_fs == NULL) {
 		DPRINT("%s(): no mem\n", __func__);
-		return -ENOMEM;
-	}
-
-	fs = zalloc(sizeof(*fs));
-	if (fat_fs == NULL) {
-		DPRINT("%s(): no mem\n", __func__);
-		free(fat_fs);
-		return -ENOMEM;
+		return NULL;
 	}
 
 	dbr = &fat_fs->dbr;
@@ -73,14 +67,14 @@ static int fat_mount(struct file_system_type *fs_type, unsigned long flags, stru
 	ret = drive->get_block(drive, 0, dbr);
 	if (ret < 0) {
 		DPRINT("%s(): read dbr err\n", __func__);
-		return ret;
+		return NULL;
 	}
 
 	blk_size = dbr->sector_size[1] << 8 | dbr->sector_size[0];
 
 	if (blk_size < 512 || blk_size > 4096 || (blk_size & (blk_size - 1))) {
 		DPRINT("%s %s() line %d\n", __FILE__, __func__, __LINE__);
-		return -EINVAL;
+		return NULL;
 	}
 
 	// TODO: check if bk_size != drive->sect_size ...
@@ -96,13 +90,26 @@ static int fat_mount(struct file_system_type *fs_type, unsigned long flags, stru
 	fat_fs->data = data_off;
 	fat_fs->clus_size = clus_size;
 
-	fs->ext = fat_fs;
+	// fixme
+	drive->sect_size = blk_size;
 
-	bdev->fs = fs;
+	// fixme
+	root_ino = zalloc(sizeof(*root_ino));
+	if (!root_ino)
+		return NULL;
 
-	drive->sect_size = blk_size; // fixme
+	root_ino->i_fs = fat_fs;
+	root_ino->i_ext = (void *)root;
 
-	return 0;
+	root_dir = zalloc(sizeof(*root_dir));
+	if (!root_dir)
+		return NULL;
+
+	root_dir->inode = root_ino;
+
+	/////
+
+	return root_dir;
 }
 
 #if 0
@@ -209,14 +216,15 @@ L1:
 	return -1;
 }
 
-static struct dentry *fat_lookup(struct file_system *fs, const char *name)
+static struct dentry *fat_lookup(struct inode *parent, const char *name)
 {
 	int ret;
 	char sname[FILE_NAME_SIZE];
-	__u32 parent;
-	struct fat_dentry *fat_de;
-	struct fat_fs *fat_fs = fs->ext;
+	__u32 blk_num;
 	struct dentry *de;
+	struct inode *ino;
+	struct fat_dentry *fat_de;
+	struct fat_fs *fat_fs = parent->i_fs;
 
 	fat_de = (struct fat_dentry *)malloc(sizeof(*fat_de));
 	if (fat_de == NULL) {
@@ -224,11 +232,11 @@ static struct dentry *fat_lookup(struct file_system *fs, const char *name)
 		return NULL;
 	}
 
-	parent = fat_fs->root;
+	blk_num = (__u32)parent->i_ext;
 
 	while (1) {
 		// fixme
-		ret = fat_find_next_file(fat_fs, &parent, sname, fat_de);
+		ret = fat_find_next_file(fat_fs, &blk_num, sname, fat_de);
 		printf("%s(): ret = %d, sname = %s\n",
 			__func__, ret, sname);
 		if (ret < 0) {
@@ -240,14 +248,27 @@ static struct dentry *fat_lookup(struct file_system *fs, const char *name)
 			name = strchr(name, '/');
 			if (name != NULL) {	// last file
 				if (fat_de->attr == 0x10) {
-					parent = fat_de->clus_hi << 16 | fat_de->clus_lo;
+					blk_num = fat_de->clus_hi << 16 | fat_de->clus_lo;
 					continue;
 				} else
 					goto err;
 			}
 
+			ino = zalloc(sizeof(*ino));
+			if (!ino)
+				return NULL;
+
+			ino->mode = ~0;
+			ino->i_fs = parent->i_fs;
+			ino->i_ext = (void *)blk_num;
+
 			de = zalloc(sizeof(*de));
-			de->ext = fat_de;
+			if (!de)
+				return NULL;
+
+			de->d_ext = fat_de;
+			de->inode = ino;
+
 			return de;
 		}
 	}
@@ -260,7 +281,7 @@ err:
 #define MAX_FILE_NAME_SIZE 256
 
 // fixme
-static int fat_open(struct file *fp, int flags, int mode)
+static int fat_open(struct file *fp, struct inode *inode)
 {
 	return 0;
 }
@@ -276,7 +297,7 @@ static ssize_t fat_read(struct file *fp, void *buff, size_t size, loff_t *off)
 	size_t pos;
 	size_t count = 0;
 	size_t tmp_size;
-	struct fat_fs *fs = fp->mnt->bdev->fs->ext;
+	struct fat_fs *fs = fp->de->inode->i_fs;
 	struct fat_dentry *de = (struct fat_dentry *)fp->de;
 
 	clus_size = fs->clus_size;

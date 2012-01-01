@@ -128,19 +128,15 @@ static inline ssize_t __flash_write(struct flash_chip *flash, const void *buff, 
 	return 0;
 }
 
-static int flash_open(struct file *fp, int flags, int mode)
+static int flash_open(struct file *fp, struct inode *inode)
 {
 	void *buff;
 	size_t size;
 	struct flash_chip *flash;
 	struct block_buff *blk_buf = &fp->blk_buf;
 
-	assert(fp->bdev);
-
-	if (O_RDONLY == flags && (fp->bdev->flags & BDF_RDONLY))
-		return -EPERM;
-
-	flash = container_of(fp->bdev, struct flash_chip, bdev);
+	flash = container_of(inode->i_ext, struct flash_chip, bdev);
+	assert(flash);
 
 	flash->callback_func = NULL;
 	flash->oob_mode = FLASH_OOB_PLACE;
@@ -154,6 +150,8 @@ static int flash_open(struct file *fp, int flags, int mode)
 
 	blk_buf->blk_base = blk_buf->blk_off = buff;
 	blk_buf->blk_size = blk_buf->max_size = size;
+
+	fp->private_data = flash;
 
 	return 0;
 }
@@ -176,7 +174,7 @@ static int __flash_erase(struct flash_chip *flash, struct erase_opt *opt)
 		size_t size = opt->esize;
 
 		ALIGN_UP(opt->esize, flash->erase_size);
-		GEN_DGB("size (0x%08x) not aligned with flash erase size (0x%08x)!"
+		GEN_DBG("size (0x%08x) not aligned with flash erase size (0x%08x)!"
 			" adjusted to 0x%08x\n",
 			size, flash->erase_size, opt->esize);
 	}
@@ -201,11 +199,7 @@ static int flash_ioctl(struct file *fp, int cmd, unsigned long arg)
 {
 	int ret;
 	FLASH_CALLBACK *callback;
-	struct flash_chip *flash;
-
-	assert(fp->bdev);
-
-	flash = container_of(fp->bdev, struct flash_chip, bdev);
+	struct flash_chip *flash = fp->private_data;
 
 	switch (cmd) {
 	case FLASH_IOCS_OOB_MODE:
@@ -261,10 +255,7 @@ static int flash_ioctl(struct file *fp, int cmd, unsigned long arg)
 
 static ssize_t flash_read(struct file *fp, void *buff, size_t size, loff_t *off)
 {
-	struct flash_chip *flash;
-
-	assert(fp->bdev);
-	flash = container_of(fp->bdev, struct flash_chip, bdev);
+	struct flash_chip *flash = fp->private_data;
 
 	return __flash_read(flash, buff, size, fp->pos);
 }
@@ -284,15 +275,13 @@ static ssize_t flash_write(struct file *fp, const void *buff, size_t size, loff_
 {
 	int ret = 0;
 	__u32 buff_room, flash_pos;
-	struct flash_chip   *flash;
+	struct flash_chip   *flash = fp->private_data;
 	struct block_buff   *blk_buff;
-	struct block_device *bdev = fp->bdev;
+	struct block_device *bdev = &flash->bdev;
 
-	if (0 == size) // fixme: to be removed
+	// fixme: to be removed
+	if (0 == size)
 		return 0;
-
-	assert(fp->bdev);
-	flash = container_of(fp->bdev, struct flash_chip, bdev);
 
 	if (size + fp->pos > bdev->size) {
 		char tmp[32];
@@ -379,11 +368,8 @@ static int flash_close(struct file *fp)
 {
 	int ret = 0, rest;
 	__u32 flash_pos;
-	struct block_buff   *blk_buff;
-	struct flash_chip   *flash;
-
-	assert(fp->bdev);
-	flash = container_of(fp->bdev, struct flash_chip, bdev);
+	struct block_buff *blk_buff;
+	struct flash_chip *flash = fp->private_data;
 
 	blk_buff = &fp->blk_buf;
 	rest = blk_buff->blk_off - blk_buff->blk_base;
@@ -449,7 +435,7 @@ int set_bdev_file_attr(struct file *fp)
 	return 0;
 }
 
-static const struct file_operations flash_fops = {
+const struct file_operations flash_fops = {
 	.open  = flash_open,
 	.read  = flash_read,
 	.write = flash_write,

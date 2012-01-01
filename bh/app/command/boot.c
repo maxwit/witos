@@ -135,7 +135,7 @@ static int build_command_line(char *cmd_line, size_t max_len)
 			if (ndev_ioctl(ndev, NIOC_GET_MASK, &client_mask) == 0)
 				ip_to_str(net_mask, client_mask);
 		} else {
-			GEN_DGB("Not supportted now!\n");
+			GEN_DBG("Not supportted now!\n");
 			// TODO: read from sysconfig
 		}
 
@@ -188,7 +188,7 @@ static ssize_t load_image(void *dst, const char *src)
 
 			ret = flash_read(flash, dst, 0, KERNEL_MAX_SIZE /* fixme */);
 			if (ret < 0) {
-				GEN_DGB("fail to load kernel image from %s!\n", src);
+				GEN_DBG("fail to load kernel image from %s!\n", src);
 				return ret;
 			}
 
@@ -208,7 +208,7 @@ static ssize_t load_image(void *dst, const char *src)
 
 		ret = read(fd, dst, KERNEL_MAX_SIZE /* fixme */);
 		if (ret < 0) {
-			GEN_DGB("fail to load kernel image from %s!\n", src);
+			GEN_DBG("fail to load kernel image from %s!\n", src);
 			return ret;
 		}
 
@@ -382,6 +382,6 @@ int main(int argc, char *argv[])
 	linux_kernel(0, board->mach_id, ATAG_BASE);
 
 error:
-	GEN_DGB("boot failed! error = %d\n", ret);
+	GEN_DBG("boot failed! error = %d\n", ret);
 	return ret;
 }
