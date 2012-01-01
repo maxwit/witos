@@ -7,7 +7,7 @@ int main(int argc, char *argv[])
 
 	if (argc == 1) {
 		go = go_get_addr();
-	} else if (str_to_val(argv[1], (__u32 *)&go) < 0) {
+	} else if (str_to_val(argv[1], (unsigned long *)&go) < 0) {
 		usage();
 		return -EINVAL;
 	}

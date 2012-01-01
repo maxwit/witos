@@ -1316,7 +1316,7 @@ int nand_erase(struct nand_chip *nand, struct erase_opt *opt)
 				break;
 
 			default: // 64?
-				GEN_DGB("oob_size (%d) not supported now!\n", flash->oob_size);
+				GEN_DBG("oob_size (%d) not supported now!\n", flash->oob_size);
 				break;
 			};
 
@@ -1853,7 +1853,6 @@ int nand_register(struct nand_chip *nand)
 
 	flash->bdev.base = 0;
 	flash->bdev.size = flash->chip_size;
-	flash->bdev.fs = NULL;
 
 	ret = flash_register(flash);
 	if (ret < 0) {

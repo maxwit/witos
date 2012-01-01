@@ -1,47 +1,56 @@
 #include <string.h>
-#include <block.h>
-#include <shell.h>
+#include <unistd.h>
+#include <dirent.h>
 
-#if 0
-#define IS_ALPH(c) (((c) >= 'a' && (c) <= 'z') || \
-			((c) >= 'A' && (c) <= 'Z'))
-
-#define STR_LEN  8
-
-static void block_info_show(struct block_device *bdev)
+static int get_bdev_by_index(int index, char name[], size_t size)
 {
-	char hr_size[STR_LEN];
+	DIR *dir;
+	struct dirent *de;
 
-	val_to_hr_str(bdev->size, hr_size);
+	dir = opendir(DEV_ROOT);
+	if (!dir)
+		return -ENOENT;
 
-	printf("0x%08x - 0x%08x %s: %s (%s) %s\n",
-		bdev->base, bdev->base + bdev->size,
-		hr_size, bdev->name, bdev->label);
+	while ((de = readdir(dir))) {
+		int i = 1, num = 0;
+		const char *postfix;
+
+		postfix = de->d_name + strlen(de->d_name);
+
+		while (postfix >= de->d_name) {
+			if (!ISDIGIT(*postfix))
+				break;
+
+			num += i * *postfix;
+			i *= 10;
+			postfix--;
+		}
+
+		if (num == index) {
+			strncpy(name, de->d_name, size);
+			return 0;
+		}
+	}
+
+	closedir(dir);
+	return -ENODEV;
 }
-#endif
 
-// fixme
 int main(int argc, char *argv[])
 {
-	char v;
-	int index;
-	const char *vol;
-	struct block_device *bdev;
+	int ret, index;
+	const char *path;
+	char str[CONF_VAL_LEN];
 
 	switch (argc) {
 	case 1:
-		v = get_home_volume();
-		bdev = get_bdev_by_volume(v);
-		break;
+		ret = conf_get_attr(HOME, str);
+		assert(ret <= 0); // should never fail!
+		path = str;
+		goto L1;
 
 	case 2:
-		vol = argv[1];
-
-		if (dec_str_to_val(vol, &index) >= 0 && index > 0)
-			bdev = get_bdev_by_volume('A' + index - 1);
-		else
-			bdev = get_bdev_by_name(vol);
-
+		path = argv[1];
 		break;
 
 	default:
@@ -49,18 +58,29 @@ int main(int argc, char *argv[])
 		return -EINVAL;
 	}
 
-	if (!bdev) {
+	ret = dec_str_to_int(path, &index);
+	if (ret >= 0) {
+		if (index >= 0) {
+			ret = get_bdev_by_index(index, str, sizeof(str));
+			if (!ret) {
+				path = str;
+				goto L1; // found
+			}
+		}
+
 		usage();
-		return -ENODEV;
+		return -ENOENT;
 	}
 
-	// block_info_show(bdev);
+L1:
+	if (!strcmp(path, getcwd()))
+		return 0;
 
-	v = bdev->volume;
-	if (v >= 'a' && v <= 'z')
-		v = v + 'A' -'a';
+	ret = chdir(path);
+	if (ret < 0) {
+		printf("cd failed, errno = %d!\n", ret);
+		return ret;
+	}
 
-	set_curr_volume(v);
-
-	return 0;
+	return ret;
 }

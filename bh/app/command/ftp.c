@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <string.h>
-#include <getopt.h>
+#include <unistd.h>
 #include <errno.h>
 #include <net/net.h>
 #include <net/socket.h>
@@ -144,17 +144,19 @@ static int ftp_send_cmd(int cmd_fd, const char *cmd, const char *arg)
 }
 
 //download to flash
+#if 0
 static int get_file_to_flash(int data_fd)
 {
+	return -1;
 	int ret;
 	char buff[BUF_LEN];
 	char cur_vol;
 	struct block_device *bdev;
 	struct bdev_file *file;
 
-	cur_vol = get_curr_volume();
+	cur_vol = getcwd();
 
-	bdev = get_bdev_by_volume(cur_vol);
+	bdev = get_bdev_by_index(cur_vol);
 	if (NULL== bdev) {
 		printf("bdev null\n");
 		return -1;
@@ -185,7 +187,9 @@ static int get_file_to_flash(int data_fd)
 
 	return 0;
 }
+#endif
 
+#if 0
 static int get_file_to_mem(int data_fd, const struct ftp_opt *fopt)
 {
 	__u32 addr;
@@ -194,7 +198,7 @@ static int get_file_to_mem(int data_fd, const struct ftp_opt *fopt)
 	int i;
 	char buff[BUF_LEN];
 
-	str_to_val(fopt->mem, &addr);
+	str_to_val(fopt->mem, (unsigned long *)&addr);
 	p = (char *)addr;
 
 	while(1) {
@@ -227,9 +231,12 @@ static int get_file_to_mem(int data_fd, const struct ftp_opt *fopt)
 
 	return 0;
 }
+#endif
 
 static int ftp_download_file(int cmd_fd, struct ftp_opt *fopt)
 {
+	return -1;
+#if 0
 	int data_port;
 	int data_fd;
 	int ret = 0;
@@ -265,6 +272,8 @@ static int ftp_download_file(int cmd_fd, struct ftp_opt *fopt)
 	sk_close(data_fd);
 
 	return ret;
+
+#endif
 }
 
 static int ftp_upload_file(int cmd_fd,  struct ftp_opt *fopt)

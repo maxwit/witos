@@ -22,7 +22,7 @@ struct loader_opt {
 	int (*main)(struct loader_opt *opt);
 #else
 	char file_name[FILE_NAME_SIZE];
-	struct bdev_file *file;
+	const char *dst;
 #endif
 };
 

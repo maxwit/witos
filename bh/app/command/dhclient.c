@@ -1,7 +1,8 @@
-#include <getopt.h>
+#include <unistd.h>
 #include <random.h> // fixme: to be removed
 #include <fs/fs.h>
 #include <net/net.h>
+#include <fcntl.h>
 
 // DHCP opcode
 #define CLIENT_REQUEST	1

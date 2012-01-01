@@ -1,7 +1,3 @@
-#if 0
-#include <unistd.h>
-#include <fcntl.h>
-#endif
 #include <stdio.h>
 #include <malloc.h>
 #include <string.h>
@@ -18,11 +14,6 @@ struct ext2_file_system {
 	struct ext2_dir_entry_2 *root;
 	struct ext2_group_desc *gdt;
 };
-
-// TODO:  remove it!
-static struct ext2_file_system *g_ext2_fs;
-
-// int ext2_mount(struct file_system_type *fs_type, unsigned long flags, struct block_device *bdev);
 
 static ssize_t ext2_read_block(struct ext2_file_system *fs, void *buff, int blk_no, size_t off, size_t size)
 {
@@ -224,68 +215,96 @@ static struct ext2_inode *ext2_read_inode(struct ext2_file_system *fs, int ino)
 	return inode;
 }
 
-struct ext2_file_system *ext2_get_file_system(const char *name)
+static struct dentry *ext2_dentry_alloc()
 {
-	return g_ext2_fs;
+	struct dentry *de;
+	struct inode *ino;
+
+	de = zalloc(sizeof(*de));
+	if (!de)
+		return NULL;
+
+	ino = zalloc(sizeof(*ino));
+	if (!ino)
+		return NULL;
+
+	de->inode = ino;
+
+	return de;
 }
 
-static int ext2_mount(struct file_system_type *fs_type, unsigned long flags, struct block_device *bdev)
+static struct dentry *ext2_mount(struct file_system_type *fs_type, unsigned long flags, struct block_device *bdev)
 {
-	struct ext2_file_system *fs = malloc(sizeof(*fs));
-	struct ext2_super_block *sb = &fs->sb;
-	struct ext2_dir_entry_2 *root;
-	struct ext2_group_desc *gdt;
-	struct disk_drive *drive = container_of(bdev, struct disk_drive, bdev);
-	int gdt_num;
-	int blk_is;
 	int ret;
+	int blk_is;
+	int gdt_num;
+	struct dentry *root;
+	struct inode *ino;
+	struct ext2_file_system *ext2_fs = zalloc(sizeof(*ext2_fs));
+	struct ext2_super_block *ext2_sb = &ext2_fs->sb;
+	struct ext2_dir_entry_2 *ext2_root;
+	struct ext2_group_desc *ext2_gdt;
+	struct ext2_inode *ext2_ino;
+	struct disk_drive *drive = container_of(bdev, struct disk_drive, bdev);
 	char buff[drive->sect_size];
 
 	ret = drive->get_block(drive, 2 * drive->sect_size, buff);
 	if (ret < 0) {
 		DPRINT("%s(): read dbr err\n", __func__);
-		return ret;
+		return NULL;
 	}
 
-	memcpy(sb, buff, sizeof(*sb));
+	memcpy(ext2_sb, buff, sizeof(*ext2_sb));
 
-	if (sb->s_magic != 0xef53) {
-		printf("magic = %x\n", sb->s_magic);
-		return -EINVAL;
+	if (ext2_sb->s_magic != 0xef53) {
+		GEN_DBG("magic = %x\n", ext2_sb->s_magic);
+		return NULL;
 	}
 
-	blk_is = (1 << (sb->s_log_block_size + 10)) / sb->s_inode_size;
+	blk_is = (1 << (ext2_sb->s_log_block_size + 10)) / ext2_sb->s_inode_size;
 
 	printf("%s(): label = %s, log block size = %d, "
 		"inode size = %d, block size = %d, inodes per block = %d\n",
-		__func__, sb->s_volume_name, sb->s_log_block_size,
-		sb->s_inode_size, (1 << (sb->s_log_block_size + 10)), blk_is);
+		__func__, ext2_sb->s_volume_name, ext2_sb->s_log_block_size,
+		ext2_sb->s_inode_size, (1 << (ext2_sb->s_log_block_size + 10)), blk_is);
 
-	fs->bdev = bdev;
-	bdev->fs = fs;
+	ext2_fs->bdev = bdev;
 
-	gdt_num = (sb->s_blocks_count + sb->s_blocks_per_group - 1) / sb->s_blocks_per_group;;
-	gdt = malloc(gdt_num * sizeof(struct ext2_group_desc));
-	if (NULL == gdt)
-		return -ENOMEM;
+	gdt_num = (ext2_sb->s_blocks_count + ext2_sb->s_blocks_per_group - 1) / ext2_sb->s_blocks_per_group;;
+	ext2_gdt = malloc(gdt_num * sizeof(struct ext2_group_desc));
+	if (NULL == ext2_gdt)
+		return NULL;
 
-	ext2_read_block(fs, gdt, sb->s_first_data_block + 1, 0, gdt_num * sizeof(struct ext2_group_desc));
+	ext2_read_block(ext2_fs, ext2_gdt, ext2_sb->s_first_data_block + 1, 0, gdt_num * sizeof(struct ext2_group_desc));
 
 	printf("%s(), block group[0 / %d]: free blocks= %d, free inodes = %d\n",
-		__func__, gdt_num, gdt->bg_free_blocks_count, gdt->bg_free_inodes_count);
+		__func__, gdt_num, ext2_gdt->bg_free_blocks_count, ext2_gdt->bg_free_inodes_count);
 
-	fs->gdt  = gdt;
+	ext2_fs->gdt  = ext2_gdt;
 
-	root = malloc(sizeof(*root));
+	ext2_root = malloc(sizeof(*ext2_root));
 	// if ...
 
-	root->inode = 2;
+	ext2_root->inode = 2;
 
-	fs->root = root;
+	ext2_fs->root = ext2_root;
 
-	g_ext2_fs = fs;
+	root = ext2_dentry_alloc();
+	if (!root)
+		return NULL;
 
-	return 0;
+	root->d_ext = ext2_root;
+	///////////////
+
+	ext2_ino = ext2_read_inode(ext2_fs, ext2_root->inode);
+	// ...
+
+	ino = root->inode;
+	ino->mode = ~0; // ino->mode = ext2_ino->i_mode;
+	ino->i_ext = ext2_ino;
+	ino->i_fs = ext2_fs;
+
+	return root;
 }
 
 #if 0
@@ -308,11 +327,12 @@ static int ext2_umount(const char *path)
 }
 #endif
 
-static struct ext2_dir_entry_2 *ext2_lookup(struct ext2_inode *parent, const char *name)
+static struct ext2_dir_entry_2 *ext2_real_lookup(struct inode *inode, const char *name)
 {
 	struct ext2_dir_entry_2 *d_match;
 	struct ext2_dir_entry_2 *dentry;
-	struct ext2_file_system *fs = g_ext2_fs;
+	struct ext2_file_system *fs = inode->i_fs;
+	struct ext2_inode *parent = inode->i_ext;
 	char buff[parent->i_size];
 	size_t len = 0, blocks, i;
 	size_t block_size = 1 << (fs->sb.s_log_block_size + 10);
@@ -352,73 +372,34 @@ found_entry:
 	return d_match;
 }
 
-// fixme: to parse path in syntax: "mount_point:filename"
+// fixme: to parse path in syntax: "vfsmount:filename"
 static inline int mnt_of_path(const char *path, char mnt[])
 {
 	return 0;
 }
 
-static struct file *ext2_open(void *file_sys, const char *name, int flags, int mode)
+static int ext2_open(struct file *fp, struct inode *inode)
 {
-	struct ext2_file_system *fs = file_sys;
-	struct ext2_dir_entry_2 *dir, *de;
-	struct ext2_inode *parent;
-	struct ext2_file *ext2_fp;
-
-	dir = fs->root;
-
-	parent = ext2_read_inode(fs, dir->inode);
-	//
-
-	de = ext2_lookup(parent, name);
-	if (NULL == de)
-		return NULL;
-
-	ext2_fp = malloc(sizeof(*ext2_fp));
-	// if
-
-	ext2_fp->dentry = de;
-	ext2_fp->fs = fs;
-
-	return &ext2_fp->f;
+	return 0;
 }
 
 static int ext2_close(struct file *fp)
 {
-	struct ext2_file *ext2_fp = container_of(fp, struct ext2_file, f);
-
-	// free(inode, dentry, ...)
-	free(ext2_fp);
-
 	return 0;
 }
 
-#if 0
-// fixme: to support "where"
-ssize_t ext2_lseek(struct ext2_file *file, ssize_t off, int where)
-{
-	switch (where) {
-	default:
-		file->pos += off;
-		break;
-	}
-
-	return file->pos;
-}
-#endif
-
-static ssize_t ext2_read(struct file *fp, void *buff, size_t size)
+static ssize_t ext2_read(struct file *fp, void *buff, size_t size, loff_t *off)
 {
 	ssize_t i, len;
 	size_t blocks;
 	size_t offset, real_size, block_size;
 	struct ext2_inode *inode;
-	struct ext2_file_system *fs;
-	struct ext2_file *ext2_fp = container_of(fp, struct ext2_file, f);
+	struct ext2_file_system *fs = fp->de->inode->i_fs;
+	struct ext2_dir_entry_2 *de;
 
-	fs = ext2_fp->fs;
+	de = (struct ext2_dir_entry_2 *)fp->de;
 
-	inode = ext2_read_inode(fs, ext2_fp->dentry->inode);
+	inode = ext2_read_inode(fs, de->inode);
 
 	if (fp->pos == inode->i_size)
 		return 0;
@@ -452,35 +433,53 @@ static ssize_t ext2_read(struct file *fp, void *buff, size_t size)
 	return real_size;
 }
 
-static int ext2_write(struct file *fp, const void *buff, size_t size)
+static int ext2_write(struct file *fp, const void *buff, size_t size, loff_t *off)
 {
 	return 0;
 }
 
-static const struct file_operations ext2_fops =
+static struct dentry *ext2_lookup(struct inode *parent, const char *name)
 {
+	struct inode *ino;
+	struct dentry *de;
+	struct ext2_dir_entry_2 *ext2_de;
+	struct ext2_inode *ext2_ino;
+
+	de = ext2_dentry_alloc();
+	if (!de)
+		return NULL;
+	ino = de->inode;
+
+	ext2_de = ext2_real_lookup(parent, name);
+	// ...
+	de->d_ext = ext2_de;
+
+	ext2_ino = ext2_read_inode(parent->i_fs, ext2_de->inode);
+	// ...
+	ino->mode = ~0; // ino->mode = ext2_ino->i_mode;
+	ino->i_ext = ext2_ino;
+	ino->i_fs = parent->i_fs;
+
+	return de;
+}
+
+static const struct file_operations ext2_fops = {
 	.open  = ext2_open,
 	.close = ext2_close,
 	.read  = ext2_read,
 	.write = ext2_write,
 };
 
-static struct file_system_type ext2_fs_type =
-{
-	.name  = "ext2",
-	.mount = ext2_mount,
-	.fops  = &ext2_fops,
+static struct file_system_type ext2_fs_type = {
+	.name   = "ext2",
+	.fops	= &ext2_fops,
+	.mount  = ext2_mount,
+	.lookup = ext2_lookup,
 };
 
-#ifdef __G_BIOS__
 static int __INIT__ ext3_init(void)
-#else
-int ext3_init(void)
-#endif
 {
 	return file_system_type_register(&ext2_fs_type);
 }
 
-#ifdef __G_BIOS__
 SUBSYS_INIT(ext3_init);
-#endif

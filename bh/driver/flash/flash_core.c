@@ -56,7 +56,7 @@ static int __INIT__ flash_parse_part(struct flash_chip *host,
 				buff[i] = *p;
 			buff[i] = '\0';
 
-			ret = hr_str_to_val(buff, &part->size);
+			ret = hr_str_to_val(buff, (unsigned long *)&part->size);
 			if (ret < 0)
 				goto error;
 
@@ -69,7 +69,7 @@ static int __INIT__ flash_parse_part(struct flash_chip *host,
 				buff[i] = *p;
 			buff[i] = '\0';
 
-			ret = hr_str_to_val(buff, &part->base);
+			ret = hr_str_to_val(buff, (unsigned long *)&part->base);
 			if (ret < 0)
 				goto error;
 
@@ -215,6 +215,8 @@ int flash_register(struct flash_chip *flash)
 	if (n <= 0) {
 		snprintf(flash->bdev.name, MAX_DEV_NAME,
 			BDEV_NAME_FLASH "%c", 'A' + g_flash_count);
+
+		strncpy(flash->bdev.label, "flash", sizeof(flash->bdev.label));
 
 		flash_fops_init(&flash->bdev); // fixme: not here!
 		ret = block_device_register(&flash->bdev);

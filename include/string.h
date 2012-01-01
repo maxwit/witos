@@ -45,16 +45,18 @@ char *strrchr(const char *, size_t);
 
 //------------------ Extra String APIs ------------------
 
-int hex_str_to_val(const char *str, __u32 *val);
-int val_to_hex_str(char *str, __u32 val);
+int hex_str_to_val(const char *str, unsigned long *val);
+int val_to_hex_str(char *str, unsigned long val);
 
-int dec_str_to_val(const char *str, int *val);
+int dec_str_to_long(const char *str, long *val);
 int val_to_dec_str(char *str, long val);
 
-int hr_str_to_val(const char *str, __u32 *val);
-int val_to_hr_str(__u32 val, char str[]);
+int dec_str_to_int(const char *str, int *val);
 
-int str_to_val(const char *str, __u32 *val);
+int hr_str_to_val(const char *str, unsigned long *val);
+int val_to_hr_str(unsigned long val, char str[]);
+
+int str_to_val(const char *str, unsigned long *val);
 
 int str_to_ip(__u8 ip_val[], const char *ip_str);
 int ip_to_str(char ip_str[], const __u32 ip);

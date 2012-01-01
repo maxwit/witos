@@ -76,7 +76,7 @@ static int __INIT__ omap3_display_init(void)
 
 	va = video_mem_alloc(&dma, vm, disp->pix_fmt);
 	if(va == NULL) {
-		GEN_DGB("video_mem_alloc() failed\n");
+		GEN_DBG("video_mem_alloc() failed\n");
 		goto error;
 	}
 

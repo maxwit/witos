@@ -772,6 +772,33 @@ int net_set_server_ip(__u32 ip)
 	return 0;
 }
 
+#if 0
+bool check_ip_addr(const char *ip, int ver)
+{
+	int dotn = 1;
+	__u8 num;
+
+	while (*ip && dotn < ver) {
+		if (*ip == '.') {
+			num = 0;
+			dotn++;
+			ip++;
+		}
+
+		if (*ip < '0' || *ip > '9')
+				break;
+
+		num += num * 10 + *ip - '0';
+		if (num > 255)
+			break;
+
+		ip++;
+	}
+
+	return false;
+}
+#endif
+
 static int __INIT__ net_init(void)
 {
 	void __INIT__ socket_init(void);

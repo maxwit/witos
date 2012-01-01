@@ -14,6 +14,8 @@
 #define YAFFS_OOB_SIZE		16
 #define YAFFS2_OOB_SIZE		64
 
+#define CHECK_IMG_MINSIZE   128
+
 // image
 typedef enum {
 	IMG_UNKNOWN,
@@ -30,7 +32,7 @@ typedef enum {
 	// FS
 	IMG_INITRD,
 	IMG_JFFS2,
-	IMG_YAFFS,
+	IMG_YAFFS1,
 	IMG_YAFFS2,
 	IMG_CRAMFS,
 	IMG_UBIFS,

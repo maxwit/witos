@@ -1,208 +1,329 @@
-#include <image.h>
-#include <block.h>
+#include <fcntl.h>
+#include <fs/fs.h>
 #include <flash/flash.h>
 
-static inline void blk_buf_init(struct block_buff *blk_buf, void *buff, size_t size)
+// fixme
+static inline int __flash_read(struct flash_chip *flash, void *buff, int start, int count)
 {
-	blk_buf->blk_base = blk_buf->blk_off = buff;
-	blk_buf->blk_size = size;
+	int ret;
+	__u32 ret_len;
+
+	if (FLASH_OOB_RAW == flash->oob_mode) {
+		struct oob_opt opt;
+
+		memset(&opt, 0, sizeof(struct oob_opt));
+		opt.op_mode   = FLASH_OOB_RAW;
+		opt.data_buff = buff;
+		opt.data_len  = count;
+
+		ret = flash->read_oob(flash, start, &opt);
+
+		// *start += opt.ret_len;
+
+		if (ret < 0)
+			return ret;
+
+		return opt.ret_len;
+	} else {
+		ret = flash->read(flash, start, count, &ret_len, buff);
+
+		// *start += ret_len;
+
+		if (ret < 0) {
+#ifdef CONFIG_DEBUG
+			if (count != ret_len)
+				printf("ERROR: fail to read data! %s()\n", __func__);
+			else
+				printf("ECC ERROR: while reading data! %s()\n", __func__);
+#endif
+
+			return -EFAULT;
+		}
+
+		return ret_len;
+	}
+
+	return 0;
 }
 
-static int flash_bdev_open(struct bdev_file *file, int flags)
+static inline ssize_t __flash_write(struct flash_chip *flash, const void *buff, __u32 count, __u32 ppos)
+{
+	int ret = 0;
+	__u32 ret_len;
+	struct oob_opt opt;
+	__u32 size = 0;
+	__u8 *buff_ptr = (__u8 *)buff;
+
+	switch (flash->oob_mode) {
+	case FLASH_OOB_RAW:
+		memset(&opt, 0, sizeof(struct oob_opt));
+		opt.op_mode   = FLASH_OOB_RAW;
+		opt.data_len  = count;
+		opt.data_buff = (__u8 *)buff;
+		opt.oob_len   = flash->oob_size;
+
+		ret = flash->write_oob(flash, ppos, &opt);
+
+		if (ret < 0) {
+			DPRINT("%s() failed! ret = %d\n", __func__, ret);
+			return ret;
+		} else if (opt.ret_len != opt.data_len) {
+			BUG();
+		}
+
+		// *ppos += opt.ret_len;
+
+		return opt.ret_len;
+
+	case FLASH_OOB_AUTO:
+		if (count % (flash->write_size + flash->oob_size)) {
+			DPRINT("%s(), size invalid!\n", __func__);
+			return -EINVAL;
+		}
+
+		while (size < count) {
+			memset(&opt, 0, sizeof(struct oob_opt));
+			opt.op_mode   = FLASH_OOB_AUTO;
+			opt.data_buff = buff_ptr;
+			opt.data_len  = flash->write_size;
+			opt.oob_buff  = buff_ptr + flash->write_size;
+			opt.oob_len   = flash->oob_size;
+
+			ret = flash->write_oob(flash, ppos, &opt);
+
+			if (ret < 0) {
+				printf("%s() failed! ret = %d\n", __func__, ret);
+				return ret;
+			}
+
+			if (opt.ret_len != opt.data_len)
+				BUG();
+
+			ppos += flash->write_size; // + flash->oob_size;
+
+			size += flash->write_size + flash->oob_size;
+			buff_ptr += flash->write_size + flash->oob_size;
+		}
+
+		return count;
+
+	default:
+		if (ppos == flash->chip_size)
+			return -ENOSPC;
+
+		if (ppos + count > flash->chip_size)
+			count = flash->chip_size - ppos;
+
+		if (!count)
+			return 0;
+
+		ret = flash->write(flash, ppos, count, &ret_len, buff);
+		// *ppos += ret_len;
+
+		assert(ret == 0);
+
+		return ret_len;
+	}
+
+	return 0;
+}
+
+static int flash_open(struct file *fp, struct inode *inode)
 {
 	void *buff;
 	size_t size;
 	struct flash_chip *flash;
+	struct block_buff *blk_buf = &fp->blk_buf;
 
-	assert(file && file->bdev);
+	flash = container_of(inode->i_ext, struct flash_chip, bdev);
+	assert(flash);
 
-	flash = container_of(file->bdev, struct flash_chip, bdev);
+	flash->callback_func = NULL;
+	flash->oob_mode = FLASH_OOB_PLACE;
 
-	size = flash->erase_size;
+	size = (flash->write_size + flash->oob_size) << \
+				(flash->erase_shift - flash->write_shift);
 
 	buff = malloc(size);
 	if (!buff)
 		return -ENOMEM;
 
-	blk_buf_init(&file->blk_buf, buff, size);
-	file->cur_pos = 0;
+	blk_buf->blk_base = blk_buf->blk_off = buff;
+	blk_buf->blk_size = blk_buf->max_size = size;
+
+	fp->private_data = flash;
 
 	return 0;
 }
 
-static int flash_bdev_close(struct bdev_file *file)
+
+static int __flash_erase(struct flash_chip *flash, struct erase_opt *opt)
 {
-	int ret = 0, rest;
-	__u32 flash_pos;
-	struct block_buff   *blk_buff;
-	struct flash_chip   *flash;
-	struct block_device *bdev;
-	__u32 eflag = EDF_ALLOWBB;
-
-	assert(file && file->bdev);
-
-	bdev = file->bdev;
-	flash = container_of(bdev, struct flash_chip, bdev);
-	blk_buff = &file->blk_buf;
-	rest = blk_buff->blk_off - blk_buff->blk_base;
-
-	if (file->cur_pos > 0 || rest > 0) { // fixme: if mode=write
-		int type;
-		__u32 pos_adj;
-
-		//printf("%s(): pos = 0x%08x, blk_base = 0x%08x, blk_off = 0x%08x, rest = 0x%08x\n",
-			// __func__, file->cur_pos + file->attr->base, blk_buff->blk_base, blk_buff->blk_off, rest);
-
-		type = image_type_detect(blk_buff->blk_base, rest);
-
-		switch (type) {
-		case IMG_YAFFS:
-		case IMG_YAFFS2:
-			pos_adj = file->cur_pos / (flash->write_size + flash->oob_size) * flash->write_size;
-			flash_pos = pos_adj;
-			ret = flash_erase(flash, flash_pos, bdev->size - pos_adj, eflag);
-			break;
-
+	int ret;
 #if 0
-		case PT_BL_GBIOS:
-			flash_pos = base + (CONFIG_GBH_START_BLK << flash->erase_shift) + file->cur_pos;
-			ret = flash_erase(flash, flash_pos, rest, eflag);
-			break;
+	struct erase_opt opt;
+
+	memset(&opt, 0, sizeof(opt));
+
+	opt.estart = start;
+	opt.esize  = size;
+	opt.flags  = flags;
 #endif
-		case IMG_JFFS2:
-			// eflag |= EDF_JFFS2;
-		default: // fixme
-			flash_pos = file->cur_pos;
-			ret = flash_erase(flash, flash_pos, bdev->size - file->cur_pos, eflag);
-			break;
-		}
 
-		if (ret < 0) {
-			DPRINT("%s(), line %d\n", __func__, __LINE__);
-			goto L1;
-		}
+	if (opt->esize & (flash->erase_size - 1)) {
+		size_t size = opt->esize;
 
-		if (rest > 0) {
-			memset(blk_buff->blk_off, 0xFF, blk_buff->blk_size - rest);
-
-			switch (type) {
-			case IMG_YAFFS:
-				ret = flash_ioctl(flash, FLASH_IOCS_OOB_MODE, (void *)FLASH_OOB_RAW);
-				ret = flash_write(flash, blk_buff->blk_base, rest, flash_pos);
-				break;
-
-			case IMG_YAFFS2:
-				ret = flash_ioctl(flash, FLASH_IOCS_OOB_MODE, (void *)FLASH_OOB_AUTO);
-				ret = flash_write(flash, blk_buff->blk_base, blk_buff->blk_size, flash_pos);
-				break;
-
-			default:
-				flash_ioctl(flash, FLASH_IOCS_OOB_MODE, (void *)FLASH_OOB_PLACE);
-				ret = flash_write(flash, blk_buff->blk_base, rest, flash_pos);
-				break;
-			}
-
-			if (ret < 0) {
-				DPRINT("%s(), line %d\n", __func__, __LINE__);
-				goto L1;
-			}
-
-			file->cur_pos += rest;
-		}
+		ALIGN_UP(opt->esize, flash->erase_size);
+		GEN_DBG("size (0x%08x) not aligned with flash erase size (0x%08x)!"
+			" adjusted to 0x%08x\n",
+			size, flash->erase_size, opt->esize);
 	}
 
-L1:
-	free(blk_buff->blk_base);
+	ret = flash->erase(flash, opt);
 
-	return ret < 0 ? ret : 0;
+#ifdef CONFIG_DEBUG
+	if (ret < 0)
+		printf("%s() failed! (errno = %d)\n", __func__, ret);
+#endif
+
+	return ret;
 }
 
-static ssize_t flash_bdev_read(struct bdev_file *file, void *buff, __u32 size)
+#if 0
+IMG_YAFFS1 -> FLASH_OOB_RAW
+IMG_YAFFS2 -> FLASH_OOB_AUTO
+normal -> FLASH_OOB_PLACE
+#endif
+
+static int flash_ioctl(struct file *fp, int cmd, unsigned long arg)
 {
-	printf("%s() not supported!\n");
-	return -EIO;
+	int ret;
+	FLASH_CALLBACK *callback;
+	struct flash_chip *flash = fp->private_data;
+
+	switch (cmd) {
+	case FLASH_IOCS_OOB_MODE:
+		switch (arg) {
+		case FLASH_OOB_RAW:
+		case FLASH_OOB_AUTO:
+			fp->blk_buf.blk_size = (flash->write_size + flash->oob_size) << \
+									(flash->erase_shift - flash->write_shift);
+			break;
+
+		case FLASH_OOB_PLACE:
+			fp->blk_buf.blk_size = flash->erase_size;
+			break;
+
+		default:
+			return -EINVAL;
+		}
+
+		flash->oob_mode = (OOB_MODE)arg;
+		break;
+
+	case FLASH_IOC_ERASE:
+		return __flash_erase(flash, (struct erase_opt *)arg);
+
+	case FLASH_IOCS_CALLBACK:
+		callback = (FLASH_CALLBACK *)arg;
+		flash->callback_func = callback->func;
+		flash->callback_args = callback->args;
+		break;
+
+	case FLASH_IOC_SCANBB:
+		if (NULL == flash->scan_bad_block)
+			return -EINVAL;
+
+		ret = flash->scan_bad_block(flash);
+
+#ifdef CONFIG_DEBUG
+		if (ret < 0)
+			printf("%s() failed! (errno = %d)\n", __func__, ret);
+#endif
+
+		return ret;
+
+	case FLASH_IOCG_SIZE:
+		*(size_t *)arg = flash->bdev.size;
+
+	default:
+		return -ENOTSUPP;
+	}
+
+	return 0;
 }
 
-static ssize_t flash_bdev_write(struct bdev_file *file, const void *buff, __u32 size)
+static ssize_t flash_read(struct file *fp, void *buff, size_t size, loff_t *off)
+{
+	struct flash_chip *flash = fp->private_data;
+
+	return __flash_read(flash, buff, size, fp->pos);
+}
+
+#if 0
+	if (fp->pos < blk_buff->blk_size) {
+		if (false == check_image_type(img_type, blk_buff->blk_base)) {
+			printf("\nImage img_type mismatch!"
+				"Please check the image name and the target file!\n");
+
+			return -EINVAL;
+		}
+	}
+#endif
+
+static ssize_t flash_write(struct file *fp, const void *buff, size_t size, loff_t *off)
 {
 	int ret = 0;
 	__u32 buff_room, flash_pos;
-	__u32 eflag = EDF_ALLOWBB;
-	image_t img_type;
-	struct flash_chip   *flash;
+	struct flash_chip   *flash = fp->private_data;
 	struct block_buff   *blk_buff;
-	struct block_device *bdev;
+	struct block_device *bdev = &flash->bdev;
 
-	assert(file && file->bdev);
-
+	// fixme: to be removed
 	if (0 == size)
 		return 0;
 
-	bdev  = file->bdev;
-	flash = container_of(bdev, struct flash_chip, bdev);
-
-	if (size + file->cur_pos > bdev->size) {
+	if (size + fp->pos > bdev->size) {
 		char tmp[32];
 
 		val_to_hr_str(bdev->size, tmp);
-		printf("File size too large! (> %s)\n", tmp);
+		DPRINT("File size too large! (> %s)\n", tmp);
 
 		return -ENOMEM;
 	}
 
-	blk_buff  = &file->blk_buf;
+	blk_buff  = &fp->blk_buf;
 	buff_room = blk_buff->blk_size - (blk_buff->blk_off - blk_buff->blk_base);
-
-	img_type = image_type_detect(blk_buff->blk_base, buff_room);
 
 	while (size > 0) {
 		if (size >= buff_room) {
-			__u32 size_adj;
+			// __u32 size_adj;
 
 			memcpy(blk_buff->blk_off, buff, buff_room);
 
 			size -= buff_room;
 			buff  = (__u8 *)buff + buff_room;
-
 			buff_room = blk_buff->blk_size;
 
-#ifdef CONFIG_IMAGE_CHECK
-			if (file->cur_pos < blk_buff->blk_size) {
-				if (false == check_image_type(img_type, blk_buff->blk_base)) {
-					printf("\nImage img_type mismatch!"
-						"Please check the image name and the target bdev_file!\n");
-
-					return -EINVAL;
-				}
-			}
-#endif
-
-			size_adj = blk_buff->blk_size;
-
-			switch (img_type) {
-			case IMG_YAFFS:
+#if 1
+			switch (flash->oob_mode) {
+			case FLASH_OOB_RAW:
+			case FLASH_OOB_AUTO:
 				// fixme: use macro: RATIO_TO_PAGE(n)
-				size_adj = blk_buff->blk_size / (flash->write_size + flash->oob_size) << flash->write_shift;
-				flash_pos = file->cur_pos / (flash->write_size + flash->oob_size) << flash->write_shift;
+				// size_adj = blk_buff->blk_size / (flash->write_size + flash->oob_size) << flash->write_shift;
+				flash_pos = fp->pos / (flash->write_size + flash->oob_size) << flash->write_shift;
 				break;
 
-			case IMG_YAFFS2:
-				// fixme: use macro: RATIO_TO_PAGE(n)
-				size_adj = blk_buff->blk_size / (flash->write_size + flash->oob_size) << flash->write_shift;
-				flash_pos = file->cur_pos / (flash->write_size + flash->oob_size) << flash->write_shift;
-				break;
-#if 0
-			case PT_BL_GBIOS:
-				flash_pos = base + (CONFIG_GBH_START_BLK << flash->erase_shift) + file->cur_pos;
-				break;
-#endif
-			case IMG_JFFS2:
-				// eflag |= EDF_JFFS2;
+			case FLASH_OOB_PLACE:
 			default:
-				flash_pos = file->cur_pos;
+				// size_adj = blk_buff->blk_size;
+				flash_pos = fp->pos;
 				break;
 			}
+#endif
 
+#if 0
+		if (flag == AUTO_ERASE)
 			ret = flash_erase(flash, flash_pos, size_adj, eflag);
 			if (ret < 0) {
 				printf("%s(), line %d\n", __func__, __LINE__);
@@ -210,34 +331,31 @@ static ssize_t flash_bdev_write(struct bdev_file *file, const void *buff, __u32 
 			}
 
 			switch (img_type) {
-			case IMG_YAFFS:
-				ret = flash_ioctl(flash, FLASH_IOCS_OOB_MODE, (void *)FLASH_OOB_RAW);
-				ret = flash_write(flash, blk_buff->blk_base, blk_buff->blk_size, flash_pos);
+			case IMG_YAFFS1:
+				ret = flash_ioctl(flash, FLASH_IOCS_OOB_MODE, FLASH_OOB_RAW);
 				break;
 
 			case IMG_YAFFS2:
-				ret = flash_ioctl(flash, FLASH_IOCS_OOB_MODE, (void *)FLASH_OOB_AUTO);
-				ret = flash_write(flash, blk_buff->blk_base, blk_buff->blk_size, flash_pos);
+				ret = flash_ioctl(flash, FLASH_IOCS_OOB_MODE, FLASH_OOB_AUTO);
 				break;
 
 			default:
-				ret = flash_ioctl(flash, FLASH_IOCS_OOB_MODE, (void *)FLASH_OOB_PLACE);
-				ret = flash_write(flash, blk_buff->blk_base, blk_buff->blk_size, flash_pos);
+				ret = flash_ioctl(flash, FLASH_IOCS_OOB_MODE, FLASH_OOB_PLACE);
 				break;
 			}
+#endif
 
+			ret = __flash_write(flash, blk_buff->blk_base, blk_buff->blk_size, flash_pos);
 			if (ret < 0) {
 				DPRINT("%s(), line %d\n", __func__, __LINE__);
 				goto L1;
 			}
 
-			file->cur_pos += blk_buff->blk_size;
+			fp->pos += blk_buff->blk_size;
 			blk_buff->blk_off = blk_buff->blk_base;
 		} else { // fixme: symi write
 			memcpy(blk_buff->blk_off, buff, size);
-
 			blk_buff->blk_off += size;
-
 			size = 0;
 		}
 	}
@@ -246,181 +364,87 @@ L1:
 	return ret;
 }
 
-#if 0
-const char *img_type2str(__u32 type)
+static int flash_close(struct file *fp)
 {
-	switch(type) {
-	case PT_FREE:
-		return PT_STR_FREE;
+	int ret = 0, rest;
+	__u32 flash_pos;
+	struct block_buff *blk_buff;
+	struct flash_chip *flash = fp->private_data;
 
-	case PT_BL_GTH:
-		return PT_STR_GB_TH;
+	blk_buff = &fp->blk_buf;
+	rest = blk_buff->blk_off - blk_buff->blk_base;
 
-	case PT_BL_GBH:
-		return PT_STR_GB_BH;
+	if (rest > 0) {
+		//printf("%s(): pos = 0x%08x, blk_base = 0x%08x, blk_off = 0x%08x, rest = 0x%08x\n",
+			// __func__, fp->pos + fp->attr->base, blk_buff->blk_base, blk_buff->blk_off, rest);
 
-	case PT_BL_GCONF:
-		return PT_STR_GB_CONF;
+		switch (flash->oob_mode) {
+		case FLASH_OOB_RAW:
+		case FLASH_OOB_AUTO:
+			flash_pos = fp->pos / (flash->write_size + flash->oob_size) * flash->write_size;
+			break;
 
-	case PT_OS_LINUX:
-		return PT_STR_LINUX;
+		case FLASH_OOB_PLACE:
+		default: // fixme
+			flash_pos = fp->pos;
+			break;
+		}
 
-	case PT_OS_WINCE:
-		return PT_STR_WINCE;
+		memset(blk_buff->blk_off, 0xFF, rest);
 
-	case IMG_RAMDISK:
-		return PT_STR_RAMDISK;
+		ret = __flash_write(flash, blk_buff->blk_base, blk_buff->blk_size /* not just the rest */, flash_pos);
+		if (ret < 0) {
+			DPRINT("%s(), line %d\n", __func__, __LINE__);
+			goto L1;
+		}
 
-	case IMG_CRAMFS:
-		return PT_STR_CRAMFS;
-
-	case IMG_JFFS2:
-		return PT_STR_JFFS2;
-
-	case IMG_YAFFS:
-		return PT_STR_YAFFS;
-
-	case IMG_YAFFS2:
-		return PT_STR_YAFFS2;
-
-	case IMG_UBIFS:
-		return PT_STR_UBIFS;
-
-	default:
-		return "Unknown";
-	}
-}
-#endif
-
-// fixme
-int part_show(const struct flash_chip *flash)
-{
-	int index = 0;
-#if 0
-	struct part_attr attr_tab[MAX_FLASH_PARTS];
-	__u32 nIndex, nRootIndex;
-	const char *pBar = "--------------------------------------------------------------------";
-	struct linux_config *pLinuxParam;
-
-	if (NULL == flash) {
-		printf("ERROR: fail to open a flash!\n");
-		return -ENODEV;
+		// fp->pos += rest;
 	}
 
-	index = part_tab_read(flash, attr_tab, MAX_FLASH_PARTS);
+L1:
+	free(blk_buff->blk_base);
 
-	if (index <= 0) {
-		printf("fail to read bdev_file table! (errno = %d)\n", index);
-		return index;
-	}
-
-	pLinuxParam = sysconf_get_linux_param();
-
-	nRootIndex = pLinuxParam->root_dev;
-
-	printf("\nPartitions on \"%s\":\n", flash->name);
-	printf("%s\n", pBar);
-	printf(" Index     Start         End     Size       Type        Name\n");
-	printf("%s\n", pBar);
-
-	for (nIndex = 0; nIndex < index; nIndex++) {
-		char szPartIdx[8], szPartSize[16];
-
-		sprintf(szPartIdx, "%c%d",
-			(nIndex == nRootIndex) ? '*' : ' ', nIndex);
-
-		val_to_hr_str(attr_tab[nIndex].size, szPartSize);
-
-		printf("  %-3s   0x%08x - 0x%08x  %-8s  %-9s  \"%s\"\n",
-			szPartIdx,
-			attr_tab[nIndex].base,
-			attr_tab[nIndex].base + attr_tab[nIndex].size,
-			szPartSize,
-			img_type2str(attr_tab[nIndex].img_type),
-			part_get_name(&attr_tab[nIndex]));
-	}
-
-	printf("%s\n", pBar);
-
-#endif
-	return index;
+	return ret < 0 ? ret : 0;
 }
 
-int set_bdev_file_attr(struct bdev_file *file)
+
+int set_bdev_file_attr(struct file *fp)
 {
+#if 0
 	char file_attr[CONF_ATTR_LEN];
 	char file_val[CONF_VAL_LEN];
 	struct block_device *bdev;
 
-	assert(file != NULL);
+	assert(fp != NULL);
 
-	bdev = file->bdev;
+	bdev = fp->bdev;
 
-	// set file name
+	// set fp name
 	snprintf(file_attr, CONF_ATTR_LEN, "bdev.%s.image.name", bdev->name);
-	if (conf_set_attr(file_attr, file->name) < 0) {
-		conf_add_attr(file_attr, file->name);
+	if (conf_set_attr(file_attr, fp->name) < 0) {
+		conf_add_attr(file_attr, fp->name);
 	}
 
-	// set file size
+	// set fp size
 	snprintf(file_attr, CONF_ATTR_LEN, "bdev.%s.image.size", bdev->name);
-	val_to_dec_str(file_val, file->size);
+	val_to_dec_str(file_val, fp->size);
 	if (conf_set_attr(file_attr, file_val) < 0) {
 		conf_add_attr(file_attr, file_val);
 	}
-
+#endif
 	return 0;
 }
 
-int get_bdev_file_attr(struct bdev_file * file)
-{
-	char file_attr[CONF_ATTR_LEN];
-	char file_val[CONF_VAL_LEN];
-	struct block_device *bdev;
-
-	assert(file != NULL);
-
-	bdev = file->bdev;
-
-	// get file name
-	snprintf(file_attr, CONF_ATTR_LEN, "bdev.%s.image.name", bdev->name);
-	if (conf_get_attr(file_attr, file_val) < 0) {
-		file->name[0] = '\0';
-		file->size = 0;
-		return 0;
-	}
-
-	strncpy(file->name, file_val, FILE_NAME_SIZE);
-
-	// get file size
-	snprintf(file_attr, CONF_ATTR_LEN, "bdev.%s.image.size", bdev->name);
-	if (conf_get_attr(file_attr, file_val) < 0 || str_to_val(file_val, &file->size) < 0) {
-		file->name[0] = '\0';
-		file->size = 0;
-	}
-
-	return 0;
-}
+const struct file_operations flash_fops = {
+	.open  = flash_open,
+	.read  = flash_read,
+	.write = flash_write,
+	.close = flash_close,
+	.ioctl = flash_ioctl,
+};
 
 int flash_fops_init(struct block_device *bdev)
 {
-	struct bdev_file *file;
-
-	file = zalloc(sizeof(*file)); // fixme: no free
-	if (!file)
-		return -ENOMEM;
-
-	file->bdev = bdev;
-	file->cur_pos = 0;
-
-	file->open  = flash_bdev_open;
-	file->read  = flash_bdev_read;
-	file->write = flash_bdev_write;
-	file->close = flash_bdev_close;
-
-	bdev->file  = file;
-
-	get_bdev_file_attr(file);
-
+	bdev->fops = &flash_fops;
 	return 0;
 }

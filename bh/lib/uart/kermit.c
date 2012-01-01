@@ -3,6 +3,9 @@
 #include <loader.h>
 #include <stdio.h>
 #include <fs/fs.h>
+#include <image.h>
+#include <fcntl.h>
+#include <flash/flash.h>
 #include <uart/uart.h>
 #include <uart/kermit.h>
 
@@ -58,10 +61,11 @@ int kermit_load(struct loader_opt *opt)
 {
 	__u8 buff[KERM_BUF_LEN];
 	__u8 curr_char;
+	__u8 *curr_addr = (__u8 *)opt->load_addr;
 	int index, count, checksum, len, seq, real_seq = 0;
 	int type = KERM_TYPE_BREAK; // fixme
-	__u8 *curr_addr = (__u8 *)opt->load_addr;
-	int i;
+	int fd, ret, i;
+	image_t img_type = IMG_MAX;
 
 #ifndef CONFIG_GTH
 	if (!opt->load_addr) {
@@ -76,6 +80,14 @@ int kermit_load(struct loader_opt *opt)
 	go_set_addr(curr_addr);
 
 	opt->load_size = 0;
+
+#ifndef CONFIG_GTH
+	if (opt->dst) {
+		fd = open(opt->dst, O_WRONLY);
+		if (fd < 0)
+			return fd;
+	}
+#endif
 
 	do {
 		while (MARK_START != uart_recv_byte());
@@ -183,8 +195,34 @@ int kermit_load(struct loader_opt *opt)
 			goto error;
 
 #ifndef CONFIG_GTH
-		if (opt->file)
-			opt->file->write(opt->file, curr_addr, count);
+		if (opt->dst) {
+			if (img_type == IMG_MAX) {
+				OOB_MODE oob_mode;
+				img_type = image_type_detect(curr_addr, count);
+
+				switch (img_type) {
+				case IMG_YAFFS1:
+					oob_mode = FLASH_OOB_RAW;
+					break;
+
+				case IMG_YAFFS2:
+					oob_mode = FLASH_OOB_AUTO;
+					break;
+
+				default:
+					oob_mode = FLASH_OOB_PLACE;
+					break;
+				}
+
+				ret = ioctl(fd, FLASH_IOCS_OOB_MODE, oob_mode);
+				if (ret < 0)
+					goto error;
+			}
+
+			ret = write(fd, curr_addr, count);
+			if (ret < 0)
+				goto error;
+		}
 
 		if (opt->load_addr)
 #endif
@@ -201,6 +239,13 @@ int kermit_load(struct loader_opt *opt)
 	return opt->load_size;
 
 error:
+
+#ifndef CONFIG_GTH
+	if (opt->dst) {
+		close(fd);
+	}
+#endif
+
 	return -EFAULT;
 }
 

@@ -198,13 +198,3 @@ enum {
 	EXT2_FT_SYMLINK		= 7,
 	EXT2_FT_MAX
 };
-
-
-struct block_device;
-
-struct ext2_file {
-	struct file f;
-
-	struct ext2_dir_entry_2 *dentry;
-	struct ext2_file_system *fs;
-};

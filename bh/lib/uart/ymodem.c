@@ -1,6 +1,9 @@
 #include <go.h>
 #include <loader.h>
 #include <fs/fs.h>
+#include <image.h>
+#include <fcntl.h>
+#include <flash/flash.h>
 #include <uart/uart.h>
 #include <uart/ymodem.h>
 
@@ -49,6 +52,8 @@ int ymodem_load(struct loader_opt *opt)
 	char blk = 0;
 	__u8 stx, blk_num[2], crc[2];
 	__u8 *curr_addr;
+	int fd_bdev = 0;
+	image_t img_type = IMG_MAX;
 
 #ifndef CONFIG_GTH
 	if (!opt->load_addr) {
@@ -56,14 +61,22 @@ int ymodem_load(struct loader_opt *opt)
 
 		curr_addr = data;
 	}
+	else
 #endif
-	else {
+	{
 		curr_addr = opt->load_addr;
 	}
 
 	go_set_addr((__u32 *)curr_addr);
 
 	opt->load_size = 0;
+#ifndef CONFIG_GTH
+		if (opt->dst) {
+			fd_bdev = open(opt->dst, O_WRONLY);
+			if (fd_bdev < 0)
+				return fd_bdev;
+		}
+#endif
 
 	while (1) {
 		uart_send_byte('C');
@@ -163,9 +176,34 @@ int ymodem_load(struct loader_opt *opt)
 		ret = uart_recv_byte_timeout(&crc[1], MODEM_TIMEOUT);
 
 #ifndef CONFIG_GTH
-		//part_write(opt->part, curr_addr, count);
-		if (opt->file)
-			opt->file->write(opt->file, curr_addr, count);
+		if (opt->dst) {
+			if (img_type == IMG_MAX) {
+				OOB_MODE oob_mode;
+				img_type = image_type_detect(curr_addr, count);
+
+				switch (img_type) {
+				case IMG_YAFFS1:
+					oob_mode = FLASH_OOB_RAW;
+					break;
+
+				case IMG_YAFFS2:
+					oob_mode = FLASH_OOB_AUTO;
+					break;
+
+				default:
+					oob_mode = FLASH_OOB_PLACE;
+					break;
+				}
+
+				ret = ioctl(fd_bdev, FLASH_IOCS_OOB_MODE, oob_mode);
+				if (ret < 0)
+					goto error;
+			}
+
+			ret = write(fd_bdev, curr_addr, count);
+			if (ret < 0)
+				goto error;
+		}
 
 		if (opt->load_addr)
 #endif
@@ -182,7 +220,15 @@ int ymodem_load(struct loader_opt *opt)
 L1:
 	modem_end_rx();
 
-	return opt->load_size;
+	ret = opt->load_size;
+error:
+
+#ifndef CONFIG_GTH
+	if (opt->dst) {
+		close(fd_bdev);
+	}
+#endif
+	return ret;
 }
 
 REGISTER_LOADER(y, ymodem_load, "Y-modem");

@@ -1,8 +1,8 @@
-#include <flash/flash.h>
-#include <getopt.h>
+#include <unistd.h>
 #include <string.h>
-#include <bar.h>
+#include <fcntl.h>
 #include <task.h>
+#include <flash/flash.h>
 
 #warning "fix the world!"
 
@@ -20,71 +20,58 @@ static int flash_str_to_val(char * str, __u32 * val, char *unit)
 		*unit = 'p'; // page
 		p[len - 4] = '\0';
 	} else if (len > 1 && strchr("kKmMgG", str[len - 1])) {
-		return hr_str_to_val(str, val);
+		return hr_str_to_val(str, (unsigned long *)val);
 	}
 
-	return str_to_val(str, val);
-}
-
-static struct flash_chip *get_current_flash()
-{
-	char v;
-	struct block_device *bdev;
-	struct flash_chip *flash;
-
-	v = get_curr_volume();
-	bdev = get_bdev_by_volume(v);
-	if (strncmp(bdev->name, "mtdblock", strlen("mtdblock"))) {
-		printf("The current volume is not a flash device!\n");
-		return NULL;
-	}
-
-	flash = container_of(bdev, struct flash_chip, bdev);
-	return flash;
-}
-
-static int is_master(struct flash_chip *flash)
-{
-	if (NULL == strchr(flash->bdev.name, 'p'))
-		return 1;
-
-	return 0;
+	return str_to_val(str, (unsigned long *)val);
 }
 
 static int info(int argc, char *argv[])
 {
-	struct flash_chip *flash;
+	int ret, fd;
+	struct part_attr part;
+	const char *dev;
 
-	flash = get_current_flash();
-	if (flash == NULL) {
-		return -ENODEV;
+	dev = getcwd();
+	fd = open(dev, O_RDONLY);
+
+	ret = ioctl(fd, 0 /*fixme*/, &part);
+	if (ret < 0) {
+		printf("fail to get parition info! (ret = %d)\n", ret);
+		// return ret;
 	}
 
+	close(fd);
+
 	printf(
-		"volume     %c:\n"
+		"label      %s\n"
 		"flash:     %s\n"
 		"device:    %s\n"
 		"base:      0x%08X\n"
 		"size:      0x%08X\n"
 		"pagesize:  0x%08X\n"
 		"blocksize: 0x%08x\n",
-		flash->bdev.volume,
-		is_master(flash) ? flash->name : flash->master->name,
-		flash->bdev.name,
-		flash->bdev.base,
-		flash->bdev.size,
-		flash->write_size,
-		flash->erase_size);
+		part.label,
+		"??",
+		"??", // part.name,
+		part.base,
+		part.size,
+		0, // write_size,
+		0 // erase_size
+		);
 
 	return 0;
 }
 
 static int read_write(int argc, char *argv[])
 {
+	return 0;
+#if 0
 	int ch, ret, flag = 0;
 	__u32 start = 0, size = 1024;
 	char start_unit = 0, size_unit = 0;
 	void *buff = NULL;
+	int fd_bdev;
 	struct flash_chip *flash;
 	struct block_device *bdev;
 
@@ -113,7 +100,7 @@ static int read_write(int argc, char *argv[])
 			break;
 
 		case 'm':
-			if (str_to_val(optarg, (__u32 *)&buff) < 0) {
+			if (str_to_val(optarg, (unsigned long *)&buff) < 0) {
 				printf("Invalid argument: \"%s\"\n", optarg);
 				usage();
 				return -EINVAL;
@@ -139,8 +126,8 @@ static int read_write(int argc, char *argv[])
 	}
 
 	// fixme
-	bdev = get_bdev_by_volume(get_curr_volume());
-	flash = flash_open(bdev->name);
+	bdev = get_bdev_by_index(getcwd());
+	flash = container_of(bdev, struct flash_chip, bdev);
 	assert(flash);
 
 	// -a xxxblock or -a xxxpage
@@ -160,35 +147,42 @@ static int read_write(int argc, char *argv[])
 	if (start + size >= flash->chip_size) {
 		printf("Address 0x%08x overflow!\n", start + size);
 		ret = -EINVAL;
-		goto error;
+		goto L1;
 	}
 
+	fd_bdev = open(bdev->name, O_RDWR);
+	if (fd_bdev < 0) {
+		goto L1;
+	}
+
+	lseek(fd_bdev, start, SEEK_SET);
 	if (0 == strcmp(argv[0], "read")) {
-		ret = flash_read(flash, buff, start, size);
+		ret = read(fd_bdev, buff, size);
 		if (ret < 0) {
 			printf("please check argument!\n");
 			usage();
 
 			ret = -EINVAL;
-			goto error;
+			goto L2;
 		}
 		printf("Read 0x%08x bytes data to mem 0x%08x from flash 0x%08x\n", size, (__u32)buff, start);
 	} else {
-		ret = flash_write(flash, buff, size, start);
+		ret = write(fd_bdev, buff, size);
 		if (ret < 0) {
 			printf("please check argument!\n");
 			usage();
 
 			ret = -EINVAL;
-			goto error;
+			goto L2;
 		}
 		printf("write 0x%08x bytes data to flash 0x%08x from mem 0x%08x\n", size, start, (__u32)buff);
 	}
 
-error:
-	flash_close(flash);
-
+L2:
+	close(fd_bdev);
+L1:
 	return ret;
+#endif
 }
 
 #if 0
@@ -213,15 +207,18 @@ static int flash_parterase_process(struct flash_chip *flash, FLASH_HOOK_PARAM *p
 // TODO: add process bar
 static int scanbb(int argc, char *argv[])
 {
+	return 0;
+#if 0
 	int ret;
 	struct flash_chip *flash;
 	__u32 part_num = -1;
 	int ch;
+	int fd;
 
 	while ((ch = getopt(argc, argv, "p:")) != -1) {
 		switch (ch) {
 		case 'p':
-			if (str_to_val(optarg, &part_num) < 0) {
+			if (str_to_val(optarg, (unsigned long *)&part_num) < 0) {
 				printf("Invalid argument: \"%s\"\n", optarg);
 				return -EINVAL;
 			}
@@ -244,15 +241,19 @@ static int scanbb(int argc, char *argv[])
 		// fixme
 	}
 
-	flash_ioctl(flash, FLASH_IOC_SCANBB, &part_num);
+	fd = open(const char * path,int flags,...)
+	ioctl(flash, FLASH_IOC_SCANBB, &part_num);
 
-	flash_close(flash);
+	close(flash);
 L1:
 	return ret;
+#endif
 }
 
 static int dump(int argc, char *argv[])
 {
+	return 0;
+#if 0
 	__u8 *p, *buff;
 	int ch;
 	int ret = 0;
@@ -319,10 +320,10 @@ static int dump(int argc, char *argv[])
 
 	ALIGN_UP(size, flash->write_size + flash->oob_size);
 
-	ret = flash_ioctl(flash, FLASH_IOCG_SIZE, &flash_size);
+	ret = ioctl(flash, FLASH_IOCG_SIZE, &flash_size);
 	if (start + size >= flash_size) {
 		printf("Address 0x%08x overflow!\n", start);
-		flash_close(flash);
+		close(flash);
 		return -EINVAL;
 	}
 
@@ -334,12 +335,12 @@ static int dump(int argc, char *argv[])
 
 	start &= ~(flash->write_size - 1);
 
-	ret = flash_ioctl(flash, FLASH_IOCS_OOB_MODE, (void *)FLASH_OOB_RAW);
+	ret = ioctl(flash, FLASH_IOCS_OOB_MODE, (void *)FLASH_OOB_RAW);
 	// if ret < 0
-	ret = flash_read(flash, buff, start, size);
+	ret = read(flash, buff, start, size);
 
 	if (ret < 0) {
-		printf("%s(): line %d execute flash_read_raw() error!\n"
+		printf("%s(): line %d execute read_raw() error!\n"
 			"error = %d\n", __func__, __LINE__, ret);
 
 		goto L1;
@@ -389,15 +390,18 @@ static int dump(int argc, char *argv[])
 L1:
 	free(buff);
 no_mem:
-	flash_close(flash);
+	close(flash);
 
 	return ret;
+#endif
 }
 
 
 // fixme: bad logic!
 static int erase(int argc, char *argv[])
 {
+	return 0;
+#if 0
 	int ch;
 	int arg_flag = 0;
 	int ret = 0;
@@ -433,7 +437,7 @@ static int erase(int argc, char *argv[])
 			break;
 
 		case 'p':
-			if (arg_flag == 1 || (optarg && str_to_val(optarg, &dev_num) < 0)) {
+			if (arg_flag == 1 || (optarg && str_to_val(optarg, (unsigned long *)&dev_num) < 0)) {
 				printf("Invalid argument: \"%s\"\n", optarg);
 				usage();
 				return -EINVAL;
@@ -462,7 +466,7 @@ static int erase(int argc, char *argv[])
 	flash = get_current_flash();
 	assert(flash);
 
-	ret = flash_ioctl(flash, FLASH_IOCG_SIZE, &flash_size);
+	ret = ioctl(flash, FLASH_IOCG_SIZE, &flash_size);
 
 	// if option is "-p" erase the whole partiton or default current partition with no option
 	if (0 == size) {
@@ -495,52 +499,50 @@ static int erase(int argc, char *argv[])
 	printf("[0x%08x : 0x%08x]\n", start, size);
 	ret = flash_erase(flash, start, size, erase_flags);
 
-	flash_close(flash);
+	close(flash);
 
 	return ret;
+#endif
 }
 
 int main(int argc, char *argv[])
 {
-	int i;
+	int ret, i;
 
 	struct command cmd[] = {
 		{
 			.name = "info",
 			.main = info
-		},
-		{
+		}, {
 			.name = "dump",
 			.main = dump
-		},
-		{
+		}, {
 			.name = "erase",
 			.main = erase
-		},
-		{
+		}, {
 			.name = "read",
 			.main = read_write
-		},
-		{
+		}, {
 			.name = "write",
 			.main = read_write
-		},
-		{
+		}, {
 			.name = "scanbb",
 			.main = scanbb
 		},
 	};
 
-	if (argc >= 2) {
-		for (i = 0; i < ARRAY_ELEM_NUM(cmd); i++) {
-			if (0 == strcmp(argv[1], cmd[i].name)) {
-				cmd[i].main(argc - 1, argv + 1);
-				return 0;
-			}
+	if (1 == argc) {
+		usage();
+		return -EINVAL;
+	}
+
+	for (i = 0; i < ARRAY_ELEM_NUM(cmd); i++) {
+		if (0 == strcmp(argv[1], cmd[i].name)) {
+			ret = cmd[i].main(argc - 1, argv + 1);
+			break;
 		}
 	}
 
-	usage();
-
-	return 0;
+L1:
+	return ret;
 }

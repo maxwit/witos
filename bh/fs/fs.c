@@ -2,12 +2,13 @@
 #include <stdio.h>
 #include <string.h>
 #include <malloc.h>
+#include <fcntl.h>
 #include <fs/fs.h>
 
 #define MAX_FDS 256
 
 static struct file_system_type *fs_type_list;
-static struct mount_point *g_mnt_list;
+static DECL_INIT_LIST(g_mnt_list);
 static struct file *fd_array[MAX_FDS];
 
 int file_system_type_register(struct file_system_type *fs_type)
@@ -37,18 +38,31 @@ struct file_system_type *file_system_type_get(const char *name)
 	return NULL;
 }
 
-#ifdef __G_BIOS__
+// fixme: to be removed
+struct block_device *seach_device(const char *name)
+{
+	struct list_node *iter;
+
+	list_for_each(iter, bdev_get_list()) {
+		struct block_device *bdev;
+
+		bdev = container_of(iter, struct block_device, bdev_node);
+		if (!strcmp(bdev->name, name))
+			return bdev;
+	}
+
+	return NULL;	
+}
+
 int mount(const char *type, unsigned long flags, const char *bdev_name, const char *path)
-#else
-int gb_mount(const char *type, unsigned long flags, const char *bdev_name, const char *path)
-#endif
 {
 	int ret;
-	struct block_device *bdev;
 	struct file_system_type *fs_type;
-	struct mount_point *mnt;
+	struct vfsmount *mnt;
+	struct dentry *root;
 
-	bdev = get_bdev_by_name(bdev_name);
+	struct block_device *bdev;
+	bdev = seach_device(bdev_name);
 	if (NULL == bdev) {
 		DPRINT("fail to open block device \"%s\"!\n", bdev_name);
 		return -ENODEV;
@@ -59,8 +73,8 @@ int gb_mount(const char *type, unsigned long flags, const char *bdev_name, const
 		return -ENOENT;
 	printf("%s() line %d\n", __func__, __LINE__);
 
-	ret = fs_type->mount(fs_type, flags, bdev);
-	if (ret < 0) {
+	root = fs_type->mount(fs_type, flags, bdev);
+	if (!root) {
 		DPRINT("fail to mount %s!\n", bdev_name);
 		goto L1;
 	}
@@ -74,15 +88,11 @@ int gb_mount(const char *type, unsigned long flags, const char *bdev_name, const
 	mnt->fs_type = fs_type;
 	mnt->path = path;
 	mnt->bdev = bdev;
+	mnt->root = root;
 
 	// TODO: check if mp exists or not!
-#if 0
-	for (mp = &g_mnt_list; *mp; mp = &(*mp)->next);
-	*mp = mnt;
-#else
-	mnt->next = g_mnt_list;
-	g_mnt_list = mnt;
-#endif
+
+	list_add_tail(&mnt->mnt_hash, &g_mnt_list);
 
 	return 0;
 L2:
@@ -91,70 +101,135 @@ L1:
 	return ret;
 }
 
-#ifdef __G_BIOS__
 int umount(const char *mnt)
-#else
-int gb_umount(const char *mnt)
-#endif
 {
 	return 0;
 }
 
-#ifdef __G_BIOS__
-int open(const char *const name, int flags, ...)
-#else
-int gb_open(const char *const name, int flags, ...)
-#endif
+#if 0
+static int bdev_open(struct file *fp, const char *name)
 {
-	int fd;
-	const char *fn;
-	struct file *fp;
-	struct mount_point *mnt;
-	const struct file_operations *fops;
+	struct block_device *bdev;
 
-	for (fn = name; *fn != ':' && *fn != '\0'; fn++);
+	bdev = seach_device(name);
+	if (NULL == bdev)
+		return -ENODEV;
 
-	for (mnt = g_mnt_list; mnt; mnt = mnt->next) {
-		if (!strncmp(mnt->path, name, fn - name))
-			break;
+	fp->bdev = bdev;
+	fp->fops = bdev->fops;
+
+	return 0;
+}
+#endif
+
+struct qstr {
+	const char *name;
+	unsigned int len;
+};
+
+static inline struct vfsmount *search_mount(struct qstr *unit)
+{
+	struct list_node *iter;
+	struct vfsmount *mnt;
+
+	list_for_each(iter, &g_mnt_list) {
+		mnt = container_of(iter, struct vfsmount, mnt_hash);
+		if (!strncmp(mnt->path, unit->name, unit->len))
+			return mnt;
 	}
 
+	return NULL;
+}
+
+static int do_open(const char *path, int flags, int mode)
+{
+	int fd, ret = -ENOENT; // fixme
+	const char *fn;
+	struct qstr str;
+	struct file *fp;
+	struct vfsmount *mnt;
+	struct file_system_type *fs_type;
+	struct dentry *de, *root;
+	struct inode *inode;
+
+	fn = strchr(path, ':'); // fixme "://"
+	// if (NULL == fn) return -EINVAL;
+
+	str.name = path;
+	str.len = fn - path; 
+	mnt = search_mount(&str);
 	if (NULL == mnt)
 		return -ENOENT;
 
-	fops = mnt->fs_type->fops;
+	root = mnt->root;
 
+	fs_type = mnt->fs_type;
+	if (!fs_type->lookup || !fs_type->fops)
+		return -EINVAL;
+
+	// fixme
 	if (*fn == '\0') {
-		DPRINT("%s(): Invalid file name \"%s\"!\n", __func__, name);
+		DPRINT("%s(): Invalid file path \"%s\"!\n", __func__, path);
 		return -EINVAL;
 	}
 	fn++;
+	while ('/' == *fn) fn++;
 
-	fp = fops->open(mnt->bdev->fs, fn, flags, 0);
-	if (NULL == fp)
+	de = fs_type->lookup(root->inode, fn);
+	if (!de) {
 		return -ENOENT;
+	}
 
-	for (fd = 0; fd < MAX_FDS; fd++)
-		if (!fd_array[fd])
-			break;
+	inode = de->inode;
+	if (O_RDONLY != flags && !(inode->mode & (IMODE_W | IMODE_X)))
+		return -EPERM;
 
-	if (fd == MAX_FDS)
-		return -EBUSY;
+	fp = zalloc(sizeof(*fp)); // use malloc instead of zalloc
+	if (!fp) {
+		ret = -ENOMEM;
+		goto no_mem;
+	}
 
-	// fp->mode = ...
+	fp->de = de;
 	fp->pos = 0;
-	fp->fops = fops;
+	fp->fops = fs_type->fops;
+	fp->flags = flags;
 
-	fd_array[fd] = fp;
+	if (!fp->fops) {
+		GEN_DBG("No fops for %s!\n", path);
+		ret = -EINVAL;
+		goto fail;
+	}
 
-	return fd;
+	if (fp->fops->open) {
+		ret = fp->fops->open(fp, de->inode);
+		if (ret < 0)
+			goto fail;
+	}
+
+	for (fd = 0; fd < MAX_FDS; fd++) {
+		if (!fd_array[fd]) {
+			fd_array[fd] = fp;
+			return fd;
+		}
+	}
+
+	// TODO: close file when failed
+
+fail:
+	free(fp);
+no_mem:
+	return ret;
 }
 
-#ifdef __G_BIOS__
+int open(const char *path, int flags, ...)
+{
+	int mode = 0;
+
+	return do_open(path, flags, mode);
+}
+
 int close(int fd)
-#else
-int gb_close(int fd)
-#endif
 {
 	struct file *fp;
 
@@ -165,15 +240,13 @@ int gb_close(int fd)
 
 	if (!fp)
 		return -ENOENT;
+
+	fd_array[fd] = NULL;
 
 	return fp->fops->close(fp);
 }
 
-#ifdef __G_BIOS__
-int read(int fd, void *buff, size_t size)
-#else
-int gb_read(int fd, void *buff, size_t size)
-#endif
+ssize_t read(int fd, void *buff, size_t size)
 {
 	struct file *fp;
 
@@ -182,17 +255,46 @@ int gb_read(int fd, void *buff, size_t size)
 
 	fp = fd_array[fd];
 
-	if (!fp)
+	if (!fp || !fp->fops->read)
 		return -ENOENT;
 
-	return fp->fops->read(fp, buff, size);
+	return fp->fops->read(fp, buff, size, &fp->pos);
 }
 
-#ifdef __G_BIOS__
-int write(int fd, const void *buff, size_t size)
-#else
-int gb_write(int fd, const void *buff, size_t size)
-#endif
+ssize_t write(int fd, const void *buff, size_t size)
+{
+	struct file *fp;
+
+	if (fd < 0 || fd >= MAX_FDS)
+		return -EINVAL;
+
+	fp = fd_array[fd];
+
+	if (!fp || !fp->fops->write)
+		return -ENOENT;
+
+	return fp->fops->write(fp, buff, size, &fp->pos);
+}
+
+int ioctl(int fd, int cmd, ...)
+{
+	struct file *fp;
+	unsigned long arg;
+
+	if (fd < 0 || fd >= MAX_FDS)
+		return -EINVAL;
+
+	fp = fd_array[fd];
+
+	if (!fp || !fp->fops->ioctl)
+		return -ENOENT;
+
+	arg = *((unsigned long *)&cmd + 1); // fixme
+
+	return fp->fops->ioctl(fp, cmd, arg);
+}
+
+loff_t lseek(int fd, loff_t offset, int whence)
 {
 	struct file *fp;
 
@@ -204,5 +306,24 @@ int gb_write(int fd, const void *buff, size_t size)
 	if (!fp)
 		return -ENOENT;
 
-	return fp->fops->write(fp, buff, size);
+#if 0
+	if (fp->fops->lseek)
+		return fp->fops->lseek(fp, offset, whence);
+#endif
+
+	switch (whence) {
+	case SEEK_SET:
+		fp->pos = offset;
+		break;
+
+	case SEEK_CUR:
+		fp->pos += offset;
+		break;
+
+	case SEEK_END:
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
 }

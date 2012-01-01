@@ -1,9 +1,10 @@
-#include <getopt.h>
+#include <unistd.h>
 #include <image.h>
 #include <net/net.h>
 #include <net/tftp.h>
 #include <uart/uart.h>
 #include <fs/fs.h>
+#include <fcntl.h>
 #include <flash/flash.h>
 #include <linux.h>
 #include <board.h>
@@ -49,32 +50,53 @@ static int build_command_line(char *cmd_line, size_t max_len)
 		str += sprintf(str, " nfsroot=%s", config);
 	} else {
 		if (!strncmp(config, "mtdblock", 8)) {
-			struct block_device *bdev;
+			int fd;
+			ssize_t ret;
 			image_t type;
-			const char *rootfs; // fixme
+			char image_buff[KB(8)], attr[CONF_ATTR_LEN];
+			const char *fstype;
 
-			bdev = get_bdev_by_name(config);
-			if (!bdev) {
+			fd = open(config, O_RDONLY);
+			if (fd < 0) {
 				printf("fail to open block device \"%s\"!\n", config);
 				return -ENODEV;
 			}
 
-#warning
-			// fixme
-			type = IMG_JFFS2; // image_type_detect()
-			switch (type) {
-			case IMG_JFFS2:
-			default:
-				rootfs = "jffs2";
-				break;
+			ret = read(fd, image_buff, sizeof(image_buff));
+			assert(ret >= 0);
 
-			case IMG_UBIFS:
-				// TODO: add ubix_y
-				break;
+			close(fd);
+
+			snprintf(attr, sizeof(attr), "%s.fstype", config);
+			if (conf_get_attr(attr, config) >= 0) {
+				fstype = config;
+			} else {
+				// fixme: check it always
+				type = image_type_detect(image_buff, sizeof(image_buff));
+				switch (type) {
+				case IMG_YAFFS1:
+					fstype = "yafs";
+					break;
+
+				case IMG_YAFFS2:
+					fstype = "yafs2";
+					break;
+
+				case IMG_JFFS2:
+					fstype = "jffs2";
+					break;
+
+				case IMG_UBIFS:
+					fstype = "ubifs";
+					break;
+
+				default:
+					fstype = NULL;
+				}
 			}
 
-			if (rootfs)
-				str += sprintf(str, " rootfstype=%s", rootfs);
+			if (fstype)
+				str += sprintf(str, " rootfstype=%s", fstype);
 		} else if (!strncmp(config, "mmcblk", 6)) {
 			str += sprintf(str, " rootwait");
 		}
@@ -113,7 +135,7 @@ static int build_command_line(char *cmd_line, size_t max_len)
 			if (ndev_ioctl(ndev, NIOC_GET_MASK, &client_mask) == 0)
 				ip_to_str(net_mask, client_mask);
 		} else {
-			GEN_DGB("Not supportted now!\n");
+			GEN_DBG("Not supportted now!\n");
 			// TODO: read from sysconfig
 		}
 
@@ -143,18 +165,19 @@ static ssize_t load_image(void *dst, const char *src)
 		struct tftp_opt dlopt;
 
 		memset(&dlopt, 0x0, sizeof(dlopt));
-	
-		net_get_server_ip(&dlopt.server_ip);
+
+		net_get_server_ip((__u32 *)&dlopt.src);
 		strcpy(dlopt.file_name, image);
 		dlopt.load_addr = dst;
-	
+
 		ret = tftp_download(&dlopt);
 		if (ret < 0) {
 			printf("fail to download %s!\n", image);
 			return ret;
 		}
 	} else {
-		if (!strncmp(src, "mtdblock", 8)) {			
+#if 0
+		if (!strncmp(src, "mtdblock", 8)) {
 			struct flash_chip *flash;
 
 			flash = flash_open(src);
@@ -165,7 +188,7 @@ static ssize_t load_image(void *dst, const char *src)
 
 			ret = flash_read(flash, dst, 0, KERNEL_MAX_SIZE /* fixme */);
 			if (ret < 0) {
-				GEN_DGB("fail to load kernel image from %s!\n", src);
+				GEN_DBG("fail to load kernel image from %s!\n", src);
 				return ret;
 			}
 
@@ -174,6 +197,22 @@ static ssize_t load_image(void *dst, const char *src)
 			printf("file \"%s\" NOT supported now:(\n", src);
 			return -EINVAL;
 		}
+#endif
+		int fd;
+
+		fd = open(src, O_RDONLY);
+		if (fd < 0) {
+			printf("fail to open \"%s\" (ret = %d)!\n", src, fd);
+			return fd;
+		}
+
+		ret = read(fd, dst, KERNEL_MAX_SIZE /* fixme */);
+		if (ret < 0) {
+			GEN_DBG("fail to load kernel image from %s!\n", src);
+			return ret;
+		}
+
+		close(fd);
 	}
 
 	return ret;
@@ -279,7 +318,7 @@ int main(int argc, char *argv[])
 	arm_tag = setup_cmdline_atag(arm_tag, cmd_line);
 
 	// setup mem tag
-	if (strstr(cmd_line, "mem=") == NULL)	
+	if (strstr(cmd_line, "mem=") == NULL)
 		arm_tag = setup_mem_atag(arm_tag);
 
 	// load initrd
@@ -343,6 +382,6 @@ int main(int argc, char *argv[])
 	linux_kernel(0, board->mach_id, ATAG_BASE);
 
 error:
-	GEN_DGB("boot failed! error = %d\n", ret);
+	GEN_DBG("boot failed! error = %d\n", ret);
 	return ret;
 }

@@ -1,4 +1,4 @@
-#include <getopt.h>
+#include <unistd.h>
 #include <graphic/display.h>
 
 #define PIXEL_DESC(pix_fmt) \
@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
 				return -EINVAL;
 			}
 
-			if (str_to_val(optarg, &id) < 0) {
+			if (str_to_val(optarg, (unsigned long *)&id) < 0) {
 				vm = lcd_get_vmode_by_name(optarg);
 			} else {
 				vm = lcd_get_vmode_by_id(id);

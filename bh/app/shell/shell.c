@@ -1,8 +1,9 @@
-#include <getopt.h>
-#include <uart/uart.h>
-#include <net/net.h>
+#include <unistd.h>
 #include <shell.h>
-#include <block.h>
+#include <dirent.h>
+// fixme: to be removed
+#include <net/net.h>
+#include <uart/uart.h>
 
 #define APP_HIST_DEPTH			    16  // should be 2**n bytes aligned.
 #define APP_ADJUST_INDEX(index)    ((index) & (APP_HIST_DEPTH - 1))
@@ -22,7 +23,6 @@ extern const struct command g_exe_begin[], g_exe_end[];
 extern const struct help_info g_help_begin[], g_help_end[];
 
 static struct command_stack g_cmd_stack;
-static char g_cur_vol = 'C', g_home_vol = 'A';
 
 int help(int argc, char *argv[]);
 
@@ -57,35 +57,14 @@ static void inline cmd_backspace(void)
 	printf("\033[D\033[1P");
 }
 
-void set_curr_volume(char vol)
+static inline void show_prompt(void)
 {
-	g_cur_vol = vol;
-}
+	char *cwd;
 
-char get_curr_volume(void)
-{
-	return g_cur_vol;
-}
+	cwd = getcwd();
+	assert (cwd != NULL);
 
-int set_home_volume(char vol)
-{
-	g_home_vol = vol;
-	return 0;
-}
-
-char get_home_volume(void)
-{
-	return g_home_vol;
-}
-
-static void show_prompt(void)
-{
-	struct block_device *bdev;
-
-	bdev = get_bdev_by_volume(g_cur_vol);
-	assert (bdev != NULL);
-
-	printf("g-bios: %s# ", bdev->name);
+	printf("g-bios: %s# ", cwd);
 }
 
 static int inline get_pre_space_count(char *buf)
@@ -711,17 +690,36 @@ L1:
 static inline int shell_init(void)
 {
 	int i;
-	char buff[CONF_VAL_LEN];
+	char home[CONF_VAL_LEN];
 
 	for (i = 0; i < APP_HIST_DEPTH; i++)
 		g_cmd_stack.stack[i] = NULL;
 
 	g_cmd_stack.hist = 0;
 
-	if (!conf_get_attr("home", buff))
-		set_curr_volume(buff[0]);
+	// check HOME and set CWD
+	if (conf_get_attr("HOME", home) < 0 /* && conf_get_attr("home", home) < 0 */) {
+		DIR *dir;
+		struct dirent *de;
 
-	return 0;
+		home[0] = '\0';
+
+		dir = opendir(DEV_ROOT);
+		if (dir) {
+			de = readdir(dir);
+			if (de)
+				strncpy(home, de->d_name, sizeof(home));
+
+			closedir(dir);
+		}
+
+		if ('\0' == home[0])
+			strcpy(home, "<system>");
+
+		conf_add_attr("HOME", home);
+	}
+
+	return chdir(home);
 }
 
 int shell(void)

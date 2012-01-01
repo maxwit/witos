@@ -5,12 +5,10 @@
 #include <net/net.h>
 
 // negative hex skipped
-#define MAX_HEX_STR_LEN (sizeof(__u32) * 2)
-
-int hex_str_to_val(const char *str, __u32 *val)
+int hex_str_to_val(const char *str, unsigned long *val)
 {
 	int len = 0;
-	__u32 tmp = 0;
+	unsigned long tmp = 0;
 
 	while (*str != '\0') {
 		if (*str >= '0' && *str <= '9') {
@@ -27,7 +25,7 @@ int hex_str_to_val(const char *str, __u32 *val)
 
 		str++;
 		len++;
-		if (len > MAX_HEX_STR_LEN)
+		if (len > sizeof(tmp) * 2)
 			return -EINVAL;
 	}
 
@@ -64,15 +62,15 @@ int val_to_dec_str(char *str, long val)
 	return j;
 }
 
-#define MAX_HEX_LEN (sizeof(__u32) * 2 + 1)
+#define MAX_HEX_LEN (sizeof(unsigned long) * 2 + 1)
 
-int val_to_hex_str(char *str, __u32 val)
+int val_to_hex_str(char *str, unsigned long val)
 {
 	char buff[MAX_HEX_LEN];
 	int i = MAX_HEX_LEN - 1, j = 0;
 
 	while (val) {
-		__u32 num = val & 0xf;
+		unsigned long num = val & 0xf;
 
 		if (num < 0xa)
 			buff[i] = (char)num + '0';
@@ -93,9 +91,35 @@ int val_to_hex_str(char *str, __u32 val)
 	return j;
 }
 
-int dec_str_to_val(const char *str, int *val)
+// fixme: merge the following 2 functions into 1
+int dec_str_to_long(const char *str, long *val)
 {
 	long tmp = 0;
+	const char *num = str;
+
+	if ('-' == *num)
+		num++;
+
+	while (*num != '\0') {
+		if (ISDIGIT(*num))
+			tmp = 10 * tmp + *num - '0';
+		else
+			return -EINVAL;
+
+		num++;
+	}
+
+	if ('-' == *str)
+		*val = -tmp;
+	else
+		*val = tmp;
+
+	return num - str;
+}
+
+int dec_str_to_int(const char *str, int *val)
+{
+	int tmp = 0;
 	const char *num = str;
 
 	if ('-' == *num)
@@ -126,7 +150,7 @@ int dec_str_to_val(const char *str, int *val)
 #define M_MARK (1 << 6)
 #define K_MARK (1 << 5)
 
-int hr_str_to_val(const char *str, __u32 *val)
+int hr_str_to_val(const char *str, unsigned long *val)
 {
 	__u8  mark = 0;
 	__u32 num = 0, tmp = 0;
@@ -189,15 +213,15 @@ error:
 	return -EINVAL;
 }
 
-int str_to_val(const char *str, __u32 *val)
+int str_to_val(const char *str, unsigned long *val)
 {
 	int ret;
-	__u32 tmp;
+	unsigned long tmp;
 
 	if ('0' == *str && ('x' == *(str + 1) || 'X' == *(str + 1)))
 		ret = hex_str_to_val(str + 2, &tmp);
 	else
-		ret = dec_str_to_val(str, (int *)&tmp);
+		ret = dec_str_to_long(str, (long *)&tmp);
 
 	if (ret >= 0)
 		*val = tmp;
@@ -206,8 +230,7 @@ int str_to_val(const char *str, __u32 *val)
 }
 
 #define KB_MASK ((1 << 10) - 1)
-
-int val_to_hr_str(__u32 val, char str[])
+int val_to_hr_str(unsigned long val, char str[])
 {
 	char *ch = str;
 	__u32 sect;
@@ -315,7 +338,7 @@ int str_to_mac(__u8 mac[], const char *str)
 	for (i = j = 0; i <= MAC_STR_LEN && j < MAC_ADR_LEN; i++) {
 		if (':' == buf[i]|| '\0' == buf[i]) {
 			buf[i] = '\0';
-			if (hex_str_to_val(p, &num) <= 0 || num > 255)
+			if (hex_str_to_val(p, (unsigned long *)&num) <= 0 || num > 255)
 				goto error;
 
 			mac[j++] = num;

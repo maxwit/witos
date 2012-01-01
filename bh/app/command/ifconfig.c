@@ -1,5 +1,5 @@
 #include <net/net.h>
-#include <getopt.h>
+#include <unistd.h>
 
 #define FLAG_IP    (1 << 0)
 #define FLAG_MASK  (1 << 1)

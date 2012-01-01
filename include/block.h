@@ -20,50 +20,33 @@ struct part_attr {
 	__u32 base;
 	__u32 size;
 	char  label[LABEL_NAME_SIZE];
-};
-
-struct block_buff {
-	// __u32  blk_id;
-	__u32  blk_size;
-	__u8  *blk_base;
-	__u8  *blk_off;
-};
-
-struct bdev_file {
-	struct block_device *bdev;
-	struct block_buff blk_buf;
-
-	size_t cur_pos;
-	char name[FILE_NAME_SIZE];
-	size_t size;
-
-	int (*open)(struct bdev_file *, int);
-	int (*close)(struct bdev_file *);
-
-	ssize_t (*read)(struct bdev_file *, void *, size_t);
-	ssize_t (*write)(struct bdev_file *, const void *, size_t);
+	__u32 flags;
 };
 
 struct block_device {
 	// struct device dev;
 	char name[MAX_DEV_NAME]; // mmcblockXpY, mtdblockN, sdaN
 
-	__u32 flags;
-
-	// part_attr
+	// use part_attr instead?
+	__u32  flags;
 	size_t base;
 	size_t size;
 	char   label[LABEL_NAME_SIZE];
 
-	// fixme!
-	void *fs;
-	char volume;
-	struct bdev_file *file;
+	// fixme: to be moved here from lower layer
+	// struct block_device *master;
+	// struct list_node slave_list;
+	// ...
+
+	// fixme: to be removed
+	// struct file_system *fs;
+	const struct file_operations *fops;
 
 	struct list_node bdev_node;
+	struct list_node devfs_node; // fixme!
 };
 
 int block_device_register(struct block_device *bdev);
 
-struct block_device *get_bdev_by_name(const char *name);
-struct block_device *get_bdev_by_volume(char vol);
+// fixme: to be removed
+const struct list_node *bdev_get_list();

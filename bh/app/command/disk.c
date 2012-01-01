@@ -1,11 +1,9 @@
 #include <mmc/mmc.h>
 #include <mmc/mmc_ops.h>
-#include <getopt.h>
+#include <unistd.h>
 #include <string.h>
-#include <shell.h>
 #include <task.h>
 #include <types.h>
-#include <shell.h>
 #include <drive.h>
 #include <block.h>
 
@@ -76,7 +74,7 @@ static int dump(int argc, char *argv[])
 		switch (opt) {
 		case 'a':
 			if (optarg != NULL) {
-				ret = str_to_val(optarg, &addr);
+				ret = str_to_val(optarg, (unsigned long *)&addr);
 				if (ret < 0) {
 					printf("Error: Address error!\n");
 
@@ -89,7 +87,7 @@ static int dump(int argc, char *argv[])
 
 		case 'w':
 			if (optarg != NULL) {
-				ret = str_to_val(optarg, &unit_size);
+				ret = str_to_val(optarg, (unsigned long *)&unit_size);
 				if (ret < 0){
 					printf("Error: Unit_size error!\n");
 					return -EINVAL;
@@ -116,9 +114,9 @@ static int dump(int argc, char *argv[])
 		unit_size = DEFAULT_UNIT_SIZE;
 	}
 
-	vol = get_home_volume();
+	// vol = get_home_volume();
 
-	bdev = get_bdev_by_volume(vol);
+	// bdev = get_bdev_by_index(vol);
 	if (!bdev) {
 		printf("fail to change to \"%c\", no such block device!\n", vol);
 		return -ENODEV;
@@ -165,7 +163,7 @@ static int write(int argc, char *argv[])
 		switch (opt) {
 		case 'a':
 			if (optarg != NULL) {
-				ret = str_to_val(optarg, &disk_addr);
+				ret = str_to_val(optarg, (unsigned long *)&disk_addr);
 				if (ret < 0) {
 					printf("Error: Start disk address error!\n");
 
@@ -178,7 +176,7 @@ static int write(int argc, char *argv[])
 
 		case 'm':
 			if (optarg != NULL) {
-				ret = str_to_val(optarg, &mem_addr);
+				ret = str_to_val(optarg, (unsigned long *)&mem_addr);
 				if (ret < 0) {
 					printf("Error: Start memory address error!\n");
 
@@ -197,11 +195,11 @@ static int write(int argc, char *argv[])
 		}
 	}
 
-	volume = get_home_volume();
+	// volume = get_home_volume();
 
 	printf("volume: %c\n", volume);
 
-	bdev = get_bdev_by_volume(volume);
+	// bdev = get_bdev_by_index(volume);
 	if (!bdev) {
 		printf("fail to get bdev \"%c\", no such block device!\n", volume);
 
@@ -242,7 +240,7 @@ static int read(int argc, char *argv[])
 		switch (opt) {
 		case 'a':
 			if (optarg != NULL) {
-				ret = str_to_val(optarg, &disk_addr);
+				ret = str_to_val(optarg, (unsigned long *)&disk_addr);
 				if (ret < 0) {
 					printf("Error: Start disk address error!\n");
 
@@ -255,7 +253,7 @@ static int read(int argc, char *argv[])
 
 		case 'm':
 			if (optarg != NULL) {
-				ret = str_to_val(optarg, &mem_addr);
+				ret = str_to_val(optarg, (unsigned long *)&mem_addr);
 				if (ret < 0) {
 					printf("Error: Start memory address error!\n");
 
@@ -274,11 +272,11 @@ static int read(int argc, char *argv[])
 		}
 	}
 
-	volume = get_home_volume();
+	// volume = get_home_volume();
 
 	printf("volume: %c\n", volume);
 
-	bdev = get_bdev_by_volume(volume);
+	// bdev = get_bdev_by_index(volume);
 	if (!bdev) {
 		printf("fail to get bdev \"%c\", no such block device!\n", volume);
 

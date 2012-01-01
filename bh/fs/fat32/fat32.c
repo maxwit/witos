@@ -1,6 +1,7 @@
 #include <malloc.h>
 #include <errno.h>
 #include <string.h>
+#include <types.h>
 #include <fs/fs.h>
 #include <fs/fat32.h>
 
@@ -42,38 +43,38 @@ static __u32 fat_get_fat_table(struct fat_fs *fs, __u32 fat_num)
 	return fat_catch[fat_num % (fs->clus_size / sizeof(fat_num))];
 }
 
-static int fat_mount(struct file_system_type *fs_type, unsigned long flags, struct block_device *bdev)
+static struct dentry *fat_mount(struct file_system_type *fs_type, unsigned long flags, struct block_device *bdev)
 {
 	int ret;
 	__u16 blk_size;
 	__u32 clus_size;
 	__u32 data_off;
-	struct fat_fs *fs;
-	struct fat_boot_sector *dbr;
 	__u32 root;
-
+	struct dentry *root_dir;
+	struct inode *root_ino;
+	struct fat_fs *fat_fs;
+	struct fat_boot_sector *dbr;
 	struct disk_drive *drive = container_of(bdev, struct disk_drive, bdev);
 
-	fs = malloc(sizeof(*fs));
-
-	if (fs == NULL) {
+	fat_fs = zalloc(sizeof(*fat_fs));
+	if (fat_fs == NULL) {
 		DPRINT("%s(): no mem\n", __func__);
-		return -ENOMEM;
+		return NULL;
 	}
 
-	dbr = &fs->dbr;
+	dbr = &fat_fs->dbr;
 
 	ret = drive->get_block(drive, 0, dbr);
 	if (ret < 0) {
 		DPRINT("%s(): read dbr err\n", __func__);
-		return ret;
+		return NULL;
 	}
 
 	blk_size = dbr->sector_size[1] << 8 | dbr->sector_size[0];
 
 	if (blk_size < 512 || blk_size > 4096 || (blk_size & (blk_size - 1))) {
 		DPRINT("%s %s() line %d\n", __FILE__, __func__, __LINE__);
-		return -EINVAL;
+		return NULL;
 	}
 
 	// TODO: check if bk_size != drive->sect_size ...
@@ -84,15 +85,31 @@ static int fat_mount(struct file_system_type *fs_type, unsigned long flags, stru
 
 	root = dbr->root_cluster;
 
-	fs->root = root;
-	fs->bdev = bdev;
-	fs->data = data_off;
-	fs->clus_size = clus_size;
+	fat_fs->root = root;
+	fat_fs->bdev = bdev;
+	fat_fs->data = data_off;
+	fat_fs->clus_size = clus_size;
 
-	bdev->fs = fs;
-	drive->sect_size = blk_size; // fixme
+	// fixme
+	drive->sect_size = blk_size;
 
-	return 0;
+	// fixme
+	root_ino = zalloc(sizeof(*root_ino));
+	if (!root_ino)
+		return NULL;
+
+	root_ino->i_fs = fat_fs;
+	root_ino->i_ext = (void *)root;
+
+	root_dir = zalloc(sizeof(*root_dir));
+	if (!root_dir)
+		return NULL;
+
+	root_dir->inode = root_ino;
+
+	/////
+
+	return root_dir;
 }
 
 #if 0
@@ -199,21 +216,27 @@ L1:
 	return -1;
 }
 
-static struct fat_dentry *fat_lookup(struct fat_fs *fs, __u32 parent, const char *name)
+static struct dentry *fat_lookup(struct inode *parent, const char *name)
 {
-	struct fat_dentry *dir;
 	int ret;
 	char sname[FILE_NAME_SIZE];
+	__u32 blk_num;
+	struct dentry *de;
+	struct inode *ino;
+	struct fat_dentry *fat_de;
+	struct fat_fs *fat_fs = parent->i_fs;
 
-	dir = (struct fat_dentry *)malloc(sizeof(*dir));
-	if (dir == NULL) {
+	fat_de = (struct fat_dentry *)malloc(sizeof(*fat_de));
+	if (fat_de == NULL) {
 		DPRINT("%s(): malloc err\n", __func__);
 		return NULL;
 	}
 
+	blk_num = (__u32)parent->i_ext;
+
 	while (1) {
 		// fixme
-		ret = fat_find_next_file(fs, &parent, sname, dir);
+		ret = fat_find_next_file(fat_fs, &blk_num, sname, fat_de);
 		printf("%s(): ret = %d, sname = %s\n",
 			__func__, ret, sname);
 		if (ret < 0) {
@@ -224,70 +247,65 @@ static struct fat_dentry *fat_lookup(struct fat_fs *fs, __u32 parent, const char
 		if (strcmp(sname, name) == 0) {
 			name = strchr(name, '/');
 			if (name != NULL) {	// last file
-				if (dir->attr == 0x10) {
-					parent = dir->clus_hi << 16 | dir->clus_lo;
+				if (fat_de->attr == 0x10) {
+					blk_num = fat_de->clus_hi << 16 | fat_de->clus_lo;
 					continue;
 				} else
 					goto err;
 			}
-			return dir;
+
+			ino = zalloc(sizeof(*ino));
+			if (!ino)
+				return NULL;
+
+			ino->mode = ~0;
+			ino->i_fs = parent->i_fs;
+			ino->i_ext = (void *)blk_num;
+
+			de = zalloc(sizeof(*de));
+			if (!de)
+				return NULL;
+
+			de->d_ext = fat_de;
+			de->inode = ino;
+
+			return de;
 		}
 	}
 
 err:
-	free(dir);
+	free(fat_de);
 	return NULL;
 }
 
 #define MAX_FILE_NAME_SIZE 256
 
 // fixme
-static struct file *fat_open(void *file_sys, const char *name, int flags, int mode)
+static int fat_open(struct file *fp, struct inode *inode)
 {
-	struct fat_dentry *dir;
-	struct fat_file *fp;
-	struct fat_fs *fs = file_sys;
-
-	dir = fat_lookup(fs, fs->root, name);
-
-	if (!dir)
-		return NULL;
-
-	fp = malloc(sizeof(*fp));
-	// if NULL
-
-	fp->fs = fs;
-	fp->dent = dir;
-
-	return &fp->f;
+	return 0;
 }
 
 static int fat_close(struct file *fp)
 {
-	struct fat_file *fat_fp = container_of(fp, struct fat_file, f);
-
-	free(fat_fp);
-
 	return 0;
 }
 
-static int fat_read(struct file *fp, void *buff, size_t size)
+static ssize_t fat_read(struct file *fp, void *buff, size_t size, loff_t *off)
 {
 	__u32 clus_num, clus_size;
 	size_t pos;
 	size_t count = 0;
 	size_t tmp_size;
-	struct fat_fs *fs;
-	struct fat_file *fat_fp = container_of(fp, struct fat_file, f);
+	struct fat_fs *fs = fp->de->inode->i_fs;
+	struct fat_dentry *de = (struct fat_dentry *)fp->de;
 
-	fs = fat_fp->fs;
-
-	clus_size = fat_fp->fs->clus_size;
-	clus_num = fat_fp->dent->clus_hi << 16 | fat_fp->dent->clus_lo;
+	clus_size = fs->clus_size;
+	clus_num = de->clus_hi << 16 | de->clus_lo;
 	pos = fp->pos;
 
-	if (size + pos > fat_fp->dent->size)
-		size = fat_fp->dent->size - pos;
+	if (size + pos > de->size)
+		size = de->size - pos;
 
 	while (pos >= clus_size) {
 		clus_num = fat_get_fat_table(fs, clus_num);
@@ -321,35 +339,28 @@ static int fat_read(struct file *fp, void *buff, size_t size)
 	return count;
 }
 
-static int fat_write(struct file *fp, const void *buff, size_t size)
+static ssize_t fat_write(struct file *fp, const void *buff, size_t size, loff_t *off)
 {
 	return 0;
 }
 
-static const struct file_operations fat_fops =
-{
+static const struct file_operations fat_fops = {
 	.open  = fat_open,
 	.close = fat_close,
 	.read  = fat_read,
 	.write = fat_write,
 };
 
-static struct file_system_type fat_fs_type =
-{
-	.name  = "vfat",
-	.mount = fat_mount,
-	.fops  = &fat_fops,
+static struct file_system_type fat_fs_type = {
+	.name   = "vfat",
+	.fops   = &fat_fops,
+	.mount  = fat_mount,
+	.lookup = fat_lookup,
 };
 
-#ifdef __G_BIOS__
 static int __INIT__ fat32_init(void)
-#else
-int fat32_init(void)
-#endif
 {
 	return file_system_type_register(&fat_fs_type);
 }
 
-#ifdef __G_BIOS__
 SUBSYS_INIT(fat32_init);
-#endif
