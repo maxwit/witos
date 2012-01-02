@@ -8,7 +8,7 @@ static int show_info(int verbose)
 	const char *cwd;
 	struct part_attr part;
 
-	cwd = getcwd();
+	cwd = __getcwd();
 	fd = open(cwd, O_RDONLY);
 
 	ret = ioctl(fd, 0 /* fixme */, &part);

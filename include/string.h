@@ -43,6 +43,8 @@ char *strchr(const char *, int);
 
 char *strrchr(const char *, size_t);
 
+char *strdup(const char *);
+
 //------------------ Extra String APIs ------------------
 
 int hex_str_to_val(const char *str, unsigned long *val);

@@ -6,4 +6,8 @@
 
 int chdir(const char *path);
 
-char *getcwd(/* fixme */);
+char *getcwd(char *buff, size_t size);
+
+char *get_current_dir_name();
+
+const char *__getcwd(void);

@@ -98,13 +98,15 @@ int main(void)
 	if (ret < 0) {
 		printf("Warning: fail to initialize system configuration!\n"
 			"Trying reset to default!\n");
-
 		conf_reset();
+		putchar('\n');
 	}
 
 	system_init();
 
 	conf_store();
+
+	// ret = mount("devtmpfs", 0, NULL, "/dev");
 
 #ifdef CONFIG_AUTO_BOOT
 	auto_boot();

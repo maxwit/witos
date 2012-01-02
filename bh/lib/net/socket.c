@@ -1,6 +1,7 @@
 #include <net/net.h>
 #include <net/skb.h>
-#include <uart/uart.h>
+#include <uart/uart.h> // fixme: to be removed
+#include <fs/fs.h>
 
 #define MAX_SOCK_NUM  32
 
@@ -183,7 +184,7 @@ static void free_skb_list(struct list_node *qu)
 int sk_close(int fd)
 {
 	int ret;
-	__UNUSED__ __u32 psr;
+	unsigned long __UNUSED__ cpsr;
 	struct socket *sock;
 	struct sock_buff *skb;
 
@@ -193,22 +194,21 @@ int sk_close(int fd)
 
 	if (TCPS_ESTABLISHED == sock->state || \
 		TCPS_SYN_RCVD == sock->state || \
-		TCPS_CLOSE_WAIT == sock->state)
-	{
+		TCPS_CLOSE_WAIT == sock->state) {
 		enum tcp_state last_state;
 
 		skb = skb_alloc(ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN, 0);
 		// if null
 		skb->sock = sock;
 
-		lock_irq_psr(psr);
+		lock_irq_psr(cpsr);
 		tcp_send_packet(skb, FLG_FIN | FLG_ACK, NULL);
 		if (TCPS_CLOSE_WAIT == sock->state)
 			sock->state = TCPS_LAST_ACK;
 		else
 			sock->state = TCPS_FIN_WAIT1;
 		last_state = sock->state;
-		unlock_irq_psr(psr);
+		unlock_irq_psr(cpsr);
 
 		if (TCPS_LAST_ACK == last_state)
 			ret = tcp_wait_for_state(sock, TCPS_CLOSED);
@@ -227,11 +227,11 @@ int sk_close(int fd)
 	}
 
 	if (TCPS_CLOSED == sock->state) {
-		lock_irq_psr(psr);
+		lock_irq_psr(cpsr);
 		free_skb_list(&sock->rx_qu);
 		free_skb_list(&sock->tx_qu);
 		free(sock);
-		unlock_irq_psr(psr);
+		unlock_irq_psr(cpsr);
 		g_sock_fds[fd] = NULL;
 	} else {
 		printf("%s(): Warning! (state = %d)\n", __func__, sock->state);

@@ -2,7 +2,7 @@
 #include <dirent.h>
 #include <block.h> //  fixme: to be removed!
 
-static char *g_cwd; // fixme: with const
+static char g_cwd[PATH_MAX];
 
 // fixme
 int chdir(const char *path)
@@ -16,7 +16,7 @@ int chdir(const char *path)
 
 	while ((de = readdir(dir))) {
 		if (!strcmp(path, de->d_name)) {
-			g_cwd = (char *)path;
+			strncpy(g_cwd, path, PATH_MAX);
 			closedir(dir);
 			return 0;
 		}
@@ -25,7 +25,17 @@ int chdir(const char *path)
 	return -ENOENT;
 }
 
-char *getcwd(/* fixme */)
+char *getcwd(char *buff, size_t size)
+{
+	return strncpy(buff, g_cwd, min(size, PATH_MAX));
+}
+
+char *get_current_dir_name()
+{
+	return strdup(g_cwd);
+}
+
+const char *__getcwd(void)
 {
 	return g_cwd;
 }

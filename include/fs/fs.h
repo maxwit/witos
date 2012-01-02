@@ -3,7 +3,7 @@
 #include <types.h>
 #include <block.h>
 
-struct file_operations;
+struct file;
 struct dentry;
 struct inode;
 struct block_device;
@@ -33,10 +33,19 @@ struct vfsmount {
 
 struct block_buff {
 	// __u32  blk_id;
-	__u8   *blk_base;
+	__u8    *blk_base;
 	size_t  blk_size;
 	size_t  max_size;
-	__u8  *blk_off;
+	__u8    *blk_off;
+};
+
+struct file_operations {
+	int (*open)(struct file *, struct inode *);
+	int (*close)(struct file *);
+	ssize_t (*read)(struct file *, void *, size_t, loff_t *);
+	ssize_t (*write)(struct file *, const void *, size_t, loff_t *);
+	int (*ioctl)(struct file *, int, unsigned long);
+	loff_t (*lseek)(struct file *, loff_t, int);
 };
 
 struct file {
@@ -48,17 +57,6 @@ struct file {
 	// struct vfsmount *vfsmnt;
 	struct block_buff blk_buf; // for block device, to be removed!
 	void *private_data;
-};
-
-struct file_operations {
-	int (*open)(struct file *, struct inode *);
-	int (*close)(struct file *);
-
-	ssize_t (*read)(struct file *, void *, size_t, loff_t *);
-	ssize_t (*write)(struct file *, const void *, size_t, loff_t *);
-
-	int (*ioctl)(struct file *, int, unsigned long);
-	loff_t (*lseek)(struct file *, loff_t, int);
 };
 
 #define IMODE_R   (1 << 0)

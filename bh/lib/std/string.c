@@ -180,6 +180,17 @@ char *strrchr(const char *src, size_t c)
 	return NULL;
 }
 
+char *strdup(const char *s)
+{
+	char *dst;
+
+	dst = malloc(strlen(s) + 1);
+	if (dst)
+		strcpy(dst, s);
+
+	return dst;
+}
+
 void *memcpy(void *dst, const void *src, size_t count)
 {
 	__u8 *d;

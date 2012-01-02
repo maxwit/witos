@@ -11,6 +11,11 @@ static struct file_system_type *fs_type_list;
 static DECL_INIT_LIST(g_mnt_list);
 static struct file *fd_array[MAX_FDS];
 
+struct nameidata {
+	unsigned int flags;
+	struct file *fp;
+};
+
 int file_system_type_register(struct file_system_type *fs_type)
 {
 	struct file_system_type **p;
@@ -141,10 +146,9 @@ static inline struct vfsmount *search_mount(struct qstr *unit)
 	return NULL;
 }
 
-static int do_open(const char *path, int flags, int mode)
+static int path_walk(const char *path, struct nameidata *nd)
 {
-	int fd, ret = -ENOENT; // fixme
-	const char *fn;
+	int ret = -ENOENT; // fixme
 	struct qstr str;
 	struct file *fp;
 	struct vfsmount *mnt;
@@ -152,36 +156,39 @@ static int do_open(const char *path, int flags, int mode)
 	struct dentry *de, *root;
 	struct inode *inode;
 
-	fn = strchr(path, ':'); // fixme "://"
-	// if (NULL == fn) return -EINVAL;
-
+	while ('/' == *path)
+		path++;
+	if (!*path)
+		return -EINVAL;
 	str.name = path;
-	str.len = fn - path; 
+
+	while ('/' == *path)
+		path++;
+	if (!*path)
+		return -EINVAL;
+	str.len = path - str.name;
+
 	mnt = search_mount(&str);
 	if (NULL == mnt)
 		return -ENOENT;
 
 	root = mnt->root;
-
 	fs_type = mnt->fs_type;
 	if (!fs_type->lookup || !fs_type->fops)
 		return -EINVAL;
 
-	// fixme
-	if (*fn == '\0') {
-		DPRINT("%s(): Invalid file path \"%s\"!\n", __func__, path);
+	while ('/' == *path)
+		path++;
+	if (!*path)
 		return -EINVAL;
-	}
-	fn++;
-	while ('/' == *fn) fn++;
 
-	de = fs_type->lookup(root->inode, fn);
+	de = fs_type->lookup(root->inode, path);
 	if (!de) {
 		return -ENOENT;
 	}
 
 	inode = de->inode;
-	if (O_RDONLY != flags && !(inode->mode & (IMODE_W | IMODE_X)))
+	if (O_RDONLY != nd->flags && !(inode->mode & (IMODE_W | IMODE_X)))
 		return -EPERM;
 
 	fp = zalloc(sizeof(*fp)); // use malloc instead of zalloc
@@ -193,7 +200,7 @@ static int do_open(const char *path, int flags, int mode)
 	fp->de = de;
 	fp->pos = 0;
 	fp->fops = fs_type->fops;
-	fp->flags = flags;
+	fp->flags = nd->flags;
 
 	if (!fp->fops) {
 		GEN_DBG("No fops for %s!\n", path);
@@ -201,24 +208,65 @@ static int do_open(const char *path, int flags, int mode)
 		goto fail;
 	}
 
+	nd->fp = fp;
+
+	return 0;
+fail:
+	free(fp);
+no_mem:
+	return ret;
+}
+
+int get_unused_fd()
+{
+	int fd;
+
+	for (fd = 0; fd < MAX_FDS; fd++) {
+		if (!fd_array[fd])
+			return fd;
+	}
+
+	return -EBUSY;
+}
+
+int fd_install(int fd, struct file *fp)
+{
+	fd_array[fd] = fp;
+	return 0;
+}
+
+static int do_open(const char *path, int flags, int mode)
+{
+	int fd, ret;
+	struct file *fp;
+	struct nameidata nd;
+
+	fd = get_unused_fd();
+	if (fd < 0)
+		return fd;
+
+	nd.flags = flags;
+
+	ret = path_walk(path, &nd);
+	if (ret < 0) {
+		GEN_DBG("fail to find \"%s\"!\n", path);
+		return ret;
+	}
+
+	fp = nd.fp;
+
 	if (fp->fops->open) {
-		ret = fp->fops->open(fp, de->inode);
+		ret = fp->fops->open(fp, fp->de->inode);
 		if (ret < 0)
 			goto fail;
 	}
 
-	for (fd = 0; fd < MAX_FDS; fd++) {
-		if (!fd_array[fd]) {
-			fd_array[fd] = fp;
-			return fd;
-		}
-	}
+	fd_install(fd, fp);
 
-	// TODO: close file when failed
+	return fd;
 
 fail:
 	free(fp);
-no_mem:
 	return ret;
 }
 

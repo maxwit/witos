@@ -15,13 +15,13 @@ static int get_bdev_by_index(int index, char name[], size_t size)
 		int i = 1, num = 0;
 		const char *postfix;
 
-		postfix = de->d_name + strlen(de->d_name);
+		postfix = de->d_name + strlen(de->d_name) - 1;
 
 		while (postfix >= de->d_name) {
 			if (!ISDIGIT(*postfix))
 				break;
 
-			num += i * *postfix;
+			num += i * (*postfix - '0');
 			i *= 10;
 			postfix--;
 		}
@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
 			ret = get_bdev_by_index(index, str, sizeof(str));
 			if (!ret) {
 				path = str;
-				goto L1; // found
+				goto L1;
 			}
 		}
 
@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
 	}
 
 L1:
-	if (!strcmp(path, getcwd()))
+	if (!strcmp(path, __getcwd()))
 		return 0;
 
 	ret = chdir(path);

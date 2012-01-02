@@ -61,7 +61,7 @@ static inline void show_prompt(void)
 {
 	char *cwd;
 
-	cwd = getcwd();
+	cwd = __getcwd();
 	assert (cwd != NULL);
 
 	printf("g-bios: %s# ", cwd);
