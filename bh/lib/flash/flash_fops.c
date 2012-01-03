@@ -3,7 +3,7 @@
 #include <flash/flash.h>
 
 // fixme
-static inline int __flash_read(struct flash_chip *flash, void *buff, int start, int count)
+static inline int __flash_read(struct flash_chip *flash, void *buff, int count, int start)
 {
 	int ret;
 	__u32 ret_len;
@@ -245,6 +245,16 @@ static int flash_ioctl(struct file *fp, int cmd, unsigned long arg)
 
 	case FLASH_IOCG_SIZE:
 		*(size_t *)arg = flash->bdev.size;
+
+	case FLASH_IOCG_INFO:
+		((struct flash_info *)arg)->name       = flash->name;
+		((struct flash_info *)arg)->block_size = flash->erase_size;
+		((struct flash_info *)arg)->oob_size   = flash->oob_size;
+		((struct flash_info *)arg)->page_size  = flash->write_size;
+		((struct flash_info *)arg)->type       = flash->type;
+		((struct flash_info *)arg)->bdev_base  = flash->bdev.base;
+		((struct flash_info *)arg)->bdev_size  = flash->bdev.size;
+		((struct flash_info *)arg)->bdev_label = flash->bdev.label;
 
 	default:
 		return -ENOTSUPP;

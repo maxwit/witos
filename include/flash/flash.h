@@ -20,6 +20,7 @@
 #define FLASH_FLASH_PART   (1 << 6) // fixme
 
 enum {
+	FLASH_IOCG_INFO,
 	FLASH_IOCS_OOB_MODE,
 	FLASH_IOCG_OOB_MODE,
 	FLASH_IOCS_CALLBACK,
@@ -112,6 +113,18 @@ struct oob_opt {
 struct image_info {
 	char  image_name[FILE_NAME_SIZE];
 	__u32 image_size;
+};
+
+struct flash_info {
+	int type;
+	size_t block_size;
+	size_t page_size;
+	size_t oob_size;
+	OOB_MODE oob_mode;
+	const char *name;
+	size_t bdev_base;
+	size_t bdev_size;
+	const char *bdev_label;
 };
 
 struct flash_chip {

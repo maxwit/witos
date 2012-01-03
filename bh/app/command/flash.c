@@ -4,8 +4,6 @@
 #include <task.h>
 #include <flash/flash.h>
 
-#warning "fix the world!"
-
 static int flash_str_to_val(char * str, __u32 * val, char *unit)
 {
 	int len;
@@ -65,15 +63,13 @@ static int info(int argc, char *argv[])
 
 static int read_write(int argc, char *argv[])
 {
-	return 0;
-#if 0
-	int ch, ret, flag = 0;
+	int ch, ret = 0, flag = 0;
 	__u32 start = 0, size = 1024;
 	char start_unit = 0, size_unit = 0;
 	void *buff = NULL;
-	int fd_bdev;
-	struct flash_chip *flash;
-	struct block_device *bdev;
+	int fd;
+	struct flash_info flash_val;
+	char bdev_name[BLOCK_DEV_NAME_LEN];
 
 	while ((ch = getopt(argc, argv, "a:l:m:h")) != -1) {
 		switch (ch) {
@@ -126,38 +122,40 @@ static int read_write(int argc, char *argv[])
 	}
 
 	// fixme
-	bdev = get_bdev_by_index(getcwd());
-	flash = container_of(bdev, struct flash_chip, bdev);
-	assert(flash);
+	getcwd(bdev_name, sizeof(bdev_name));
+	fd = open(bdev_name, O_RDWR);
+	if (fd < 0) {
+		goto L1;
+	}
+
+	ret = ioctl(fd, FLASH_IOCG_INFO, &flash_val);
+	if (ret < 0) {
+		goto L2;
+	}
 
 	// -a xxxblock or -a xxxpage
 	if (start_unit == 'b') {
-		start *= flash->erase_size;
+		start *= flash_val.block_size;
 	} else if (start_unit == 'p') {
-		start *= flash->write_size;
+		start *= flash_val.page_size;
 	}
 
 	// -l xxxblock or -l xxxpage
 	if (size_unit == 'b') {
-		size *= flash->erase_size;
+		size *= flash_val.block_size;
 	} else if (size_unit == 'p') {
-		size *= flash->write_size;
+		size *= flash_val.page_size;
 	}
 
-	if (start + size >= flash->chip_size) {
+	if (start + size >= flash_val.bdev_size) {
 		printf("Address 0x%08x overflow!\n", start + size);
 		ret = -EINVAL;
 		goto L1;
 	}
 
-	fd_bdev = open(bdev->name, O_RDWR);
-	if (fd_bdev < 0) {
-		goto L1;
-	}
-
-	lseek(fd_bdev, start, SEEK_SET);
+	lseek(fd, start, SEEK_SET);
 	if (0 == strcmp(argv[0], "read")) {
-		ret = read(fd_bdev, buff, size);
+		ret = read(fd, buff, size);
 		if (ret < 0) {
 			printf("please check argument!\n");
 			usage();
@@ -167,7 +165,7 @@ static int read_write(int argc, char *argv[])
 		}
 		printf("Read 0x%08x bytes data to mem 0x%08x from flash 0x%08x\n", size, (__u32)buff, start);
 	} else {
-		ret = write(fd_bdev, buff, size);
+		ret = write(fd, buff, size);
 		if (ret < 0) {
 			printf("please check argument!\n");
 			usage();
@@ -179,10 +177,9 @@ static int read_write(int argc, char *argv[])
 	}
 
 L2:
-	close(fd_bdev);
+	close(fd);
 L1:
 	return ret;
-#endif
 }
 
 #if 0
@@ -207,13 +204,12 @@ static int flash_parterase_process(struct flash_chip *flash, FLASH_HOOK_PARAM *p
 // TODO: add process bar
 static int scanbb(int argc, char *argv[])
 {
-	return 0;
-#if 0
 	int ret;
-	struct flash_chip *flash;
 	__u32 part_num = -1;
 	int ch;
 	int fd;
+	char bdev_name[BLOCK_DEV_NAME_LEN];
+	struct flash_info flash_val;
 
 	while ((ch = getopt(argc, argv, "p:")) != -1) {
 		switch (ch) {
@@ -231,29 +227,40 @@ static int scanbb(int argc, char *argv[])
 		}
 	}
 
-	flash = get_current_flash();
-	if (NULL == flash) {
-		ret = -ENODEV;
+	if (part_num != -1) {
+		snprintf(bdev_name, sizeof(bdev_name), "mtdblock%d", part_num);
+	} else {
+		getcwd(bdev_name, sizeof(bdev_name));
+	}
+
+	fd = open(bdev_name, O_RDONLY);
+	if (fd < 0) {
+		ret = fd;
 		goto L1;
 	}
 
-	if (FLASH_NANDFLASH == flash->type) {
-		// fixme
+	ret = ioctl(fd, FLASH_IOCG_INFO, &flash_val);
+	if (ret < 0) {
+		goto L2;
 	}
 
-	fd = open(const char * path,int flags,...)
-	ioctl(flash, FLASH_IOC_SCANBB, &part_num);
+	if (FLASH_NANDFLASH != flash_val.type) {
+		goto L2;
+	}
 
-	close(flash);
+	ret = ioctl(fd, FLASH_IOC_SCANBB);
+	if (ret < 0) {
+		goto L2;
+	}
+
+L2:
+	close(fd);
 L1:
 	return ret;
-#endif
 }
 
 static int dump(int argc, char *argv[])
 {
-	return 0;
-#if 0
 	__u8 *p, *buff;
 	int ch;
 	int ret = 0;
@@ -262,8 +269,9 @@ static int dump(int argc, char *argv[])
 	int size = 0;
 	char start_unit = 0;
 	char size_unit = 0;
-	size_t flash_size;
-	struct flash_chip *flash;
+	int fd;
+	struct flash_info flash_val;
+	char bdev_name[BLOCK_DEV_NAME_LEN];
 
 	while ((ch = getopt(argc, argv, "p:a:l:h")) != -1) {
 		switch (ch) {
@@ -296,59 +304,72 @@ static int dump(int argc, char *argv[])
 		}
 	}
 
-	flash = get_current_flash();
-	if (NULL == flash) {
-		return -ENODEV;
+	getcwd(bdev_name, sizeof(bdev_name));
+	fd = open(bdev_name, O_RDONLY);
+	if (fd < 0) {
+		ret = fd;
+		goto L1;
+	}
+
+	ret = ioctl(fd, FLASH_IOCG_INFO, &flash_val);
+	if (ret < 0) {
+		goto L2;
 	}
 
 	// -a xxxblock or -a xxxpage
 	if (start_unit == 'b') {
-		start *= flash->erase_size;
+		start *= flash_val.block_size;
 	} else if (start_unit == 'p') {
-		start *= flash->write_size;
+		start *= flash_val.page_size;
 	}
 
 	// -l xxxblock or -l xxxpage
 	if (size_unit == 'b') {
-		size *= flash->erase_size;
+		size *= flash_val.block_size;
 	} else if (size_unit == 'p') {
-		size *= flash->write_size;
+		size *= flash_val.page_size;
 	}
 
 	if (size == 0)
-		size = flash->write_size + flash->oob_size;
+		size = flash_val.page_size + flash_val.oob_size;
 
-	ALIGN_UP(size, flash->write_size + flash->oob_size);
+	ALIGN_UP(size, flash_val.page_size + flash_val.oob_size);
 
-	ret = ioctl(flash, FLASH_IOCG_SIZE, &flash_size);
-	if (start + size >= flash_size) {
+	if (start + size >= flash_val.bdev_size) {
 		printf("Address 0x%08x overflow!\n", start);
-		close(flash);
-		return -EINVAL;
+		ret = -EINVAL;
+		goto L2;
 	}
 
 	buff = (__u8 *)malloc(size);
 	if (NULL == buff) {
 		ret = -ENOMEM;
-		goto no_mem;
+		goto L3;
 	}
 
-	start &= ~(flash->write_size - 1);
+	start &= ~(flash_val.page_size - 1);
 
-	ret = ioctl(flash, FLASH_IOCS_OOB_MODE, (void *)FLASH_OOB_RAW);
-	// if ret < 0
-	ret = read(flash, buff, start, size);
+	ret = ioctl(fd, FLASH_IOCS_OOB_MODE, (void *)FLASH_OOB_RAW);
+	if (ret < 0) {
+		goto L3;
+	}
 
+	ret = lseek(fd, start, SEEK_SET);
+	if (ret < 0) {
+		goto L3;
+	}
+
+	ret = read(fd, buff, size);
 	if (ret < 0) {
 		printf("%s(): line %d execute read_raw() error!\n"
 			"error = %d\n", __func__, __LINE__, ret);
 
-		goto L1;
+		goto L3;
 	}
 
 	DPRINT("%s 0x%08x (flash 0x%08x) ==> RAM 0x%08x, "
 		"Expected length 0x%08x, Real length 0x%08x\n",
-		flash->bdev.name, start, flash->bdev.base + start, buff, size, ret);
+		flash_val.name, start, flash_val.bdev_base + start, buff, size, ret);
 
 	p = buff;
 
@@ -357,7 +378,7 @@ static int dump(int argc, char *argv[])
 
 		printf("Page @ 0x%08x:\n", start);
 
-		i = flash->write_size >> 4;
+		i = flash_val.page_size >> 4;
 
 		while (i--) {
 			printf( "\t%02x %02x %02x %02x %02x %02x %02x %02x"
@@ -368,9 +389,9 @@ static int dump(int argc, char *argv[])
 			p += 16;
 		}
 
-		printf("OOB @ 0x%08x + 0x%08x:\n", start, flash->write_size);
+		printf("OOB @ 0x%08x + 0x%08x:\n", start, flash_val.page_size);
 
-		i = flash->oob_size >> 4;
+		i = flash_val.oob_size >> 4;
 
 		while (i--) {
 			printf( "\t%02x %02x %02x %02x %02x %02x %02x %02x"
@@ -381,27 +402,24 @@ static int dump(int argc, char *argv[])
 			p += 16;
 		}
 
-		start += flash->write_size + flash->oob_size;
-		size  -= flash->write_size + flash->oob_size;
+		start += flash_val.page_size + flash_val.oob_size;
+		size  -= flash_val.page_size + flash_val.oob_size;
 
 		puts("\n");
 	}
 
-L1:
+L3:
 	free(buff);
-no_mem:
-	close(flash);
-
+L2:
+	close(fd);
+L1:
 	return ret;
-#endif
 }
 
 
 // fixme: bad logic!
 static int erase(int argc, char *argv[])
 {
-	return 0;
-#if 0
 	int ch;
 	int arg_flag = 0;
 	int ret = 0;
@@ -410,9 +428,11 @@ static int erase(int argc, char *argv[])
 	__u32 dev_num = 0;
 	char start_unit = 0;
 	char size_unit = 0;
-	struct flash_chip *flash = NULL;
 	__u32 erase_flags = EDF_NORMAL;
-	size_t flash_size;
+	int fd;
+	struct flash_info flash_val;
+	struct erase_opt eopt;
+	char bdev_name[BLOCK_DEV_NAME_LEN];
 
 	while ((ch = getopt(argc, argv, "a:l:p::c:f")) != -1) {
 		switch(ch) {
@@ -463,51 +483,69 @@ static int erase(int argc, char *argv[])
 		}
 	}
 
-	flash = get_current_flash();
-	assert(flash);
+	getcwd(bdev_name, sizeof(bdev_name));
 
-	ret = ioctl(flash, FLASH_IOCG_SIZE, &flash_size);
+	fd = open(bdev_name, O_WRONLY);
+	if (fd < 0) {
+		ret = fd;
+		goto L1;
+	}
+
+	ret = ioctl(fd, FLASH_IOCG_INFO, &flash_val);
+	if (ret < 0) {
+		goto L2;
+	}
 
 	// if option is "-p" erase the whole partiton or default current partition with no option
 	if (0 == size) {
-		size = flash_size;
+		size = flash_val.bdev_size;
 	} else {
 		// -a xxxblock or -a xxxpage
 		if (start_unit == 'b') {
-			start *= flash->erase_size;
+			start *= flash_val.block_size;
 		} else if (start_unit == 'p') {
-			start *= flash->write_size;
+			start *= flash_val.page_size;
 		}
 
 		// -l xxxblock or -l xxxpage
 		if (size_unit == 'b') {
-			size *= flash->erase_size;
+			size *= flash_val.block_size;
 		} else if (size_unit == 'p') {
-			size *= flash->write_size;
+			size *= flash_val.page_size;
 		}
 	}
 
-	if (flash_size < start + size) {
+	if (start + size > flash_val.bdev_size) {
 		printf("Out of chip size!\n");
 		return -EINVAL;
 	}
 
 	//aligned:
-	ALIGN_UP(start, flash->write_size);
-	ALIGN_UP(size, flash->erase_size);
+	ALIGN_UP(start, flash_val.page_size);
+	ALIGN_UP(size, flash_val.block_size);
 
 	printf("[0x%08x : 0x%08x]\n", start, size);
-	ret = flash_erase(flash, start, size, erase_flags);
 
-	close(flash);
+	memset(&eopt, 0, sizeof(eopt));
+	eopt.esize = size;
+	eopt.estart = start;
+	eopt.flags = erase_flags;
 
+	ret = ioctl(fd, FLASH_IOC_ERASE, &eopt);
+	if (ret < 0) {
+		goto L2;
+	}
+
+L2:
+	close(fd);
+
+L1:
 	return ret;
-#endif
 }
 
 int main(int argc, char *argv[])
 {
-	int ret, i;
+	int ret = 0, i;
 
 	struct command cmd[] = {
 		{
@@ -543,6 +581,5 @@ int main(int argc, char *argv[])
 		}
 	}
 
-L1:
 	return ret;
 }
