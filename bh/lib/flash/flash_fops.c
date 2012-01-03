@@ -138,6 +138,12 @@ static int flash_open(struct file *fp, struct inode *inode)
 	flash = container_of(inode->i_ext, struct flash_chip, bdev);
 	assert(flash);
 
+	if (fp->flags == O_WRONLY || fp->flags == O_RDWR) {
+		if (flash->bdev.flags & BDF_RDONLY) {
+			return -EACCES;
+		}
+	}
+
 	flash->callback_func = NULL;
 	flash->oob_mode = FLASH_OOB_PLACE;
 

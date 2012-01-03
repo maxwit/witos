@@ -52,8 +52,11 @@ static int __INIT__ flash_parse_part(struct flash_chip *host,
 			part->size = host->chip_size - curr_base;
 			p++;
 		} else {
-			for (i = 0; *p && *p!= '@' && *p != '('; i++, p++)
+			for (i = 0; *p; i++, p++) {
+				if (*p == '@' || *p == '(' || *p == 'r' || *p == ',')
+					break;
 				buff[i] = *p;
+			}
 			buff[i] = '\0';
 
 			ret = hr_str_to_val(buff, (unsigned long *)&part->size);
@@ -65,8 +68,10 @@ static int __INIT__ flash_parse_part(struct flash_chip *host,
 
 		// part base
 		if (*p == '@') {
-			for (i = 0, p++; *p && *p != '('; i++, p++)
+			for (i = 0, p++; *p; i++, p++) {
+				if (*p == '(' || *p == 'r' || *p == ',')
 				buff[i] = *p;
+			}
 			buff[i] = '\0';
 
 			ret = hr_str_to_val(buff, (unsigned long *)&part->base);
@@ -87,9 +92,21 @@ static int __INIT__ flash_parse_part(struct flash_chip *host,
 				part->label[i] = *p;
 
 			p++;
-			if (',' == *p)
-				p++;
 		}
+
+		if (*p == 'r') {
+			p++;
+			if (*p != 'o') {
+				return -EINVAL;
+			}
+
+			part->flags |= BDF_RDONLY;
+			p++;
+		}
+
+		if (',' == *p)
+			p++;
+
 		part->label[i] = '\0';
 
 		curr_base += part->size;
@@ -231,8 +248,9 @@ int flash_register(struct flash_chip *flash)
 
 			snprintf(slave->bdev.name, LABEL_NAME_SIZE, BDEV_NAME_FLASH "%d", i + 1);
 
-			slave->bdev.base = part_tab[i].base;
-			slave->bdev.size = part_tab[i].size;
+			slave->bdev.flags = part_tab[i].flags;
+			slave->bdev.base  = part_tab[i].base;
+			slave->bdev.size  = part_tab[i].size;
 			strncpy(slave->bdev.label, part_tab[i].label,
 				sizeof(slave->bdev.label));
 
