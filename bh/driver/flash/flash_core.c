@@ -70,6 +70,7 @@ static int __INIT__ flash_parse_part(struct flash_chip *host,
 		if (*p == '@') {
 			for (i = 0, p++; *p; i++, p++) {
 				if (*p == '(' || *p == 'r' || *p == ',')
+					break;
 				buff[i] = *p;
 			}
 			buff[i] = '\0';
