@@ -52,8 +52,11 @@ static int __INIT__ flash_parse_part(struct flash_chip *host,
 			part->size = host->chip_size - curr_base;
 			p++;
 		} else {
-			for (i = 0; *p && *p!= '@' && *p != '('; i++, p++)
+			for (i = 0; *p; i++, p++) {
+				if (*p == '@' || *p == '(' || *p == 'r' || *p == ',')
+					break;
 				buff[i] = *p;
+			}
 			buff[i] = '\0';
 
 			ret = hr_str_to_val(buff, (unsigned long *)&part->size);
@@ -65,8 +68,11 @@ static int __INIT__ flash_parse_part(struct flash_chip *host,
 
 		// part base
 		if (*p == '@') {
-			for (i = 0, p++; *p && *p != '('; i++, p++)
+			for (i = 0, p++; *p; i++, p++) {
+				if (*p == '(' || *p == 'r' || *p == ',')
+					break;
 				buff[i] = *p;
+			}
 			buff[i] = '\0';
 
 			ret = hr_str_to_val(buff, (unsigned long *)&part->base);
@@ -87,9 +93,21 @@ static int __INIT__ flash_parse_part(struct flash_chip *host,
 				part->label[i] = *p;
 
 			p++;
-			if (',' == *p)
-				p++;
 		}
+
+		if (*p == 'r') {
+			p++;
+			if (*p != 'o') {
+				return -EINVAL;
+			}
+
+			part->flags |= BDF_RDONLY;
+			p++;
+		}
+
+		if (',' == *p)
+			p++;
+
 		part->label[i] = '\0';
 
 		curr_base += part->size;
@@ -105,18 +123,44 @@ error:
 	return ret;
 }
 
+static size_t remove_blank_space(const char *src, char *dst, size_t size)
+{
+	char *p = dst;
+
+	while (*src) {
+		if (*src != ' ') {
+			*p = *src;
+			p++;
+		}
+
+		src++;
+	}
+
+	*p = '\0';
+
+	return p - dst;
+}
+
 static int __INIT__ flash_scan_part(struct flash_chip *host,
 						struct part_attr part[])
 {
 	int ret;
 	char part_def[CONF_VAL_LEN];
+	char conf_val[CONF_VAL_LEN];
+	const char *match_parts;
 
-	ret = conf_get_attr("flash.parts", part_def);
+	ret = conf_get_attr("flash.parts", conf_val);
 	if (ret < 0) {
 		return ret;
 	}
 
-	// TODO: add code here!
+	match_parts = strstr(conf_val, host->name);
+	if (!match_parts) {
+		// TODO: add hint here
+		return -ENOENT;
+	}
+
+	remove_blank_space(match_parts, part_def, sizeof(part_def));
 
 	return flash_parse_part(host, part, part_def);
 }
@@ -184,6 +228,7 @@ int flash_register(struct flash_chip *flash)
 	printf("registering flash device \"%s\":\n", flash->name);
 	list_add_tail(&flash->master_node, &g_master_list);
 
+	memset(part_tab, 0, sizeof(part_tab));
 	n = flash_scan_part(flash, part_tab);
 
 	if (n <= 0) {
@@ -205,8 +250,9 @@ int flash_register(struct flash_chip *flash)
 
 			snprintf(slave->bdev.name, LABEL_NAME_SIZE, BDEV_NAME_FLASH "%d", i + 1);
 
-			slave->bdev.base = part_tab[i].base;
-			slave->bdev.size = part_tab[i].size;
+			slave->bdev.flags = part_tab[i].flags;
+			slave->bdev.base  = part_tab[i].base;
+			slave->bdev.size  = part_tab[i].size;
 			strncpy(slave->bdev.label, part_tab[i].label,
 				sizeof(slave->bdev.label));
 
