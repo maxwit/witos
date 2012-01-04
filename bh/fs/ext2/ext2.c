@@ -217,7 +217,7 @@ static struct ext2_inode *ext2_read_inode(struct ext2_file_system *fs, int ino)
 	blk_no = ino_no / count;
 	ino_no = ino_no % count;
 
-	printf("%s(%d): grp_no = %d, blk_no = %d, ino_no = %d, inode table = %d\n",
+	DPRINT("%s(%d): grp_no = %d, blk_no = %d, ino_no = %d, inode table = %d\n",
 		__func__, ino + 1, grp_no, blk_no, ino_no, gde->bg_inode_table);
 
 	inode = malloc(sb->s_inode_size);
@@ -225,7 +225,7 @@ static struct ext2_inode *ext2_read_inode(struct ext2_file_system *fs, int ino)
 
 	ext2_read_block(fs, inode, gde->bg_inode_table + blk_no, ino_no * sb->s_inode_size, sb->s_inode_size);
 
-	printf("%s(%d): inode size = %d, uid = %d, gid = %d, mode = 0x%x\n",
+	DPRINT("%s(%d): inode size = %d, uid = %d, gid = %d, mode = 0x%x\n",
 		__func__, ino + 1, inode->i_size, inode->i_uid, inode->i_gid, inode->i_mode);
 
 	return inode;
@@ -291,7 +291,7 @@ static struct dentry *ext2_mount(struct file_system_type *fs_type, unsigned long
 
 	blk_is = (1 << (ext2_sb->s_log_block_size + 10)) / ext2_sb->s_inode_size;
 
-	printf("%s(): label = %s, log block size = %d, "
+	DPRINT("%s(): label = %s, log block size = %d, "
 		"inode size = %d, block size = %d, inodes per block = %d\n",
 		__func__, ext2_sb->s_volume_name, ext2_sb->s_log_block_size,
 		ext2_sb->s_inode_size, (1 << (ext2_sb->s_log_block_size + 10)), blk_is);
@@ -305,7 +305,7 @@ static struct dentry *ext2_mount(struct file_system_type *fs_type, unsigned long
 
 	ext2_read_block(ext2_fs, ext2_gdt, ext2_sb->s_first_data_block + 1, 0, gdt_num * sizeof(struct ext2_group_desc));
 
-	printf("%s(), block group[0 / %d]: free blocks= %d, free inodes = %d\n",
+	DPRINT("%s(), block group[0 / %d]: free blocks= %d, free inodes = %d\n",
 		__func__, gdt_num, ext2_gdt->bg_free_blocks_count, ext2_gdt->bg_free_inodes_count);
 
 	ext2_fs->gdt  = ext2_gdt;
@@ -378,7 +378,8 @@ static struct ext2_dir_entry_2 *ext2_real_lookup(struct inode *inode, const char
 
 		while (dentry->rec_len > 0 && len < parent->i_size && len < (i + 1) * block_size) {
 			dentry->name[dentry->name_len] = '\0';
-			printf("%s: inode = %d, dentry size = %d, name size = %d, block = %d\n",
+
+			DPRINT("%s: inode = %d, dentry size = %d, name size = %d, block = %d\n",
 				dentry->name, dentry->inode, dentry->rec_len, dentry->name_len, i);
 
 			if (!strncmp(dentry->name, name, dentry->name_len))
@@ -389,8 +390,7 @@ static struct ext2_dir_entry_2 *ext2_real_lookup(struct inode *inode, const char
 		}
 	}
 
-	printf("%s(): entry \"%s\" not found!\n",
-		__func__, name);
+	GEN_DBG("\"%s\" not found!\n", name);
 
 	return NULL;
 
@@ -510,7 +510,6 @@ static struct file_system_type ext2_fs_type = {
 
 static int __INIT__ ext2_init(void)
 {
-	GEN_DBG("\n");
 	return file_system_type_register(&ext2_fs_type);
 }
 

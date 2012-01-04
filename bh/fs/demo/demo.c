@@ -17,6 +17,7 @@ int main(int argc, char *argv[])
 	ssize_t len;
 	const char *dev_name = "/tmp/hello.ext2", *type = "ext2", *path = "/" MNT_PT "/"  __FILE__;
 	char buff[BUF_LEN + 1];
+	struct block_device bdev;
 
 	while ((ret = getopt(argc, argv, "d:t:f:h")) != -1) {
 		switch (ret) {
@@ -60,8 +61,6 @@ int main(int argc, char *argv[])
 		buff[len] = '\0';
 		printf("%s", buff);
 	}
-
-	printf("%s() line %d\n", __func__, __LINE__);
 
 	__close(fd);
 

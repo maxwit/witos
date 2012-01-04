@@ -80,7 +80,6 @@ int __mount(const char *type, unsigned long flags, const char *bdev_name, const 
 	fs_type = file_system_type_get(type);
 	if (NULL == fs_type)
 		return -ENOENT;
-	printf("%s() line %d\n", __func__, __LINE__);
 
 	root = fs_type->mount(fs_type, flags, bdev);
 	if (!root) {

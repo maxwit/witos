@@ -1,4 +1,5 @@
-CFLAGS = -Wall -g -I. -include init.h -DCONFIG_DEBUG
+CFLAGS = -Wall -I. -include init.h
+#-g -DCONFIG_DEBUG
 CC = gcc
 
 SRCS = $(wildcard *.c)
