@@ -62,7 +62,7 @@ struct block_device *seach_device(const char *name)
 #ifdef __GBIOS_VER__
 int mount(const char *type, unsigned long flags, const char *bdev_name, const char *path)
 #else
-int demo_mount(const char *type, unsigned long flags, const char *bdev_name, const char *path)
+int __mount(const char *type, unsigned long flags, const char *bdev_name, const char *path)
 #endif
 {
 	int ret;
@@ -113,7 +113,7 @@ L1:
 #ifdef __GBIOS_VER__
 int umount(const char *mnt)
 #else
-int demo_umount(const char *mnt)
+int __umount(const char *mnt)
 #endif
 {
 	return 0;
@@ -281,7 +281,7 @@ fail:
 #ifdef __GBIOS_VER__
 int open(const char *path, int flags, ...)
 #else
-int demo_open(const char *path, int flags, ...)
+int __open(const char *path, int flags, ...)
 #endif
 {
 	int mode = 0;
@@ -292,7 +292,7 @@ int demo_open(const char *path, int flags, ...)
 #ifdef __GBIOS_VER__
 int close(int fd)
 #else
-int demo_close(int fd)
+int __close(int fd)
 #endif
 {
 	struct file *fp;
@@ -313,7 +313,7 @@ int demo_close(int fd)
 #ifdef __GBIOS_VER__
 ssize_t read(int fd, void *buff, size_t size)
 #else
-ssize_t demo_read(int fd, void *buff, size_t size)
+ssize_t __read(int fd, void *buff, size_t size)
 #endif
 {
 	struct file *fp;
@@ -332,7 +332,7 @@ ssize_t demo_read(int fd, void *buff, size_t size)
 #ifdef __GBIOS_VER__
 ssize_t write(int fd, const void *buff, size_t size)
 #else
-ssize_t demo_write(int fd, const void *buff, size_t size)
+ssize_t __write(int fd, const void *buff, size_t size)
 #endif
 {
 	struct file *fp;
@@ -351,7 +351,7 @@ ssize_t demo_write(int fd, const void *buff, size_t size)
 #ifdef __GBIOS_VER__
 int ioctl(int fd, int cmd, ...)
 #else
-int demo_ioctl(int fd, int cmd, ...)
+int __ioctl(int fd, int cmd, ...)
 #endif
 {
 	struct file *fp;
@@ -373,7 +373,7 @@ int demo_ioctl(int fd, int cmd, ...)
 #ifdef __GBIOS_VER__
 loff_t lseek(int fd, loff_t offset, int whence)
 #else
-loff_t demo_lseek(int fd, loff_t offset, int whence)
+loff_t __lseek(int fd, loff_t offset, int whence)
 #endif
 {
 	struct file *fp;

@@ -9,15 +9,14 @@
 #include <fs/fs.h>
 
 #define BUF_LEN 511
-#define MNTPT   "c"
+#define MNT_PT   "c"
 
 int main(int argc, char *argv[])
 {
 	int ret, fd;
 	ssize_t len;
-	const char *dev_name = "/tmp/hello.ext2", *type = "ext2", *path = "/" MNTPT "/"  __FILE__;
+	const char *dev_name = "/tmp/hello.ext2", *type = "ext2", *path = "/" MNT_PT "/"  __FILE__;
 	char buff[BUF_LEN + 1];
-	struct block_device bdev;
 
 	while ((ret = getopt(argc, argv, "d:t:f:h")) != -1) {
 		switch (ret) {
@@ -41,20 +40,20 @@ int main(int argc, char *argv[])
 	strcpy(bdev.name, dev_name);
 	block_device_register(&bdev);
 
-	ret = demo_mount(type, 0, dev_name, MNTPT);
+	ret = __mount(type, 0, dev_name, MNT_PT);
 	if (ret < 0) {
 		printf("fail to mount %s with %s! (ret = %d)\n", dev_name, type, ret);
 		return ret;
 	}
 
-	fd = demo_open(path, 0);
+	fd = __open(path, 0);
 	if (fd < 0) {
 		printf("fail to open %s\n", path);
 		return fd;
 	}
 
 	while (1) {
-		len = demo_read(fd, buff, BUF_LEN);
+		len = __read(fd, buff, BUF_LEN);
 		if (len <= 0)
 			break;
 
@@ -64,9 +63,9 @@ int main(int argc, char *argv[])
 
 	printf("%s() line %d\n", __func__, __LINE__);
 
-	demo_close(fd);
+	__close(fd);
 
-	demo_umount(MNTPT);
+	__umount(MNT_PT);
 
 	return 0;
 }

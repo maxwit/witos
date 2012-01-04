@@ -44,6 +44,7 @@ dir-y := th bh
 all: $(dir-y)
 
 $(dir-y): include/autoconf.h
+	@./utility/codeclean.sh
 	@make $(img_build)$@
 
 include/autoconf.h: .config

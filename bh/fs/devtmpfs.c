@@ -63,7 +63,7 @@ struct dentry *devfs_lookup(struct inode *parent, const char *name)
 		}
 	}
 
-	return NULL;	
+	return NULL;
 }
 
 extern const struct file_operations flash_fops;

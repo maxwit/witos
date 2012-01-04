@@ -26,7 +26,7 @@ int block_device_register(struct block_device *bdev)
 
 	bdev->fd = fd;
 
-	list_add_tail(&bdev->bdev_node, &g_bdev_list);	
+	list_add_tail(&bdev->bdev_node, &g_bdev_list);
 
 #if 0
 	printf("    0x%08x - 0x%08x %s (%s)\n",
