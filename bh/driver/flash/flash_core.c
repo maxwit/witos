@@ -228,6 +228,7 @@ int flash_register(struct flash_chip *flash)
 	printf("registering flash device \"%s\":\n", flash->name);
 	list_add_tail(&flash->master_node, &g_master_list);
 
+	memset(part_tab, 0, sizeof(part_tab));
 	n = flash_scan_part(flash, part_tab);
 
 	if (n <= 0) {
