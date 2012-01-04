@@ -86,7 +86,7 @@ int disk_drive_register(struct disk_drive *drive)
 		if (NULL == slave)
 			return -ENOMEM;
 
-		snprintf(slave->bdev.name, LABEL_NAME_SIZE, "%sp%d",
+		snprintf(slave->bdev.name, LABEL_NAME_SIZE, "%sp%d", // fixme
 			drive->bdev.name, i + 1);
 
 		slave->bdev.base = part_tab[i].base;
@@ -102,18 +102,6 @@ int disk_drive_register(struct disk_drive *drive)
 		ret = block_device_register(&slave->bdev);
 		// if ret < 0 ...
 	}
-
-#if 0
-	struct list_node *iter;
-
-	printf("%s:", drive->bdev.name);
-	list_for_each(iter, &drive->slave_list)
-	{
-		slave = container_of(iter, struct disk_drive, slave_list);
-		printf(" %s", slave->bdev.name);
-	}
-	printf("\n");
-#endif
 
 	return ret;
 }

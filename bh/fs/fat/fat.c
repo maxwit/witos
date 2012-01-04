@@ -3,7 +3,8 @@
 #include <string.h>
 #include <types.h>
 #include <fs/fs.h>
-#include <fs/fat32.h>
+#include <fs/fat.h>
+#include <drive.h>
 
 static ssize_t fat_read_block(struct fat_fs *fs, void *buff, int blk_no, size_t off, size_t size)
 {
@@ -358,9 +359,9 @@ static struct file_system_type fat_fs_type = {
 	.lookup = fat_lookup,
 };
 
-static int __INIT__ fat32_init(void)
+static int __INIT__ fat_init(void)
 {
 	return file_system_type_register(&fat_fs_type);
 }
 
-SUBSYS_INIT(fat32_init);
+SUBSYS_INIT(fat_init);

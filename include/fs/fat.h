@@ -1,7 +1,6 @@
 #pragma once
 
 #include <types.h>
-#include <drive.h>
 #include <fs/fs.h>
 
 struct fat_boot_sector {

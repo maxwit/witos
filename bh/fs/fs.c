@@ -56,7 +56,7 @@ struct block_device *seach_device(const char *name)
 			return bdev;
 	}
 
-	return NULL;	
+	return NULL;
 }
 
 int mount(const char *type, unsigned long flags, const char *bdev_name, const char *path)

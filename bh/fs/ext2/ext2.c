@@ -2,11 +2,12 @@
 #include <malloc.h>
 #include <string.h>
 #include <errno.h>
-#include <drive.h>
+#include <block.h>
 #include <fs/fs.h>
-#include <fs/ext3.h>
+#include <fs/ext2.h>
 
 #define MAX_MNT_LEN 256
+#define SECT_SIZE   (1 << 9)
 
 struct ext2_file_system {
 	struct ext2_super_block sb;
@@ -19,17 +20,30 @@ static ssize_t ext2_read_block(struct ext2_file_system *fs, void *buff, int blk_
 {
 	struct block_device *bdev = fs->bdev;
 	struct ext2_super_block *sb = &fs->sb;
-	struct disk_drive *drive = container_of(bdev, struct disk_drive, bdev);
-	size_t buf_len = (off + size + drive->sect_size - 1) & ~(drive->sect_size - 1);
+	// struct disk_drive *drive = container_of(bdev, struct disk_drive, bdev);
+	size_t buf_len = (off + size + SECT_SIZE - 1) & ~(SECT_SIZE - 1);
 	char blk_buf[buf_len];
 	int start_blk = blk_no << (sb->s_log_block_size + 1), cur_blk;
+	struct bio *bio;
 
-	for (cur_blk = 0; cur_blk < buf_len / drive->sect_size; cur_blk++) {
-		// bdev->get_block(bdev, start_blk + cur_blk, blk_buf + cur_blk * drive->sect_size);
-		drive->get_block(drive, (start_blk + cur_blk) * drive->sect_size, blk_buf + cur_blk * drive->sect_size);
+	bio = bio_alloc();
+	if (!bio)
+		return -ENOMEM;
+	bio->bdev = bdev;
+	bio->sect = blk_no; // start_blk?
+	bio->size = size;
+	bio->data = buff;
+	submit_bio(READ, bio);
+#if 0
+	for (cur_blk = 0; cur_blk < buf_len / SECT_SIZE; cur_blk++) {
+		// bdev->get_block(bdev, start_blk + cur_blk, blk_buf + cur_blk * SECT_SIZE);
+		drive->get_block(drive, (start_blk + cur_blk) * SECT_SIZE, blk_buf + cur_blk * SECT_SIZE);
 	}
 
 	memcpy(buff, blk_buf + off, size);
+#endif
+
+	bio_free(bio);
 
 	return size;
 }
@@ -245,19 +259,32 @@ static struct dentry *ext2_mount(struct file_system_type *fs_type, unsigned long
 	struct ext2_dir_entry_2 *ext2_root;
 	struct ext2_group_desc *ext2_gdt;
 	struct ext2_inode *ext2_ino;
-	struct disk_drive *drive = container_of(bdev, struct disk_drive, bdev);
-	char buff[drive->sect_size];
+	// struct disk_drive *drive = container_of(bdev, struct disk_drive, bdev);
+	char buff[SECT_SIZE];
+	struct bio *bio;
 
-	ret = drive->get_block(drive, 2 * drive->sect_size, buff);
+#if 0
+	ret = drive->get_block(drive, 2 * SECT_SIZE, buff);
 	if (ret < 0) {
 		DPRINT("%s(): read dbr err\n", __func__);
 		return NULL;
 	}
+#endif
+	bio = bio_alloc();
+	if (!bio)
+		return NULL;
+	bio->bdev = bdev;
+	bio->sect = 2;
+	bio->size = SECT_SIZE;
+	bio->data = buff;
+	submit_bio(READ, bio);
+	// TODO: check flags here
+	bio_free(bio);
 
 	memcpy(ext2_sb, buff, sizeof(*ext2_sb));
 
-	if (ext2_sb->s_magic != 0xef53) {
-		GEN_DBG("magic = %x\n", ext2_sb->s_magic);
+	if (ext2_sb->s_magic != 0xEF53) {
+		GEN_DBG("bad magic (0x%x)!\n", ext2_sb->s_magic);
 		return NULL;
 	}
 
@@ -477,9 +504,9 @@ static struct file_system_type ext2_fs_type = {
 	.lookup = ext2_lookup,
 };
 
-static int __INIT__ ext3_init(void)
+static int __INIT__ ext2_init(void)
 {
 	return file_system_type_register(&ext2_fs_type);
 }
 
-SUBSYS_INIT(ext3_init);
+SUBSYS_INIT(ext2_init);
