@@ -6,12 +6,36 @@
 #include <block.h>
 #include <stdlib.h>
 
-#define SECT_SIZE 512
+#define SECT_SIZE   (1 << 9)
 
-enum {
-	READ = 1,
-	WRITE,
-};
+static DECL_INIT_LIST(g_bdev_list);
+
+const struct list_node *bdev_get_list()
+{
+	return &g_bdev_list;
+}
+
+int block_device_register(struct block_device *bdev)
+{
+	int fd;
+
+	fd = open(bdev->name, O_RDONLY);
+	if (fd < 0) {
+		return 0;
+	}
+
+	bdev->fd = fd;
+
+	list_add_tail(&bdev->bdev_node, &g_bdev_list);	
+
+#if 0
+	printf("    0x%08x - 0x%08x %s (%s)\n",
+		bdev->base, bdev->base + bdev->size, bdev->name,
+		bdev->label[0] ? bdev->label : "N/A");
+#endif
+
+	return 0;
+}
 
 struct bio *bio_alloc(/* reserved */)
 {
@@ -32,19 +56,26 @@ void bio_free(struct bio *bio)
 void submit_bio(int rw, struct bio *bio)
 {
 	int ret;
-	size_t len;
-	sector_t sect = bio->sect;
 	struct block_device *bdev = bio->bdev;
 
-	for (len = 0; len < bio->size; len += SECT_SIZE) {
-		if (READ == rw)
-			ret = read(bdev->fd, sect << 9, bio->data + len);
-		else
-			ret = write(bdev->fd, sect << 9, bio->data + len);
+	lseek(bdev->fd, bio->sect << 9, SEEK_SET);
 
-		sect++;
-	}
+	if (READ == rw)
+		ret = read(bdev->fd, bio->data, bio->size);
+	else
+		ret = write(bdev->fd, bio->data, bio->size);
 
 	if (ret < 0)
 		bio->flags = 1; // fixme
+}
+
+void *zalloc(size_t sz)
+{
+	void *p;
+
+	p = malloc(sz);
+	if (p)
+		memset(p, 0, sz);
+
+	return p;
 }

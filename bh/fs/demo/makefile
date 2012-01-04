@@ -1,11 +1,13 @@
-CFLAGS = -Wall -g -I. -DCONFIG_DEBUG
+CFLAGS = -Wall -g -I. -include init.h -DCONFIG_DEBUG
 CC = gcc
 
 SRCS = $(wildcard *.c)
 OBJS = $(SRCS:%.c=%.o)
-OBJS += fs.o block.o ext2.o fat.o
+OBJS += fs.o block.o ext2.o
 
-all: demo
+HDRS =  list.h fs
+
+all: $(HDRS) demo
 
 demo: $(OBJS)
 	gcc $^ -o $@
@@ -13,7 +15,7 @@ demo: $(OBJS)
 clean:
 	@rm -fv *.o demo
 
-ext2.o: ../ext/ext2.c
+ext2.o: ../ext2/ext2.c
 	gcc $(CFLAGS) -c $<
 
 #fat.o: ../fat/fat.c
@@ -21,3 +23,9 @@ ext2.o: ../ext/ext2.c
 
 fs.o: ../fs.c
 	gcc $(CFLAGS) -c $<
+
+$(HDRS):
+	@ln -sv ../../../include/$@ $@
+
+distclean: clean
+	@rm -vf $(HDRS)

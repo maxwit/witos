@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <init.h>
 #include <malloc.h>
 #include <string.h>
 #include <errno.h>
@@ -23,25 +24,26 @@ static ssize_t ext2_read_block(struct ext2_file_system *fs, void *buff, int blk_
 	// struct disk_drive *drive = container_of(bdev, struct disk_drive, bdev);
 	size_t buf_len = (off + size + SECT_SIZE - 1) & ~(SECT_SIZE - 1);
 	char blk_buf[buf_len];
-	int start_blk = blk_no << (sb->s_log_block_size + 1), cur_blk;
+	int start_blk = blk_no << (sb->s_log_block_size + 1);
+	// int cur_blk;
 	struct bio *bio;
 
 	bio = bio_alloc();
 	if (!bio)
 		return -ENOMEM;
 	bio->bdev = bdev;
-	bio->sect = blk_no; // start_blk?
-	bio->size = size;
-	bio->data = buff;
+	bio->sect = start_blk;
+	bio->size = buf_len;
+	bio->data = blk_buf;
 	submit_bio(READ, bio);
 #if 0
 	for (cur_blk = 0; cur_blk < buf_len / SECT_SIZE; cur_blk++) {
 		// bdev->get_block(bdev, start_blk + cur_blk, blk_buf + cur_blk * SECT_SIZE);
 		drive->get_block(drive, (start_blk + cur_blk) * SECT_SIZE, blk_buf + cur_blk * SECT_SIZE);
 	}
+#endif
 
 	memcpy(buff, blk_buf + off, size);
-#endif
 
 	bio_free(bio);
 
@@ -249,7 +251,6 @@ static struct dentry *ext2_dentry_alloc()
 
 static struct dentry *ext2_mount(struct file_system_type *fs_type, unsigned long flags, struct block_device *bdev)
 {
-	int ret;
 	int blk_is;
 	int gdt_num;
 	struct dentry *root;
@@ -361,7 +362,8 @@ static struct ext2_dir_entry_2 *ext2_real_lookup(struct inode *inode, const char
 	struct ext2_file_system *fs = inode->i_fs;
 	struct ext2_inode *parent = inode->i_ext;
 	char buff[parent->i_size];
-	size_t len = 0, blocks, i;
+	size_t len = 0;
+	int blocks, i;
 	size_t block_size = 1 << (fs->sb.s_log_block_size + 10);
 
 	blocks = (parent->i_size + block_size - 1) / block_size;
@@ -424,7 +426,7 @@ static ssize_t ext2_read(struct file *fp, void *buff, size_t size, loff_t *off)
 	struct ext2_file_system *fs = fp->de->inode->i_fs;
 	struct ext2_dir_entry_2 *de;
 
-	de = (struct ext2_dir_entry_2 *)fp->de;
+	de = fp->de->d_ext;
 
 	inode = ext2_read_inode(fs, de->inode);
 
@@ -460,7 +462,7 @@ static ssize_t ext2_read(struct file *fp, void *buff, size_t size, loff_t *off)
 	return real_size;
 }
 
-static int ext2_write(struct file *fp, const void *buff, size_t size, loff_t *off)
+static ssize_t ext2_write(struct file *fp, const void *buff, size_t size, loff_t *off)
 {
 	return 0;
 }
@@ -478,7 +480,9 @@ static struct dentry *ext2_lookup(struct inode *parent, const char *name)
 	ino = de->inode;
 
 	ext2_de = ext2_real_lookup(parent, name);
-	// ...
+	if (!ext2_de)
+		return NULL;
+
 	de->d_ext = ext2_de;
 
 	ext2_ino = ext2_read_inode(parent->i_fs, ext2_de->inode);
@@ -506,6 +510,7 @@ static struct file_system_type ext2_fs_type = {
 
 static int __INIT__ ext2_init(void)
 {
+	GEN_DBG("\n");
 	return file_system_type_register(&ext2_fs_type);
 }
 

@@ -3,6 +3,7 @@
 typedef unsigned char  __u8, byte;
 typedef unsigned short __u16;
 typedef unsigned int   __u32;
+typedef __loff_t  loff_t;
 
 // fixme
 typedef unsigned short __le16;
@@ -69,3 +70,13 @@ typedef enum {false, true} bool;
 		(a) = (b); \
 		(b) = _________tmp; \
 	} while(0)
+
+#ifdef CONFIG_DEBUG
+#define DPRINT(fmt, args ...)  printf(fmt, ##args)
+#define GEN_DBG(fmt, args ...) \
+		printf("%s() line %d: " fmt, __func__, __LINE__, ##args)
+#else
+#define DPRINT(fmt, args ...)
+#define GEN_DBG(fmt, args ...)
+#endif
+

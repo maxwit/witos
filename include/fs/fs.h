@@ -1,6 +1,7 @@
 #pragma once
 
 #include <types.h>
+#include <list.h>
 #include <block.h>
 
 struct file;
@@ -49,7 +50,7 @@ struct file_operations {
 };
 
 struct file {
-	size_t pos;
+	loff_t pos;
 	unsigned int flags;
 	// unsigned int mode;
 	const struct file_operations *fops;

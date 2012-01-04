@@ -59,7 +59,11 @@ struct block_device *seach_device(const char *name)
 	return NULL;
 }
 
+#ifdef __GBIOS_VER__
 int mount(const char *type, unsigned long flags, const char *bdev_name, const char *path)
+#else
+int demo_mount(const char *type, unsigned long flags, const char *bdev_name, const char *path)
+#endif
 {
 	int ret;
 	struct file_system_type *fs_type;
@@ -106,7 +110,11 @@ L1:
 	return ret;
 }
 
+#ifdef __GBIOS_VER__
 int umount(const char *mnt)
+#else
+int demo_umount(const char *mnt)
+#endif
 {
 	return 0;
 }
@@ -162,7 +170,7 @@ static int path_walk(const char *path, struct nameidata *nd)
 		return -EINVAL;
 	str.name = path;
 
-	while ('/' == *path)
+	while (*path && '/' != *path)
 		path++;
 	if (!*path)
 		return -EINVAL;
@@ -270,14 +278,22 @@ fail:
 	return ret;
 }
 
+#ifdef __GBIOS_VER__
 int open(const char *path, int flags, ...)
+#else
+int demo_open(const char *path, int flags, ...)
+#endif
 {
 	int mode = 0;
 
 	return do_open(path, flags, mode);
 }
 
+#ifdef __GBIOS_VER__
 int close(int fd)
+#else
+int demo_close(int fd)
+#endif
 {
 	struct file *fp;
 
@@ -294,7 +310,11 @@ int close(int fd)
 	return fp->fops->close(fp);
 }
 
+#ifdef __GBIOS_VER__
 ssize_t read(int fd, void *buff, size_t size)
+#else
+ssize_t demo_read(int fd, void *buff, size_t size)
+#endif
 {
 	struct file *fp;
 
@@ -309,7 +329,11 @@ ssize_t read(int fd, void *buff, size_t size)
 	return fp->fops->read(fp, buff, size, &fp->pos);
 }
 
+#ifdef __GBIOS_VER__
 ssize_t write(int fd, const void *buff, size_t size)
+#else
+ssize_t demo_write(int fd, const void *buff, size_t size)
+#endif
 {
 	struct file *fp;
 
@@ -324,7 +348,11 @@ ssize_t write(int fd, const void *buff, size_t size)
 	return fp->fops->write(fp, buff, size, &fp->pos);
 }
 
+#ifdef __GBIOS_VER__
 int ioctl(int fd, int cmd, ...)
+#else
+int demo_ioctl(int fd, int cmd, ...)
+#endif
 {
 	struct file *fp;
 	unsigned long arg;
@@ -342,7 +370,11 @@ int ioctl(int fd, int cmd, ...)
 	return fp->fops->ioctl(fp, cmd, arg);
 }
 
+#ifdef __GBIOS_VER__
 loff_t lseek(int fd, loff_t offset, int whence)
+#else
+loff_t demo_lseek(int fd, loff_t offset, int whence)
+#endif
 {
 	struct file *fp;
 

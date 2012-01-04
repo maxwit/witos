@@ -54,12 +54,11 @@ char *gets(char *s)
 			break;
 		}
 
-#ifndef GBIOS_VERSION
-		if (*str == '\b' && str > s)
+#ifdef __GBIOS_VER__
+		if (*str == (char)127) {
 #else
-		if (*str == (char)127)
+		if (*str == '\b' && str > s) {
 #endif
-		{
 			if (str > s) {
 				putchar('\b');
 				putchar(' ');
