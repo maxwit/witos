@@ -1,5 +1,6 @@
 #include <unistd.h>
 #include <fcntl.h>
+#include <dirent.h>
 #include <block.h>
 
 static int show_info(int verbose)
@@ -49,9 +50,11 @@ static int show_info(int verbose)
 
 int main(int argc, char *argv[])
 {
-	int opt;
-	int ret = 0;
+	int opt, ret;
 	int verbose = 0;
+	const char *path;
+	DIR *dir;
+	struct dirent *entry;
 
 	while ((opt = getopt(argc, argv, "l")) != -1) {
 		switch (opt) {
@@ -69,7 +72,21 @@ int main(int argc, char *argv[])
 		return -EINVAL;
 	}
 
-	ret = show_info(1);
+	path = __getcwd();
+
+	dir = opendir(path);
+	if (!dir) {
+		printf("cannot access \"%s\"\n", path);
+		return -ENOENT;
+	}
+
+	while ((entry = readdir(dir))) {
+		printf("%s\n", entry->d_name);
+	}
+
+	closedir(dir);
+
+	// ret = show_info(1);
 
 	return ret;
 }

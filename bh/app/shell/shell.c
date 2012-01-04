@@ -698,7 +698,7 @@ static inline int shell_init(void)
 	g_cmd_stack.hist = 0;
 
 	// check HOME and set CWD
-	if (conf_get_attr("HOME", home) < 0 /* && conf_get_attr("home", home) < 0 */) {
+	if (conf_get_attr("HOME", home) < 0) {
 		DIR *dir;
 		struct dirent *de;
 
@@ -714,7 +714,7 @@ static inline int shell_init(void)
 		}
 
 		if ('\0' == home[0])
-			strcpy(home, "<system>");
+			strcpy(home, DEV_ROOT);
 
 		conf_add_attr("HOME", home);
 	}
