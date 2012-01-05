@@ -78,3 +78,11 @@ typedef enum {false, true} bool;
 		(a) = (b); \
 		(b) = _________tmp; \
 	} while(0)
+
+#ifdef __GBIOS_VER__
+#define GAPI
+#define ALIAS(func)
+#else
+#define GAPI        static
+#define ALIAS(func) __attribute__((alias(#func)))
+#endif

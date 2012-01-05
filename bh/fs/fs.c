@@ -8,7 +8,7 @@
 #define MAX_FDS 256
 
 static struct file_system_type *fs_type_list;
-static DECL_INIT_LIST(g_mnt_list);
+static DECL_INIT_LIST(g_mount_list);
 static struct file *fd_array[MAX_FDS];
 
 struct nameidata {
@@ -100,7 +100,7 @@ int __mount(const char *type, unsigned long flags, const char *bdev_name, const 
 
 	// TODO: check if mp exists or not!
 
-	list_add_tail(&mnt->mnt_hash, &g_mnt_list);
+	list_add_tail(&mnt->mnt_hash, &g_mount_list);
 
 	return 0;
 L2:
@@ -118,22 +118,6 @@ int __umount(const char *mnt)
 	return 0;
 }
 
-#if 0
-static int bdev_open(struct file *fp, const char *name)
-{
-	struct block_device *bdev;
-
-	bdev = seach_device(name);
-	if (NULL == bdev)
-		return -ENODEV;
-
-	fp->bdev = bdev;
-	fp->fops = bdev->fops;
-
-	return 0;
-}
-#endif
-
 struct qstr {
 	const char *name;
 	unsigned int len;
@@ -144,7 +128,7 @@ static inline struct vfsmount *search_mount(struct qstr *unit)
 	struct list_node *iter;
 	struct vfsmount *mnt;
 
-	list_for_each(iter, &g_mnt_list) {
+	list_for_each(iter, &g_mount_list) {
 		mnt = container_of(iter, struct vfsmount, mnt_hash);
 		if (!strncmp(mnt->path, unit->name, unit->len))
 			return mnt;

@@ -57,11 +57,11 @@ void submit_bio(int rw, struct bio *bio)
 		else
 			ret = drive->put_block(drive, sect << 9, bio->data + len);
 
+		if (ret < 0)
+			bio->flags = 1; // fixme
+
 		sect++;
 	}
-
-	if (ret < 0)
-		bio->flags = 1; // fixme
 }
 
 static int __INIT__ block_device_init(void)

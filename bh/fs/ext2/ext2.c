@@ -10,44 +10,43 @@
 #define MAX_MNT_LEN 256
 #define SECT_SIZE   (1 << 9)
 
-struct ext2_file_system {
-	struct ext2_super_block sb;
-	struct block_device *bdev;
-	struct ext2_dir_entry_2 *root;
+struct ext2_sb_info {
+	struct ext2_super_block e2_sb;
 	struct ext2_group_desc *gdt;
 };
 
-static ssize_t ext2_read_block(struct ext2_file_system *fs, void *buff, int blk_no, size_t off, size_t size)
+static ssize_t ext2_read_block(struct super_block *sb, void *buff, int blk_no, size_t off, size_t size)
 {
-	struct block_device *bdev = fs->bdev;
-	struct ext2_super_block *sb = &fs->sb;
-	// struct disk_drive *drive = container_of(bdev, struct disk_drive, bdev);
-	size_t buf_len = (off + size + SECT_SIZE - 1) & ~(SECT_SIZE - 1);
-	char blk_buf[buf_len];
-	int start_blk = blk_no << (sb->s_log_block_size + 1);
-	// int cur_blk;
+	ssize_t ret, start_blk;
 	struct bio *bio;
+	struct ext2_sb_info *sbi = sb->s_ext;
+	struct ext2_super_block *e2_sb;
+
+	e2_sb = &sbi->e2_sb;
+	start_blk = blk_no << (e2_sb->s_log_block_size + 1);
 
 	bio = bio_alloc();
 	if (!bio)
 		return -ENOMEM;
-	bio->bdev = bdev;
-	bio->sect = start_blk;
-	bio->size = buf_len;
-	bio->data = blk_buf;
-	submit_bio(READ, bio);
-#if 0
-	for (cur_blk = 0; cur_blk < buf_len / SECT_SIZE; cur_blk++) {
-		// bdev->get_block(bdev, start_blk + cur_blk, blk_buf + cur_blk * SECT_SIZE);
-		drive->get_block(drive, (start_blk + cur_blk) * SECT_SIZE, blk_buf + cur_blk * SECT_SIZE);
+
+	bio->size = (off + size + SECT_SIZE - 1) & ~(SECT_SIZE - 1);
+	bio->data = malloc(bio->size);
+	if (!bio->data) {
+		ret = -ENOMEM;
+		goto L1;
 	}
-#endif
 
-	memcpy(buff, blk_buf + off, size);
+	bio->bdev = sb->s_bdev;
+	bio->sect = start_blk;
+	submit_bio(READ, bio);
 
+	memcpy(buff, bio->data + off, size);
+	ret = size;
+
+	free(bio->data);
+L1:
 	bio_free(bio);
-
-	return size;
+	return ret;
 }
 
 static size_t get_start_layer(size_t start_block, size_t index_per_block)
@@ -63,10 +62,11 @@ static size_t get_start_layer(size_t start_block, size_t index_per_block)
 		return 3;
 }
 
-static size_t get_ind_block(struct ext2_file_system *fs,
+static size_t get_ind_block(struct super_block *sb,
 			struct ext2_inode *inode,ssize_t start_block, __le32 block_indexs[], size_t len)
 {
-	size_t block_size = 1 << (fs->sb.s_log_block_size + 10);
+	struct ext2_sb_info *sbi = sb->s_ext;
+	size_t block_size = 1 << (sbi->e2_sb.s_log_block_size + 10);
 	size_t index_per_block = block_size / sizeof(__le32);
 	__le32 buff[index_per_block];
 	size_t i;
@@ -76,7 +76,7 @@ static size_t get_ind_block(struct ext2_file_system *fs,
 	if(len <= 0)
 		return 0;
 
-	ext2_read_block(fs, buff, inode->i_block[EXT2_IND_BLOCK], 0, block_size);
+	ext2_read_block(sb, buff, inode->i_block[EXT2_IND_BLOCK], 0, block_size);
 
 	for(i = 0; i < len && i < index_per_block - start_block; i++)
 		block_indexs[i] = buff[i + start_block];
@@ -84,10 +84,11 @@ static size_t get_ind_block(struct ext2_file_system *fs,
 	return i;
 }
 
-static size_t get_dind_block(struct ext2_file_system *fs,
+static size_t get_dind_block(struct super_block *sb,
 			struct ext2_inode *inode,ssize_t start_block, __le32 block_indexs[], size_t len)
 {
-	size_t block_size = 1 << (fs->sb.s_log_block_size + 10);
+	struct ext2_sb_info *sbi = sb->s_ext;
+	size_t block_size = 1 << (sbi->e2_sb.s_log_block_size + 10);
 	size_t index_per_block = block_size / sizeof(__le32);
 	__le32 buff[index_per_block];
 	__le32 dbuff[index_per_block];
@@ -96,17 +97,17 @@ static size_t get_dind_block(struct ext2_file_system *fs,
 	if(len <= 0)
 		return 0;
 
-	ext2_read_block(fs, buff, inode->i_block[EXT2_DIND_BLOCK], 0, block_size);
+	ext2_read_block(sb, buff, inode->i_block[EXT2_DIND_BLOCK], 0, block_size);
 
 	start_block = start_block < 0 ? 0 : start_block;
 
 	k = start_block % index_per_block;
 
 	for(j = start_block / index_per_block; j < index_per_block; j++) {
-		ext2_read_block(fs, dbuff, buff[j], 0, block_size);
+		ext2_read_block(sb, dbuff, buff[j], 0, block_size);
 
-		for(; i < len && k < index_per_block; i++, k++)
-			block_indexs[i] = dbuff[k];
+		while (i < len && k < index_per_block)
+			block_indexs[i++] = dbuff[k++];
 
 		if(i >= len)
 			return i;
@@ -117,10 +118,11 @@ static size_t get_dind_block(struct ext2_file_system *fs,
 	return i;
 }
 
-static size_t get_tind_block(struct ext2_file_system *fs,
+static size_t get_tind_block(struct super_block *sb,
 			struct ext2_inode *inode, ssize_t start_block, __le32 block_indexs[], size_t len)
 {
-	size_t block_size = 1 << (fs->sb.s_log_block_size + 10);
+	struct ext2_sb_info *sbi = sb->s_ext;
+	size_t block_size = 1 << (sbi->e2_sb.s_log_block_size + 10);
 	size_t index_per_block = block_size / sizeof(__le32);
 	__le32 buff[index_per_block];
 	__le32 dbuff[index_per_block];
@@ -130,17 +132,17 @@ static size_t get_tind_block(struct ext2_file_system *fs,
 	if(len <= 0)
 		return 0;
 
-	ext2_read_block(fs, buff, inode->i_block[EXT2_TIND_BLOCK], 0, block_size);
+	ext2_read_block(sb, buff, inode->i_block[EXT2_TIND_BLOCK], 0, block_size);
 
 	start_block = start_block < 0 ? 0 : start_block;
 
 	h = start_block % index_per_block;
 
 	for(j = start_block / (index_per_block * index_per_block); j < index_per_block; j++) {
-		ext2_read_block(fs, dbuff, buff[j], 0, block_size);
+		ext2_read_block(sb, dbuff, buff[j], 0, block_size);
 
 		for(k = start_block / index_per_block; k < index_per_block; k++) {
-			ext2_read_block(fs, tbuff, dbuff[k], 0, block_size);
+			ext2_read_block(sb, tbuff, dbuff[k], 0, block_size);
 
 			for(; i < len && h < index_per_block; i++, h++)
 				block_indexs[i] = tbuff[h];
@@ -155,10 +157,11 @@ static size_t get_tind_block(struct ext2_file_system *fs,
 	return i;
 }
 
-static int get_block_indexs(struct ext2_file_system *fs,
+static int get_block_indexs(struct super_block *sb,
 			struct ext2_inode *inode,size_t start_block, __le32 block_indexs[], size_t len)
 {
-	size_t index_per_block = (1 << (fs->sb.s_log_block_size + 10)) / sizeof(__le32);
+	struct ext2_sb_info *sbi = sb->s_ext;
+	size_t index_per_block = (1 << (sbi->e2_sb.s_log_block_size + 10)) / sizeof(__le32);
 	size_t start_layer;
 	size_t i = 0;
 
@@ -178,52 +181,53 @@ static int get_block_indexs(struct ext2_file_system *fs,
 	}
 
 	if(i < len && (start_layer == 1 || start_layer == -1)) {
-		i += get_ind_block(fs, inode, start_block - EXT2_IND_BLOCK,
+		i += get_ind_block(sb, inode, start_block - EXT2_IND_BLOCK,
 							block_indexs + i, len - i);
 
 		start_layer = -1;
 	}
 
 	if(i < len && (start_layer == 2 || start_layer == -1)) {
-		i += get_dind_block(fs, inode, start_block - EXT2_IND_BLOCK - index_per_block
+		i += get_dind_block(sb, inode, start_block - EXT2_IND_BLOCK - index_per_block
 							, block_indexs + i, len - i);
 
 		start_layer = -1;
 	}
 
 	if(i < len && (start_layer == 3 || start_layer == -1)) {
-		i += get_tind_block(fs, inode, start_block - EXT2_IND_BLOCK - index_per_block
+		i += get_tind_block(sb, inode, start_block - EXT2_IND_BLOCK - index_per_block
 							- index_per_block * index_per_block, block_indexs + i, len - i);
 	}
 
 	return i;
 }
 
-static struct ext2_inode *ext2_read_inode(struct ext2_file_system *fs, int ino)
+static struct ext2_inode *ext2_read_inode(struct super_block *sb, int ino)
 {
+	struct ext2_sb_info *sbi = sb->s_ext;
 	struct ext2_inode *inode;
-	struct ext2_super_block *sb = &fs->sb;
+	struct ext2_super_block *e2_sb = &sbi->e2_sb;
 	int grp_no, ino_no, blk_no, count;
 	struct ext2_group_desc *gde;
 
 	ino--;
 
-	count = (1 << (sb->s_log_block_size + 10)) / sb->s_inode_size;
+	count = (1 << (e2_sb->s_log_block_size + 10)) / e2_sb->s_inode_size;
 
-	grp_no = ino / sb->s_inodes_per_group;
-	gde = &fs->gdt[grp_no];
+	grp_no = ino / e2_sb->s_inodes_per_group;
+	gde = &sbi->gdt[grp_no];
 
-	ino_no = ino % sb->s_inodes_per_group;
+	ino_no = ino % e2_sb->s_inodes_per_group;
 	blk_no = ino_no / count;
 	ino_no = ino_no % count;
 
 	DPRINT("%s(%d): grp_no = %d, blk_no = %d, ino_no = %d, inode table = %d\n",
 		__func__, ino + 1, grp_no, blk_no, ino_no, gde->bg_inode_table);
 
-	inode = malloc(sb->s_inode_size);
+	inode = malloc(e2_sb->s_inode_size);
 	// if
 
-	ext2_read_block(fs, inode, gde->bg_inode_table + blk_no, ino_no * sb->s_inode_size, sb->s_inode_size);
+	ext2_read_block(sb, inode, gde->bg_inode_table + blk_no, ino_no * e2_sb->s_inode_size, e2_sb->s_inode_size);
 
 	DPRINT("%s(%d): inode size = %d, uid = %d, gid = %d, mode = 0x%x\n",
 		__func__, ino + 1, inode->i_size, inode->i_uid, inode->i_gid, inode->i_mode);
@@ -249,28 +253,31 @@ static struct dentry *ext2_dentry_alloc()
 	return de;
 }
 
+bool ext2_check_fstype(void *buff, size_t size)
+{
+	struct ext2_super_block *e2_sb = buff;
+
+	if (size >= sizeof(struct ext2_super_block) && 0xEF53 == e2_sb->s_magic)
+		return true;
+
+	return false;
+}
+
 static struct dentry *ext2_mount(struct file_system_type *fs_type, unsigned long flags, struct block_device *bdev)
 {
 	int blk_is;
 	int gdt_num;
+	char buff[SECT_SIZE];
 	struct dentry *root;
 	struct inode *ino;
-	struct ext2_file_system *ext2_fs = zalloc(sizeof(*ext2_fs));
-	struct ext2_super_block *ext2_sb = &ext2_fs->sb;
-	struct ext2_dir_entry_2 *ext2_root;
-	struct ext2_group_desc *ext2_gdt;
-	struct ext2_inode *ext2_ino;
-	// struct disk_drive *drive = container_of(bdev, struct disk_drive, bdev);
-	char buff[SECT_SIZE];
+	struct super_block *sb;
+	struct ext2_sb_info *sbi;
+	struct ext2_super_block *e2_sb;
+	struct ext2_dir_entry_2 *e2_root;
+	struct ext2_group_desc *gdt;
+	struct ext2_inode *e2_inode;
 	struct bio *bio;
 
-#if 0
-	ret = drive->get_block(drive, 2 * SECT_SIZE, buff);
-	if (ret < 0) {
-		DPRINT("%s(): read dbr err\n", __func__);
-		return NULL;
-	}
-#endif
 	bio = bio_alloc();
 	if (!bio)
 		return NULL;
@@ -282,97 +289,99 @@ static struct dentry *ext2_mount(struct file_system_type *fs_type, unsigned long
 	// TODO: check flags here
 	bio_free(bio);
 
-	memcpy(ext2_sb, buff, sizeof(*ext2_sb));
-
-	if (ext2_sb->s_magic != 0xEF53) {
-		GEN_DBG("bad magic (0x%x)!\n", ext2_sb->s_magic);
+	if (ext2_check_fstype(buff, SECT_SIZE)) {
+		GEN_DBG("bad magic (0x%x)!\n", e2_sb->s_magic);
 		return NULL;
 	}
 
-	blk_is = (1 << (ext2_sb->s_log_block_size + 10)) / ext2_sb->s_inode_size;
+	sbi = zalloc(sizeof(*sbi));
+	if (!sbi) {
+		// ...
+		return NULL;
+	}
+
+	e2_sb = &sbi->e2_sb;
+	memcpy(e2_sb, buff, sizeof(*e2_sb));
+
+	sb = zalloc(sizeof(*sb));
+	if (!sb) {
+		// ...
+		return NULL;
+	}
+
+	sb->s_ext  = sbi;
+	sb->s_bdev = bdev;
+
+	blk_is = (1 << (e2_sb->s_log_block_size + 10)) / e2_sb->s_inode_size;
 
 	DPRINT("%s(): label = %s, log block size = %d, "
 		"inode size = %d, block size = %d, inodes per block = %d\n",
-		__func__, ext2_sb->s_volume_name, ext2_sb->s_log_block_size,
-		ext2_sb->s_inode_size, (1 << (ext2_sb->s_log_block_size + 10)), blk_is);
+		__func__, e2_sb->s_volume_name, e2_sb->s_log_block_size,
+		e2_sb->s_inode_size, (1 << (e2_sb->s_log_block_size + 10)), blk_is);
 
-	ext2_fs->bdev = bdev;
-
-	gdt_num = (ext2_sb->s_blocks_count + ext2_sb->s_blocks_per_group - 1) / ext2_sb->s_blocks_per_group;;
-	ext2_gdt = malloc(gdt_num * sizeof(struct ext2_group_desc));
-	if (NULL == ext2_gdt)
+	gdt_num = (e2_sb->s_blocks_count + e2_sb->s_blocks_per_group - 1) / e2_sb->s_blocks_per_group;;
+	gdt = malloc(gdt_num * sizeof(struct ext2_group_desc));
+	if (NULL == gdt)
 		return NULL;
 
-	ext2_read_block(ext2_fs, ext2_gdt, ext2_sb->s_first_data_block + 1, 0, gdt_num * sizeof(struct ext2_group_desc));
+	ext2_read_block(sb, gdt, e2_sb->s_first_data_block + 1, 0, gdt_num * sizeof(struct ext2_group_desc));
 
 	DPRINT("%s(), block group[0 / %d]: free blocks= %d, free inodes = %d\n",
-		__func__, gdt_num, ext2_gdt->bg_free_blocks_count, ext2_gdt->bg_free_inodes_count);
+		__func__, gdt_num, gdt->bg_free_blocks_count, gdt->bg_free_inodes_count);
 
-	ext2_fs->gdt  = ext2_gdt;
+	sbi->gdt = gdt;
 
-	ext2_root = malloc(sizeof(*ext2_root));
+	e2_root = malloc(sizeof(*e2_root));
 	// if ...
 
-	ext2_root->inode = 2;
-
-	ext2_fs->root = ext2_root;
+	e2_root->inode = 2;
+	// TODO: fill other fields
 
 	root = ext2_dentry_alloc();
 	if (!root)
 		return NULL;
 
-	root->d_ext = ext2_root;
-	///////////////
+	root->d_ext = e2_root;
+	root->d_sb  = sb;
+	// ...
 
-	ext2_ino = ext2_read_inode(ext2_fs, ext2_root->inode);
+	sb->s_root = root;
+
+	e2_inode = ext2_read_inode(sb, e2_root->inode);
 	// ...
 
 	ino = root->inode;
-	ino->mode = ~0; // ino->mode = ext2_ino->i_mode;
-	ino->i_ext = ext2_ino;
-	ino->i_fs = ext2_fs;
+	ino->mode  = e2_inode->i_mode; // fixme
+	ino->i_ext = e2_inode;
+	ino->i_sb  = sb;
 
 	return root;
 }
 
-#if 0
-// fixme: free all resources
-static int ext2_umount(const char *path)
+// fixme
+static void ext2_umount(struct super_block *sb)
 {
-	struct ext2_file_system *fs;
-
-	fs = ext2_get_file_system(path);
-	if (NULL == fs)
-		return -ENOENT;
-
-	// bdev_close(fs->bdev);
-
-	// free fs-> ...
-
-	free(fs);
-
-	return 0;
 }
-#endif
 
 static struct ext2_dir_entry_2 *ext2_real_lookup(struct inode *inode, const char *name)
 {
 	struct ext2_dir_entry_2 *d_match;
 	struct ext2_dir_entry_2 *dentry;
-	struct ext2_file_system *fs = inode->i_fs;
+	struct super_block *sb = inode->i_sb;
+	struct ext2_sb_info *sbi = sb->s_ext;
 	struct ext2_inode *parent = inode->i_ext;
 	char buff[parent->i_size];
 	size_t len = 0;
 	int blocks, i;
-	size_t block_size = 1 << (fs->sb.s_log_block_size + 10);
+	size_t block_size = 1 << (sbi->e2_sb.s_log_block_size + 10);
 
 	blocks = (parent->i_size + block_size - 1) / block_size;
 	__le32 block_indexs[blocks];
 
-	get_block_indexs(fs, parent, 0, block_indexs, blocks);
+	get_block_indexs(sb, parent, 0, block_indexs, blocks);
 
 	for (i = 0; i < blocks; i++) {
-		ext2_read_block(fs, buff, block_indexs[i], 0, block_size);
+		ext2_read_block(sb, buff, block_indexs[i], 0, block_size);
 
 		dentry = (struct ext2_dir_entry_2 *)buff;
 
@@ -401,12 +410,6 @@ found_entry:
 	return d_match;
 }
 
-// fixme: to parse path in syntax: "vfsmount:filename"
-static inline int mnt_of_path(const char *path, char mnt[])
-{
-	return 0;
-}
-
 static int ext2_open(struct file *fp, struct inode *inode)
 {
 	return 0;
@@ -423,17 +426,18 @@ static ssize_t ext2_read(struct file *fp, void *buff, size_t size, loff_t *off)
 	size_t blocks;
 	size_t offset, real_size, block_size;
 	struct ext2_inode *inode;
-	struct ext2_file_system *fs = fp->de->inode->i_fs;
+	struct super_block *sb = fp->de->inode->i_sb;
+	struct ext2_sb_info *sbi = sb->s_ext;
 	struct ext2_dir_entry_2 *de;
 
 	de = fp->de->d_ext;
 
-	inode = ext2_read_inode(fs, de->inode);
+	inode = ext2_read_inode(sb, de->inode);
 
 	if (fp->pos == inode->i_size)
 		return 0;
 
-	block_size = 1 << (fs->sb.s_log_block_size + 10);
+	block_size = 1 << (sbi->e2_sb.s_log_block_size + 10);
 	char tmp_buff[block_size];
 
 	real_size = min(size, inode->i_size - fp->pos);
@@ -441,7 +445,7 @@ static ssize_t ext2_read(struct file *fp, void *buff, size_t size, loff_t *off)
 	blocks = (real_size + (block_size - 1)) / block_size;
 	__le32 block_indexs[blocks];
 
-	get_block_indexs(fs, inode, fp->pos / block_size, block_indexs, blocks);
+	get_block_indexs(sb, inode, fp->pos / block_size, block_indexs, blocks);
 
 	offset = fp->pos % block_size;
 	len = block_size - offset;
@@ -450,7 +454,7 @@ static ssize_t ext2_read(struct file *fp, void *buff, size_t size, loff_t *off)
 		if(i == blocks - 1)
 			len = real_size % block_size == 0 ? block_size : (real_size % block_size);
 
-		ext2_read_block(fs, tmp_buff, block_indexs[i], offset, len);
+		ext2_read_block(sb, tmp_buff, block_indexs[i], offset, len);
 
 		memcpy(buff, tmp_buff, len);
 		buff += len;
@@ -472,7 +476,7 @@ static struct dentry *ext2_lookup(struct inode *parent, const char *name)
 	struct inode *ino;
 	struct dentry *de;
 	struct ext2_dir_entry_2 *ext2_de;
-	struct ext2_inode *ext2_ino;
+	struct ext2_inode *e2_inode;
 
 	de = ext2_dentry_alloc();
 	if (!de)
@@ -485,11 +489,11 @@ static struct dentry *ext2_lookup(struct inode *parent, const char *name)
 
 	de->d_ext = ext2_de;
 
-	ext2_ino = ext2_read_inode(parent->i_fs, ext2_de->inode);
+	e2_inode = ext2_read_inode(parent->i_sb, ext2_de->inode);
 	// ...
-	ino->mode = ~0; // ino->mode = ext2_ino->i_mode;
-	ino->i_ext = ext2_ino;
-	ino->i_fs = parent->i_fs;
+	ino->mode = ~0; // ino->mode = e2_inode->i_mode;
+	ino->i_ext = e2_inode;
+	ino->i_sb = parent->i_sb;
 
 	return de;
 }
@@ -503,8 +507,10 @@ static const struct file_operations ext2_fops = {
 
 static struct file_system_type ext2_fs_type = {
 	.name   = "ext2",
-	.fops	= &ext2_fops,
 	.mount  = ext2_mount,
+	.umount = ext2_umount,
+	// to be removed:
+	.fops	= &ext2_fops,
 	.lookup = ext2_lookup,
 };
 

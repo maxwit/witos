@@ -4,18 +4,21 @@
 #include <list.h>
 #include <block.h>
 
-struct file;
-struct dentry;
-struct inode;
-struct block_device;
 struct vfsmount;
+struct super_block;
+struct inode;
+struct dentry;
+struct file;
 
 struct file_system_type {
 	const char *name;
-	const struct file_operations *fops;
 	struct file_system_type *next;
 
 	struct dentry *(*mount)(struct file_system_type *, unsigned long, struct block_device *);
+	void (*umount)(struct super_block *);
+
+	// fixme: to remove the followings
+	const struct file_operations *fops;
 	struct dentry *(*lookup)(struct inode *, const char *);
 };
 
@@ -25,10 +28,9 @@ struct file_system_type *file_system_type_get(const char *);
 
 struct vfsmount {
 	const char *path;
-	struct block_device *bdev;
+	struct block_device *bdev; // fixme!
 	struct file_system_type *fs_type;
 	struct list_node mnt_hash;
-	// void *fs_ext;
 	struct dentry *root;
 };
 
@@ -66,13 +68,21 @@ struct file {
 
 struct inode {
 	__u32 mode;
-	void *i_fs; // fixme!
+	struct super_block *i_sb;
 	void *i_ext;
 };
 
 struct dentry {
+	// char d_name[NAME_SIZE];
 	struct inode *inode;
+	struct super_block *d_sb;
 	void *d_ext;
+};
+
+struct super_block {
+	struct block_device *s_bdev;
+	struct dentry *s_root;
+	void *s_ext;
 };
 
 int device_create(struct list_node *node);

@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <malloc.h>
 #include <string.h>
+#include <fcntl.h>
 #include <fs/fs.h>
 
 #define BUF_LEN 511
@@ -47,7 +48,7 @@ int main(int argc, char *argv[])
 		return ret;
 	}
 
-	fd = __open(path, 0);
+	fd = __open(path, O_RDONLY);
 	if (fd < 0) {
 		printf("fail to open %s\n", path);
 		return fd;

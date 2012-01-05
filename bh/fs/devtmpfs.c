@@ -51,7 +51,7 @@ struct dentry *devfs_lookup(struct inode *parent, const char *name)
 				inode->mode = ~0; // fixme
 
 			inode->i_ext = bdev;
-			inode->i_fs = parent->i_fs;
+			inode->i_sb = parent->i_sb;
 
 			de = zalloc(sizeof(*de));
 			if (!de)
