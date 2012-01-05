@@ -1,3 +1,5 @@
+#include <errno.h>
+#include <delay.h>
 #include <uart/uart.h>
 
 int uart_recv_byte_timeout(__u8 *ch, int timeout)

@@ -1,3 +1,4 @@
+#include <io.h>
 #include <arm/omap3.h>
 
 int soc_init(void)

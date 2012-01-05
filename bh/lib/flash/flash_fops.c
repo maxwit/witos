@@ -1,3 +1,8 @@
+#include <stdio.h>
+#include <errno.h>
+#include <string.h>
+#include <malloc.h>
+#include <assert.h>
 #include <fcntl.h>
 #include <fs/fs.h>
 #include <flash/flash.h>

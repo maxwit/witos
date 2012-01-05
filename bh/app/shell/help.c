@@ -1,5 +1,8 @@
 #include <errno.h>
 #include <task.h>
+#include <stdio.h>
+#include <string.h>
+#include <assert.h>
 
 static inline void list_option(const struct help_info *help)
 {

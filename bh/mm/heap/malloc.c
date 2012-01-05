@@ -1,4 +1,9 @@
+#include <list.h>
+#include <init.h>
+#include <errno.h>
 #include <malloc.h>
+#include <assert.h>
+#include <string.h>
 
 #define LIST_NODE_SIZE             WORD_ALIGN_UP(sizeof(struct list_node))
 #define LIST_NODE_ALIGN(size)     (((size) + LIST_NODE_SIZE - 1) & ~(LIST_NODE_SIZE - 1))

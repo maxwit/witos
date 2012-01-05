@@ -1,9 +1,7 @@
 #pragma once
 
-#include <types.h>
-
 #define GB_SYSCFG_VER    7
-#define GB_SYSCFG_MAGIC  MKFOURCC('G', 's', 'y', 's')
+#define GB_SYSCFG_MAGIC  "sysG"
 
 #define __SYSCONF__ __attribute__ ((__section__(".gsect_sysconfig")))
 

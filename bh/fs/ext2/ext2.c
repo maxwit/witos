@@ -291,8 +291,7 @@ static struct dentry *ext2_mount(struct file_system_type *fs_type, unsigned long
 	bio_free(bio);
 
 	if (ext2_check_fstype(buff, SECT_SIZE) == true) {
-		GEN_DBG("Invalid EXT2 magic number (0x%08x)!\n",
-			((struct ext2_super_block *)buff)->s_magic);
+		GEN_DBG("Invalid EXT2 magic number!\n"); // ((struct ext2_super_block *)buff)->s_magic);
 		return NULL;
 	}
 
@@ -528,6 +527,7 @@ static struct file_system_type ext2_fs_type = {
 
 static int __INIT__ ext2_init(void)
 {
+	GEN_DBG("\n");
 	return file_system_type_register(&ext2_fs_type);
 }
 

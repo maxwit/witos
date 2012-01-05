@@ -1,3 +1,6 @@
+#include <stdio.h>
+#include <errno.h>
+#include <string.h>
 #include <graphic/display.h>
 
 static const struct lcd_vmode g_lcd_vm_tab[] =

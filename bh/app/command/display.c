@@ -1,4 +1,7 @@
+#include <errno.h>
+#include <stdio.h>
 #include <unistd.h>
+#include <string.h>
 #include <graphic/display.h>
 
 #define PIXEL_DESC(pix_fmt) \

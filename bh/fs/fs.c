@@ -7,14 +7,19 @@
 
 #define MAX_FDS 256
 
-static struct file_system_type *fs_type_list;
-static DECL_INIT_LIST(g_mount_list);
-static struct file *fd_array[MAX_FDS];
+struct qstr {
+	const char *name;
+	unsigned int len;
+};
 
 struct nameidata {
 	unsigned int flags;
 	struct file *fp;
 };
+
+static struct file_system_type *fs_type_list;
+static DECL_INIT_LIST(g_mount_list);
+static struct file *fd_array[MAX_FDS];
 
 int file_system_type_register(struct file_system_type *fs_type)
 {
@@ -43,11 +48,8 @@ struct file_system_type *file_system_type_get(const char *name)
 	return NULL;
 }
 
-#ifdef __GBIOS_VER__
-int mount(const char *type, unsigned long flags, const char *bdev_name, const char *path)
-#else
-int __mount(const char *type, unsigned long flags, const char *bdev_name, const char *path)
-#endif
+int GAPI mount(const char *type, unsigned long flags,
+	const char *bdev_name, const char *path) 
 {
 	int ret;
 	struct file_system_type *fs_type;
@@ -63,8 +65,10 @@ int __mount(const char *type, unsigned long flags, const char *bdev_name, const 
 	}
 
 	fs_type = file_system_type_get(type);
-	if (NULL == fs_type)
+	if (NULL == fs_type) {
+		DPRINT("fail to find file system type %s!\n", type);
 		return -ENOENT;
+	}
 
 	root = fs_type->mount(fs_type, flags, bdev);
 	if (!root) {
@@ -94,19 +98,14 @@ L1:
 	return ret;
 }
 
-#ifdef __GBIOS_VER__
-int umount(const char *mnt)
-#else
-int __umount(const char *mnt)
-#endif
+EXPORT_SYMBOL(mount);
+
+int GAPI umount(const char *mnt)
 {
 	return 0;
 }
 
-struct qstr {
-	const char *name;
-	unsigned int len;
-};
+EXPORT_SYMBOL(umount);
 
 static inline struct vfsmount *search_mount(struct qstr *unit)
 {
@@ -246,22 +245,16 @@ fail:
 	return ret;
 }
 
-#ifdef __GBIOS_VER__
-int open(const char *path, int flags, ...)
-#else
-int __open(const char *path, int flags, ...)
-#endif
+int GAPI open(const char *path, int flags, ...)
 {
 	int mode = 0;
 
 	return do_open(path, flags, mode);
 }
 
-#ifdef __GBIOS_VER__
-int close(int fd)
-#else
-int __close(int fd)
-#endif
+EXPORT_SYMBOL(open);
+
+int GAPI close(int fd)
 {
 	struct file *fp;
 
@@ -278,11 +271,9 @@ int __close(int fd)
 	return fp->fops->close(fp);
 }
 
-#ifdef __GBIOS_VER__
-ssize_t read(int fd, void *buff, size_t size)
-#else
-ssize_t __read(int fd, void *buff, size_t size)
-#endif
+EXPORT_SYMBOL(close);
+
+ssize_t GAPI read(int fd, void *buff, size_t size)
 {
 	struct file *fp;
 
@@ -297,11 +288,9 @@ ssize_t __read(int fd, void *buff, size_t size)
 	return fp->fops->read(fp, buff, size, &fp->pos);
 }
 
-#ifdef __GBIOS_VER__
-ssize_t write(int fd, const void *buff, size_t size)
-#else
-ssize_t __write(int fd, const void *buff, size_t size)
-#endif
+EXPORT_SYMBOL(read);
+
+ssize_t GAPI write(int fd, const void *buff, size_t size)
 {
 	struct file *fp;
 
@@ -316,11 +305,9 @@ ssize_t __write(int fd, const void *buff, size_t size)
 	return fp->fops->write(fp, buff, size, &fp->pos);
 }
 
-#ifdef __GBIOS_VER__
-int ioctl(int fd, int cmd, ...)
-#else
-int __ioctl(int fd, int cmd, ...)
-#endif
+EXPORT_SYMBOL(write);
+
+int GAPI ioctl(int fd, int cmd, ...)
 {
 	struct file *fp;
 	unsigned long arg;
@@ -338,11 +325,9 @@ int __ioctl(int fd, int cmd, ...)
 	return fp->fops->ioctl(fp, cmd, arg);
 }
 
-#ifdef __GBIOS_VER__
-loff_t lseek(int fd, loff_t offset, int whence)
-#else
-loff_t __lseek(int fd, loff_t offset, int whence)
-#endif
+EXPORT_SYMBOL(ioctl);
+
+loff_t GAPI lseek(int fd, loff_t offset, int whence)
 {
 	struct file *fp;
 
@@ -354,10 +339,8 @@ loff_t __lseek(int fd, loff_t offset, int whence)
 	if (!fp)
 		return -ENOENT;
 
-#if 0
 	if (fp->fops->lseek)
 		return fp->fops->lseek(fp, offset, whence);
-#endif
 
 	switch (whence) {
 	case SEEK_SET:
@@ -375,3 +358,5 @@ loff_t __lseek(int fd, loff_t offset, int whence)
 
 	return 0;
 }
+
+EXPORT_SYMBOL(lseek);

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <list.h>
+
 #define MAX_DENT_NAME_SIZE  256
 
 // g-bios system standard directory

@@ -1,3 +1,5 @@
+#include <init.h>
+#include <string.h>
 #include <platform.h>
 
 static int match(struct device *dev, struct driver *drv);

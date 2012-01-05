@@ -1,3 +1,9 @@
+#include <init.h>
+#include <delay.h>
+#include <assert.h>
+#include <errno.h>
+#include <string.h>
+#include <malloc.h>
 #include <net/net.h>
 #include <uart/uart.h>
 
@@ -797,7 +803,6 @@ bool check_ip_addr(const char *ip, int ver)
 
 	return false;
 }
-#endif
 
 static int __INIT__ net_init(void)
 {
@@ -808,3 +813,4 @@ static int __INIT__ net_init(void)
 }
 
 SUBSYS_INIT(net_init);
+#endif

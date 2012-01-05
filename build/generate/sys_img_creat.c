@@ -9,7 +9,7 @@
 #define DBG_STR_LEN           128
 #define BUF_LEN               (1024 * 8)
 #define GB_SYSCFG_VER         7
-#define GB_SYSCFG_MAGIC       MKFOURCC('G', 's', 'y', 's')
+#define GB_SYSCFG_MAGIC       "sysG"
 
 struct sys_config {
 	__u32 magic;

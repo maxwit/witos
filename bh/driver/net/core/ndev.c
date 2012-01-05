@@ -1,3 +1,9 @@
+#include <init.h>
+#include <delay.h>
+#include <errno.h>
+#include <assert.h>
+#include <string.h>
+#include <malloc.h>
 #include <stdlib.h>
 #include <net/net.h>
 #include <net/ndev.h>

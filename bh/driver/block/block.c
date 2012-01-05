@@ -1,7 +1,9 @@
+#include <list.h>
 #include <stdio.h>
 #include <string.h>
 #include <block.h>
-#include <list.h>
+#include <assert.h>
+#include <malloc.h>
 #include <fs/fs.h>
 #include <drive.h> // fixme
 

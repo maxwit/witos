@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <io.h>
+#include <delay.h>
 #include <loader.h>
 #include <flash/nand.h>
 

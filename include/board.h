@@ -1,4 +1,7 @@
+#pragma once
+
 #include <types.h>
+#include <init.h>
 
 #define __BOARD__  __attribute__((__section__(".gsect.board")))
 

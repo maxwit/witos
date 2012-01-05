@@ -1,3 +1,8 @@
+#include <io.h>
+#include <init.h>
+#include <delay.h>
+#include <errno.h>
+#include <malloc.h>
 #include <flash/flash.h>
 #include <flash/nand.h>
 

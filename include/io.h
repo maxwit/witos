@@ -2,8 +2,6 @@
 
 #include <types.h>
 
-#define VA(x) ((void *)(x))
-
 static inline __u8 readb(void *mem)
 {
 	return *(volatile __u8 *)mem;

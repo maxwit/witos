@@ -39,8 +39,6 @@ typedef enum {false, true} bool;
 		} \
 	} while (0)
 
-#define MKFOURCC(a, b, c, d)    (((a) << 24) | (b) << 16 | ((c) << 8) | (d))
-
 #define __PACKED__        __attribute__((packed))
 #define __WEAK__          __attribute__((weak))
 
@@ -81,8 +79,9 @@ typedef enum {false, true} bool;
 
 #ifdef __GBIOS_VER__
 #define GAPI
-#define ALIAS(func)
+#define EXPORT_SYMBOL(func)
 #else
-#define GAPI        static
-#define ALIAS(func) __attribute__((alias(#func)))
+#define GAPI    static
+#define EXPORT_SYMBOL(sym) \
+		__typeof(sym) __##sym __attribute__((alias(#sym)))
 #endif

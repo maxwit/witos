@@ -1,4 +1,8 @@
 #include <irq.h>
+#include <errno.h>
+#include <stdio.h>
+#include <malloc.h>
+#include <assert.h>
 
 #ifdef CONFIG_IRQ_SUPPORT
 

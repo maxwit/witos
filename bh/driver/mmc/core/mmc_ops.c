@@ -1,3 +1,9 @@
+#include <init.h>
+#include <stdio.h>
+#include <delay.h>
+#include <errno.h>
+#include <string.h>
+#include <assert.h>
 #include <mmc/mmc.h>
 #include <mmc/mmc_ops.h>
 

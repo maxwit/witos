@@ -3,6 +3,7 @@
  */
 
 #include <stdio.h>
+#include <delay.h>
 #include <loader.h>
 #include <uart/uart.h>
 

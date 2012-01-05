@@ -26,7 +26,7 @@ char *strcat(char *, const char *);
 
 char *strncat(char *, const char *, size_t);
 
-long memcmp(const void*, const void*, size_t);
+int memcmp(const void*, const void*, size_t);
 
 void *memcpy(void *, const void*, size_t);
 
@@ -41,7 +41,7 @@ char *strcasestr(const char *, const char *);
 
 char *strchr(const char *, int);
 
-char *strrchr(const char *, size_t);
+char *strrchr(const char *, int);
 
 char *strdup(const char *);
 

@@ -1,3 +1,10 @@
+#include <io.h>
+#include <errno.h>
+#include <delay.h>
+#include <malloc.h>
+#include <assert.h>
+#include <string.h>
+#include <bitops.h>
 #include <flash/flash.h>
 #include <flash/nand.h>
 

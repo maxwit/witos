@@ -1,4 +1,10 @@
-#include <g-bios.h>
+#include <io.h>
+#include <init.h>
+#include <stdio.h>
+#include <delay.h>
+#include <errno.h>
+#include <malloc.h>
+#include <string.h>
 #include <mmc/mmc.h>
 
 // #define CONFIG_MMC_DEBUG

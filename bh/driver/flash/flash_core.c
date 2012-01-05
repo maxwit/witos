@@ -1,3 +1,9 @@
+#include <io.h>
+#include <init.h>
+#include <delay.h>
+#include <errno.h>
+#include <string.h>
+#include <malloc.h>
 #include <flash/flash.h>
 
 static DECL_INIT_LIST(g_master_list);

@@ -1,4 +1,7 @@
+#include <stdio.h>
+#include <string.h>
 #include <board.h>
+#include <errno.h>
 
 static const struct board_id *g_active_board; // or just board_id ?
 

@@ -1,4 +1,8 @@
 #include <stdio.h>
+#include <errno.h>
+#include <string.h>
+#include <unistd.h>
+#include <stdio.h>
 
 void __WEAK__ reset(void);
 

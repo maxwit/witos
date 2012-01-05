@@ -1,7 +1,9 @@
-#include <string.h>
 #include <stdio.h>
+#include <string.h>
+#include <assert.h>
 #include <stdlib.h>
 #include <fcntl.h>
+#include <errno.h>
 #include <net/net.h>
 #include <flash/flash.h>
 
@@ -277,7 +279,7 @@ int conf_load()
 {
 	struct sysconfig *cfg = _syscfg_get();
 
-	if (GB_SYSCFG_MAGIC != *(__u32 *)cfg->data)
+	if (strncmp(GB_SYSCFG_MAGIC, (char *)cfg->data, strlen(GB_SYSCFG_MAGIC)))
 		return -EINVAL;
 
 	cfg->size = _g_sysconfig_len;
@@ -357,7 +359,7 @@ void conf_reset(void)
 {
 	struct sysconfig *cfg = _syscfg_get();
 
-	*(__u32 *)cfg->data = GB_SYSCFG_MAGIC;
+	strcpy((char *)cfg->data, GB_SYSCFG_MAGIC); // fixme: use write_line() instead
 	cfg->size = 4;
 
 	conf_check_default();

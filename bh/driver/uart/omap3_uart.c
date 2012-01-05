@@ -1,3 +1,5 @@
+#include <io.h>
+#include <delay.h>
 #include <uart/uart.h>
 
 static void omap3_uart_send_byte(__u8 b)

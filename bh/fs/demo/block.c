@@ -3,8 +3,9 @@
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
-#include <block.h>
 #include <stdlib.h>
+#include "block.h"
+#include "demo.h"
 
 #define SECT_SIZE   (1 << 9)
 

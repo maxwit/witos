@@ -1,3 +1,5 @@
+#include <stdio.h>
+#include <string.h>
 #include "linux.h"
 
 #define CONFIG_RAM_BANK_NUM  1 // fixme!

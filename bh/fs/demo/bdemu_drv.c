@@ -1,6 +1,10 @@
-#include <init.h>
 #include <stdio.h>
-#include <block.h>
+#include "demo.h"
+#include "block.h"
+
+// fixme
+#define __INIT__ __attribute__((constructor))
+#define module_init(func)
 
 static struct block_device g_bdev[] = {
 	{
@@ -19,6 +23,8 @@ static struct block_device g_bdev[] = {
 static __INIT__ int bdemu_init()
 {
 	int i, ret;
+
+	printf("%s() line %d\n", __func__, __LINE__);
 
 	for (i = 0; i < sizeof(g_bdev) / sizeof(g_bdev[0]); i++) {
 		ret = block_device_register(&g_bdev[i]);

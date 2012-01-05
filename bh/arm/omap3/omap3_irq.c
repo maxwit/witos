@@ -1,4 +1,8 @@
+#include <io.h>
 #include <irq.h>
+#include <errno.h>
+#include <stdio.h>
+#include <assert.h>
 
 int read_irq_num(void)
 {

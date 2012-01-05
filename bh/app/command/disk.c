@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <mmc/mmc.h>
 #include <mmc/mmc_ops.h>
 #include <unistd.h>
@@ -12,6 +13,7 @@
 #define MMC_HOST_NUM        5
 #define DEFAULT_UNIT_SIZE   1
 
+#if 0
 static int scan(int argc, char *argv[])
 {
 	int	ret;
@@ -339,3 +341,7 @@ int main(int argc, char *argv[])
 
 	return -1;
  }
+#else
+int main()
+{return 0;}
+#endif

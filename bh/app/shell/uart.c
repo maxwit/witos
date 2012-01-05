@@ -1,3 +1,7 @@
+#include <task.h>
+#include <stdio.h>
+#include <string.h>
+#include <assert.h>
 
 static struct option uart_generic_option[] = {
 	{

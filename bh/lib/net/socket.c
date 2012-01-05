@@ -1,7 +1,13 @@
+#include <stdio.h>
+#include <errno.h>
+#include <string.h>
+#include <malloc.h>
+#include <assert.h>
+#include <delay.h>
 #include <net/net.h>
 #include <net/skb.h>
-#include <uart/uart.h> // fixme: to be removed
 #include <fs/fs.h>
+#include <uart/uart.h> // fixme: to be removed
 
 #define MAX_SOCK_NUM  32
 
@@ -711,12 +717,4 @@ struct socket *arp_search_socket(const struct arp_packet *arp_pkt)
 	}
 
 	return NULL;
-}
-
-void __INIT__ socket_init(void)
-{
-	int fd;
-
-	for (fd = 0; fd < MAX_SOCK_NUM; fd++)
-		g_sock_fds[fd] = NULL;
 }

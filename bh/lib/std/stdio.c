@@ -510,7 +510,7 @@ get_sign :
 	return str_count;
 }
 
-int snprintf(char *buf, int size, const char *fmt, ...)
+int snprintf(char *buf, size_t size, const char *fmt, ...)
 {
 	int *arg = (int *)&fmt + 1;
 	int printed;

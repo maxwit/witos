@@ -1,3 +1,4 @@
+#include <stdio.h>
 
 void undef_handle()
 {
@@ -28,4 +29,3 @@ void fiq_handle()
 	printf("FIQ\n");
 	while (1);
 }
-

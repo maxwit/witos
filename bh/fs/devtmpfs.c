@@ -1,3 +1,8 @@
+#include <init.h>
+#include <stdio.h>
+#include <errno.h>
+#include <malloc.h>
+#include <string.h>
 #include <fs/fs.h>
 
 static DECL_INIT_LIST(g_dev_list);

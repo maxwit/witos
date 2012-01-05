@@ -1,5 +1,8 @@
-#include <shell.h>
+#include <stdio.h>
+#include <init.h>
+#include <errno.h>
 // fixme: to be removed!
+#include <shell.h>
 #include <uart/uart.h>
 #include <font/font.h>
 

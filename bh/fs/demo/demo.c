@@ -1,13 +1,11 @@
 #include <stdio.h>
 #include <getopt.h>
-#include <list.h>
 #include <errno.h>
-#include <demofs.h>
 #include <unistd.h>
 #include <malloc.h>
 #include <string.h>
 #include <fcntl.h>
-#include <fs/fs.h>
+#include "demo.h"
 
 #define BUF_LEN 511
 #define MNT_PT   "c"

@@ -1,7 +1,11 @@
+#include <stdio.h>
+#include <delay.h>
+#include <errno.h>
+#include <assert.h>
+#include <string.h>
 #include <malloc.h>
 #include <graphic/display.h>
 #include <djpeg/djpeg.h>
-#include <errno.h>
 
 static struct display* g_system_display;
 

@@ -1,5 +1,9 @@
-#include <unistd.h>
 #include <dirent.h>
+#include <errno.h>
+#include <unistd.h>
+#include <string.h>
+#include <malloc.h>
+#include <assert.h>
 #include <block.h> //  fixme: to be removed!
 
 static char g_cwd[PATH_MAX];

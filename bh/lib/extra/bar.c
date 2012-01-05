@@ -1,4 +1,8 @@
 #include <bar.h>
+#include <stdio.h>
+#include <string.h>
+#include <assert.h>
+#include <malloc.h>
 
 int create_progress_bar(struct process_bar **ppNew, __u32 nMin, __u32 nMax)
 {

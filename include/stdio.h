@@ -1,5 +1,7 @@
 #pragma once
 
+#include <types.h>
+
 int putchar(int);
 
 char *gets(char *);
@@ -10,21 +12,14 @@ int printf(const char *, ...);
 
 int sprintf(char *, const char *, ...);
 
-int snprintf(char *, int , const char *, ...);
+int snprintf(char *, size_t, const char *, ...);
 
 int fflush(int);
 
-#define BUG() \
-	do { \
-		printf(" BUG @ %s() line %d!\n", __func__, __LINE__); \
-		while (1); \
-	} while(0)
-
-#define assert(x) \
-	do { if (!(x)) BUG(); } while (0)
-
+// right here?
 #ifdef CONFIG_DEBUG
-#define DPRINT(fmt, args ...)  printf(fmt, ##args)
+#define DPRINT(fmt, args ...) \
+	printf(fmt, ##args)
 #define GEN_DBG(fmt, args ...) \
 	printf("%s() line %d: " fmt, __func__, __LINE__, ##args)
 #else

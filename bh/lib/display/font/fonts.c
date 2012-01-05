@@ -1,3 +1,4 @@
+#include <string.h>
 #include <font/font.h>
 
 const struct font_desc *find_font(const char *name)

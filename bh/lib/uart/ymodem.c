@@ -1,5 +1,7 @@
 #include <go.h>
 #include <loader.h>
+#include <stdio.h>
+#include <string.h>
 #include <fs/fs.h>
 #include <image.h>
 #include <fcntl.h>

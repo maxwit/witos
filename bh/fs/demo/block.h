@@ -1,7 +1,7 @@
 #pragma once
 
-#include <types.h>
-#include <list.h>
+#include <sys/types.h>
+#include "demo.h"
 
 enum {
 	READ = 1,
@@ -19,8 +19,8 @@ struct block_device {
 
 struct bio {
 	void     *data;
-	sector_t sect;
 	size_t   size;
+	sector_t sect;
 	struct block_device *bdev;
 	unsigned long flags;
 };

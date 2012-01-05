@@ -1,8 +1,13 @@
-#include <autoconf.h>
+#include <io.h>
+#include <irq.h>
+#include <init.h>
+#include <delay.h>
+#include <errno.h>
+#include <stdio.h>
+#include <malloc.h>
+#include <platform.h>
 #include <net/net.h>
 #include <net/mii.h>
-#include <irq.h>
-#include <platform.h>
 #include "lan9220.h"
 
 #ifdef CONFIG_LAN9220_DEBUG

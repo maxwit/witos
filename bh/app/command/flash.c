@@ -1,7 +1,9 @@
+#include <errno.h>
+#include <stdio.h>
+#include <malloc.h>
 #include <unistd.h>
 #include <string.h>
 #include <fcntl.h>
-#include <task.h>
 #include <flash/flash.h>
 
 static int flash_str_to_val(char * str, __u32 * val, char *unit)

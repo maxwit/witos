@@ -1,5 +1,11 @@
-#include <unistd.h>
+#include <task.h>
 #include <shell.h>
+#include <stdio.h>
+#include <errno.h>
+#include <string.h>
+#include <assert.h>
+#include <unistd.h>
+#include <malloc.h>
 #include <dirent.h>
 // fixme: to be removed
 #include <net/net.h>
@@ -59,7 +65,7 @@ static void inline cmd_backspace(void)
 
 static inline void show_prompt(void)
 {
-	char *cwd;
+	const char *cwd;
 
 	cwd = __getcwd();
 	assert (cwd != NULL);

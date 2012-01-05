@@ -1,4 +1,7 @@
+#include <init.h>
 #include <stdio.h>
+#include <errno.h>
+#include <assert.h>
 #include <block.h>
 #include <drive.h>
 #include <malloc.h>

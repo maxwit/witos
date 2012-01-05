@@ -1,3 +1,7 @@
+#include <stdio.h>
+#include <errno.h>
+#include <malloc.h>
+#include <string.h>
 #include <mmc/mmc.h>
 #include <mmc/mmc_ops.h>
 #include "sdio_ops.h"

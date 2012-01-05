@@ -1,5 +1,6 @@
-#include <string.h>
 #include <types.h>
+#include <malloc.h>
+#include <string.h>
 
 size_t strlen(const char *src)
 {
@@ -165,7 +166,7 @@ char *strchr(const char *src, int c)
 	return NULL;
 }
 
-char *strrchr(const char *src, size_t c)
+char *strrchr(const char *src, int c)
 {
 	const char *iter;
 
@@ -247,7 +248,7 @@ void *memset(void *src, int c, size_t count)
 	return src;
 }
 
-long memcmp(const void* dst, const void* src, size_t count)
+int memcmp(const void* dst, const void* src, size_t count)
 {
 	const __u8 *s, *d;
 
