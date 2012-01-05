@@ -70,6 +70,7 @@ int __mount(const char *type, unsigned long flags, const char *bdev_name, const 
 	struct vfsmount *mnt;
 	struct dentry *root;
 
+	// fixme
 	struct block_device *bdev;
 	bdev = seach_device(bdev_name);
 	if (NULL == bdev) {
