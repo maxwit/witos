@@ -16,9 +16,8 @@ int main(int argc, char *argv[])
 {
 	int ret, fd;
 	ssize_t len;
-	const char *dev_name = "/tmp/hello.ext2", *type = "ext2", *path = "/" MNT_PT "/"  __FILE__;
+	const char *dev_name = "/dev/sdz2", *type = "ext2", *path = "/" MNT_PT "/makefile";
 	char buff[BUF_LEN + 1];
-	struct block_device bdev;
 
 	while ((ret = getopt(argc, argv, "d:t:f:h")) != -1) {
 		switch (ret) {
@@ -38,9 +37,6 @@ int main(int argc, char *argv[])
 			break;
 		}
 	}
-
-	strcpy(bdev.name, dev_name);
-	block_device_register(&bdev);
 
 	ret = __mount(type, 0, dev_name, MNT_PT);
 	if (ret < 0) {

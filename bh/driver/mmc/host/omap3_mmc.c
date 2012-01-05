@@ -395,4 +395,4 @@ static int omap3_mmc_init(void)
 	return 0;
 }
 
-DRIVER_INIT(omap3_mmc_init);
+module_init(omap3_mmc_init);

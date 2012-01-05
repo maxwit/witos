@@ -136,4 +136,4 @@ L1:
 	return ret;
 }
 
-DRIVER_INIT(omap3_nand_probe);
+module_init(omap3_nand_probe);

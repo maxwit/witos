@@ -207,5 +207,5 @@ static int __INIT__ cs89x0_init(void)
 	return ret;
 }
 
-DRIVER_INIT(cs89x0_init);
+module_init(cs89x0_init);
 

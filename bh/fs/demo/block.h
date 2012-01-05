@@ -12,14 +12,15 @@ typedef unsigned long sector_t;
 
 struct block_device {
 	int fd;
-	char name[256];
+	const char *name;
+	const char *map;
 	struct list_node bdev_node;
 };
 
 struct bio {
 	void     *data;
-	size_t   size;
 	sector_t sect;
+	size_t   size;
 	struct block_device *bdev;
 	unsigned long flags;
 };
@@ -34,4 +35,4 @@ void submit_bio(int rw,struct bio * bio);
 
 int block_device_register(struct block_device *bdev);
 
-const struct list_node *bdev_get_list();
+struct block_device *bdev_get(const char *name);

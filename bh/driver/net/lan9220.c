@@ -378,4 +378,4 @@ static int __INIT__ lan9220_driver_init(void)
 	return platform_driver_register(&lan9220_driver);
 }
 
-DRIVER_INIT(lan9220_driver_init);
+module_init(lan9220_driver_init);

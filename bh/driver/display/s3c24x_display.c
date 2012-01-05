@@ -67,5 +67,5 @@ static int __INIT__ s3c24x0_lcdc_init(void)
 	return 0;
 }
 
-DRIVER_INIT(s3c24x0_lcdc_init);
+module_init(s3c24x0_lcdc_init);
 

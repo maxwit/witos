@@ -10,18 +10,14 @@
 
 static DECL_INIT_LIST(g_bdev_list);
 
-const struct list_node *bdev_get_list()
-{
-	return &g_bdev_list;
-}
-
 int block_device_register(struct block_device *bdev)
 {
 	int fd;
 
-	fd = open(bdev->name, O_RDONLY);
+	fd = open(bdev->map, O_RDONLY);
 	if (fd < 0) {
-		return 0;
+		GEN_DBG("%s: fail to map file \"%s\"!\n", bdev->name, bdev->map);
+		return -ENODEV;
 	}
 
 	bdev->fd = fd;
@@ -35,6 +31,21 @@ int block_device_register(struct block_device *bdev)
 #endif
 
 	return 0;
+}
+
+struct block_device *bdev_get(const char *name)
+{
+	struct list_node *iter;
+
+	list_for_each(iter, &g_bdev_list) {
+		struct block_device *bdev;
+
+		bdev = container_of(iter, struct block_device, bdev_node);
+		if (!strcmp(bdev->name, name))
+			return bdev;
+	}
+
+	return NULL;
 }
 
 struct bio *bio_alloc(/* reserved */)

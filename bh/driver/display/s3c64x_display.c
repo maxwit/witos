@@ -88,4 +88,4 @@ static int __INIT__ s3c6410_display_init(void)
 	return 0;
 }
 
-DRIVER_INIT(s3c6410_display_init);
+module_init(s3c6410_display_init);

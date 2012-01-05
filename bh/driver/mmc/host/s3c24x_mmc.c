@@ -185,4 +185,4 @@ static int __INIT__ s3c2440_mmc_init(void)
 	return mmc_register(&s3c2440_mmc);
 }
 
-DRIVER_INIT(s3c2440_mmc_init);
+module_init(s3c2440_mmc_init);

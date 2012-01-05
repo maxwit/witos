@@ -364,4 +364,4 @@ static int __INIT__ fat_init(void)
 	return file_system_type_register(&fat_fs_type);
 }
 
-SUBSYS_INIT(fat_init);
+module_init(fat_init);

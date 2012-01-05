@@ -330,4 +330,4 @@ static int __INIT__ dm9000_init(void)
 	return ret;
 }
 
-DRIVER_INIT(dm9000_init);
+module_init(dm9000_init);

@@ -110,4 +110,4 @@ L1:
 	return ret;
 }
 
-DRIVER_INIT(at91_nand_probe);
+module_init(at91_nand_probe);

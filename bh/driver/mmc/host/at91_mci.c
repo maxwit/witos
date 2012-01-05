@@ -109,5 +109,5 @@ static int __INIT__ at91_mci_init(void)
 	return mmc_register(&at91_mci);
 }
 
-DRIVER_INIT(at91_mci_init);
+module_init(at91_mci_init);
 

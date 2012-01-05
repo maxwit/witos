@@ -43,22 +43,6 @@ struct file_system_type *file_system_type_get(const char *name)
 	return NULL;
 }
 
-// fixme: to be removed
-struct block_device *seach_device(const char *name)
-{
-	struct list_node *iter;
-
-	list_for_each(iter, bdev_get_list()) {
-		struct block_device *bdev;
-
-		bdev = container_of(iter, struct block_device, bdev_node);
-		if (!strcmp(bdev->name, name))
-			return bdev;
-	}
-
-	return NULL;
-}
-
 #ifdef __GBIOS_VER__
 int mount(const char *type, unsigned long flags, const char *bdev_name, const char *path)
 #else
@@ -72,7 +56,7 @@ int __mount(const char *type, unsigned long flags, const char *bdev_name, const 
 
 	// fixme
 	struct block_device *bdev;
-	bdev = seach_device(bdev_name);
+	bdev = bdev_get(bdev_name);
 	if (NULL == bdev) {
 		DPRINT("fail to open block device \"%s\"!\n", bdev_name);
 		return -ENODEV;

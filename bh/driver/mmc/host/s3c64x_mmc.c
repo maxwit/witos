@@ -259,6 +259,6 @@ static int s3c6410_mmc_init(void)
 }
 
 #ifndef CONFIG_GTH
-DRIVER_INIT(s3c6410_mmc_init);
+module_init(s3c6410_mmc_init);
 #endif
 

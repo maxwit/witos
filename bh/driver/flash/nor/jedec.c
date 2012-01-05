@@ -50,4 +50,4 @@ static int __INIT__ nor_flash_probe(void)
 	return -ENODEV;
 }
 
-DRIVER_INIT(nor_flash_probe);
+module_init(nor_flash_probe);

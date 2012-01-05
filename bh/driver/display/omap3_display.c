@@ -104,4 +104,4 @@ error:
 	return ret;
 }
 
-DRIVER_INIT(omap3_display_init);
+module_init(omap3_display_init);

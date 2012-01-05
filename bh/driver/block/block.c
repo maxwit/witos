@@ -7,9 +7,19 @@
 
 static DECL_INIT_LIST(g_bdev_list);
 
-const struct list_node *bdev_get_list()
+struct block_device *bdev_get(const char *name)
 {
-	return &g_bdev_list;
+	struct list_node *iter;
+
+	list_for_each(iter, &g_bdev_list) {
+		struct block_device *bdev;
+
+		bdev = container_of(iter, struct block_device, bdev_node);
+		if (!strcmp(bdev->name, name))
+			return bdev;
+	}
+
+	return NULL;
 }
 
 int block_device_register(struct block_device *bdev)
@@ -63,10 +73,3 @@ void submit_bio(int rw, struct bio *bio)
 		sect++;
 	}
 }
-
-static int __INIT__ block_device_init(void)
-{
-	return 0;
-}
-
-SUBSYS_INIT(block_device_init);

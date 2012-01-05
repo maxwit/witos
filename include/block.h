@@ -69,5 +69,4 @@ void bio_free(struct bio *bio);
 
 void submit_bio(int rw,struct bio * bio);
 
-// fixme: to be removed
-const struct list_node *bdev_get_list();
+struct block_device *bdev_get(const char *name);

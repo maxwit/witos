@@ -648,4 +648,4 @@ static int __INIT__ DataFlashProbe(void)
 	return ulRet;
 }
 
-DRIVER_INIT(DataFlashProbe);
+module_init(DataFlashProbe);

@@ -213,4 +213,4 @@ L1:
 	return ret;
 }
 
-DRIVER_INIT(s3c24x_nand_probe);
+module_init(s3c24x_nand_probe);

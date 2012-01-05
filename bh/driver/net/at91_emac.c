@@ -277,5 +277,5 @@ L1:
 	return ret;
 }
 
-DRIVER_INIT(at91_emac_probe);
+module_init(at91_emac_probe);
 

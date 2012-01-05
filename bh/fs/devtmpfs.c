@@ -80,4 +80,4 @@ static int __INIT__ devfs_init(void)
 	return file_system_type_register(&devfs_type);
 }
 
-SUBSYS_INIT(devfs_init);
+module_init(devfs_init);

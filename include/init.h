@@ -25,7 +25,7 @@
 #define POSTSUBS_INIT(func) \
 		static __USED__ __INIT_POSTSUBS__ init_func_t __initcall_##func = func
 
-#define DRIVER_INIT(func) \
+#define module_init(func) \
 	static __USED__ __INIT_DRV__  init_func_t __initcall_##func = func
 
 typedef int (*init_func_t)(void);

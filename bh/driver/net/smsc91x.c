@@ -200,4 +200,4 @@ static int __INIT__ smsc91x_init(void)
 	return ret;
 }
 
-DRIVER_INIT(smsc91x_init);
+module_init(smsc91x_init);

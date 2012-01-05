@@ -73,4 +73,4 @@ static int at91sam9261_lcdc_init(void)
 	at91_lcdc_writel(PWRCON, 30 << 1 | 1);
 }
 
-DRIVER_INIT(at91sam9261_lcdc_init);
+module_init(at91sam9261_lcdc_init);
