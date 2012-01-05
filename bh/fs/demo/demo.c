@@ -14,7 +14,10 @@ int main(int argc, char *argv[])
 {
 	int ret, fd;
 	ssize_t len;
-	const char *dev_name = "/dev/sdz2", *type = "ext2", *path = "/" MNT_PT "/makefile";
+	const char *dev_name = "/dev/sdz2", *type = "ext2";
+	// const char *path = "/" MNT_PT "/abc/12345/hello";
+	// const char *path = "/" MNT_PT "/makefile";
+	const char *path = "/" MNT_PT "/demo.c";
 	char buff[BUF_LEN + 1];
 
 	while ((ret = getopt(argc, argv, "d:t:f:h")) != -1) {

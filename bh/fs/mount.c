@@ -7,31 +7,21 @@
 
 #define MAX_FDS 256
 
-struct qstr {
-	const char *name;
-	unsigned int len;
-};
-
-struct nameidata {
-	unsigned int flags;
-	struct file *fp;
-};
-
 static struct file_system_type *fs_type_list;
 static DECL_INIT_LIST(g_mount_list);
 static struct file *fd_array[MAX_FDS];
 
-int file_system_type_register(struct file_system_type *fs_type)
+int file_system_type_register(struct file_system_type *fstype)
 {
 	struct file_system_type **p;
 
 	for (p = &fs_type_list; *p; p = &(*p)->next) {
-		if (!strcmp((*p)->name, fs_type->name))
+		if (!strcmp((*p)->name, fstype->name))
 			return -EBUSY;
 	}
 
-	fs_type->next = NULL;
-	*p = fs_type;
+	fstype->next = NULL;
+	*p = fstype;
 
 	return 0;
 }
@@ -49,10 +39,10 @@ struct file_system_type *file_system_type_get(const char *name)
 }
 
 int GAPI mount(const char *type, unsigned long flags,
-	const char *bdev_name, const char *path) 
+	const char *bdev_name, const char *path)
 {
 	int ret;
-	struct file_system_type *fs_type;
+	struct file_system_type *fstype;
 	struct vfsmount *mnt;
 	struct dentry *root;
 
@@ -64,13 +54,13 @@ int GAPI mount(const char *type, unsigned long flags,
 		return -ENODEV;
 	}
 
-	fs_type = file_system_type_get(type);
-	if (NULL == fs_type) {
+	fstype = file_system_type_get(type);
+	if (NULL == fstype) {
 		DPRINT("fail to find file system type %s!\n", type);
 		return -ENOENT;
 	}
 
-	root = fs_type->mount(fs_type, flags, bdev);
+	root = fstype->mount(fstype, flags, bdev);
 	if (!root) {
 		DPRINT("fail to mount %s!\n", bdev_name);
 		goto L1;
@@ -82,10 +72,10 @@ int GAPI mount(const char *type, unsigned long flags,
 		goto L2;
 	}
 
-	mnt->fs_type = fs_type;
-	mnt->path = path;
-	mnt->bdev = bdev;
-	mnt->root = root;
+	mnt->fstype     = fstype;
+	mnt->mountpoint = path;
+	mnt->dev_name   = bdev_name;
+	mnt->root       = root;
 
 	// TODO: check if mp exists or not!
 
@@ -114,55 +104,85 @@ static inline struct vfsmount *search_mount(struct qstr *unit)
 
 	list_for_each(iter, &g_mount_list) {
 		mnt = container_of(iter, struct vfsmount, mnt_hash);
-		if (!strncmp(mnt->path, unit->name, unit->len))
+		if (!strncmp(mnt->mountpoint, unit->name, unit->len))
 			return mnt;
 	}
 
 	return NULL;
 }
 
-static int path_walk(const char *path, struct nameidata *nd)
+#if 0
+static inline int path_unit(struct qstr *unit)
 {
-	int ret = -ENOENT; // fixme
-	struct qstr str;
-	struct file *fp;
-	struct vfsmount *mnt;
-	struct file_system_type *fs_type;
-	struct dentry *de, *root;
-	struct inode *inode;
+	const char *path = unit->name;
 
-	while ('/' == *path)
-		path++;
+	while ('/' == *path) path++;
 	if (!*path)
 		return -EINVAL;
-	str.name = path;
+	unit->name = path;
 
 	while (*path && '/' != *path)
 		path++;
 	if (!*path)
 		return -EINVAL;
-	str.len = path - str.name;
+	unit->len = path - unit->name;
 
-	mnt = search_mount(&str);
-	if (NULL == mnt)
-		return -ENOENT;
+	return unit->len;
+}
+#endif
 
-	root = mnt->root;
-	fs_type = mnt->fs_type;
-	if (!fs_type->lookup || !fs_type->fops)
+static int path_walk(const char *path, struct nameidata *nd)
+{
+	int ret = -ENOENT; // fixme
+	struct qstr unit;
+	struct file *fp;
+	struct vfsmount *mnt;
+	struct file_system_type *fstype;
+	struct dentry *child, *parent;
+	struct inode *inode;
+
+	while ('/' == *path) path++;
+	if (!*path)
 		return -EINVAL;
+	unit.name = path;
 
-	while ('/' == *path)
+	while (*path && '/' != *path)
 		path++;
 	if (!*path)
 		return -EINVAL;
+	unit.len = path - unit.name;
 
-	de = fs_type->lookup(root->inode, path);
-	if (!de) {
+	mnt = search_mount(&unit);
+	if (NULL == mnt)
 		return -ENOENT;
+
+	child = mnt->root;
+	fstype = mnt->fstype;
+	if (!fstype->lookup || !fstype->fops)
+		return -EINVAL;
+
+	while (1) {
+		while ('/' == *path) path++;
+		if (!*path)
+			break;
+
+		unit.name = path;
+		do {
+			path++;
+		} while (*path && '/' != *path);
+		unit.len = path - unit.name;
+		GEN_DBG("parsing %s\n", unit.name);
+
+		nd->unit = &unit;
+		parent = child;
+		child = fstype->lookup(parent->inode, nd);
+		if (!child) {
+			GEN_DBG("failed @ \"%s\"!\n", unit.name);
+			return -ENOENT;
+		}
 	}
 
-	inode = de->inode;
+	inode = child->inode;
 	if (O_RDONLY != nd->flags && !(inode->mode & (IMODE_W | IMODE_X)))
 		return -EPERM;
 
@@ -172,12 +192,12 @@ static int path_walk(const char *path, struct nameidata *nd)
 		goto no_mem;
 	}
 
-	fp->de = de;
-	fp->pos = 0;
-	fp->fops = fs_type->fops;
-	fp->flags = nd->flags;
+	fp->f_dentry = child;
+	fp->f_pos    = 0;
+	fp->f_op     = fstype->fops;
+	fp->flags    = nd->flags;
 
-	if (!fp->fops) {
+	if (!fp->f_op) {
 		GEN_DBG("No fops for %s!\n", path);
 		ret = -EINVAL;
 		goto fail;
@@ -230,8 +250,8 @@ static int do_open(const char *path, int flags, int mode)
 
 	fp = nd.fp;
 
-	if (fp->fops->open) {
-		ret = fp->fops->open(fp, fp->de->inode);
+	if (fp->f_op->open) {
+		ret = fp->f_op->open(fp, fp->f_dentry->inode);
 		if (ret < 0)
 			goto fail;
 	}
@@ -268,7 +288,7 @@ int GAPI close(int fd)
 
 	fd_array[fd] = NULL;
 
-	return fp->fops->close(fp);
+	return fp->f_op->close(fp);
 }
 
 EXPORT_SYMBOL(close);
@@ -282,10 +302,10 @@ ssize_t GAPI read(int fd, void *buff, size_t size)
 
 	fp = fd_array[fd];
 
-	if (!fp || !fp->fops->read)
+	if (!fp || !fp->f_op->read)
 		return -ENOENT;
 
-	return fp->fops->read(fp, buff, size, &fp->pos);
+	return fp->f_op->read(fp, buff, size, &fp->f_pos);
 }
 
 EXPORT_SYMBOL(read);
@@ -299,10 +319,10 @@ ssize_t GAPI write(int fd, const void *buff, size_t size)
 
 	fp = fd_array[fd];
 
-	if (!fp || !fp->fops->write)
+	if (!fp || !fp->f_op->write)
 		return -ENOENT;
 
-	return fp->fops->write(fp, buff, size, &fp->pos);
+	return fp->f_op->write(fp, buff, size, &fp->f_pos);
 }
 
 EXPORT_SYMBOL(write);
@@ -317,12 +337,12 @@ int GAPI ioctl(int fd, int cmd, ...)
 
 	fp = fd_array[fd];
 
-	if (!fp || !fp->fops->ioctl)
+	if (!fp || !fp->f_op->ioctl)
 		return -ENOENT;
 
 	arg = *((unsigned long *)&cmd + 1); // fixme
 
-	return fp->fops->ioctl(fp, cmd, arg);
+	return fp->f_op->ioctl(fp, cmd, arg);
 }
 
 EXPORT_SYMBOL(ioctl);
@@ -339,16 +359,16 @@ loff_t GAPI lseek(int fd, loff_t offset, int whence)
 	if (!fp)
 		return -ENOENT;
 
-	if (fp->fops->lseek)
-		return fp->fops->lseek(fp, offset, whence);
+	if (fp->f_op->lseek)
+		return fp->f_op->lseek(fp, offset, whence);
 
 	switch (whence) {
 	case SEEK_SET:
-		fp->pos = offset;
+		fp->f_pos = offset;
 		break;
 
 	case SEEK_CUR:
-		fp->pos += offset;
+		fp->f_pos += offset;
 		break;
 
 	case SEEK_END:

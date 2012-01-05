@@ -364,7 +364,7 @@ static void ext2_umount(struct super_block *sb)
 {
 }
 
-static struct ext2_dir_entry_2 *ext2_real_lookup(struct inode *inode, const char *name)
+static struct ext2_dir_entry_2 *ext2_real_lookup(struct inode *inode, struct nameidata *nd)
 {
 	struct super_block *sb = inode->i_sb;
 	struct ext2_sb_info *e2_sbi;
@@ -374,6 +374,7 @@ static struct ext2_dir_entry_2 *ext2_real_lookup(struct inode *inode, const char
 	size_t len = 0;
 	int blocks, i;
 	size_t block_size;
+	struct qstr *unit = nd->unit;
 
 	e2_sbi = sb->s_ext;
 	block_size = 1024 << e2_sbi->e2_sb.s_log_block_size;
@@ -394,7 +395,8 @@ static struct ext2_dir_entry_2 *ext2_real_lookup(struct inode *inode, const char
 			DPRINT("%s: inode = %d, e2_de size = %d, name size = %d, block = %d\n",
 				e2_de->name, e2_de->inode, e2_de->rec_len, e2_de->name_len, i);
 
-			if (!strncmp(e2_de->name, name, e2_de->name_len))
+			if (unit->len == e2_de->name_len && \
+				!strncmp(e2_de->name, unit->name, e2_de->name_len))
 				goto found_entry;
 
 			e2_de = (struct ext2_dir_entry_2 *)((char *)e2_de + e2_de->rec_len);
@@ -402,7 +404,7 @@ static struct ext2_dir_entry_2 *ext2_real_lookup(struct inode *inode, const char
 		}
 	}
 
-	GEN_DBG("\"%s\" not found!\n", name);
+	GEN_DBG("\"%s\" not found!\n", unit->name);
 
 	return NULL;
 
@@ -428,7 +430,7 @@ static ssize_t ext2_read(struct file *fp, void *buff, size_t size, loff_t *off)
 	ssize_t i, len;
 	size_t blocks;
 	size_t offset, real_size, block_size;
-	struct dentry *de = fp->de;
+	struct dentry *de = fp->f_dentry;
 	struct super_block *sb;
 	struct ext2_inode *e2_in;
 	struct ext2_sb_info *e2_sbi;
@@ -442,20 +444,20 @@ static ssize_t ext2_read(struct file *fp, void *buff, size_t size, loff_t *off)
 	if (!e2_in)
 		return -ENOENT;
 
-	if (fp->pos == e2_in->i_size)
+	if (fp->f_pos == e2_in->i_size)
 		return 0;
 
 	block_size = 1 << (e2_sbi->e2_sb.s_log_block_size + 10);
 	char tmp_buff[block_size];
 
-	real_size = min(size, e2_in->i_size - fp->pos);
+	real_size = min(size, e2_in->i_size - fp->f_pos);
 
 	blocks = (real_size + (block_size - 1)) / block_size;
 	__le32 block_indexs[blocks];
 
-	get_block_indexs(sb, e2_in, fp->pos / block_size, block_indexs, blocks);
+	get_block_indexs(sb, e2_in, fp->f_pos / block_size, block_indexs, blocks);
 
-	offset = fp->pos % block_size;
+	offset = fp->f_pos % block_size;
 	len = block_size - offset;
 
 	for(i = 0; i < blocks; i++) {
@@ -466,7 +468,7 @@ static ssize_t ext2_read(struct file *fp, void *buff, size_t size, loff_t *off)
 
 		memcpy(buff, tmp_buff, len);
 		buff += len;
-		fp->pos += len;
+		fp->f_pos += len;
 		offset = 0;
 		len = block_size;
 	}
@@ -479,14 +481,14 @@ static ssize_t ext2_write(struct file *fp, const void *buff, size_t size, loff_t
 	return 0;
 }
 
-static struct dentry *ext2_lookup(struct inode *parent, const char *name)
+static struct dentry *ext2_lookup(struct inode *parent, struct nameidata *nd)
 {
 	struct inode *in;
 	struct dentry *de;
 	struct ext2_dir_entry_2 *e2_de;
 	struct ext2_inode *e2_in;
 
-	e2_de = ext2_real_lookup(parent, name);
+	e2_de = ext2_real_lookup(parent, nd);
 	if (!e2_de)
 		return NULL;
 

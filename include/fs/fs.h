@@ -10,6 +10,17 @@ struct inode;
 struct dentry;
 struct file;
 
+struct qstr {
+	const char *name;
+	unsigned int len;
+};
+
+struct nameidata {
+	struct qstr *unit;
+	unsigned int flags;
+	struct file *fp;
+};
+
 struct file_system_type {
 	const char *name;
 	struct file_system_type *next;
@@ -19,7 +30,7 @@ struct file_system_type {
 
 	// fixme: to remove the followings
 	const struct file_operations *fops;
-	struct dentry *(*lookup)(struct inode *, const char *);
+	struct dentry *(*lookup)(struct inode *, struct nameidata *nd);
 };
 
 int file_system_type_register(struct file_system_type *);
@@ -27,11 +38,11 @@ int file_system_type_register(struct file_system_type *);
 struct file_system_type *file_system_type_get(const char *);
 
 struct vfsmount {
-	const char *path;
-	struct block_device *bdev; // fixme!
-	struct file_system_type *fs_type;
-	struct list_node mnt_hash;
+	const char *dev_name;
+	const char *mountpoint; // fixme: dentry type
 	struct dentry *root;
+	struct file_system_type *fstype;
+	struct list_node mnt_hash;
 };
 
 struct block_buff {
@@ -52,11 +63,11 @@ struct file_operations {
 };
 
 struct file {
-	loff_t pos;
+	loff_t f_pos;
 	unsigned int flags;
 	// unsigned int mode;
-	const struct file_operations *fops;
-	struct dentry *de;
+	const struct file_operations *f_op;
+	struct dentry *f_dentry;
 	// struct vfsmount *vfsmnt;
 	struct block_buff blk_buf; // for block device, to be removed!
 	void *private_data;

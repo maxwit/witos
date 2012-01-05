@@ -5,7 +5,7 @@ LA_CFLAGS = -I. -include demo.h
 
 SRCS = $(wildcard *.c)
 OBJS = $(SRCS:%.c=%.o)
-OBJS += fs.o block.o ext2.o
+OBJS += block.o mount.o ext2.o
 
 all: demo
 
@@ -21,14 +21,11 @@ bdemu_drv.o: bdemu_drv.c
 block.o: block.c
 	gcc $(CFLAGS) $(LA_CFLAGS) -c $<
 
-fs.o: ../fs.c
+mount.o: ../mount.c
 	gcc $(CFLAGS) $(GB_CFLAGS) -c $<
 
 ext2.o: ../ext2/ext2.c
 	gcc $(CFLAGS) $(GB_CFLAGS) -c $<
-
-#fat.o: ../fat/fat.c
-#	gcc $(CFLAGS) -c $<
 
 clean:
 	@rm -fv *.o demo
