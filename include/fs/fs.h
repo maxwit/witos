@@ -4,6 +4,8 @@
 #include <list.h>
 #include <block.h>
 
+typedef int (*filldir_t)(void *, const char *, int, loff_t, __u32 /* fixme */, unsigned);
+
 struct vfsmount;
 struct super_block;
 struct inode;
@@ -17,8 +19,9 @@ struct qstr {
 
 struct nameidata {
 	struct qstr *unit;
-	unsigned int flags;
-	struct file *fp;
+	// unsigned int flags;
+	// struct file *file;
+	struct dentry *dentry;
 };
 
 struct file_system_type {
@@ -27,10 +30,6 @@ struct file_system_type {
 
 	struct dentry *(*mount)(struct file_system_type *, unsigned long, struct block_device *);
 	void (*umount)(struct super_block *);
-
-	// fixme: to remove the followings
-	const struct file_operations *fops;
-	struct dentry *(*lookup)(struct inode *, struct nameidata *nd);
 };
 
 int file_system_type_register(struct file_system_type *);
@@ -60,6 +59,7 @@ struct file_operations {
 	ssize_t (*write)(struct file *, const void *, size_t, loff_t *);
 	int (*ioctl)(struct file *, int, unsigned long);
 	loff_t (*lseek)(struct file *, loff_t, int);
+	int (*readdir) (struct file *, void *, filldir_t);
 };
 
 struct file {
@@ -73,15 +73,53 @@ struct file {
 	void *private_data;
 };
 
-#define IMODE_R   (1 << 0)
-#define IMODE_W   (1 << 1)
-#define IMODE_X   (1 << 2)
+#define S_IFMT  00170000
+#define S_IFSOCK 0140000
+#define S_IFLNK	 0120000
+#define S_IFREG  0100000
+#define S_IFBLK  0060000
+#define S_IFDIR  0040000
+#define S_IFCHR  0020000
+#define S_IFIFO  0010000
+#define S_ISUID  0004000
+#define S_ISGID  0002000
+#define S_ISVTX  0001000
+
+#define S_ISLNK(m)	(((m) & S_IFMT) == S_IFLNK)
+#define S_ISREG(m)	(((m) & S_IFMT) == S_IFREG)
+#define S_ISDIR(m)	(((m) & S_IFMT) == S_IFDIR)
+#define S_ISCHR(m)	(((m) & S_IFMT) == S_IFCHR)
+#define S_ISBLK(m)	(((m) & S_IFMT) == S_IFBLK)
+#define S_ISFIFO(m)	(((m) & S_IFMT) == S_IFIFO)
+#define S_ISSOCK(m)	(((m) & S_IFMT) == S_IFSOCK)
+
+#define S_IRWXU 00700
+#define S_IRUSR 00400
+#define S_IWUSR 00200
+#define S_IXUSR 00100
+
+#define S_IRWXG 00070
+#define S_IRGRP 00040
+#define S_IWGRP 00020
+#define S_IXGRP 00010
+
+#define S_IRWXO 00007
+#define S_IROTH 00004
+#define S_IWOTH 00002
+#define S_IXOTH 00001
+
+struct inode_operations {
+	struct dentry *(*lookup)(struct inode *, struct nameidata *);
+	// int (*create)(struct inode *, struct dentry *, int, struct nameidata *);
+};
 
 struct inode {
-	unsigned long       i_ino;
-	loff_t              i_size;
-	__u32               i_mode;
-	struct super_block *i_sb;
+	unsigned long i_ino;
+	loff_t        i_size;
+	__u32         i_mode;
+	struct super_block            *i_sb;
+	const struct inode_operations *i_op;
+	const struct file_operations  *i_fop;
 };
 
 #define DNAME_INLINE_LEN 36

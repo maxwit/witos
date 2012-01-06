@@ -20,11 +20,9 @@ static struct block_device g_bdev[] = {
 	},
 };
 
-static __INIT__ int bdemu_init()
+static int __INIT__ bdemu_init()
 {
 	int i, ret;
-
-	printf("%s() line %d\n", __func__, __LINE__);
 
 	for (i = 0; i < sizeof(g_bdev) / sizeof(g_bdev[0]); i++) {
 		ret = block_device_register(&g_bdev[i]);

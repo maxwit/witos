@@ -22,6 +22,9 @@ typedef enum {false, true} bool;
 #define cpu_to_le16(x)         (x)
 #define le16_to_cpu(x)         (x)
 
+#define cpu_to_le32(x)         (x)
+#define le32_to_cpu(x)         (x)
+
 #define CPU_TO_BE16(val)      (((val) >> 8) | (((val) & 0xff) << 8))
 #define BE16_TO_CPU(val)      (((val) >> 8) | (((val) & 0xff) << 8))
 

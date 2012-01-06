@@ -3,6 +3,7 @@
 #include <malloc.h>
 #include <string.h>
 #include <errno.h>
+#include <assert.h>
 #include <block.h>
 #include <fs/fs.h>
 #include <fs/ext2_fs.h>
@@ -10,6 +11,33 @@
 
 #define MAX_MNT_LEN 256
 #define SECT_SIZE   (1 << 9) // fixme
+
+static struct dentry *ext2_lookup(struct inode *parent, struct nameidata *nd);
+
+static const struct inode_operations ext2_reg_inode_operations = {
+};
+
+static const struct inode_operations ext2_dir_inode_operations = {
+	.lookup = ext2_lookup,
+};
+
+static int ext2_open(struct file *fp, struct inode *inode);
+static int ext2_close(struct file *fp);
+static ssize_t ext2_read(struct file *fp, void *buff, size_t size, loff_t *off);
+static ssize_t ext2_write(struct file *fp, const void *buff, size_t size, loff_t *off);
+
+static const struct file_operations ext2_reg_file_operations = {
+	.open  = ext2_open,
+	.close = ext2_close,
+	.read  = ext2_read,
+	.write = ext2_write,
+};
+
+static int ext2_readdir(struct file * filp, void * dirent, filldir_t filldir);
+
+static const struct file_operations ext2_dir_file_operations = {
+	.readdir = ext2_readdir,
+};
 
 static struct inode *ext2_alloc_inode(struct super_block *sb)
 {
@@ -211,7 +239,7 @@ static int get_block_indexs(struct super_block *sb,
 	return i;
 }
 
-static struct ext2_inode *ext2_read_inode(struct super_block *sb, int ino)
+static struct ext2_inode *ext2_get_inode(struct super_block *sb, int ino)
 {
 	int grp_no, ino_no, blk_no, count;
 	struct ext2_sb_info *e2_sbi = sb->s_fs_info;
@@ -261,7 +289,7 @@ struct inode *ext2_iget(struct super_block *sb, unsigned long ino)
 	struct ext2_inode *e2_in;
 	struct ext2_inode_info *e2_ini;
 
-	e2_in = ext2_read_inode(sb, ino);
+	e2_in = ext2_get_inode(sb, ino);
 	// ...
 
 	inode = ext2_alloc_inode(sb);
@@ -270,12 +298,22 @@ struct inode *ext2_iget(struct super_block *sb, unsigned long ino)
 		return NULL;
 	}
 
-	inode->i_ino   = ino;
-	inode->i_mode  = e2_in->i_mode; // fixme
-	inode->i_size  = e2_in->i_size;
+	inode->i_ino  = ino;
+	inode->i_mode = le16_to_cpu(e2_in->i_mode);
+	inode->i_size = le32_to_cpu(e2_in->i_size);
 
 	e2_ini = EXT2_I(inode);
-	e2_ini->i_e2in = e2_in;
+	e2_ini->i_e2in = e2_in; // fixme
+
+	if (S_ISREG(inode->i_mode)) {
+		inode->i_op = &ext2_reg_inode_operations;
+		inode->i_fop = &ext2_reg_file_operations;
+	} else if (S_ISDIR(inode->i_mode)) {
+		inode->i_op = &ext2_dir_inode_operations;
+		inode->i_fop = &ext2_dir_file_operations;
+	} else {
+		BUG();
+	}
 
 	return inode;
 }
@@ -460,7 +498,7 @@ static ssize_t ext2_read(struct file *fp, void *buff, size_t size, loff_t *off)
 	in     = de->d_inode;
 	e2_sbi = sb->s_fs_info;
 
-	e2_in = ext2_read_inode(sb, in->i_ino);
+	e2_in = ext2_get_inode(sb, in->i_ino);
 	if (!e2_in)
 		return -ENOENT;
 
@@ -531,25 +569,19 @@ static struct dentry *ext2_lookup(struct inode *parent, struct nameidata *nd)
 	return de;
 }
 
-static const struct file_operations ext2_fops = {
-	.open  = ext2_open,
-	.close = ext2_close,
-	.read  = ext2_read,
-	.write = ext2_write,
-};
+static int ext2_readdir(struct file * filp, void * dirent, filldir_t filldir)
+{
+	return 0;
+}
 
 static struct file_system_type ext2_fs_type = {
 	.name   = "ext2",
 	.mount  = ext2_mount,
 	.umount = ext2_umount,
-	// to be removed:
-	.fops	= &ext2_fops,
-	.lookup = ext2_lookup,
 };
 
 static int __INIT__ ext2_init(void)
 {
-	GEN_DBG("\n");
 	return file_system_type_register(&ext2_fs_type);
 }
 

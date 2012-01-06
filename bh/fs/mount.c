@@ -133,12 +133,9 @@ static inline int path_unit(struct qstr *unit)
 
 static int path_walk(const char *path, struct nameidata *nd)
 {
-	int ret = -ENOENT; // fixme
 	struct qstr unit;
-	struct file *fp;
 	struct vfsmount *mnt;
-	struct file_system_type *fstype;
-	struct dentry *child, *parent;
+	struct dentry *dir;
 	struct inode *inode;
 
 	while ('/' == *path) path++;
@@ -156,10 +153,7 @@ static int path_walk(const char *path, struct nameidata *nd)
 	if (NULL == mnt)
 		return -ENOENT;
 
-	child = mnt->root;
-	fstype = mnt->fstype;
-	if (!fstype->lookup || !fstype->fops)
-		return -EINVAL;
+	dir = mnt->root;
 
 	while (1) {
 		while ('/' == *path) path++;
@@ -174,42 +168,21 @@ static int path_walk(const char *path, struct nameidata *nd)
 		GEN_DBG("parsing %s\n", unit.name);
 
 		nd->unit = &unit;
-		parent = child;
-		child = fstype->lookup(parent->d_inode, nd);
-		if (!child) {
+
+		inode = dir->d_inode;
+		if (!inode->i_op->lookup)
+			return -ENOTSUPP;
+
+		dir = inode->i_op->lookup(inode, nd);
+		if (!dir) {
 			GEN_DBG("failed @ \"%s\"!\n", unit.name);
 			return -ENOENT;
 		}
 	}
 
-	inode = child->d_inode;
-	if (O_RDONLY != nd->flags && !(inode->i_mode & (IMODE_W | IMODE_X)))
-		return -EPERM;
-
-	fp = zalloc(sizeof(*fp)); // use malloc instead of zalloc
-	if (!fp) {
-		ret = -ENOMEM;
-		goto no_mem;
-	}
-
-	fp->f_dentry = child;
-	fp->f_pos    = 0;
-	fp->f_op     = fstype->fops;
-	fp->flags    = nd->flags;
-
-	if (!fp->f_op) {
-		GEN_DBG("No fops for %s!\n", path);
-		ret = -EINVAL;
-		goto fail;
-	}
-
-	nd->fp = fp;
+	nd->dentry = dir;
 
 	return 0;
-fail:
-	free(fp);
-no_mem:
-	return ret;
 }
 
 int get_unused_fd()
@@ -230,6 +203,31 @@ int fd_install(int fd, struct file *fp)
 	return 0;
 }
 
+static int __dentry_open(struct dentry *dir, struct file *fp)
+{
+	int ret;
+	struct inode *inode = dir->d_inode;
+
+	fp->f_dentry = dir;
+	fp->f_pos = 0;
+
+	fp->f_op = inode->i_fop;
+	if (!fp->f_op) {
+		GEN_DBG("No fops for %s!\n", dir->d_name.name);
+		return -ENODEV;
+	}
+
+	// TODO: check flags
+
+	if (fp->f_op->open) {
+		ret = fp->f_op->open(fp, inode);
+		if (ret < 0)
+			return ret;
+	}
+
+	return 0;
+}
+
 static int do_open(const char *path, int flags, int mode)
 {
 	int fd, ret;
@@ -240,21 +238,23 @@ static int do_open(const char *path, int flags, int mode)
 	if (fd < 0)
 		return fd;
 
-	nd.flags = flags;
-
 	ret = path_walk(path, &nd);
 	if (ret < 0) {
 		GEN_DBG("fail to find \"%s\"!\n", path);
 		return ret;
 	}
 
-	fp = nd.fp;
-
-	if (fp->f_op->open) {
-		ret = fp->f_op->open(fp, fp->f_dentry->d_inode);
-		if (ret < 0)
-			goto fail;
+	fp = zalloc(sizeof(*fp)); // use malloc instead of zalloc
+	if (!fp) {
+		ret = -ENOMEM;
+		goto no_mem;
 	}
+
+	fp->flags = flags;
+
+	ret = __dentry_open(nd.dentry, fp);
+	if (ret < 0)
+		goto fail;
 
 	fd_install(fd, fp);
 
@@ -262,6 +262,7 @@ static int do_open(const char *path, int flags, int mode)
 
 fail:
 	free(fp);
+no_mem:
 	return ret;
 }
 
