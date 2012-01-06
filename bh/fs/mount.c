@@ -175,15 +175,15 @@ static int path_walk(const char *path, struct nameidata *nd)
 
 		nd->unit = &unit;
 		parent = child;
-		child = fstype->lookup(parent->inode, nd);
+		child = fstype->lookup(parent->d_inode, nd);
 		if (!child) {
 			GEN_DBG("failed @ \"%s\"!\n", unit.name);
 			return -ENOENT;
 		}
 	}
 
-	inode = child->inode;
-	if (O_RDONLY != nd->flags && !(inode->mode & (IMODE_W | IMODE_X)))
+	inode = child->d_inode;
+	if (O_RDONLY != nd->flags && !(inode->i_mode & (IMODE_W | IMODE_X)))
 		return -EPERM;
 
 	fp = zalloc(sizeof(*fp)); // use malloc instead of zalloc
@@ -251,7 +251,7 @@ static int do_open(const char *path, int flags, int mode)
 	fp = nd.fp;
 
 	if (fp->f_op->open) {
-		ret = fp->f_op->open(fp, fp->f_dentry->inode);
+		ret = fp->f_op->open(fp, fp->f_dentry->d_inode);
 		if (ret < 0)
 			goto fail;
 	}

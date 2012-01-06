@@ -140,7 +140,7 @@ static int flash_open(struct file *fp, struct inode *inode)
 	struct flash_chip *flash;
 	struct block_buff *blk_buf = &fp->blk_buf;
 
-	flash = container_of(inode->i_ext, struct flash_chip, bdev);
+	// flash = container_of(inode->i_ext, struct flash_chip, bdev);
 	assert(flash);
 
 	if (fp->flags == O_WRONLY || fp->flags == O_RDWR) {
@@ -278,11 +278,11 @@ static ssize_t flash_read(struct file *fp, void *buff, size_t size, loff_t *off)
 {
 	struct flash_chip *flash = fp->private_data;
 
-	return __flash_read(flash, buff, size, fp->pos);
+	return __flash_read(flash, buff, size, fp->f_pos);
 }
 
 #if 0
-	if (fp->pos < blk_buff->blk_size) {
+	if (fp->f_pos < blk_buff->blk_size) {
 		if (false == check_image_type(img_type, blk_buff->blk_base)) {
 			printf("\nImage img_type mismatch!"
 				"Please check the image name and the target file!\n");
@@ -304,7 +304,7 @@ static ssize_t flash_write(struct file *fp, const void *buff, size_t size, loff_
 	if (0 == size)
 		return 0;
 
-	if (size + fp->pos > bdev->size) {
+	if (size + fp->f_pos > bdev->size) {
 		char tmp[32];
 
 		val_to_hr_str(bdev->size, tmp);
@@ -332,13 +332,13 @@ static ssize_t flash_write(struct file *fp, const void *buff, size_t size, loff_
 			case FLASH_OOB_AUTO:
 				// fixme: use macro: RATIO_TO_PAGE(n)
 				// size_adj = blk_buff->blk_size / (flash->write_size + flash->oob_size) << flash->write_shift;
-				flash_pos = fp->pos / (flash->write_size + flash->oob_size) << flash->write_shift;
+				flash_pos = fp->f_pos / (flash->write_size + flash->oob_size) << flash->write_shift;
 				break;
 
 			case FLASH_OOB_PLACE:
 			default:
 				// size_adj = blk_buff->blk_size;
-				flash_pos = fp->pos;
+				flash_pos = fp->f_pos;
 				break;
 			}
 #endif
@@ -372,7 +372,7 @@ static ssize_t flash_write(struct file *fp, const void *buff, size_t size, loff_
 				goto L1;
 			}
 
-			fp->pos += blk_buff->blk_size;
+			fp->f_pos += blk_buff->blk_size;
 			blk_buff->blk_off = blk_buff->blk_base;
 		} else { // fixme: symi write
 			memcpy(blk_buff->blk_off, buff, size);
@@ -397,17 +397,17 @@ static int flash_close(struct file *fp)
 
 	if (rest > 0) {
 		//printf("%s(): pos = 0x%08x, blk_base = 0x%08x, blk_off = 0x%08x, rest = 0x%08x\n",
-			// __func__, fp->pos + fp->attr->base, blk_buff->blk_base, blk_buff->blk_off, rest);
+			// __func__, fp->f_pos + fp->attr->base, blk_buff->blk_base, blk_buff->blk_off, rest);
 
 		switch (flash->oob_mode) {
 		case FLASH_OOB_RAW:
 		case FLASH_OOB_AUTO:
-			flash_pos = fp->pos / (flash->write_size + flash->oob_size) * flash->write_size;
+			flash_pos = fp->f_pos / (flash->write_size + flash->oob_size) * flash->write_size;
 			break;
 
 		case FLASH_OOB_PLACE:
 		default: // fixme
-			flash_pos = fp->pos;
+			flash_pos = fp->f_pos;
 			break;
 		}
 
@@ -419,7 +419,7 @@ static int flash_close(struct file *fp)
 			goto L1;
 		}
 
-		// fp->pos += rest;
+		// fp->f_pos += rest;
 	}
 
 L1:

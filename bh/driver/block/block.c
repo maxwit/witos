@@ -32,7 +32,7 @@ int block_device_register(struct block_device *bdev)
 		bdev->base, bdev->base + bdev->size, bdev->name,
 		bdev->label[0] ? bdev->label : "N/A");
 
-	device_create(&bdev->devfs_node);
+	// device_create(&bdev->devfs_node);
 
 	return 0;
 }

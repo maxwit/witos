@@ -78,22 +78,27 @@ struct file {
 #define IMODE_X   (1 << 2)
 
 struct inode {
-	__u32 mode;
+	unsigned long       i_ino;
+	loff_t              i_size;
+	__u32               i_mode;
 	struct super_block *i_sb;
-	void *i_ext;
 };
 
+#define DNAME_INLINE_LEN 36
+
 struct dentry {
-	// char d_name[NAME_SIZE];
-	struct inode *inode;
+	struct qstr d_name;
+	char d_iname[DNAME_INLINE_LEN];
+	struct inode *d_inode;
 	struct super_block *d_sb;
-	void *d_ext;
 };
+
+struct dentry *__d_alloc(struct super_block *sb, const struct qstr *str);
 
 struct super_block {
 	struct block_device *s_bdev;
 	struct dentry *s_root;
-	void *s_ext;
+	void *s_fs_info;
 };
 
-int device_create(struct list_node *node);
+struct super_block *sget(struct file_system_type *type, struct block_device *bdev);

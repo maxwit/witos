@@ -22,13 +22,13 @@ static struct dentry *devfs_mount(struct file_system_type *fstype, unsigned long
 	if (!ino)
 		return NULL;
 
-	ino->mode = ~0;
+	ino->i_mode = ~0;
 
 	root = zalloc(sizeof(*root));
 	if (!root)
 		return NULL;
 
-	root->inode = ino;
+	root->d_inode = ino;
 
 	return root;
 }
@@ -51,9 +51,9 @@ struct dentry *devfs_lookup(struct inode *parent, const char *name)
 				return NULL;
 
 			if (bdev->flags == BDF_RDONLY)
-				inode->mode = IMODE_R;
+				inode->i_mode = IMODE_R;
 			else
-				inode->mode = ~0; // fixme
+				inode->i_mode = ~0; // fixme
 
 			inode->i_ext = bdev;
 			inode->i_sb = parent->i_sb;
@@ -62,7 +62,7 @@ struct dentry *devfs_lookup(struct inode *parent, const char *name)
 			if (!de)
 				return NULL;
 
-			de->inode = inode;
+			de->d_inode = inode;
 
 			return de;
 		}
