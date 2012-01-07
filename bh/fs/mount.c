@@ -264,7 +264,10 @@ int GAPI close(int fd)
 
 	fd_install(fd, NULL);
 
-	return fp->f_op->close(fp);
+	if (fp->f_op && fp->f_op->close)
+		return fp->f_op->close(fp);
+
+	return 0;
 }
 
 EXPORT_SYMBOL(close);

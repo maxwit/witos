@@ -72,7 +72,7 @@ struct dirent *readdir(DIR *dir)
 	assert(dir);
 
 	ret = getdents(dir->fd, &lde, 1); // fixme
-	if (ret < 0)
+	if (ret <= 0)
 		return NULL;
 
 	de = malloc(lde.d_reclen);

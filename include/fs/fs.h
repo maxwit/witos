@@ -17,9 +17,9 @@ struct qstr {
 
 struct nameidata {
 	struct qstr *unit;
+	struct dentry *dentry;
 	// unsigned int flags;
 	// struct file *file;
-	struct dentry *dentry;
 };
 
 struct file_system_type {
@@ -145,10 +145,10 @@ struct linux_dirent {
 
 int getdents(unsigned int fd, struct linux_dirent *dirp, unsigned int count);
 int filldir(struct linux_dirent *, const char * name, int namlen, loff_t offset,
-		   unsigned long ino, unsigned int d_type);
+		   unsigned long ino, unsigned int type);
 
 struct super_block {
-	size_t s_blksize;
+	__u32 s_blksize;
 	struct block_device *s_bdev;
 	struct dentry *s_root;
 	void *s_fs_info;

@@ -1,4 +1,3 @@
-#include <fcntl.h>
 #include <errno.h>
 #include <string.h>
 #include <fs/fs.h>
