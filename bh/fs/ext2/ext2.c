@@ -576,7 +576,7 @@ static int ext2_inode_read_block(struct inode *in, int blk_no, char *blk_buf)
 	struct ext2_inode_info *e2_info = EXT2_I(in);
 	int blk_index[in->i_size / in->i_sb->s_blksize];
 
-	get_block_indexs(in->i_sb, e2_info->i_e2in, 0, (__le32 *)blk_index, in->i_sb->s_blksize);
+	get_block_indexs(in->i_sb, e2_info->i_e2in, 0, (__le32 *)blk_index, ARRAY_ELEM_NUM(blk_index));
 
 	ext2_read_block(in->i_sb, blk_buf, blk_index[blk_no], 0, in->i_sb->s_blksize);
 
