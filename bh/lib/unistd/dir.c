@@ -1,10 +1,11 @@
+#include <fcntl.h>
 #include <dirent.h>
 #include <errno.h>
 #include <unistd.h>
 #include <string.h>
 #include <malloc.h>
 #include <assert.h>
-#include <block.h> //  fixme: to be removed!
+#include <fs/fs.h>
 
 static char g_cwd[PATH_MAX];
 
@@ -46,24 +47,39 @@ const char *__getcwd(void)
 
 DIR *opendir(const char *name)
 {
+	int fd;
 	DIR *dir;
+
+	fd = open(name, O_RDONLY);
+	if (fd < 0)
+		return NULL;
 
 	dir = zalloc(sizeof(*dir));
 	if (!dir)
 		return NULL;
+
+	dir->fd = fd;
 
 	return dir;
 }
 
 struct dirent *readdir(DIR *dir)
 {
+	int ret;
 	struct dirent *de = NULL;
+	struct linux_dirent lde;
 
 	assert(dir);
-	if (dir->iter == dir->list)
+
+	ret = getdents(dir->fd, &lde, 1); // fixme
+	if (ret < 0)
 		return NULL;
 
-	dir->iter = dir->iter->next;
+	de->d_ino    = lde->d_ino;
+	de->d_off    = lde->d_off;
+	de->d_reclen = lde->d_reclen;
+	de->d_type   = 0; // fixme
+	strcpy(de->d_name, lde->d_name);
 
 	return de;
 }
@@ -72,6 +88,8 @@ int closedir(DIR *dir)
 {
 	assert(dir);
 
+	close(dir->fd);
 	free(dir);
+
 	return 0;
 }

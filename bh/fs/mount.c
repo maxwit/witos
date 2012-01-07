@@ -5,11 +5,8 @@
 #include <fcntl.h>
 #include <fs/fs.h>
 
-#define MAX_FDS 256
-
 static struct file_system_type *fs_type_list;
 static DECL_INIT_LIST(g_mount_list);
-static struct file *fd_array[MAX_FDS];
 
 int file_system_type_register(struct file_system_type *fstype)
 {
@@ -185,24 +182,6 @@ static int path_walk(const char *path, struct nameidata *nd)
 	return 0;
 }
 
-int get_unused_fd()
-{
-	int fd;
-
-	for (fd = 0; fd < MAX_FDS; fd++) {
-		if (!fd_array[fd])
-			return fd;
-	}
-
-	return -EBUSY;
-}
-
-int fd_install(int fd, struct file *fp)
-{
-	fd_array[fd] = fp;
-	return 0;
-}
-
 static int __dentry_open(struct dentry *dir, struct file *fp)
 {
 	int ret;
@@ -279,15 +258,11 @@ int GAPI close(int fd)
 {
 	struct file *fp;
 
-	if (fd < 0 || fd >= MAX_FDS)
-		return -EINVAL;
-
-	fp = fd_array[fd];
-
+	fp = fget(fd);
 	if (!fp)
 		return -ENOENT;
 
-	fd_array[fd] = NULL;
+	fd_install(fd, NULL);
 
 	return fp->f_op->close(fp);
 }
@@ -298,11 +273,7 @@ ssize_t GAPI read(int fd, void *buff, size_t size)
 {
 	struct file *fp;
 
-	if (fd < 0 || fd >= MAX_FDS)
-		return -EINVAL;
-
-	fp = fd_array[fd];
-
+	fp = fget(fd);
 	if (!fp || !fp->f_op->read)
 		return -ENOENT;
 
@@ -315,11 +286,7 @@ ssize_t GAPI write(int fd, const void *buff, size_t size)
 {
 	struct file *fp;
 
-	if (fd < 0 || fd >= MAX_FDS)
-		return -EINVAL;
-
-	fp = fd_array[fd];
-
+	fp = fget(fd);
 	if (!fp || !fp->f_op->write)
 		return -ENOENT;
 
@@ -333,11 +300,7 @@ int GAPI ioctl(int fd, int cmd, ...)
 	struct file *fp;
 	unsigned long arg;
 
-	if (fd < 0 || fd >= MAX_FDS)
-		return -EINVAL;
-
-	fp = fd_array[fd];
-
+	fp = fget(fd);
 	if (!fp || !fp->f_op->ioctl)
 		return -ENOENT;
 
@@ -352,11 +315,7 @@ loff_t GAPI lseek(int fd, loff_t offset, int whence)
 {
 	struct file *fp;
 
-	if (fd < 0 || fd >= MAX_FDS)
-		return -EINVAL;
-
-	fp = fd_array[fd];
-
+	fp = fget(fd);
 	if (!fp)
 		return -ENOENT;
 

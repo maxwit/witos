@@ -4,8 +4,6 @@
 #include <list.h>
 #include <block.h>
 
-typedef int (*filldir_t)(void *, const char *, int, loff_t, __u32 /* fixme */, unsigned);
-
 struct vfsmount;
 struct super_block;
 struct inode;
@@ -59,7 +57,7 @@ struct file_operations {
 	ssize_t (*write)(struct file *, const void *, size_t, loff_t *);
 	int (*ioctl)(struct file *, int, unsigned long);
 	loff_t (*lseek)(struct file *, loff_t, int);
-	int (*readdir) (struct file *, void *, filldir_t);
+	int (*readdir) (struct file *, struct linux_dirent *);
 };
 
 struct file {
@@ -133,6 +131,19 @@ struct dentry {
 
 struct dentry *__d_alloc(struct super_block *sb, const struct qstr *str);
 
+// copy from Linux man page
+struct linux_dirent {
+	unsigned long  d_ino;	  /* Inode number */
+	unsigned long  d_off;	  /* Offset to next linux_dirent */
+	unsigned short d_reclen;  /* Length of this linux_dirent */
+	char		   d_name[0];  /* Filename (null-terminated) */
+	/* length is actually (d_reclen - 2 - offsetof(struct linux_dirent, d_name) */
+};
+
+int getdents(unsigned int fd, struct linux_dirent *dirp, unsigned int count);
+int filldir(struct linux_dirent *, const char * name, int namlen, loff_t offset,
+		   unsigned long ino, unsigned int d_type);
+
 struct super_block {
 	struct block_device *s_bdev;
 	struct dentry *s_root;
@@ -140,3 +151,8 @@ struct super_block {
 };
 
 struct super_block *sget(struct file_system_type *type, struct block_device *bdev);
+
+// fixme
+int get_unused_fd();
+int fd_install(int fd, struct file *fp);
+struct file *fget(unsigned int fd);

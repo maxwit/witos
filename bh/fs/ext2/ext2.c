@@ -569,7 +569,7 @@ static struct dentry *ext2_lookup(struct inode *parent, struct nameidata *nd)
 	return de;
 }
 
-static int ext2_readdir(struct file * filp, void * dirent, filldir_t filldir)
+static int ext2_readdir(struct file *fp, struct linux_dirent *dirent)
 {
 	return 0;
 }
