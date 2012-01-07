@@ -3,8 +3,8 @@
 #include <string.h>
 #include <fs/fs.h>
 
-int filldir(struct linux_dirent *lde, const char * name, int namlen, loff_t offset,
-		   unsigned long ino, unsigned int d_type)
+int filldir(struct linux_dirent *lde, const char *name, int namlen, loff_t offset,
+		   unsigned long ino, unsigned int type)
 {
 	size_t reclen;
 

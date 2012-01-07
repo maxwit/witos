@@ -597,7 +597,7 @@ static int ext2_readdir(struct file *fp, struct linux_dirent *dirent)
 	struct super_block *sb = fp->f_dentry->d_inode->i_sb;
 	struct ext2_sb_info *sbi = (struct ext2_sb_info *)sb->s_fs_info;
 	struct ext2_super_block *esb = &((struct ext2_sb_info *)sb->s_fs_info)->e2_sb;
-	struct ext2_group_desc *gdt = &((struct ext2_sb_info *)sb->s_fs_info)->gdt;
+	struct ext2_group_desc *gdt = ((struct ext2_sb_info *)sb->s_fs_info)->gdt;
 	struct ext2_inode *eino;
 	int blk_size = 1024 << esb->s_log_block_size;
 	char buff[blk_size];
@@ -623,7 +623,7 @@ static int ext2_readdir(struct file *fp, struct linux_dirent *dirent)
 	ext2_read_block(sb, buff, blk_off, 0, blk_size);
 	eino = (struct ext2_inode *)(buff + ino_off);
 
-	sz_in_blk = (eino->i_size + blk_size - 1)/ blk_size;
+	sz_in_blk = (eino->i_size + blk_size - 1) / blk_size;
 
 	ids = blk_size / 4;
 	for (i = 0; i < sz_in_blk; i++) {
