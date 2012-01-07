@@ -66,7 +66,7 @@ DIR *opendir(const char *name)
 struct dirent *readdir(DIR *dir)
 {
 	int ret;
-	struct dirent *de = NULL;
+	struct dirent *de;
 	struct linux_dirent lde;
 
 	assert(dir);
@@ -75,11 +75,15 @@ struct dirent *readdir(DIR *dir)
 	if (ret < 0)
 		return NULL;
 
-	de->d_ino    = lde->d_ino;
-	de->d_off    = lde->d_off;
-	de->d_reclen = lde->d_reclen;
+	de = malloc(lde.d_reclen);
+	if (!de)
+		return NULL;
+
+	de->d_ino    = lde.d_ino;
+	de->d_off    = lde.d_off;
+	de->d_reclen = lde.d_reclen;
 	de->d_type   = 0; // fixme
-	strcpy(de->d_name, lde->d_name);
+	strcpy(de->d_name, lde.d_name);
 
 	return de;
 }

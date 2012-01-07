@@ -57,7 +57,7 @@ struct file_operations {
 	ssize_t (*write)(struct file *, const void *, size_t, loff_t *);
 	int (*ioctl)(struct file *, int, unsigned long);
 	loff_t (*lseek)(struct file *, loff_t, int);
-	int (*readdir) (struct file *, struct linux_dirent *);
+	int (*readdir)(struct file *, struct linux_dirent *);
 };
 
 struct file {
