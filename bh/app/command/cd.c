@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <dirent.h>
 
+#if 0
 static int get_bdev_by_index(int index, char name[], size_t size)
 {
 	DIR *dir;
@@ -37,6 +38,7 @@ static int get_bdev_by_index(int index, char name[], size_t size)
 	closedir(dir);
 	return -ENODEV;
 }
+#endif
 
 int main(int argc, char *argv[])
 {
@@ -47,7 +49,7 @@ int main(int argc, char *argv[])
 	switch (argc) {
 	case 1:
 		ret = conf_get_attr(HOME, str);
-		assert(ret <= 0); // should never fail!
+		assert(ret >= 0); // should never fail!
 		path = str;
 		goto L1;
 
@@ -60,6 +62,7 @@ int main(int argc, char *argv[])
 		return -EINVAL;
 	}
 
+#if 0
 	ret = dec_str_to_int(path, &index);
 	if (ret >= 0) {
 		if (index >= 0) {
@@ -73,6 +76,7 @@ int main(int argc, char *argv[])
 		usage();
 		return -ENOENT;
 	}
+#endif
 
 L1:
 	if (!strcmp(path, __getcwd()))

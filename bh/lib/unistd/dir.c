@@ -12,6 +12,7 @@ static char g_cwd[PATH_MAX];
 // fixme
 int chdir(const char *path)
 {
+#if 0
 	DIR *dir;
 	struct dirent *de;
 
@@ -28,6 +29,10 @@ int chdir(const char *path)
 	}
 
 	return -ENOENT;
+#endif
+	strncpy(g_cwd, path, PATH_MAX);
+
+	return 0;
 }
 
 char *getcwd(char *buff, size_t size)
