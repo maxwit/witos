@@ -24,13 +24,16 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (optind < argc) {
+	if (optind + 1 < argc) {
 		usage();
 		return -EINVAL;
 	}
 
-	path = __getcwd();
-
+	if (optind < argc) {
+		path = argv[optind];
+	} else {
+		path = __getcwd();
+	}
 	dir = opendir(path);
 	if (!dir) {
 		printf("cannot access \"%s\"\n", path);
