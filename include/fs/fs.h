@@ -50,6 +50,8 @@ struct block_buff {
 	__u8    *blk_off;
 };
 
+struct linux_dirent;
+
 struct file_operations {
 	int (*open)(struct file *, struct inode *);
 	int (*close)(struct file *);
@@ -146,6 +148,7 @@ int filldir(struct linux_dirent *, const char * name, int namlen, loff_t offset,
 		   unsigned long ino, unsigned int d_type);
 
 struct super_block {
+	size_t s_blksize;
 	struct block_device *s_bdev;
 	struct dentry *s_root;
 	void *s_fs_info;
