@@ -569,10 +569,120 @@ static struct dentry *ext2_lookup(struct inode *parent, struct nameidata *nd)
 	return de;
 }
 
-static int ext2_readdir(struct file * filp, void * dirent, filldir_t filldir)
+static int set_dirent_by_blk(void *dirent, void *blk_buf, size_t blk_size)
 {
-	return 0;
+	struct ext2_dir_entry_2 *de = (struct ext2_dir_entry_2 *)blk_buf;
+	void *dst = dirent;
+
+	while (de < blk_buf + blk_size) {
+		if (de->name_len == 0)
+			break;
+
+		if (de->inode == 0)
+			continue;
+
+		memcpy(dst, de, de->rec_len);
+		dst = dst + de->rec_len;
+		de = (struct ext2_dir_entry_2 *)((void *)de + de->rec_len);
+	}
+
+	return dst - dirent;
 }
+
+static int ext2_readdir(struct file *filp, void *dirent, filldir_t filldir)
+{
+	struct dentry *de = filp->f_dentry;
+	struct inode *ino = filp->f_dentry->d_inode;
+	struct super_block *sb = filp->f_dentry->d_inode->i_sb;
+	struct ext2_sb_info *sbi = (struct ext2_sb_info *)sb->s_fs_info;
+	struct ext2_super_block *esb = (struct ext2_sb_info *)sb->s_fs_info->e2_sb;
+	struct ext2_group_desc *gdt = (struct ext2_sb_info *)sb->s_fs_info->gdt;
+	struct ext2_inode *eino;
+	int blk_size = 1024 << esb->s_log_block_size;
+	char buff[blk_size];
+	unsigned long ino_num;
+	unsigned long grp_off;
+	unsigned long blk_off;
+	unsigned long ino_off;
+	size_t sz_in_blk;
+	int i, j, k, l;
+	int ids;
+	int ret;
+	int blk_no;
+	char blk_buf[blk_size];
+	int blk_index1[blk_size / sizeof(int)];
+	int blk_index2[blk_size / sizeof(int)];
+	int blk_index3[blk_size / sizeof(int)];
+
+	ino_num = ino->i_ino;
+	grp_off = ino_num / esb->s_inodes_per_group;
+	ino_off = (ino_num % esb->s_inodes_per_group) * esb->s_inode_size;
+	blk_off = gdt[grp_off].bg_inode_table + ino_off / blk_size;
+
+	ext2_read_block(sb, buff, blk_off, 0, blk_size);
+	eino = (struct ext2_inode *)(buff + ino_off);
+
+	sz_in_blk = (eino->i_size + blk_size - 1)/ blk_size;
+
+	ids = blk_size / 4;
+	for (i = 0; i < sz_in_blk; i++) {
+		ext2_read_block(sb, blk_buf, eino->i_block[i], 0, blk_size);
+
+	}
+
+	if (sz_in_blk > 12) {
+		ext2_read_block(sb, blk_index1, eino->i_block[13], 0, blk_size);
+
+		for (l = 0; i < sz_in_blk && l < ids; i++, l++) {
+			blk_no = blk_index1[l];
+			ext2_read_block(sb, blk_buf, blk_no, 0, blk_size);
+		}
+	}
+
+	if (sz_in_blk > 12 + ids) {
+		ext2_read_block(sb, blk_index2, eino->i_block[14], 0, blk_size);
+
+		for (j = 0; j < ids; j++) {
+			ext2_read_block(sb, blk_index1, blk_index2[j], 0, blk_size);
+
+			for (l = 0; i < sz_in_blk && l < ids; i++, l++) {
+				blk_no = blk_index1[l];
+				ext2_read_block(sb, blk_buf, blk_no, 0, blk_size);
+			}
+
+			if (i == sz_in_blk && i == 12 + ids + ids * ids)
+				break;
+		}
+	}
+
+	if (sz_in_blk > 12 + ids + ids * ids){
+		ext2_read_block(sb, blk_index3, eino->i_block[15], 0, blk_size);
+
+		for (k = 0; k < ids; k++) {
+			ext2_read_block(sb, blk_index2, blk_index3[k], 0, blk_size);
+
+			for (j = 0; j < ids; j++) {
+				ext2_read_block(sb, blk_index1, blk_index2[j], 0, blk_size);
+
+				for (l = 0; i < sz_in_blk && l < ids; i++, l++) {
+					blk_no = blk_index1[l];
+					ext2_read_block(sb, blk_buf, blk_no, 0, blk_size);
+				}
+
+				if (i == sz_in_blk && i == 12 + ids + ids * ids)
+					break;
+			}
+
+			if (i == sz_in_blk)
+				break;
+		}
+	}
+
+error:
+
+	return ret;
+}
+
 
 static struct file_system_type ext2_fs_type = {
 	.name   = "ext2",
