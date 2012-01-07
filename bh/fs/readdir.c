@@ -2,7 +2,7 @@
 #include <string.h>
 #include <fs/fs.h>
 
-int filldir(struct linux_dirent *lde, const char *name, int namlen, loff_t offset,
+int filldir(struct linux_dirent *lde, const char *name, int size, loff_t offset,
 		   unsigned long ino, unsigned int type)
 {
 	size_t reclen;
@@ -11,11 +11,11 @@ int filldir(struct linux_dirent *lde, const char *name, int namlen, loff_t offse
 	lde->d_off  = offset;
 	lde->d_type = type;
 
-	reclen = (size_t)(&((struct linux_dirent *)0)->d_name) + namlen + 2;
+	reclen = (size_t)(&((struct linux_dirent *)0)->d_name) + size + 2;
 	ALIGN_UP(reclen, sizeof(long));
 	lde->d_reclen = reclen;
 
-	strncpy(lde->d_name, name, namlen);
+	strcpy(lde->d_name, name);
 
 	return 0;
 }
