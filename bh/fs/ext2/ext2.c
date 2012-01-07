@@ -570,6 +570,43 @@ static struct dentry *ext2_lookup(struct inode *parent, struct nameidata *nd)
 	return de;
 }
 
+static int ext2_inode_read_block(struct inode *in, int blk_no, char *blk_buf)
+{
+	return 0;
+}
+
+static int ext2_readdir(struct file *fp, struct linux_dirent *dirent)
+{
+	int blk_num;
+	int blk_off;
+	char buff[fp->f_dentry->d_inode->i_sb->s_blksize];
+	struct inode *in;
+	struct ext2_dir_entry_2 *e2_de;
+
+	in = fp->f_dentry->d_inode;
+
+	if (fp->f_pos == in->i_size)
+		return 0;
+
+	blk_num = fp->f_pos / in->i_sb->s_blksize;
+	blk_off = fp->f_pos % in->i_sb->s_blksize;
+
+	ext2_inode_read_block(in, blk_num, buff);
+
+	e2_de = (struct ext2_dir_entry_2 *)(buff + blk_off);
+
+	if (e2_de->rec_len + fp->f_pos > in->i_size)
+		return -ENODATA;
+
+	filldir(dirent, e2_de->name, e2_de->name_len, fp->f_pos /*fixme*/,
+		in->i_ino, e2_de->file_type);
+
+	fp->f_pos += e2_de->rec_len;
+
+	return e2_de->rec_len;
+}
+
+#if 0
 static int set_dirent_by_blk(void *dirent, void *blk_buf, size_t blk_size)
 {
 	struct ext2_dir_entry_2 *de = (struct ext2_dir_entry_2 *)blk_buf;
@@ -626,7 +663,7 @@ static int ext2_readdir(struct file *fp, struct linux_dirent *dirent)
 	sz_in_blk = (eino->i_size + blk_size - 1) / blk_size;
 
 	ids = blk_size / 4;
-	for (i = 0; i < sz_in_blk; i++) {
+	for (i = 0; i < 12 && i < sz_in_blk; i++) {
 		ext2_read_block(sb, blk_buf, eino->i_block[i], 0, blk_size);
 
 	}
@@ -683,7 +720,7 @@ error:
 
 	return ret;
 }
-
+#endif
 
 static struct file_system_type ext2_fs_type = {
 	.name   = "ext2",
