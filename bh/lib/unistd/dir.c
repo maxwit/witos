@@ -82,7 +82,7 @@ struct dirent *readdir(DIR *dir)
 	de->d_ino    = lde.d_ino;
 	de->d_off    = lde.d_off;
 	de->d_reclen = lde.d_reclen;
-	de->d_type   = 0; // fixme
+	de->d_type   = lde.d_type; // fixme
 	strcpy(de->d_name, lde.d_name);
 
 	return de;

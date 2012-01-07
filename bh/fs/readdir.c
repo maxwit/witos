@@ -8,8 +8,9 @@ int filldir(struct linux_dirent *lde, const char *name, int namlen, loff_t offse
 {
 	size_t reclen;
 
-	lde->d_ino = ino;
-	lde->d_off = offset;
+	lde->d_ino  = ino;
+	lde->d_off  = offset;
+	lde->d_type = type;
 
 	reclen = (size_t)(&((struct linux_dirent *)0)->d_name) + namlen + 2;
 	ALIGN_UP(reclen, sizeof(long));

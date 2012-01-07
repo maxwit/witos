@@ -138,6 +138,7 @@ struct linux_dirent {
 	unsigned short d_reclen;  /* Length of this linux_dirent */
 	char		   d_name[0];  /* Filename (null-terminated) */
 	/* length is actually (d_reclen - 2 - offsetof(struct linux_dirent, d_name) */
+	unsigned char  d_type; // fixme
 };
 
 int getdents(unsigned int fd, struct linux_dirent *dirp, unsigned int count);

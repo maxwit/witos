@@ -159,8 +159,7 @@ static size_t get_dind_block(struct super_block *sb,
 static size_t get_tind_block(struct super_block *sb,
 			struct ext2_inode *inode, ssize_t start_block, __le32 block_indexs[], size_t len)
 {
-	struct ext2_sb_info *e2_sbi = sb->s_fs_info;
-	size_t block_size = 1 << (e2_sbi->e2_sb.s_log_block_size + 10);
+	size_t block_size = sb->s_blksize;
 	size_t index_per_block = block_size / sizeof(__le32);
 	__le32 buff[index_per_block];
 	__le32 dbuff[index_per_block];
@@ -322,8 +321,8 @@ struct inode *ext2_iget(struct super_block *sb, unsigned long ino)
 static int ext2_fill_super(struct super_block *sb)
 {
 	int ret;
-	int blk_is;
-	int gdt_size;
+	int group_count;
+	unsigned int bpg; // blocks per groups
 	char buff[KB(1)];
 	struct ext2_sb_info *e2_sbi;
 	struct ext2_super_block *e2_sb;
@@ -354,33 +353,35 @@ static int ext2_fill_super(struct super_block *sb)
 		goto L1;
 	}
 
-	sb->s_fs_info = e2_sbi;
-
+#if 1 // fixme
 	e2_sb = &e2_sbi->e2_sb;
 	memcpy(e2_sb, buff, sizeof(*e2_sb));
+#endif
 
-	blk_is = (1 << (e2_sb->s_log_block_size + 10)) / e2_sb->s_inode_size;
+	sb->s_fs_info = e2_sbi;
+	sb->s_blksize = 1024 << e2_sb->s_log_block_size;
 
-	DPRINT("%s(): label = %s, log block size = %d, "
-		"inode size = %d, block size = %d, inodes per block = %d\n",
-		__func__, e2_sb->s_volume_name, e2_sb->s_log_block_size,
-		e2_sb->s_inode_size, (1 << (e2_sb->s_log_block_size + 10)), blk_is);
+	bpg = e2_sb->s_blocks_per_group;
+	group_count = (e2_sb->s_blocks_count + bpg - 1) / bpg;
+	DPRINT("super block information:\n"
+		"label = \"%s\", inode size = %d, block size = %d\n",
+		e2_sb->s_volume_name[0] ? e2_sb->s_volume_name : "<N/A>",
+		e2_sb->s_inode_size, sb->s_blksize);
 
-	gdt_size = (e2_sb->s_blocks_count + e2_sb->s_blocks_per_group - 1) / e2_sb->s_blocks_per_group;
-	gdt_size *= sizeof(struct ext2_group_desc);
-
-	gdt = malloc(gdt_size);
+	gdt = malloc(group_count * sizeof(struct ext2_group_desc));
 	if (NULL == gdt) {
 		ret = -ENOMEM;
 		goto L2;
 	}
-
-	ext2_read_block(sb, gdt, e2_sb->s_first_data_block + 1, 0, gdt_size);
-
-	DPRINT("%s(), block group[0 / %d]: free blocks= %d, free inodes = %d\n",
-		__func__, gdt_size, gdt->bg_free_blocks_count, gdt->bg_free_inodes_count);
-
 	e2_sbi->gdt = gdt;
+
+	ext2_read_block(sb, gdt, e2_sb->s_first_data_block + 1, 0,
+		group_count * sizeof(struct ext2_group_desc));
+
+	DPRINT("group descrition:\n"
+		"block groups = %d, free blocks = %d, free inodes = %d\n",
+		group_count, gdt->bg_free_blocks_count, gdt->bg_free_inodes_count);
+
 
 	return 0;
 
