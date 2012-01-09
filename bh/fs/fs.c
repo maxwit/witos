@@ -6,8 +6,9 @@
 #define MAX_FDS 256
 
 static struct file *fd_array[MAX_FDS];
+static struct fs_struct g_fs;
 
-struct super_block *sget(struct file_system_type *type, struct block_device *bdev)
+struct super_block *sget(struct file_system_type *type, void *data)
 {
 	struct super_block *sb;
 
@@ -17,9 +18,19 @@ struct super_block *sget(struct file_system_type *type, struct block_device *bde
 		return NULL;
 	}
 
-	sb->s_bdev = bdev;
+	sb->s_bdev = data;
 
 	return sb;
+}
+
+struct dentry *d_alloc(struct dentry *parent, const struct qstr *str)
+{
+	struct dentry *de = __d_alloc(parent->d_sb, str);
+
+	de->d_parent = parent;
+	list_add_tail(&de->d_child, &parent->d_subdirs);
+
+	return de;
 }
 
 struct dentry *__d_alloc(struct super_block *sb, const struct qstr *str)
@@ -32,6 +43,9 @@ struct dentry *__d_alloc(struct super_block *sb, const struct qstr *str)
 		return NULL;
 
 	de->d_sb = sb;
+	de->d_parent = de;
+	list_head_init(&de->d_child);
+	list_head_init(&de->d_subdirs);
 
 	de->d_name.len = str->len;
 	if (str->len >= DNAME_INLINE_LEN) {
@@ -48,6 +62,26 @@ struct dentry *__d_alloc(struct super_block *sb, const struct qstr *str)
 	name[str->len] = '\0';
 
 	return de;
+}
+
+struct dentry * d_alloc_root(struct inode *root_inode)
+{
+	struct dentry *root_dir = NULL;
+
+	if (root_inode) {
+		static const struct qstr name = {.name = "/", .len = 1};
+
+		root_dir = __d_alloc(root_inode->i_sb, &name);
+		if (root_dir)
+			root_dir->d_inode = root_inode;
+	}
+
+	return root_dir;
+}
+
+void dput(struct dentry *dentry)
+{
+	list_del_node(&dentry->d_child);
 }
 
 int get_unused_fd()
@@ -74,4 +108,40 @@ struct file *fget(unsigned int fd)
 		return NULL; // -EINVAL;
 
 	return fd_array[fd];
+}
+
+int vfs_mkdir(struct inode *dir, struct dentry *dentry, int mode)
+{
+	int errno;
+
+	errno = dir->i_op->mkdir(dir, dentry, mode);
+
+	return errno;
+}
+
+struct fs_struct *get_curr_fs()
+{
+	return &g_fs;
+}
+
+long sys_mkdir(const char *name, unsigned int /*fixme*/ mode)
+{
+	int ret;
+	struct nameidata nd;
+	struct dentry *de;
+	struct qstr unit;
+
+	// ret = path_walk(name, &nd);
+
+	nd.dentry = get_curr_fs()->pwd;
+	nd.mnt = get_curr_fs()->pwdmnt;
+
+	unit.name = name;
+	unit.len = strlen(name);
+	de = d_alloc(nd.dentry, &unit);
+
+	mode |= S_IFDIR;
+	ret = vfs_mkdir(nd.dentry->d_inode, de, mode);
+
+	return ret;
 }

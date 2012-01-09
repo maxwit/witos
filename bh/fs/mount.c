@@ -3,6 +3,7 @@
 #include <string.h>
 #include <malloc.h>
 #include <fcntl.h>
+#include <assert.h>
 #include <fs/fs.h>
 
 static struct file_system_type *fs_type_list;
@@ -43,21 +44,13 @@ int GAPI mount(const char *type, unsigned long flags,
 	struct vfsmount *mnt;
 	struct dentry *root;
 
-	// fixme
-	struct block_device *bdev;
-	bdev = bdev_get(bdev_name);
-	if (NULL == bdev) {
-		DPRINT("fail to open block device \"%s\"!\n", bdev_name);
-		return -ENODEV;
-	}
-
 	fstype = file_system_type_get(type);
 	if (NULL == fstype) {
 		DPRINT("fail to find file system type %s!\n", type);
 		return -ENOENT;
 	}
 
-	root = fstype->mount(fstype, flags, bdev);
+	root = fstype->mount(fstype, flags, bdev_name);
 	if (!root) {
 		DPRINT("fail to mount %s!\n", bdev_name);
 		goto L1;
@@ -128,13 +121,72 @@ static inline int path_unit(struct qstr *unit)
 }
 #endif
 
+struct dentry *d_lookup(struct dentry *parent, struct qstr *unit)
+{
+	struct dentry *de;
+	struct list_node *iter;
+
+	list_for_each(iter, &parent->d_subdirs) {
+		de = container_of(iter, struct dentry, d_child);
+		if (!strcmp(de->d_name.name, unit->name))
+			return de;
+	}
+
+	return NULL;
+}
+
+static struct dentry *real_lookup(struct dentry *parent, struct qstr *unit,
+		     struct nameidata *nd)
+{
+	struct inode *dir = parent->d_inode;
+	struct dentry *dentry = d_alloc(parent, unit);
+
+	if (dentry) {
+		struct dentry *result;
+
+		assert(dir->i_op->lookup);
+		result = dir->i_op->lookup(dir, dentry, nd);
+		if (result) {
+			dput(dentry);
+			dentry = result;
+		}
+	}
+
+	return dentry;
+}
+
+static int __follow_mount(struct path *path)
+{
+	return 0;
+}
+static int do_lookup(struct nameidata *nd, struct qstr *name,
+		     struct path *path)
+{
+	struct vfsmount *mnt = nd->mnt;
+	struct dentry *dentry;
+
+	dentry = d_lookup(nd->dentry, name);
+	if (!dentry) {
+		dentry = real_lookup(nd->dentry, name, nd);
+		if (!dentry)
+			return -ENOENT;
+	}
+
+	path->mnt = mnt;
+	path->dentry = dentry;
+
+	__follow_mount(path);
+
+	return 0;
+}
+
 static int path_walk(const char *path, struct nameidata *nd)
 {
+	int ret;
 	struct qstr unit;
-	struct vfsmount *mnt;
-	struct dentry *dir;
-	struct inode *inode;
+	struct path next;
 
+#if 0
 	while ('/' == *path) path++;
 	if (!*path)
 		return -EINVAL;
@@ -149,8 +201,15 @@ static int path_walk(const char *path, struct nameidata *nd)
 	mnt = search_mount(&unit);
 	if (NULL == mnt)
 		return -ENOENT;
+#endif
 
-	dir = mnt->root;
+	if ('/' == *path) {
+		nd->dentry = get_curr_fs()->root;
+		nd->mnt = get_curr_fs()->rootmnt;
+	} else {
+		nd->dentry = get_curr_fs()->pwd;
+		nd->mnt = get_curr_fs()->pwdmnt;
+	}
 
 	while (1) {
 		while ('/' == *path) path++;
@@ -164,20 +223,13 @@ static int path_walk(const char *path, struct nameidata *nd)
 		unit.len = path - unit.name;
 		GEN_DBG("parsing %s\n", unit.name);
 
-		nd->unit = &unit;
+		ret = do_lookup(nd, &unit, &next);
+		if (ret < 0)
+			return ret;
 
-		inode = dir->d_inode;
-		if (!inode->i_op->lookup)
-			return -ENOTSUPP;
-
-		dir = inode->i_op->lookup(inode, nd);
-		if (!dir) {
-			GEN_DBG("failed @ \"%s\"!\n", unit.name);
-			return -ENOENT;
-		}
+		nd->dentry = next.dentry;
+		nd->mnt = next.mnt;
 	}
-
-	nd->dentry = dir;
 
 	return 0;
 }
@@ -207,7 +259,7 @@ static int __dentry_open(struct dentry *dir, struct file *fp)
 	return 0;
 }
 
-static int do_open(const char *path, int flags, int mode)
+static int sys_open(const char *path, int flags, int mode)
 {
 	int fd, ret;
 	struct file *fp;
@@ -249,7 +301,7 @@ int GAPI open(const char *path, int flags, ...)
 {
 	int mode = 0;
 
-	return do_open(path, flags, mode);
+	return sys_open(path, flags, mode);
 }
 
 EXPORT_SYMBOL(open);
@@ -298,18 +350,24 @@ ssize_t GAPI write(int fd, const void *buff, size_t size)
 
 EXPORT_SYMBOL(write);
 
-int GAPI ioctl(int fd, int cmd, ...)
+int sys_ioctl(int fd, int cmd, unsigned long arg)
 {
 	struct file *fp;
-	unsigned long arg;
 
 	fp = fget(fd);
 	if (!fp || !fp->f_op->ioctl)
 		return -ENOENT;
 
+	return fp->f_op->ioctl(fp, cmd, arg);
+}
+
+int GAPI ioctl(int fd, int cmd, ...)
+{
+	unsigned long arg;
+
 	arg = *((unsigned long *)&cmd + 1); // fixme
 
-	return fp->f_op->ioctl(fp, cmd, arg);
+	return sys_ioctl(fd, cmd, arg);
 }
 
 EXPORT_SYMBOL(ioctl);

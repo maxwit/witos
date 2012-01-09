@@ -13,7 +13,8 @@
 #define MAX_MNT_LEN 256
 #define SECT_SIZE   (1 << 9) // fixme
 
-static struct dentry *ext2_lookup(struct inode *parent, struct nameidata *nd);
+static struct dentry *ext2_lookup(struct inode *parent, struct dentry *dentry,
+						struct nameidata *nd);
 
 static const struct inode_operations ext2_reg_inode_operations = {
 };
@@ -293,7 +294,7 @@ struct inode *ext2_iget(struct super_block *sb, unsigned long ino)
 	// ...
 
 	inode = ext2_alloc_inode(sb);
-	if (!ino) {
+	if (!inode) {
 		// ...
 		return NULL;
 	}
@@ -391,13 +392,19 @@ L1:
 	return ret;
 }
 
-static struct dentry *ext2_mount(struct file_system_type *fs_type, unsigned long flags, struct block_device *bdev)
+static struct dentry *ext2_mount(struct file_system_type *fs_type, unsigned long flags, const char *bdev_name)
 {
 	int ret;
 	struct dentry *root;
 	struct inode *in;
 	struct super_block *sb;
-	struct qstr name = {.len = 0,};
+	struct block_device *bdev;
+
+	bdev = bdev_get(bdev_name);
+	if (NULL == bdev) {
+		DPRINT("fail to open block device \"%s\"!\n", bdev_name);
+		return NULL;
+	}
 
 	sb = sget(fs_type, bdev);
 	if (!sb)
@@ -415,11 +422,10 @@ static struct dentry *ext2_mount(struct file_system_type *fs_type, unsigned long
 		return NULL;
 	}
 
-	root = __d_alloc(sb, &name);
+	root = d_alloc_root(in);
 	if (!root)
 		return NULL;
 
-	root->d_inode = in;
 	sb->s_root = root;
 
 	return root;
@@ -542,33 +548,26 @@ static ssize_t ext2_write(struct file *fp, const void *buff, size_t size, loff_t
 	return 0;
 }
 
-static struct dentry *ext2_lookup(struct inode *parent, struct nameidata *nd)
+static struct dentry *ext2_lookup(struct inode *parent, struct dentry *dentry, struct nameidata *nd)
 {
 	unsigned long ino;
 	struct inode *inode;
-	struct dentry *de;
 
-	ino = ext2_inode_by_name(parent, nd->unit);
+	ino = ext2_inode_by_name(parent, &dentry->d_name);
 	if (!ino) {
 		// ...
-		return NULL;
+		return NULL; // fixme!!!
 	}
 
 	inode = ext2_iget(parent->i_sb, ino);
 	if (!inode) {
 		// ...
-		return NULL;
+		return NULL; // fixme!!!
 	}
 
-	de = __d_alloc(parent->i_sb, nd->unit);
-	if (!de) {
-		// ...
-		return NULL;
-	}
+	dentry->d_inode = inode;
 
-	de->d_inode = inode;
-
-	return de;
+	return NULL;
 }
 
 static int ext2_inode_read_block(struct inode *in, int blk_no, char *blk_buf)

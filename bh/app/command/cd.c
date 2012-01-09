@@ -42,7 +42,7 @@ static int get_bdev_by_index(int index, char name[], size_t size)
 
 int main(int argc, char *argv[])
 {
-	int ret, index;
+	int ret; // index;
 	const char *path;
 	char str[CONF_VAL_LEN];
 

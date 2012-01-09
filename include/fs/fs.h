@@ -16,17 +16,23 @@ struct qstr {
 };
 
 struct nameidata {
-	struct qstr *unit;
+	// struct qstr *unit;
 	struct dentry *dentry;
+	struct vfsmount *mnt;
 	// unsigned int flags;
 	// struct file *file;
+};
+
+struct path {
+	struct vfsmount *mnt;
+	struct dentry *dentry;
 };
 
 struct file_system_type {
 	const char *name;
 	struct file_system_type *next;
 
-	struct dentry *(*mount)(struct file_system_type *, unsigned long, struct block_device *);
+	struct dentry *(*mount)(struct file_system_type *, unsigned long, const char *);
 	void (*umount)(struct super_block *);
 };
 
@@ -109,8 +115,10 @@ struct file {
 #define S_IXOTH 00001
 
 struct inode_operations {
-	struct dentry *(*lookup)(struct inode *, struct nameidata *);
-	// int (*create)(struct inode *, struct dentry *, int, struct nameidata *);
+	struct dentry *(*lookup)(struct inode *, struct dentry *, struct nameidata *);
+	int (*create) (struct inode *, struct dentry *, int, struct nameidata *);
+	int (*mkdir) (struct inode *, struct dentry *, int);
+	int (*rmdir) (struct inode *, struct dentry *);
 };
 
 struct inode {
@@ -129,9 +137,17 @@ struct dentry {
 	char d_iname[DNAME_INLINE_LEN];
 	struct inode *d_inode;
 	struct super_block *d_sb;
+	struct dentry *d_parent;
+	struct list_node d_subdirs, d_child;
 };
 
 struct dentry *__d_alloc(struct super_block *sb, const struct qstr *str);
+
+struct dentry *d_alloc(struct dentry *parent, const struct qstr *str);
+
+struct dentry * d_alloc_root(struct inode *root_inode);
+
+void dput(struct dentry *dentry);
 
 // copy from Linux man page
 struct linux_dirent {
@@ -154,9 +170,17 @@ struct super_block {
 	void *s_fs_info;
 };
 
-struct super_block *sget(struct file_system_type *type, struct block_device *bdev);
+struct super_block *sget(struct file_system_type *type, void *data);
 
 // fixme
 int get_unused_fd();
 int fd_install(int fd, struct file *fp);
 struct file *fget(unsigned int fd);
+
+//
+struct fs_struct {
+	struct dentry *pwd, *root;
+	struct vfsmount *pwdmnt, *rootmnt;
+};
+
+struct fs_struct *get_curr_fs();
