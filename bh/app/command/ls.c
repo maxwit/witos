@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
 	if (optind < argc) {
 		path = argv[optind];
 	} else {
-		path = __getcwd();
+		path = get_current_dir_name();
 	}
 	dir = opendir(path);
 	if (!dir) {

@@ -1,3 +1,4 @@
+#include <syscalls.h>
 #include <fcntl.h>
 #include <dirent.h>
 #include <errno.h>
@@ -7,47 +8,40 @@
 #include <assert.h>
 #include <fs/fs.h>
 
-static char g_cwd[PATH_MAX];
+// static char g_cwd[PATH_MAX];
 
 // fixme
 int chdir(const char *path)
 {
-#if 0
-	DIR *dir;
-	struct dirent *de;
+	long ret;
 
-	dir = opendir(DEV_ROOT);
-	if (!dir)
-		return -ENOENT;
-
-	while ((de = readdir(dir))) {
-		if (!strcmp(path, de->d_name)) {
-			strncpy(g_cwd, path, PATH_MAX);
-			closedir(dir);
-			return 0;
-		}
-	}
-
-	return -ENOENT;
-#endif
-	strncpy(g_cwd, path, PATH_MAX);
-
-	return 0;
+	ret = sys_chdir(path);
+	return ret;
 }
 
 char *getcwd(char *buff, size_t size)
 {
-	return strncpy(buff, g_cwd, min(size, PATH_MAX));
+	long ret;
+	size_t max_size = min(size, PATH_MAX);
+
+	ret = sys_getcwd(buff, max_size);
+	if (ret < 0)
+		return NULL;
+
+	return buff;
 }
 
 char *get_current_dir_name()
 {
-	return strdup(g_cwd);
-}
+	int ret;
+	char cwd[PATH_MAX];
 
-const char *__getcwd(void)
-{
-	return g_cwd;
+	ret = sys_getcwd(cwd, PATH_MAX);
+	if (ret < 0)
+		return NULL;
+
+	cwd[PATH_MAX - 1] = '\0'; // fixme!
+	return strdup(cwd);
 }
 
 DIR *opendir(const char *name)

@@ -184,8 +184,9 @@ char *strrchr(const char *src, int c)
 char *strdup(const char *s)
 {
 	char *dst;
+	size_t size = strlen(s) + 1;
 
-	dst = malloc(strlen(s) + 1);
+	dst = malloc(size);
 	if (dst)
 		strcpy(dst, s);
 

@@ -67,7 +67,7 @@ static inline void show_prompt(void)
 {
 	const char *cwd;
 
-	cwd = __getcwd();
+	cwd = get_current_dir_name();
 	assert (cwd != NULL);
 
 	printf("g-bios: %s# ", cwd);

@@ -195,7 +195,7 @@ static int tftp_get_file(int argc, char **argv)
 	}
 
 	if (!dlopt.file_name[0]) {
-		dlopt.dst = __getcwd();
+		dlopt.dst = get_current_dir_name();
 		snprintf(conf_attr, CONF_ATTR_LEN, "bdev.%s.image.name", dlopt.dst);
 		if (conf_get_attr(conf_attr, conf_val) < 0) {
 			printf("Please sepcify the filename!\n");
@@ -207,7 +207,7 @@ static int tftp_get_file(int argc, char **argv)
 
 	if (mem_only == false) {
 		if (!dlopt.dst) {
-			dlopt.dst = __getcwd();
+			dlopt.dst = get_current_dir_name();
 		}
 	}
 

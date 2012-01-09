@@ -19,7 +19,7 @@ static int uart_load(int argc, char *argv[])
 
 	memset(&ldr_opt, 0x0, sizeof(ldr_opt));
 
-	ldr_opt.dst = __getcwd();
+	ldr_opt.dst = get_current_dir_name();
 
 	while ((opt = getopt(argc, argv, "m::p:f:i:vh")) != -1) {
 		switch (opt) {

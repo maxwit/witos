@@ -40,9 +40,34 @@ int GAPI mount(const char *type, unsigned long flags,
 	const char *bdev_name, const char *path)
 {
 	int ret;
+	static bool root_mounted = false;
 	struct file_system_type *fstype;
 	struct vfsmount *mnt;
 	struct dentry *root;
+	struct nameidata nd;
+
+	if ((flags & MS_ROOT) && root_mounted == true)
+		return -EBUSY;
+
+	if (!(flags & MS_NODEV)) {
+		struct list_node *iter;
+
+		list_for_each(iter, &g_mount_list) {
+			mnt = container_of(iter, struct vfsmount, mnt_hash);
+			if (!strcmp(mnt->dev_name, bdev_name)) {
+				GEN_DBG("device \"%s\" already mounted!\n", bdev_name);
+				return -EBUSY;
+			}
+		}
+	}
+
+	if (!(flags & MS_ROOT)) {
+		ret = path_walk(path, &nd); // fixme: directory only!
+		if (ret < 0) {
+			GEN_DBG("\"%s\" does NOT exist!\n");
+			return ret;
+		}
+	}
 
 	fstype = file_system_type_get(type);
 	if (NULL == fstype) {
@@ -53,21 +78,27 @@ int GAPI mount(const char *type, unsigned long flags,
 	root = fstype->mount(fstype, flags, bdev_name);
 	if (!root) {
 		DPRINT("fail to mount %s!\n", bdev_name);
+		ret = -EIO; // fixme!
 		goto L1;
 	}
 
-	mnt = malloc(sizeof(*mnt));
+	mnt = zalloc(sizeof(*mnt));
 	if (NULL == mnt) {
 		ret = -ENOMEM;
 		goto L2;
 	}
 
-	mnt->fstype     = fstype;
-	mnt->mountpoint = path;
-	mnt->dev_name   = bdev_name;
-	mnt->root       = root;
+	mnt->fstype   = fstype;
+	mnt->dev_name = bdev_name;
+	mnt->root     = root;
 
-	// TODO: check if mp exists or not!
+	if (flags & MS_ROOT) {
+		mnt->mountpoint = NULL;
+		set_fs_root(mnt, root);
+		set_fs_pwd(mnt, root); // now?
+	} else {
+		mnt->mountpoint = nd.dentry;
+	}
 
 	list_add_tail(&mnt->mnt_hash, &g_mount_list);
 
@@ -77,8 +108,6 @@ L2:
 L1:
 	return ret;
 }
-
-EXPORT_SYMBOL(mount);
 
 int GAPI umount(const char *mnt)
 {
@@ -94,7 +123,8 @@ static inline struct vfsmount *search_mount(struct qstr *unit)
 
 	list_for_each(iter, &g_mount_list) {
 		mnt = container_of(iter, struct vfsmount, mnt_hash);
-		if (!strncmp(mnt->mountpoint, unit->name, unit->len))
+		// fixme
+		if (!strncmp(mnt->mountpoint->d_name.name, unit->name, unit->len))
 			return mnt;
 	}
 
@@ -146,6 +176,7 @@ static struct dentry *real_lookup(struct dentry *parent, struct qstr *unit,
 
 		assert(dir->i_op->lookup);
 		result = dir->i_op->lookup(dir, dentry, nd);
+		// fixme: return dentry instead of NULL;
 		if (result) {
 			dput(dentry);
 			dentry = result;
@@ -159,6 +190,7 @@ static int __follow_mount(struct path *path)
 {
 	return 0;
 }
+
 static int do_lookup(struct nameidata *nd, struct qstr *name,
 		     struct path *path)
 {
@@ -180,7 +212,7 @@ static int do_lookup(struct nameidata *nd, struct qstr *name,
 	return 0;
 }
 
-static int path_walk(const char *path, struct nameidata *nd)
+int path_walk(const char *path, struct nameidata *nd)
 {
 	int ret;
 	struct qstr unit;

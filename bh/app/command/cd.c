@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
 #endif
 
 L1:
-	if (!strcmp(path, __getcwd()))
+	if (!strcmp(path, get_current_dir_name()))
 		return 0;
 
 	ret = chdir(path);

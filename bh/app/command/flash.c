@@ -32,7 +32,7 @@ static int info(int argc, char *argv[])
 	struct part_attr part;
 	const char *dev;
 
-	dev = __getcwd();
+	dev = get_current_dir_name();
 	fd = open(dev, O_RDONLY);
 
 	ret = ioctl(fd, 0 /*fixme*/, &part);

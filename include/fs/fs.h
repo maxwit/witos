@@ -42,7 +42,7 @@ struct file_system_type *file_system_type_get(const char *);
 
 struct vfsmount {
 	const char *dev_name;
-	const char *mountpoint; // fixme: dentry type
+	struct dentry *mountpoint;
 	struct dentry *root;
 	struct file_system_type *fstype;
 	struct list_node mnt_hash;
@@ -184,3 +184,7 @@ struct fs_struct {
 };
 
 struct fs_struct *get_curr_fs();
+void set_fs_root(struct vfsmount *mnt, struct dentry *dir);
+void set_fs_pwd(struct vfsmount *mnt, struct dentry *dir);
+
+int path_walk(const char *path, struct nameidata *nd);

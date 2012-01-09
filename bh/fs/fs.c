@@ -124,6 +124,18 @@ struct fs_struct *get_curr_fs()
 	return &g_fs;
 }
 
+void set_fs_root(struct vfsmount *mnt, struct dentry *dir)
+{
+	g_fs.root = dir;
+	g_fs.rootmnt = mnt;
+}
+
+void set_fs_pwd(struct vfsmount *mnt, struct dentry *dir)
+{
+	g_fs.pwd = dir;
+	g_fs.pwdmnt = mnt;
+}
+
 long sys_mkdir(const char *name, unsigned int /*fixme*/ mode)
 {
 	int ret;
@@ -144,4 +156,25 @@ long sys_mkdir(const char *name, unsigned int /*fixme*/ mode)
 	ret = vfs_mkdir(nd.dentry->d_inode, de, mode);
 
 	return ret;
+}
+
+long sys_chdir(const char *path)
+{
+	int ret;
+	struct nameidata nd;
+
+	ret = path_walk(path, &nd);
+	if (ret < 0)
+		return ret;
+
+	set_fs_pwd(nd.mnt, nd.dentry);
+
+	return 0;
+}
+
+long sys_getcwd(char *buff, unsigned long size)
+{
+	struct dentry *cwd = get_curr_fs()->pwd;
+
+	return strncpy(buff, cwd->d_name.name, size);
 }

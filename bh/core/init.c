@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <init.h>
 #include <errno.h>
+#include <syscalls.h>
+#include <fcntl.h> // for mount(), fixme
 // fixme: to be removed!
 #include <shell.h>
 #include <uart/uart.h>
@@ -107,9 +109,16 @@ int main(void)
 
 	system_init();
 
-	conf_store();
+	ret = mount("tmpfs", MS_ROOT | MS_NODEV, NULL, "/");
+	if (ret < 0) {
+		printf("Fetal error: fail to mount rootfs! (errno = %d)\n", ret);
+		return ret;
+	}
 
-	// ret = mount("devtmpfs", 0, NULL, "/dev");
+	sys_mkdir("/dev", 0755);
+	sys_mkdir("/tmp", 0755);
+
+	conf_store();
 
 #ifdef CONFIG_AUTO_BOOT
 	auto_boot();
