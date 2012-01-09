@@ -21,6 +21,7 @@ struct nameidata {
 	struct vfsmount *mnt;
 	// unsigned int flags;
 	// struct file *file;
+	int ret;
 };
 
 struct path {
@@ -139,6 +140,7 @@ struct dentry {
 	struct super_block *d_sb;
 	struct dentry *d_parent;
 	struct list_node d_subdirs, d_child;
+	// int d_type; // fixme
 };
 
 struct dentry *__d_alloc(struct super_block *sb, const struct qstr *str);

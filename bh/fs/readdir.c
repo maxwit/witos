@@ -29,7 +29,9 @@ int getdents(unsigned int fd, struct linux_dirent *lde, unsigned int count)
 	if (!fp || !fp->f_op)
 		return -ENODEV;
 
-	ret = fp->f_op->readdir(fp, lde);
+	if (!fp->f_op->readdir)
+		return -ENOTSUPP;
 
+	ret = fp->f_op->readdir(fp, lde);
 	return ret;
 }

@@ -8,7 +8,7 @@
 #include <dirent.h>
 #include <fs/fs.h>
 
-#define RAM_BLK_SIZE   (1 << 9)
+#define RAM_BLK_SIZE   (1 << 12)
 
 struct ram_super_block {
 	struct list_node *r_list;
@@ -16,7 +16,10 @@ struct ram_super_block {
 
 struct ram_inode {
 	struct inode vfs_inode;
-	void *data;
+	union {
+		void *data;
+		// struct list_node list;
+	};
 };
 
 // fixme
@@ -88,8 +91,8 @@ struct inode *ram_iget(struct super_block *sb, unsigned long ino)
 	inode->i_ino  = ino;
 
 	rin = RAM_I(inode);
-	rin->data = NULL;
 
+	rin->data = NULL;
 	if (S_ISREG(inode->i_mode)) {
 		inode->i_op = &ram_reg_inode_operations;
 		inode->i_fop = &ram_reg_file_operations;
@@ -201,7 +204,7 @@ static struct dentry *ram_lookup(struct inode *parent, struct dentry *dentry,
 
 	//
 #endif
-
+	nd->ret = -ENOENT;
 	return NULL;
 }
 
@@ -225,18 +228,38 @@ static int ram_readdir(struct file *fp, struct linux_dirent *dirent)
 
 static int ram_mkdir(struct inode *parent, struct dentry *de, int mode)
 {
-	struct inode *in;
+	struct inode *cur_in;
+	struct ram_inode *par_rin;
+	struct linux_dirent lde;
 
-	in = ram_alloc_inode(parent->i_sb);
+	cur_in = ram_alloc_inode(parent->i_sb);
 	//
-	in->i_ino = 1234; // fixme
-	in->i_mode = mode;
+	cur_in->i_ino = 1234; // fixme
+	cur_in->i_mode = mode;
 
-	in->i_op = &ram_dir_inode_operations;
-	GEN_DBG("%p : %p\n", in->i_op, &ram_dir_inode_operations);
-	in->i_fop = &ram_dir_file_operations;
+	cur_in->i_op = &ram_dir_inode_operations;
+	cur_in->i_fop = &ram_dir_file_operations;
 
-	de->d_inode = in;
+	de->d_inode = cur_in;
+
+	par_rin = RAM_I(parent);
+	if (!par_rin->data) {
+		par_rin->data = malloc(RAM_BLK_SIZE);
+		if (!par_rin->data)
+			return -ENOMEM;
+	}
+
+	// fixme
+	filldir(&lde, de->d_name.name, de->d_name.len,
+		0, de->d_inode->i_ino, 0);
+
+	if (parent->i_size + lde.d_reclen >= RAM_BLK_SIZE) {
+		GEN_DBG("overflow!\n");
+		return -EOVERFLOW;
+	}
+
+	memcpy(par_rin->data + parent->i_size, &lde, lde.d_reclen);
+	parent->i_size += lde.d_reclen;
 
 	return 0;
 }

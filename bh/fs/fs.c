@@ -148,6 +148,7 @@ long sys_mkdir(const char *name, unsigned int /*fixme*/ mode)
 	nd.dentry = get_curr_fs()->pwd;
 	nd.mnt = get_curr_fs()->pwdmnt;
 
+	while ('/' == *name) name++; // fixme
 	unit.name = name;
 	unit.len = strlen(name);
 	de = d_alloc(nd.dentry, &unit);

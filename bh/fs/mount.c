@@ -174,11 +174,10 @@ static struct dentry *real_lookup(struct dentry *parent, struct qstr *unit,
 	if (dentry) {
 		struct dentry *result;
 
-		if (!dir->i_op->lookup) {
-			GEN_DBG("invalid %s! p = %p\n", parent->d_name.name, dir->i_op);
-			return NULL;
-		}
+		assert(dir->i_op->lookup);
+		nd->ret = 0;
 		result = dir->i_op->lookup(dir, dentry, nd);
+		if (nd->ret < 0) return NULL; // fixme!
 		// fixme: return dentry instead of NULL;
 		if (result) {
 			dput(dentry);
@@ -220,23 +219,6 @@ int path_walk(const char *path, struct nameidata *nd)
 	int ret;
 	struct qstr unit;
 	struct path next;
-
-#if 0
-	while ('/' == *path) path++;
-	if (!*path)
-		return -EINVAL;
-	unit.name = path;
-
-	while (*path && '/' != *path)
-		path++;
-	if (!*path)
-		return -EINVAL;
-	unit.len = path - unit.name;
-
-	mnt = search_mount(&unit);
-	if (NULL == mnt)
-		return -ENOENT;
-#endif
 
 	if ('/' == *path) {
 		nd->dentry = get_curr_fs()->root;
@@ -336,10 +318,9 @@ int GAPI open(const char *path, int flags, ...)
 {
 	int mode = 0;
 
+	GEN_DBG("path = %s\n", path);
 	return sys_open(path, flags, mode);
 }
-
-EXPORT_SYMBOL(open);
 
 int GAPI close(int fd)
 {
