@@ -15,18 +15,15 @@ struct qstr {
 	unsigned int len;
 };
 
-struct nameidata {
-	// struct qstr *unit;
-	struct dentry *dentry;
-	struct vfsmount *mnt;
-	// unsigned int flags;
-	// struct file *file;
-	int ret;
-};
-
 struct path {
 	struct vfsmount *mnt;
 	struct dentry *dentry;
+};
+
+struct nameidata {
+	struct path path;
+	// unsigned int flags;
+	int ret;
 };
 
 struct file_system_type {
@@ -43,8 +40,9 @@ struct file_system_type *file_system_type_get(const char *);
 
 struct vfsmount {
 	const char *dev_name;
-	struct dentry *mountpoint;
 	struct dentry *root;
+	struct vfsmount *mnt_parent;
+	struct dentry *mountpoint;
 	struct file_system_type *fstype;
 	struct list_node mnt_hash;
 };
@@ -181,12 +179,12 @@ struct file *fget(unsigned int fd);
 
 //
 struct fs_struct {
-	struct dentry *pwd, *root;
-	struct vfsmount *pwdmnt, *rootmnt;
+	struct path root, pwd;
 };
 
-struct fs_struct *get_curr_fs();
-void set_fs_root(struct vfsmount *mnt, struct dentry *dir);
-void set_fs_pwd(struct vfsmount *mnt, struct dentry *dir);
+void set_fs_root(const struct path *);
+void set_fs_pwd(const struct path *);
+void get_fs_root(struct path *);
+void get_fs_pwd(struct path *);
 
 int path_walk(const char *path, struct nameidata *nd);

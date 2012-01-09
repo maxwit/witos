@@ -50,10 +50,7 @@ int GAPI mount(const char *type, unsigned long flags,
 		return -EBUSY;
 
 	if (!(flags & MS_NODEV)) {
-		struct list_node *iter;
-
-		list_for_each(iter, &g_mount_list) {
-			mnt = container_of(iter, struct vfsmount, mnt_hash);
+		list_for_each_entry(mnt, &g_mount_list, mnt_hash) {
 			if (!strcmp(mnt->dev_name, bdev_name)) {
 				GEN_DBG("device \"%s\" already mounted!\n", bdev_name);
 				return -EBUSY;
@@ -93,11 +90,15 @@ int GAPI mount(const char *type, unsigned long flags,
 	mnt->root     = root;
 
 	if (flags & MS_ROOT) {
-		mnt->mountpoint = NULL;
-		set_fs_root(mnt, root);
-		set_fs_pwd(mnt, root); // now?
+		struct path sysroot = {.dentry = root, .mnt = mnt};
+
+		mnt->mountpoint = NULL; // fixme
+		mnt->mnt_parent = NULL;
+		set_fs_root(&sysroot);
+		set_fs_pwd(&sysroot); // now?
 	} else {
-		mnt->mountpoint = nd.dentry;
+		mnt->mountpoint = nd.path.dentry;
+		mnt->mnt_parent = nd.path.mnt;
 	}
 
 	list_add_tail(&mnt->mnt_hash, &g_mount_list);
@@ -114,42 +115,12 @@ int GAPI umount(const char *mnt)
 	return 0;
 }
 
-EXPORT_SYMBOL(umount);
-
-static inline struct vfsmount *search_mount(struct qstr *unit)
+static inline void path_to_nameidata(const struct path *path,
+					struct nameidata *nd)
 {
-	struct list_node *iter;
-	struct vfsmount *mnt;
-
-	list_for_each(iter, &g_mount_list) {
-		mnt = container_of(iter, struct vfsmount, mnt_hash);
-		// fixme
-		if (!strncmp(mnt->mountpoint->d_name.name, unit->name, unit->len))
-			return mnt;
-	}
-
-	return NULL;
+	nd->path.mnt = path->mnt;
+	nd->path.dentry = path->dentry;
 }
-
-#if 0
-static inline int path_unit(struct qstr *unit)
-{
-	const char *path = unit->name;
-
-	while ('/' == *path) path++;
-	if (!*path)
-		return -EINVAL;
-	unit->name = path;
-
-	while (*path && '/' != *path)
-		path++;
-	if (!*path)
-		return -EINVAL;
-	unit->len = path - unit->name;
-
-	return unit->len;
-}
-#endif
 
 struct dentry *d_lookup(struct dentry *parent, struct qstr *unit)
 {
@@ -174,10 +145,9 @@ static struct dentry *real_lookup(struct dentry *parent, struct qstr *unit,
 	if (dentry) {
 		struct dentry *result;
 
-		assert(dir->i_op->lookup);
-		nd->ret = 0;
 		result = dir->i_op->lookup(dir, dentry, nd);
-		if (nd->ret < 0) return NULL; // fixme!
+		if (nd->ret < 0)
+			return NULL; // fixme!
 		// fixme: return dentry instead of NULL;
 		if (result) {
 			dput(dentry);
@@ -188,22 +158,55 @@ static struct dentry *real_lookup(struct dentry *parent, struct qstr *unit,
 	return dentry;
 }
 
-static int __follow_mount(struct path *path)
+
+struct vfsmount *lookup_mnt(struct path *path)
 {
+	struct vfsmount *mnt;
+
+	list_for_each_entry(mnt, &g_mount_list, mnt_hash) {
+		if (mnt->mountpoint == path->dentry)
+			return mnt;
+	}
+
+	return NULL;
+}
+
+int __follow_mount(struct path *path)
+{
+	struct vfsmount *mnt;
+
+	mnt = lookup_mnt(path);
+	if (mnt) {
+		path->mnt = mnt;
+		path->dentry = mnt->mountpoint;
+	}
+
 	return 0;
 }
 
 static int do_lookup(struct nameidata *nd, struct qstr *name,
 		     struct path *path)
 {
-	struct vfsmount *mnt = nd->mnt;
+	struct vfsmount *mnt = nd->path.mnt;
 	struct dentry *dentry;
 
-	dentry = d_lookup(nd->dentry, name);
+	if ('.' == name->name[0]) {
+		if (1 == name->len)
+			return 0;
+
+		if ('.' == name->name[1] && 2 == name->len) {
+			path->dentry = nd->path.dentry->d_parent;
+			path->mnt = nd->path.mnt;
+			__follow_mount(path);
+			return 0;
+		}
+	}
+
+	dentry = d_lookup(nd->path.dentry, name);
 	if (!dentry) {
-		dentry = real_lookup(nd->dentry, name, nd);
+		dentry = real_lookup(nd->path.dentry, name, nd);
 		if (!dentry)
-			return -ENOENT;
+			return nd->ret;
 	}
 
 	path->mnt = mnt;
@@ -214,6 +217,11 @@ static int do_lookup(struct nameidata *nd, struct qstr *name,
 	return 0;
 }
 
+static inline bool cannot_lookup(const struct inode *in)
+{
+	return in->i_op->lookup == NULL;
+}
+
 int path_walk(const char *path, struct nameidata *nd)
 {
 	int ret;
@@ -221,14 +229,17 @@ int path_walk(const char *path, struct nameidata *nd)
 	struct path next;
 
 	if ('/' == *path) {
-		nd->dentry = get_curr_fs()->root;
-		nd->mnt = get_curr_fs()->rootmnt;
+		get_fs_root(&nd->path);
 	} else {
-		nd->dentry = get_curr_fs()->pwd;
-		nd->mnt = get_curr_fs()->pwdmnt;
+		get_fs_pwd(&nd->path);
 	}
 
 	while (1) {
+		if (cannot_lookup(nd->path.dentry->d_inode)) {
+			GEN_DBG("dentry = %s\n", nd->path.dentry->d_name.name);
+			return -ENOTDIR;
+		}
+
 		while ('/' == *path) path++;
 		if (!*path)
 			break;
@@ -238,14 +249,13 @@ int path_walk(const char *path, struct nameidata *nd)
 			path++;
 		} while (*path && '/' != *path);
 		unit.len = path - unit.name;
-		GEN_DBG("parsing %s\n", unit.name);
 
+		GEN_DBG("searching %s\n", unit.name);
 		ret = do_lookup(nd, &unit, &next);
 		if (ret < 0)
 			return ret;
 
-		nd->dentry = next.dentry;
-		nd->mnt = next.mnt;
+		path_to_nameidata(&next, nd);
 	}
 
 	return 0;
@@ -280,7 +290,7 @@ static int sys_open(const char *path, int flags, int mode)
 {
 	int fd, ret;
 	struct file *fp;
-	struct nameidata nd;
+	struct nameidata nd = {.ret = 0};
 
 	fd = get_unused_fd();
 	if (fd < 0)
@@ -300,7 +310,7 @@ static int sys_open(const char *path, int flags, int mode)
 
 	fp->flags = flags;
 
-	ret = __dentry_open(nd.dentry, fp);
+	ret = __dentry_open(nd.path.dentry, fp);
 	if (ret < 0)
 		goto fail;
 
@@ -318,7 +328,6 @@ int GAPI open(const char *path, int flags, ...)
 {
 	int mode = 0;
 
-	GEN_DBG("path = %s\n", path);
 	return sys_open(path, flags, mode);
 }
 

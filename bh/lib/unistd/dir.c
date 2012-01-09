@@ -25,8 +25,10 @@ char *getcwd(char *buff, size_t size)
 	size_t max_size = min(size, PATH_MAX);
 
 	ret = sys_getcwd(buff, max_size);
-	if (ret < 0)
+	if (ret < 0) {
+		GEN_DBG("ret = %d\n", ret);
 		return NULL;
+	}
 
 	return buff;
 }

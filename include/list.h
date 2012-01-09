@@ -1,5 +1,7 @@
 #pragma once
 
+#include <types.h>
+
 #define HEAD_INIT(list) \
 	{.next = &list, .prev = &list}
 
@@ -9,6 +11,14 @@
 struct list_node {
 	struct list_node *next, *prev;
 };
+
+#define list_for_each(iter, head) \
+	for (iter = (head)->next; iter != (head); iter = iter->next)
+
+#define list_for_each_entry(pos, head, member) \
+	for (pos = container_of((head)->next, typeof(*pos), member); \
+		&pos->member != (head); \
+		pos = container_of(pos->member.next, typeof(*pos), member))
 
 static inline void list_head_init(struct list_node *head)
 {
@@ -50,6 +60,3 @@ static inline int list_is_empty(const struct list_node *head)
 {
 	return head->next == head;
 }
-
-#define list_for_each(iter, head) \
-	for (iter = (head)->next; iter != (head); iter = iter->next)

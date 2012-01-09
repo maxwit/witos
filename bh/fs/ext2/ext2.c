@@ -556,16 +556,19 @@ static struct dentry *ext2_lookup(struct inode *parent, struct dentry *dentry, s
 	ino = ext2_inode_by_name(parent, &dentry->d_name);
 	if (!ino) {
 		// ...
-		return NULL; // fixme!!!
+		nd->ret = -ENOENT;
+		return NULL;
 	}
 
 	inode = ext2_iget(parent->i_sb, ino);
 	if (!inode) {
 		// ...
+		nd->ret = -EIO;
 		return NULL; // fixme!!!
 	}
 
 	dentry->d_inode = inode;
+	nd->ret = 0;
 
 	return NULL;
 }

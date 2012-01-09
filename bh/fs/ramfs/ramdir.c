@@ -72,39 +72,64 @@ static struct inode *ram_alloc_inode(struct super_block *sb)
 	return &rin->vfs_inode;
 }
 
-static struct ram_inode *ram_get_inode(struct super_block *sb, int ino)
+static inline struct ram_inode *ram_get_inode(struct super_block *sb, int ino)
 {
 	return NULL;
+}
+
+struct inode *ram_inode_create(struct super_block *sb, int mode)
+{
+	struct inode *inode;
+	// struct ram_inode *rin;
+
+	inode = ram_alloc_inode(sb);
+	if (!inode) {
+		// ...
+		return NULL;
+	}
+
+	inode->i_ino  = 12345;
+	inode->i_mode = mode;
+
+	// rin = RAM_I(inode);
+
+	if (S_ISREG(inode->i_mode)) {
+		inode->i_op = &ram_reg_inode_operations;
+		inode->i_fop = &ram_reg_file_operations;
+	} else if (S_ISDIR(inode->i_mode)) {
+		inode->i_op = &ram_dir_inode_operations;
+		inode->i_fop = &ram_dir_file_operations;
+	} else {
+		BUG();
+	}
+
+	return inode;
 }
 
 struct inode *ram_iget(struct super_block *sb, unsigned long ino)
 {
 	struct inode *inode;
-	struct ram_inode *rin;
+	// struct ram_inode *rin;
 
 	inode = ram_alloc_inode(sb);
-	if (!ino) {
+	if (!inode) {
 		// ...
 		return NULL;
 	}
 
 	inode->i_ino  = ino;
 
-	rin = RAM_I(inode);
+	// rin = RAM_I(inode);
 
-	rin->data = NULL;
 	if (S_ISREG(inode->i_mode)) {
 		inode->i_op = &ram_reg_inode_operations;
 		inode->i_fop = &ram_reg_file_operations;
-	} else { // if (S_ISDIR(inode->i_mode)) {
+	} else if (S_ISDIR(inode->i_mode)) {
 		inode->i_op = &ram_dir_inode_operations;
 		inode->i_fop = &ram_dir_file_operations;
-	}
-#if 0
-	else {
+	} else {
 		BUG();
 	}
-#endif
 
 	return inode;
 }
@@ -145,7 +170,7 @@ static struct dentry *ram_mount(struct file_system_type *fs_type, unsigned long 
 		return NULL;
 	}
 
-	in = ram_iget(sb, 1);
+	in = ram_inode_create(sb, S_IFDIR);
 	if (!in) {
 		// ...
 		return NULL;
@@ -270,9 +295,9 @@ static struct file_system_type ram_fs_type = {
 	.umount = ram_umount,
 };
 
-static int __INIT__ ram_init(void)
+static int __INIT__ ramfs_init(void)
 {
 	return file_system_type_register(&ram_fs_type);
 }
 
-module_init(ram_init);
+module_init(ramfs_init);

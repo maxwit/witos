@@ -124,16 +124,24 @@ struct fs_struct *get_curr_fs()
 	return &g_fs;
 }
 
-void set_fs_root(struct vfsmount *mnt, struct dentry *dir)
+void set_fs_root(const struct path *root)
 {
-	g_fs.root = dir;
-	g_fs.rootmnt = mnt;
+	g_fs.root = *root;
 }
 
-void set_fs_pwd(struct vfsmount *mnt, struct dentry *dir)
+void set_fs_pwd(const struct path *pwd)
 {
-	g_fs.pwd = dir;
-	g_fs.pwdmnt = mnt;
+	g_fs.pwd = *pwd;
+}
+
+void get_fs_root(struct path *root)
+{
+	*root = g_fs.root;
+}
+
+void get_fs_pwd(struct path *pwd)
+{
+	*pwd = g_fs.pwd;
 }
 
 long sys_mkdir(const char *name, unsigned int /*fixme*/ mode)
@@ -145,16 +153,15 @@ long sys_mkdir(const char *name, unsigned int /*fixme*/ mode)
 
 	// ret = path_walk(name, &nd);
 
-	nd.dentry = get_curr_fs()->pwd;
-	nd.mnt = get_curr_fs()->pwdmnt;
+	get_fs_pwd(&nd.path);
 
 	while ('/' == *name) name++; // fixme
 	unit.name = name;
 	unit.len = strlen(name);
-	de = d_alloc(nd.dentry, &unit);
+	de = d_alloc(nd.path.dentry, &unit);
 
 	mode |= S_IFDIR;
-	ret = vfs_mkdir(nd.dentry->d_inode, de, mode);
+	ret = vfs_mkdir(nd.path.dentry->d_inode, de, mode);
 
 	return ret;
 }
@@ -168,15 +175,56 @@ long sys_chdir(const char *path)
 	if (ret < 0)
 		return ret;
 
-	set_fs_pwd(nd.mnt, nd.dentry);
+	set_fs_pwd(&nd.path);
 
 	return 0;
 }
 
+#define PATH_STACK_SIZE 256
+
 long sys_getcwd(char *buff, unsigned long size)
 {
-	struct dentry *cwd = get_curr_fs()->pwd;
+	int top = 0, count;
+	struct dentry *stack[PATH_STACK_SIZE];
+	struct path cwd, root;
 
-	strncpy(buff, cwd->d_name.name, size);
-	return size; // fixme
+	get_fs_pwd(&cwd);
+	get_fs_root(&root);
+
+	while (cwd.dentry != root.dentry) {
+		if (cwd.dentry == cwd.mnt->root) {
+			cwd.dentry = cwd.mnt->mountpoint;
+			cwd.mnt = cwd.mnt->mnt_parent;
+			continue; // yes, we'd jump to next loop
+		}
+
+		stack[top] = cwd.dentry;
+		top++;
+		if (top >= PATH_STACK_SIZE) {
+			// ret = -EOVERFLOW;
+			break;
+		}
+
+		cwd.dentry = cwd.dentry->d_parent;
+	}
+
+	if (0 == top) {
+		buff[0] = '/';
+		buff[1] = '\0';
+		return 1;
+	}
+
+	count = 0;
+	while (--top >= 0) {
+		buff[count++] = '/';
+		strcpy(buff + count, stack[top]->d_name.name);
+		count += stack[top]->d_name.len;
+
+		if (count >= size) {
+			// ret = -EOVERFLOW;
+			break;
+		}
+	}
+
+	return count;
 }
