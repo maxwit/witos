@@ -705,23 +705,7 @@ static inline int shell_init(void)
 
 	// check HOME and set CWD
 	if (conf_get_attr("HOME", home) < 0) {
-		DIR *dir;
-		struct dirent *de;
-
-		home[0] = '\0';
-
-		dir = opendir(DEV_ROOT);
-		if (dir) {
-			de = readdir(dir);
-			if (de)
-				strncpy(home, de->d_name, sizeof(home));
-
-			closedir(dir);
-		}
-
-		if ('\0' == home[0])
-			strcpy(home, DEV_ROOT);
-
+		strcpy(home, "/");
 		conf_add_attr("HOME", home);
 	}
 

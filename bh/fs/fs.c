@@ -176,5 +176,6 @@ long sys_getcwd(char *buff, unsigned long size)
 {
 	struct dentry *cwd = get_curr_fs()->pwd;
 
-	return strncpy(buff, cwd->d_name.name, size);
+	strncpy(buff, cwd->d_name.name, size);
+	return size; // fixme
 }

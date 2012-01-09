@@ -174,7 +174,10 @@ static struct dentry *real_lookup(struct dentry *parent, struct qstr *unit,
 	if (dentry) {
 		struct dentry *result;
 
-		assert(dir->i_op->lookup);
+		if (!dir->i_op->lookup) {
+			GEN_DBG("invalid %s! p = %p\n", parent->d_name.name, dir->i_op);
+			return NULL;
+		}
 		result = dir->i_op->lookup(dir, dentry, nd);
 		// fixme: return dentry instead of NULL;
 		if (result) {
