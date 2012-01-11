@@ -79,7 +79,6 @@ static int __INIT__ omap3_nand_init(struct nand_ctrl *nfc)
 	writel(VA(GPMC_BASE + GPMC_CONFIG_CS0 + GPMC_CONFIG_4), 0x0F010F01);
 	writel(VA(GPMC_BASE + GPMC_CONFIG_CS0 + GPMC_CONFIG_5), 0x010C1414);
 	writel(VA(GPMC_BASE + GPMC_CONFIG_CS0 + GPMC_CONFIG_6), 0x1F0F0A80);
-
 	writel(VA(GPMC_BASE + GPMC_CONFIG_CS0 + GPMC_CONFIG_7), (0x8 & 0xf) << 8 | ((0x0c000000 >> 24) & 0x3f) | 1 << 6);
 
 	udelay(0x100);

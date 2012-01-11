@@ -4,7 +4,7 @@
 
 #include <flash/nand.h>
 
-int at91_nand_flash_ready(struct nand_chip *nand)
+int at91_nand_ready(struct nand_chip *nand)
 {
 	return readl(VA(PIO_NAND + PIO_PDSR)) & PIO_NAND_RDY;
 }
@@ -59,7 +59,8 @@ int nand_init(struct nand_chip *nand)
 	nand->cmmd_port = VA(AT91SAM926X_PA_NAND + NAND_CMMD);
 	nand->addr_port = VA(AT91SAM926X_PA_NAND + NAND_ADDR);
 	nand->data_port = VA(AT91SAM926X_PA_NAND + NAND_DATA);
-	nand->flash_ready = at91_nand_flash_ready;
+
+	nand->nand_ready = at91_nand_ready;
 
 	return 0;
 }

@@ -27,7 +27,7 @@ int nand_init(struct nand_chip *nand)
 	nand->addr_port = VA(NAND_CTRL_BASE + NF_ADDR);
 	nand->data_port = VA(NAND_CTRL_BASE + NF_DATA);
 
-	nand->flash_ready = s3c24x_nand_ready;
+	nand->nand_ready = s3c24x_nand_ready;
 
 	return 0;
 }

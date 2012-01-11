@@ -16,7 +16,7 @@ struct jffs2_clean_mark {
 	__u32 total_len;
 };
 
-extern const struct nand_device_desc g_nand_device_id[];
+extern const struct nand_chip_desc g_nand_chip_desc[];
 extern const struct nand_vendor_name g_nand_vendor_id[];
 
 static struct nand_oob_layout g_oob8_layout = {
@@ -158,16 +158,17 @@ static int nand_blk_bad(struct nand_chip *nand, __u32 ofs, int getchip)
 	}
 
 	if (nand->flags & NAND_BUSWIDTH_16) {
-		nfc->command(nand, NAND_CMMD_READOOB, nand->bad_blk_oob_pos & 0xFE,
-				page);
+		nfc->command(nand, NAND_CMMD_READOOB,
+			nand->bad_blk_oob_pos & 0xFE, page);
+
 		bad = cpu_to_le16(nfc->read_word(nfc));
 		if (nand->bad_blk_oob_pos & 0x1)
 			bad >>= 8;
-		if ((bad & 0xFF) != 0xff)
+		if ((bad & 0xFF) != 0xFF)
 			res = 1;
 	} else {
 		nfc->command(nand, NAND_CMMD_READOOB, nand->bad_blk_oob_pos, page);
-		if (nfc->read_byte(nfc) != 0xff)
+		if (nfc->read_byte(nfc) != 0xFF)
 			res = 1;
 	}
 
@@ -281,7 +282,7 @@ static void nand_command_small(struct nand_chip *nand,
 		ctrl &= ~NAND_CTRL_CHANGE;
 		nfc->cmd_ctrl(nand, row >> 8, ctrl);
 
-		if (flash->chip_size > MB(32)) // (1 << 25)
+		if (flash->chip_size > (1 << 25))
 			nfc->cmd_ctrl(nand, row >> 16, ctrl);
 	}
 
@@ -333,7 +334,7 @@ static void nand_command_large(struct nand_chip *nand,
 		command = NAND_CMMD_READ0;
 	}
 
-	nfc->cmd_ctrl(nand,	command & 0xff,
+	nfc->cmd_ctrl(nand,	command & 0xFF,
 			NAND_NCE | NAND_CLE | NAND_CTRL_CHANGE);
 
 	if (col != -1 || row != -1) {
@@ -352,7 +353,7 @@ static void nand_command_large(struct nand_chip *nand,
 			nfc->cmd_ctrl(nand, row, ctrl);
 			nfc->cmd_ctrl(nand, row >> 8, NAND_NCE | NAND_ALE);
 
-			if (flash->chip_size > MB(128)) // (1 << 27)
+			if (flash->chip_size > (1 << 27))
 				nfc->cmd_ctrl(nand, row >> 16, NAND_NCE | NAND_ALE);
 		}
 	}
@@ -386,7 +387,7 @@ static void nand_command_large(struct nand_chip *nand,
 
 		nfc->cmd_ctrl(nand, NAND_CMMD_STATUS, NAND_NCE | NAND_CLE | NAND_CTRL_CHANGE);
 		nfc->cmd_ctrl(nand, NAND_CMMD_NONE, NAND_NCE | NAND_CTRL_CHANGE);
-		while (!(nfc->read_byte(nfc) & NAND_STATUS_READY));
+		while (!(nfc->read_byte(nfc) & NAND_STATUS_READY)); // fixme
 
 		return;
 
@@ -507,21 +508,21 @@ static void nand_write_page_swecc(struct nand_chip *nand, const __u8 *buff)
 	struct nand_ctrl *nfc = nand->master;
 	int i;
 	const __u8 *p;
-	__u8 *pEccCodes  = nand->buffers->ecccalc;
+	__u8 *ecc_code  = nand->buffers->ecccalc;
 	__u32 *ecc_pos = nfc->curr_oob_layout->ecc_pos;
 
 	i = 0;
 	p = buff;
 
 	while (p < buff + flash->write_size) {
-		nand_calculate_ecc(nand, p, pEccCodes + i);
+		nand_calculate_ecc(nand, p, ecc_code + i);
 
 		i += SOFT_ECC_CODE_NUM;
 		p += SOFT_ECC_DATA_LEN;
 	}
 
 	while(--i >= 0)
-		nand->oob_buf[ecc_pos[i]] = pEccCodes[i];
+		nand->oob_buf[ecc_pos[i]] = ecc_code[i];
 
 	nfc->write_page_raw(nand, buff);
 }
@@ -537,8 +538,8 @@ static void nand_write_page_hwecc(struct nand_chip *nand, const __u8 *buff)
 	int ecc_data_len = nfc->ecc_data_len;
 	int ecc_code_len = nfc->ecc_code_len;
 
-	__u8 *pEccCodes  = nand->buffers->ecccalc;
-	__u32 *ecc_pos = nfc->curr_oob_layout->ecc_pos;
+	__u8  *ecc_code = nand->buffers->ecccalc;
+	__u32 *ecc_pos  = nfc->curr_oob_layout->ecc_pos;
 
 	i = 0;
 	p = buff;
@@ -546,14 +547,14 @@ static void nand_write_page_hwecc(struct nand_chip *nand, const __u8 *buff)
 	while (p < buff + flash->write_size) {
 		nfc->ecc_enable(nand, NAND_ECC_WRITE);
 		nfc->write_buff(nfc, p, ecc_data_len);
-		nfc->ecc_generate(nand, p, pEccCodes + i);
+		nfc->ecc_generate(nand, p, ecc_code + i);
 
 		i += ecc_code_len;
 		p += ecc_data_len;
 	}
 
 	while(--i >= 0)
-		nand->oob_buf[ecc_pos[i]] = pEccCodes[i];
+		nand->oob_buf[ecc_pos[i]] = ecc_code[i];
 
 	nfc->write_buff(nfc, nand->oob_buf, flash->oob_size);
 }
@@ -744,7 +745,7 @@ L1:
 	if (flash->eccstat.ecc_failed_count - stats.ecc_failed_count)
 		return -EBADMSG;
 
-	return  flash->eccstat.ecc_correct_count - stats.ecc_correct_count ? -EUCLEAN : 0;
+	return flash->eccstat.ecc_correct_count - stats.ecc_correct_count ? -EUCLEAN : 0;
 }
 
 static int nand_read(struct nand_chip *nand,
@@ -1032,7 +1033,7 @@ static int nand_write_by_opt(struct nand_chip *nand, long to, struct oob_opt *op
 		nand->page_in_buff = -1;
 
 	if (!oob_buf)
-		memset(nand->oob_buf, 0xff, flash->oob_size);
+		memset(nand->oob_buf, 0xFF, flash->oob_size);
 
 	write_len = 0;
 
@@ -1169,12 +1170,12 @@ static int nand_do_write_oob(struct nand_chip *nand, __u32 to, struct oob_opt *o
 	if (page == nand->page_in_buff)
 		nand->page_in_buff = -1;
 
-	memset(nand->oob_buf, 0xff, flash->oob_size);
+	memset(nand->oob_buf, 0xFF, flash->oob_size);
 	nand_fill_oob(nand, opt->oob_buff, opt);
 
 	status = nfc->write_oob(nand, page & nand->page_num_mask);
 	// fixme
-	memset(nand->oob_buf, 0xff, flash->oob_size);
+	memset(nand->oob_buf, 0xFF, flash->oob_size);
 
 	if (status)
 		return status;
@@ -1476,17 +1477,16 @@ static int probe_nand_chip(struct nand_chip *nand)
 	nand->device_id = nfc->read_byte(nfc);
 #endif
 
-	for (i = 0; g_nand_device_id[i].name != NULL; i++) {
-		if (nand->device_id == g_nand_device_id[i].id) {
-			flash->chip_size = g_nand_device_id[i].chip_size << 20;
-			nand->flags = g_nand_device_id[i].flags;
-
-			nand->name = g_nand_device_id[i].name;
+	for (i = 0; g_nand_chip_desc[i].name != NULL; i++) {
+		if (nand->device_id == g_nand_chip_desc[i].id) {
+			flash->chip_size = g_nand_chip_desc[i].chip_size << 20;
+			nand->flags = g_nand_chip_desc[i].flags;
+			nand->name = g_nand_chip_desc[i].name;
 
 			//
-			if (PAGE_SIZE_AUTODETECT != g_nand_device_id[i].write_size) {
-				flash->erase_size = g_nand_device_id[i].erase_size;
-				flash->write_size = g_nand_device_id[i].write_size;
+			if (PAGE_SIZE_AUTODETECT != g_nand_chip_desc[i].write_size) {
+				flash->erase_size = g_nand_chip_desc[i].erase_size;
+				flash->write_size = g_nand_chip_desc[i].write_size;
 				flash->oob_size   = flash->write_size / 32;
 			} else {
 				__u8 ext_id[2];
@@ -1732,27 +1732,21 @@ int flash_set_ecc_mode(struct flash_chip *flash, ECC_MODE new_mode, ECC_MODE *ol
 
 struct nand_chip *nand_probe(struct nand_ctrl *nfc, int bus_idx)
 {
-	int ret;
+	int ret, i;
 	struct nand_chip *nand;
-	int i;
 
-	if ((!nfc->cmmd_reg || !nfc->addr_reg) &&
-		nfc->cmd_ctrl == nand_cmd_ctrl)
-	{
+	if ((!nfc->cmmd_reg || !nfc->addr_reg) && nfc->cmd_ctrl == nand_cmd_ctrl) {
 		printf("error: cmmd_reg or addr_reg is not specified!\n");
 		return NULL;
 	}
 
 	nand = new_nand_chip(nfc, bus_idx);
-
 	if (NULL == nand)
 		return NULL;
 
 	ret = probe_nand_chip(nand);
-	if (ret < 0) {
-		delete_nand_chip(nand);
-		return NULL;
-	}
+	if (ret < 0)
+		goto not_found;
 
 	// fixme
 	for (i = 0; g_nand_vendor_id[i].id; i++) {
@@ -1760,28 +1754,29 @@ struct nand_chip *nand_probe(struct nand_ctrl *nfc, int bus_idx)
 			return nand;
 	}
 
+not_found:
+	delete_nand_chip(nand);
 	return NULL;
 }
 
 int nand_register(struct nand_chip *nand)
 {
-	int ret;
+	int i, ret;
 	struct flash_chip *flash;
 	struct nand_ctrl *nfc;
 	char vendor_name[64];
 	char chip_size[32], block_size[32], write_size[32];
-	int j;
 
 	nfc = nand->master;
 
-	for (j = 0; g_nand_vendor_id[j].id; j++) {
-		if (g_nand_vendor_id[j].id == nand->vendor_id) {
-			strcpy(vendor_name, g_nand_vendor_id[j].name);
+	for (i = 0; g_nand_vendor_id[i].id; i++) {
+		if (g_nand_vendor_id[i].id == nand->vendor_id) {
+			strcpy(vendor_name, g_nand_vendor_id[i].name);
 			break;
 		}
 	}
 
-	if (0 == g_nand_vendor_id[j].id)
+	if (0 == g_nand_vendor_id[i].id)
 		strcpy(vendor_name, "Unknown vendor");
 
 	flash = NAND_TO_FLASH(nand);
@@ -1908,16 +1903,3 @@ int nand_ctrl_register(struct nand_ctrl *nfc)
 
 	return nfc->slaves == 0 ? -ENODEV : nfc->slaves;
 }
-
-#if 0
-const char *flash_get_mtd_name(const struct flash_chip *flash)
-{
-	struct nand_chip *nand;
-
-	assert(NULL != flash);
-
-	nand = FLASH_TO_NAND(flash);
-
-	return nand->master->name;
-}
-#endif

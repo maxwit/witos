@@ -34,16 +34,7 @@
 
 #define NAND_CMMD_NONE          -1
 
-struct nand_chip;
-
-#ifdef CONFIG_GTH
-
-int nand_init(struct nand_chip *);
-
-#else
-
-#include <flash/flash.h>
-
+// Nand description
 #define SOFT_ECC_DATA_LEN  256
 #define SOFT_ECC_CODE_NUM  3
 
@@ -92,6 +83,41 @@ int nand_init(struct nand_chip *);
 #define NAND_USE_FLASH_BBT    0x00010000
 #define NAND_SKIP_BBTSCAN    0x00020000
 #define NAND_OWN_BUFFERS    0x00040000
+
+#define LP_OPTIONS (NAND_SAMSUNG_LP_OPTIONS | NAND_NO_READRDY | NAND_NO_AUTOINCR)
+#define LP_OPTIONS16 (LP_OPTIONS | NAND_BUSWIDTH_16)
+
+struct nand_chip_desc {
+#ifdef CONFIG_GTH
+	int   id;
+	__u32 size;
+#else
+	const char *name;
+	int   id;
+	__u32 write_size;
+	__u32 chip_size;
+	__u32 erase_size;
+#endif
+	__u32 flags;
+};
+
+#ifdef CONFIG_GTH
+#define NAND_CHIP_DESC(n, i, w, c, e, f) \
+	{.id = i, .size = (c) << 20 | (w), .flags = f}
+#else
+#define NAND_CHIP_DESC(n, i, w, c, e, f) \
+	{.name = n, .id = i, .write_size = w, .chip_size = c, .erase_size = e, .flags = f}
+#endif
+
+struct nand_chip;
+
+#ifdef CONFIG_GTH
+
+int nand_init(struct nand_chip *);
+
+#else
+
+#include <flash/flash.h>
 
 typedef enum {
 	FL_READY,
@@ -186,15 +212,6 @@ struct nand_ctrl {
 #define NAND_MFR_MICRON        0x2c
 #define NAND_MFR_AMD        0x01
 
-struct nand_device_desc {
-	const char *name;
-	int id;
-	__u32 write_size;
-	__u32 chip_size;
-	__u32 erase_size;
-	__u32 flags;
-};
-
 struct nand_vendor_name {
 	int  id;
 	const char *name;
@@ -255,9 +272,10 @@ struct nand_chip {
 	void *data_port;
 
 	size_t write_size;
-	size_t erase_size;
+	size_t chip_size;
 
-	int (*flash_ready)(struct nand_chip *);
+	void *(*read_buff)(struct nand_chip *, void *, size_t);
+	int (*nand_ready)(struct nand_chip *);
 #else
 	struct flash_chip parent;
 	struct nand_ctrl *master;

@@ -33,7 +33,7 @@ int nand_init(struct nand_chip *nand)
 	nand->cmmd_port = VA(GPMC_BASE + GPMC_NAND_COMMAND_0);
 	nand->addr_port = VA(GPMC_BASE + GPMC_NAND_ADDRESS_0);
 	nand->data_port = VA(GPMC_BASE + GPMC_NAND_DATA_0);
-	nand->flash_ready = omap3_nand_ready;
+	nand->nand_ready = omap3_nand_ready;
 
 	return 0;
 }
