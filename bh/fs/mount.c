@@ -178,7 +178,7 @@ int __follow_mount(struct path *path)
 	mnt = lookup_mnt(path);
 	if (mnt) {
 		path->mnt = mnt;
-		path->dentry = mnt->mountpoint;
+		path->dentry = mnt->root;
 	}
 
 	return 0;
