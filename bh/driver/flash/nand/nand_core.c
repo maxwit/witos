@@ -16,7 +16,7 @@ struct jffs2_clean_mark {
 	__u32 total_len;
 };
 
-extern const struct nand_chip_desc g_nand_chip_desc[];
+extern const struct nand_desc g_nand_chip_desc[];
 extern const struct nand_vendor_name g_nand_vendor_id[];
 
 static struct nand_oob_layout g_oob8_layout = {

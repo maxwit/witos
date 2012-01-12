@@ -87,7 +87,7 @@
 #define LP_OPTIONS (NAND_SAMSUNG_LP_OPTIONS | NAND_NO_READRDY | NAND_NO_AUTOINCR)
 #define LP_OPTIONS16 (LP_OPTIONS | NAND_BUSWIDTH_16)
 
-struct nand_chip_desc {
+struct nand_desc {
 #ifdef CONFIG_GTH
 	int   id;
 	__u32 size;
@@ -114,6 +114,8 @@ struct nand_chip;
 #ifdef CONFIG_GTH
 
 int nand_init(struct nand_chip *);
+int nand_probe(struct nand_chip *);
+void *nand_read_page(struct nand_chip *, __u32, void *);
 
 #else
 
@@ -274,8 +276,8 @@ struct nand_chip {
 	size_t write_size;
 	size_t chip_size;
 
-	void *(*read_buff)(struct nand_chip *, void *, size_t);
 	int (*nand_ready)(struct nand_chip *);
+	void *(*read_buff)(struct nand_chip *, void *, size_t);
 #else
 	struct flash_chip parent;
 	struct nand_ctrl *master;

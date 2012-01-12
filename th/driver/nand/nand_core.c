@@ -1,13 +1,12 @@
-#include <stdio.h>
 #include <io.h>
+#include <stdio.h>
 #include <delay.h>
-#include <loader.h>
 #include <flash/nand.h>
 
 #define NAND_TIMEOUT         (1 << 14)
 #define IS_LARGE_PAGE(nand)  (nand->write_size >= KB(1))
 
-static const struct nand_chip_desc g_nand_chip_desc[] = {
+static const struct nand_desc g_nand_chip_desc[] = {
     NAND_CHIP_DESC("NAND 16MB 1.8V 8-bit",   0x33, 512, 16, 0x4000, 0),
     NAND_CHIP_DESC("NAND 16MB 3.3V 8-bit",   0x73, 512, 16, 0x4000, 0),
     NAND_CHIP_DESC("NAND 16MB 1.8V 16-bit",  0x43, 512, 16, 0x4000, NAND_BUSWIDTH_16),
@@ -64,15 +63,12 @@ static const struct nand_chip_desc g_nand_chip_desc[] = {
     NAND_CHIP_DESC("NAND 2GiB 3.3V 16-bit",  0xC5, 0, 2048, 0, LP_OPTIONS16),
 };
 
-// Basic operations
-static void inline nand_write_cmd(struct nand_chip *nand, __u8 cmd)
+static void nand_cmd_ctrl(struct nand_chip *nand, __u8 arg, __u32 ctrl)
 {
-	writeb(nand->cmmd_port, cmd);
-}
-
-static void inline nand_write_addr(struct nand_chip *nand, __u8 addr)
-{
-	writeb(nand->addr_port, addr);
+	if (ctrl & NAND_CLE)
+		writeb(nand->cmmd_port, arg);
+	else // if (ctrl & NAND_ALE)
+		writeb(nand->addr_port, arg);
 }
 
 static void *nand_read_buff8(struct nand_chip *nand, void *buff, size_t size)
@@ -116,62 +112,45 @@ static int nand_wait_ready(struct nand_chip *nand)
 	return 0;
 }
 
-static void nand_send_cmd(struct nand_chip *nand,
+static void nand_command(struct nand_chip *nand,
 						__u32 cmd, int row, int col)
 {
-	nand_write_cmd(nand, cmd);
+	nand_cmd_ctrl(nand, cmd, NAND_CLE);
 
 	if (col != -1) {
-		nand_write_addr(nand, col & 0xff);
+		nand_cmd_ctrl(nand, col & 0xff, NAND_ALE);
 
 		if (IS_LARGE_PAGE(nand))
-			nand_write_addr(nand, (col >> 8) & 0xff);
+			nand_cmd_ctrl(nand, (col >> 8) & 0xff, NAND_ALE);
 	}
 
 	if (row != -1) {
-		nand_write_addr(nand, row & 0xff);
-		nand_write_addr(nand, (row >> 8) & 0xff);
+		nand_cmd_ctrl(nand, row & 0xff, NAND_ALE);
+		nand_cmd_ctrl(nand, (row >> 8) & 0xff, NAND_ALE);
 
 		if (nand->chip_size > (1 << 27))
-			nand_write_addr(nand, (row >> 16) & 0xff);
+			nand_cmd_ctrl(nand, (row >> 16) & 0xff, NAND_ALE);
 	}
 
 	switch (cmd) {
 	case NAND_CMMD_READ0:
 		if (IS_LARGE_PAGE(nand))
-			nand_write_cmd(nand, NAND_CMMD_READSTART);
-		break;
+			nand_cmd_ctrl(nand, NAND_CMMD_READSTART, NAND_CLE);
 
 	default:
 		break;
 	}
 
-	nand_wait_ready(nand);
+	nand_wait_ready(nand); // fixme: not need for READID
 }
 
-static int nand_probe(struct nand_chip *nand)
+static inline void config_nand(struct nand_chip *nand,
+						const struct nand_desc *desc)
 {
-	int i;
-	__u8 dev_id, ven_id, ext_id;
+	__u8 ext_id;
 
-	nand_send_cmd(nand, NAND_CMMD_RESET, -1, -1);
-
-	nand_send_cmd(nand, NAND_CMMD_READID, -1, 0);
-	ven_id = readb(nand->data_port);
-	dev_id = readb(nand->data_port);
-	printf("NAND ID = 0x%x%x\n", ven_id, dev_id);
-
-	for (i = 0; i < ARRAY_ELEM_NUM(g_nand_chip_desc); i++) {
-		if (g_nand_chip_desc[i].id == dev_id)
-			goto found;
-	}
-
-	printf("NAND not found!\n");
-	return -1;
-
-found:
-	nand->chip_size  = g_nand_chip_desc[i].size & 0xFFF00000;
-	nand->write_size = g_nand_chip_desc[i].size & 0x000FFFFF;
+	nand->chip_size  = desc->size & 0xFFF00000;
+	nand->write_size = desc->size & 0x000FFFFF;
 
 	if (!nand->write_size) {
 		ext_id = readb(nand->data_port);
@@ -181,87 +160,74 @@ found:
 	}
 
 #ifdef CONFIG_DEBUG
-	printf("(Nand page size = 0x%x, chip size = 0x%x)\n",
+	printf("NAND page size = 0x%x, chip size = 0x%x\n",
 		nand->write_size, nand->chip_size);
 #endif
 
 	if (!nand->read_buff) {
-		if (g_nand_chip_desc[i].flags & NAND_BUSWIDTH_16)
+		if (desc->flags & NAND_BUSWIDTH_16)
 			nand->read_buff = nand_read_buff16;
 		else
 			nand->read_buff = nand_read_buff8;
 	}
-
-	return 0;
 }
 
-static void *nand_read_page(struct nand_chip *nand, __u32 page, void *buff)
+int nand_probe(struct nand_chip *nand)
 {
-	nand_send_cmd(nand, NAND_CMMD_READ0, page, 0);
+	int i;
+	__u8 dev_id, ven_id;
+
+	nand_command(nand, NAND_CMMD_RESET, -1, -1);
+
+	nand_command(nand, NAND_CMMD_READID, -1, 0);
+	ven_id = readb(nand->data_port);
+	dev_id = readb(nand->data_port);
+	printf("NAND ID = 0x%x%x\n", ven_id, dev_id);
+
+	for (i = 0; i < ARRAY_ELEM_NUM(g_nand_chip_desc); i++) {
+		if (g_nand_chip_desc[i].id == dev_id) {
+			config_nand(nand, &g_nand_chip_desc[i]);
+			return 0;
+		}
+	}
+
+	printf("NAND not found!\n");
+	return -1;
+}
+
+#if 1
+void *nand_read_page(struct nand_chip *nand, __u32 page, void *buff)
+{
+	nand_command(nand, NAND_CMMD_READ0, page, 0);
 	return nand->read_buff(nand, buff, nand->write_size);
 }
-
-// load bottom-half from nand with timeout checking
-int __WEAK__ nand_load(struct nand_chip *nand, __u32 nstart, void *mstart)
+#else
+int nand_read(struct nand_chip *nand, __u8 *buff, size_t size, loff_t offset)
 {
-	__u32 curr_page, last_page;
-	__u32 wshift;
-	__u32 load_size;
-	void *buff;
+	int wshift;
+	int cur, end;
+
+	if (offset & (nand->write_size - 1)) {
+		GEN_DBG("invalid start address 0x%x\n", offset);
+		return -1;
+	}
 
 	for (wshift = 0; wshift < WORD_BITS; wshift++) {
 		if ((1 << wshift) == nand->write_size)
 			break;
 	}
 
-	if (WORD_BITS == wshift)
-		return -1;
+	cur = offset >> wshift;
+	end = (offset + size - 1) >> wshift;
 
-	curr_page = nstart >> wshift;
+	while (cur <= end) {
+		nand_command(nand, NAND_CMMD_READ0, cur, 0);
+		nand->read_buff(nand, buff, nand->write_size);
 
-	buff = nand_read_page(nand, curr_page, mstart);
-
-	if (GBH_MAGIC == readl(VA(mstart + GBH_MAGIC_OFFSET))) {
-		load_size = readl(VA(mstart + GBH_SIZE_OFFSET));
-#ifdef CONFIG_DEBUG
-		printf("g-bios-bh found.\n");
-#endif
-	} else {
-		load_size = CONFIG_GBH_LOAD_SIZE;
-#ifdef CONFIG_DEBUG
-		printf("g-bios-bh NOT found!\n");
-#endif
+		buff += nand->write_size;
+		cur++;
 	}
 
-	last_page = curr_page + ((load_size - 1) >> wshift);
-
-#ifdef CONFIG_DEBUG
-	printf("Nand loader: memory = 0x%x, nand = 0x%x, size = 0x%x\n",
-		mstart, nstart, load_size);
+	return 0;
+}
 #endif
-
-	while (++curr_page <= last_page)
-		buff = nand_read_page(nand, curr_page, buff);
-
-	return buff - mstart;
-}
-
-static int nand_loader(struct loader_opt *opt)
-{
-	int ret;
-	struct nand_chip nand = {0}; // nand_chip must be initialized
-
-	ret = nand_init(&nand);
-	if (ret < 0)
-		return ret;
-
-	ret = nand_probe(&nand);
-	if (ret < 0)
-		return ret;
-
-	ret = nand_load(&nand, CONFIG_GBH_START_BLK * 0x20000, VA(CONFIG_GBH_START_MEM));
-
-	return ret;
-}
-
-REGISTER_LOADER(n, nand_loader, "NAND");
