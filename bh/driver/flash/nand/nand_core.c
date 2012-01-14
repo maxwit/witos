@@ -232,10 +232,15 @@ static int nand_check_blk_bad(struct nand_chip *nand, __u32 ofs, int getchip)
 
 static void nand_wait_ready(struct nand_chip *nand)
 {
+	int to;
 	struct nand_ctrl *nfc = nand->master;
 
-	// fixme
-	while (!nfc->flash_ready(nand));
+	for (to = 0; to < 10; to++) {
+		if (nfc->flash_ready(nand))
+			break;
+
+		udelay(nfc->chip_delay);
+	}
 }
 
 static void nand_command_small(struct nand_chip *nand,
@@ -416,21 +421,23 @@ static void nand_command_large(struct nand_chip *nand,
 	nand_wait_ready(nand);
 }
 
+// fixme
 static int nand_wait(struct nand_chip *nand)
 {
+	int status, state, to;
 	struct nand_ctrl *nfc = nand->master;
-	int status, state = nfc->state;
 
 	// fixme: tWB
 	// ndelay(100);
 	ndelay(nfc->chip_delay);
 
+	state = nfc->state;
 	if ((state == FL_ERASING) && (nand->flags & NAND_IS_AND))
 		nfc->command(nand, NAND_CMMD_STATUS_MULTI, -1, -1);
 	else
 		nfc->command(nand, NAND_CMMD_STATUS, -1, -1);
 
-	while (1) {
+	for (to = 0; to < 10; to++) {
 		if (nfc->flash_ready) {
 			if (nfc->flash_ready(nand))
 				break;

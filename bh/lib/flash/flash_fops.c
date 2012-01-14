@@ -140,7 +140,7 @@ static int flash_open(struct file *fp, struct inode *inode)
 	struct flash_chip *flash;
 	struct block_buff *blk_buf = &fp->blk_buf;
 
-	// flash = container_of(inode->i_ext, struct flash_chip, bdev);
+	flash = NULL; // container_of(inode, struct flash_chip, bdev);
 	assert(flash);
 
 	if (fp->flags == O_WRONLY || fp->flags == O_RDWR) {

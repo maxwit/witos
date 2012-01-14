@@ -64,7 +64,7 @@ static int tftp_send_ack(const int fd, const __u16 blk, struct sockaddr_in *remo
 int tftp_download(struct tftp_opt *opt)
 {
 	int ret;
-	int sockfd, fd;
+	int sockfd, fd = -1; // fixme!!!
 	__u16 blk_num;
 	__u8 *buff_ptr;
 	socklen_t addrlen;

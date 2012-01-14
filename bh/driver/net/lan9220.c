@@ -18,7 +18,8 @@
 #endif
 
 struct lan9220_chip {
-	void *iomem;
+	void *mmio;
+	__u16 rev;
 #ifdef CONFIG_IRQ_SUPPORT
 	__u32 int_mask;
 #endif
@@ -30,21 +31,31 @@ struct lan9220_chip {
 #endif
 };
 
+struct lan9x_id {
+	__u16 id;
+	const char *name;
+};
+
+static const struct lan9x_id g_lan9x_idt[] = {
+	{DEV_ID_LAN9118, "LAN9118 (32-bit)"},
+	{DEV_ID_LAN9220, "LAN9220 (16-bit)"},
+};
+
 static inline __u32 lan9220_readl(struct lan9220_chip *lan9220, __u8 reg)
 {
 	if (lan9220->busw32)
-		return readl(lan9220->iomem + reg);
+		return readl(lan9220->mmio + reg);
 
-	return readw(lan9220->iomem + reg + 2) << 16 | readw(lan9220->iomem + reg);
+	return readw(lan9220->mmio + reg + 2) << 16 | readw(lan9220->mmio + reg);
 }
 
 static inline void lan9220_writel(struct lan9220_chip *lan9220, __u8 reg, __u32 val)
 {
 	if (lan9220->busw32) {
-		writel(lan9220->iomem + reg, val);
+		writel(lan9220->mmio + reg, val);
 	} else {
-		writew(lan9220->iomem + reg, val & 0xffff);
-		writew(lan9220->iomem + reg + 2, val >> 16 & 0xffff);
+		writew(lan9220->mmio + reg, val & 0xffff);
+		writew(lan9220->mmio + reg + 2, val >> 16 & 0xffff);
 	}
 }
 
@@ -288,53 +299,56 @@ static int lan9220_set_mac(struct net_device *ndev, const __u8 *mac)
 	return 0;
 }
 
-static int __INIT__ lan9220_init(struct platform_device *plat_dev)
+static int __INIT__ lan9220_probe(struct lan9220_chip *lan9220, int busw32)
 {
-	int ret;
-	__u16 id[2];
-	const char *chip_name;
-	int irq;
+	int i;
+	__u32 id;
+
+	lan9220->busw32 = busw32;
+	id = lan9220_readl(lan9220, ID_REV);
+
+	for (i = 0; i < ARRAY_ELEM_NUM(g_lan9x_idt); i++) {
+		if (g_lan9x_idt[i].id == id >> 16) {
+			lan9220->rev = id & 0xFFFF;
+			return i;
+		}
+	}
+
+	return -ENODEV;
+}
+
+static int __INIT__ lan9220_init(struct platform_device *pdev)
+{
+	int ret, irq;
 	unsigned long mem;
 	struct net_device *ndev;
 	struct lan9220_chip *lan9220;
 
-	mem = platform_get_memory(plat_dev);
-	irq = platform_get_irq(plat_dev);
+	mem = platform_get_memory(pdev);
+	irq = platform_get_irq(pdev);
 
 	ndev = ndev_new(sizeof(*lan9220));
 	if (NULL == ndev)
 		return -ENOMEM;
 
 	lan9220 = ndev->chip;
-	lan9220->iomem = VA(mem);
+	lan9220->mmio = VA(mem);
 #ifdef CONFIG_IRQ_SUPPORT
 	lan9220->int_mask = 0xfffff07f;
 #endif
 
-	// id = readl(ID_REV);
-	id[0] = readw(lan9220->iomem + ID_REV); // REV
-	id[1] = readw(lan9220->iomem + ID_REV + 2); // Device ID
-
-	switch (id[1]) {
-	case DEV_ID_LAN9118:
-		lan9220->busw32 = 1;
-		chip_name = "LAN9118 (32-bit)";
-		break;
-
-	case DEV_ID_LAN9220:
-		lan9220->busw32 = 0;
-		chip_name = "LAN9220 (16-bit)";
-		break;
-
-	default:
-		printf("unknown device id (0x%04x)!\n", id[1]);
-		ret = -ENODEV;
-		goto error;
+	ret = lan9220_probe(lan9220, 1);
+	if (ret < 0) {
+		ret = lan9220_probe(lan9220, 0);
+		if (ret < 0) {
+			printf("LAN9X not found!\n");
+			return ret;
+		}
 	}
 
-	printf("%s found, rev = 0x%04x\n", chip_name, id[0]);
+	ndev->chip_name = g_lan9x_idt[ret].name;
+	printf("%s found, rev = 0x%04x\n", ndev->chip_name, lan9220->rev);
 
-	ndev->chip_name    = chip_name;
 	ndev->set_mac_addr = lan9220_set_mac;
 	ndev->send_packet  = lan9220_send_packet;
 #ifndef CONFIG_IRQ_SUPPORT
@@ -351,11 +365,7 @@ static int __INIT__ lan9220_init(struct platform_device *plat_dev)
 		goto error;
 
 #ifdef CONFIG_IRQ_SUPPORT
-	if (id[1] == DEV_ID_LAN9118)
-		irq_set_trigger(irq, IRQ_TYPE_LOW);
-	else
-		irq_set_trigger(irq, IRQ_TYPE_HIGH);
-
+	irq_set_trigger(irq, IRQ_TYPE_HIGH);
 	ret = irq_register_isr(irq, lan9220_isr, ndev);
 	if (ret < 0)
 		goto error;

@@ -1,3 +1,7 @@
+#include <io.h>
+#include <init.h>
+#include <errno.h>
+#include <delay.h>
 #include <stdio.h>
 #include <net/net.h>
 #include <net/mii.h>

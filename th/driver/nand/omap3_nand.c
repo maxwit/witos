@@ -4,10 +4,7 @@
 
 static int omap3_nand_ready(struct nand_chip *nand)
 {
-	while (!(readl(VA(GPMC_BASE + GPMC_STATUS)) & (1 << 8)))
-	writel(VA(GPMC_BASE + GPMC_STATUS), 1 << 8);
-
-	return 1;
+	return readl(VA(GPMC_BASE + GPMC_STATUS)) & (1 << 8);
 }
 
 int nand_init(struct nand_chip *nand)

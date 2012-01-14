@@ -6,12 +6,9 @@
 #include <flash/flash.h>
 #include <flash/nand.h>
 
-static int omap3_nand_is_ready(struct nand_chip *nand)
+static int omap3_nand_ready(struct nand_chip *nand)
 {
-	while(!(readl(VA(GPMC_BASE + GPMC_STATUS)) & (1 << 8)));
-	writel(VA(GPMC_BASE + GPMC_STATUS), (1 << 8));
-
-	return 1;
+	return readl(VA(GPMC_BASE + GPMC_STATUS)) & (1 << 8);
 }
 
 static void omap3_nand_enable_hwecc(struct nand_chip *nand, int mode)
@@ -116,7 +113,7 @@ static int __INIT__ omap3_nand_probe(void)
 	nfc->data_reg = VA(GPMC_BASE + GPMC_NAND_DATA_0);
 
 	nfc->name = "omap2-nand"; // fixme
-	nfc->flash_ready  = omap3_nand_is_ready;
+	nfc->flash_ready  = omap3_nand_ready;
 	// ECC
 	nfc->ecc_data_len = 512;
 	nfc->ecc_code_len = 3;

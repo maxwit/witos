@@ -64,7 +64,7 @@ int kermit_load(struct loader_opt *opt)
 	__u8 *curr_addr = (__u8 *)opt->load_addr;
 	int index, count, checksum, len, seq, real_seq = 0;
 	int type = KERM_TYPE_BREAK; // fixme
-	int fd, ret, i;
+	int fd = -1 /* fixme!!! */ , ret, i;
 	image_t img_type = IMG_MAX;
 
 #ifndef CONFIG_GTH

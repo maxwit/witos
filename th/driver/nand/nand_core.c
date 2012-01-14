@@ -3,6 +3,7 @@
 #include <delay.h>
 #include <flash/nand.h>
 
+// #define CONFIG_NAND_DEBUG
 #define NAND_TIMEOUT         (1 << 14)
 #define IS_LARGE_PAGE(nand)  (nand->write_size >= KB(1))
 
@@ -101,7 +102,7 @@ static int nand_wait_ready(struct nand_chip *nand)
 				return i;
 		}
 
-#ifdef CONFIG_DEBUG
+#ifdef CONFIG_NAND_DEBUG
 		printf("Nand Timeout!\n");
 #endif
 		return -1;
@@ -159,7 +160,7 @@ static inline void config_nand(struct nand_chip *nand,
 		nand->write_size = KB(1) << (ext_id & 0x3);
 	}
 
-#ifdef CONFIG_DEBUG
+#ifdef CONFIG_NAND_DEBUG
 	printf("NAND page size = 0x%x, chip size = 0x%x\n",
 		nand->write_size, nand->chip_size);
 #endif
