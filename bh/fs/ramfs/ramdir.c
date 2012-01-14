@@ -18,21 +18,16 @@ struct ram_inode {
 	struct inode vfs_inode;
 	union {
 		void *data;
-		// struct list_node list;
 	};
 };
 
 // fixme
 static DECL_INIT_LIST(g_root_dir);
 
-static struct dentry *ram_lookup(struct inode *parent, struct dentry *dentry,
-	struct nameidata *nd);
 static int ram_open(struct file *fp, struct inode *inode);
 static int ram_close(struct file *fp);
 static ssize_t ram_read(struct file *fp, void *buff, size_t size, loff_t *off);
 static ssize_t ram_write(struct file *fp, const void *buff, size_t size, loff_t *off);
-static int ram_readdir(struct file *, struct linux_dirent *);
-static int ram_mkdir(struct inode *, struct dentry *, int);
 
 static const struct inode_operations ram_reg_inode_operations = {
 };
@@ -44,15 +39,22 @@ static const struct file_operations ram_reg_file_operations = {
 	.write = ram_write,
 };
 
+static struct dentry *ram_lookup(struct inode *parent, struct dentry *dentry,
+	struct nameidata *nd);
+static int ram_mkdir(struct inode *, struct dentry *, int);
+
 static const struct inode_operations ram_dir_inode_operations = {
 	.lookup = ram_lookup,
 	.mkdir  = ram_mkdir,
 };
 
+static int ram_opendir(struct file *fp, struct inode *inode);
+static int ram_readdir(struct file *, struct linux_dirent *);
+
 static const struct file_operations ram_dir_file_operations = {
+	.open    = ram_opendir,
 	.readdir = ram_readdir,
 };
-
 
 static inline struct ram_inode *RAM_I(struct inode *inode)
 {
@@ -192,10 +194,6 @@ static void ram_umount(struct super_block *sb)
 
 static int ram_open(struct file *fp, struct inode *inode)
 {
-	struct ram_inode *rin = container_of(inode, struct ram_inode, vfs_inode);
-
-	fp->private_data = rin->data;
-
 	return 0;
 }
 
@@ -209,82 +207,65 @@ static ssize_t ram_read(struct file *fp, void *buff, size_t size, loff_t *off)
 	return 0;
 }
 
-static ssize_t ram_write(struct file *fp, const void *buff, size_t size, loff_t *off)
+static ssize_t
+ram_write(struct file *fp, const void *buff, size_t size, loff_t *off)
 {
 	return 0;
 }
 
-static struct dentry *ram_lookup(struct inode *parent, struct dentry *dentry,
-	struct nameidata *nd)
+static struct dentry *
+ram_lookup(struct inode *parent, struct dentry *dentry, struct nameidata *nd)
 {
-#if 0
-	unsigned long ino;
-	struct inode *inode;
-	struct dentry *dir, *child;
-	struct ram_inode *rin;
-	struct list_node *iter;
-
-	rin = RAM_I(parent);
-	dir = rin->data;
-
-	//
-#endif
+	assert(0);
 	nd->ret = -ENOENT;
 	return NULL;
 }
 
+static int ram_opendir(struct file *fp, struct inode *inode)
+{
+	fp->private_data = fp->f_dentry->d_subdirs.next;
+	return 0;
+}
+
 static int ram_readdir(struct file *fp, struct linux_dirent *dirent)
 {
-	struct inode *inode;
-	struct ram_inode *rin;
-	struct linux_dirent *rde;
+	struct dentry *de;
+	struct inode *in;
+	struct list_node *iter;
 
-	inode = fp->f_dentry->d_inode;
-	if (fp->f_pos >= inode->i_size)
+	if (fp->f_pos >= fp->f_dentry->d_inode->i_size)
 		return 0;
 
-	rin = RAM_I(inode);
-	rde = rin->data + fp->f_pos;
-	memcpy(dirent, rde, rde->d_reclen);
+	iter = fp->private_data;
+	de = container_of(iter, struct dentry, d_child);
 
-	fp->f_pos += rde->d_reclen;
-	return rde->d_reclen;
+	in = de->d_inode;
+	// TODO: fix the offset and type
+	filldir(dirent, de->d_name.name, de->d_name.len, 0, in->i_ino, in->i_mode);
+
+	fp->private_data = iter->next;
+	fp->f_pos++;
+
+	return dirent->d_reclen;
 }
 
 static int ram_mkdir(struct inode *parent, struct dentry *de, int mode)
 {
-	struct inode *cur_in;
-	struct ram_inode *par_rin;
-	struct linux_dirent lde;
+	struct inode *inode;
 
-	cur_in = ram_alloc_inode(parent->i_sb);
-	//
-	cur_in->i_ino = 1234; // fixme
-	cur_in->i_mode = mode;
+	inode = ram_alloc_inode(parent->i_sb);
+	if (!inode)
+		return -ENOMEM;
 
-	cur_in->i_op = &ram_dir_inode_operations;
-	cur_in->i_fop = &ram_dir_file_operations;
+	inode->i_ino = 1234; // fixme
+	inode->i_mode = mode;
 
-	de->d_inode = cur_in;
+	inode->i_op = &ram_dir_inode_operations;
+	inode->i_fop = &ram_dir_file_operations;
 
-	par_rin = RAM_I(parent);
-	if (!par_rin->data) {
-		par_rin->data = malloc(RAM_BLK_SIZE);
-		if (!par_rin->data)
-			return -ENOMEM;
-	}
+	de->d_inode = inode;
 
-	// fixme
-	filldir(&lde, de->d_name.name, de->d_name.len,
-		0, de->d_inode->i_ino, 0);
-
-	if (parent->i_size + lde.d_reclen >= RAM_BLK_SIZE) {
-		GEN_DBG("overflow!\n");
-		return -EOVERFLOW;
-	}
-
-	memcpy(par_rin->data + parent->i_size, &lde, lde.d_reclen);
-	parent->i_size += lde.d_reclen;
+	parent->i_size++;
 
 	return 0;
 }

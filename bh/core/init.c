@@ -117,6 +117,9 @@ int main(void)
 
 	sys_mkdir("/dev", 0755);
 	sys_mkdir("/tmp", 0755);
+	sys_mkdir("/d", 0755);
+
+	mount("ext2", 0, "mmcblk0", "/d");
 
 	conf_store();
 

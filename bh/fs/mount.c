@@ -129,7 +129,8 @@ struct dentry *d_lookup(struct dentry *parent, struct qstr *unit)
 
 	list_for_each(iter, &parent->d_subdirs) {
 		de = container_of(iter, struct dentry, d_child);
-		if (!strcmp(de->d_name.name, unit->name))
+		if (de->d_name.len == unit->len && \
+			!strncmp(de->d_name.name, unit->name, unit->len))
 			return de;
 	}
 
@@ -146,10 +147,13 @@ static struct dentry *real_lookup(struct dentry *parent, struct qstr *unit,
 		struct dentry *result;
 
 		result = dir->i_op->lookup(dir, dentry, nd);
-		if (nd->ret < 0)
-			return NULL; // fixme!
-		// fixme: return dentry instead of NULL;
-		if (result) {
+		if (nd->ret < 0) {
+			GEN_DBG("fail to lookup \"%s\" (ret = %d)!\n",
+				dentry->d_name.name, nd->ret);
+			return NULL;
+		}
+		if (result != dentry) {
+			GEN_DBG("%s -> %s\n", dentry->d_name.name, result->d_name.name);
 			dput(dentry);
 			dentry = result;
 		}
@@ -184,6 +188,14 @@ int __follow_mount(struct path *path)
 	return 0;
 }
 
+int follow_up(struct path *path)
+{
+	path->dentry = path->mnt->mountpoint;
+	path->mnt = path->mnt->mnt_parent;
+
+	return 0;
+}
+
 static int do_lookup(struct nameidata *nd, struct qstr *name,
 		     struct path *path)
 {
@@ -197,7 +209,10 @@ static int do_lookup(struct nameidata *nd, struct qstr *name,
 		if ('.' == name->name[1] && 2 == name->len) {
 			path->dentry = nd->path.dentry->d_parent;
 			path->mnt = nd->path.mnt;
-			__follow_mount(path);
+
+			if (path->dentry == path->mnt->root && path->mnt->mnt_parent)
+				follow_up(path);
+
 			return 0;
 		}
 	}
@@ -235,11 +250,6 @@ int path_walk(const char *path, struct nameidata *nd)
 	}
 
 	while (1) {
-		if (cannot_lookup(nd->path.dentry->d_inode)) {
-			GEN_DBG("dentry = %s\n", nd->path.dentry->d_name.name);
-			return -ENOTDIR;
-		}
-
 		while ('/' == *path) path++;
 		if (!*path)
 			break;
@@ -250,7 +260,13 @@ int path_walk(const char *path, struct nameidata *nd)
 		} while (*path && '/' != *path);
 		unit.len = path - unit.name;
 
-		GEN_DBG("searching %s\n", unit.name);
+		if (cannot_lookup(nd->path.dentry->d_inode)) {
+			GEN_DBG("dentry \"%s\" cannot lookup! i_op = %p\n",
+				nd->path.dentry->d_name.name, nd->path.dentry->d_inode->i_op);
+			return -ENOTDIR;
+		}
+
+		GEN_DBG("searching \"%s\"\n", path);
 		ret = do_lookup(nd, &unit, &next);
 		if (ret < 0)
 			return ret;
@@ -279,8 +295,10 @@ static int __dentry_open(struct dentry *dir, struct file *fp)
 
 	if (fp->f_op->open) {
 		ret = fp->f_op->open(fp, inode);
-		if (ret < 0)
+		if (ret < 0) {
+			GEN_DBG("open failed! (ret = %d)\n", ret);
 			return ret;
+		}
 	}
 
 	return 0;
@@ -347,8 +365,6 @@ int GAPI close(int fd)
 	return 0;
 }
 
-EXPORT_SYMBOL(close);
-
 ssize_t GAPI read(int fd, void *buff, size_t size)
 {
 	struct file *fp;
@@ -360,8 +376,6 @@ ssize_t GAPI read(int fd, void *buff, size_t size)
 	return fp->f_op->read(fp, buff, size, &fp->f_pos);
 }
 
-EXPORT_SYMBOL(read);
-
 ssize_t GAPI write(int fd, const void *buff, size_t size)
 {
 	struct file *fp;
@@ -372,8 +386,6 @@ ssize_t GAPI write(int fd, const void *buff, size_t size)
 
 	return fp->f_op->write(fp, buff, size, &fp->f_pos);
 }
-
-EXPORT_SYMBOL(write);
 
 int sys_ioctl(int fd, int cmd, unsigned long arg)
 {
@@ -394,8 +406,6 @@ int GAPI ioctl(int fd, int cmd, ...)
 
 	return sys_ioctl(fd, cmd, arg);
 }
-
-EXPORT_SYMBOL(ioctl);
 
 loff_t GAPI lseek(int fd, loff_t offset, int whence)
 {
@@ -424,5 +434,3 @@ loff_t GAPI lseek(int fd, loff_t offset, int whence)
 
 	return 0;
 }
-
-EXPORT_SYMBOL(lseek);

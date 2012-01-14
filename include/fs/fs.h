@@ -159,7 +159,6 @@ struct linux_dirent {
 	unsigned char  d_type; // fixme
 };
 
-int getdents(unsigned int fd, struct linux_dirent *dirp, unsigned int count);
 int filldir(struct linux_dirent *, const char * name, int namlen, loff_t offset,
 		   unsigned long ino, unsigned int type);
 
@@ -188,3 +187,4 @@ void get_fs_root(struct path *);
 void get_fs_pwd(struct path *);
 
 int path_walk(const char *path, struct nameidata *nd);
+int follow_up(struct path *path);

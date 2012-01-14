@@ -182,7 +182,9 @@ static int __flash_erase(struct flash_chip *flash, struct erase_opt *opt)
 #endif
 
 	if (opt->esize & (flash->erase_size - 1)) {
+#ifdef CONFIG_DEBUG
 		size_t size = opt->esize;
+#endif
 
 		ALIGN_UP(opt->esize, flash->erase_size);
 		GEN_DBG("size (0x%08x) not aligned with flash erase size (0x%08x)!"

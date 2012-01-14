@@ -158,10 +158,16 @@ long sys_mkdir(const char *name, unsigned int /*fixme*/ mode)
 	while ('/' == *name) name++; // fixme
 	unit.name = name;
 	unit.len = strlen(name);
-	de = d_alloc(nd.path.dentry, &unit);
 
-	mode |= S_IFDIR;
-	ret = vfs_mkdir(nd.path.dentry->d_inode, de, mode);
+	de = d_alloc(nd.path.dentry, &unit);
+GEN_DBG("de = 0x%p (%s)\n", de, de->d_name.name);
+
+	ret = vfs_mkdir(nd.path.dentry->d_inode, de, mode | S_IFDIR);
+	if (ret < 0) {
+		// fixme: use d_free() instead
+		list_del_node(&de->d_child);
+		free(de);
+	}
 
 	return ret;
 }
@@ -193,8 +199,7 @@ long sys_getcwd(char *buff, unsigned long size)
 
 	while (cwd.dentry != root.dentry) {
 		if (cwd.dentry == cwd.mnt->root) {
-			cwd.dentry = cwd.mnt->mountpoint;
-			cwd.mnt = cwd.mnt->mnt_parent;
+			follow_up(&cwd);
 			continue; // yes, we'd jump to next loop
 		}
 

@@ -122,8 +122,7 @@ static int lan9220_hw_init(struct net_device *ndev)
 	ndev->mdio_write(ndev, phy->addr,
 		MII_REG_INT_MASK, PHY_INT_AN | PHY_INT_LINK);
 
-	val = lan9220_readl(lan9220, IRQ_CFG);
-	lan9220_writel(lan9220, IRQ_CFG, val | 0x1 << 8);
+	lan9220_writel(lan9220, IRQ_CFG, 0x1 << 8);
 #endif
 
 	// enable RX and TX
@@ -365,7 +364,7 @@ static int __INIT__ lan9220_init(struct platform_device *pdev)
 		goto error;
 
 #ifdef CONFIG_IRQ_SUPPORT
-	irq_set_trigger(irq, IRQ_TYPE_HIGH);
+	irq_set_trigger(irq, IRQ_TYPE_HIGH); // fixme
 	ret = irq_register_isr(irq, lan9220_isr, ndev);
 	if (ret < 0)
 		goto error;

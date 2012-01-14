@@ -260,16 +260,10 @@ static struct ext2_inode *ext2_get_inode(struct super_block *sb, int ino)
 	blk_no = ino_no / count;
 	ino_no = ino_no % count;
 
-	DPRINT("%s(%d): grp_no = %d, blk_no = %d, ino_no = %d, inode table = %d\n",
-		__func__, ino + 1, grp_no, blk_no, ino_no, gde->bg_inode_table);
-
 	e2_in = malloc(e2_sb->s_inode_size);
 	// if
 
 	ext2_read_block(sb, e2_in, gde->bg_inode_table + blk_no, ino_no * e2_sb->s_inode_size, e2_sb->s_inode_size);
-
-	DPRINT("%s(%d): inode size = %d, uid = %d, gid = %d, mode = 0x%x\n",
-		__func__, ino + 1, e2_in->i_size, e2_in->i_uid, e2_in->i_gid, e2_in->i_mode);
 
 	return e2_in;
 }
@@ -570,7 +564,7 @@ static struct dentry *ext2_lookup(struct inode *parent, struct dentry *dentry, s
 	dentry->d_inode = inode;
 	nd->ret = 0;
 
-	return NULL;
+	return dentry;
 }
 
 static int ext2_inode_read_block(struct inode *in, int blk_no, char *blk_buf)

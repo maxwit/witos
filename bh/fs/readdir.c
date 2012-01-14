@@ -20,7 +20,7 @@ int filldir(struct linux_dirent *lde, const char *name, int size, loff_t offset,
 	return 0;
 }
 
-int getdents(unsigned int fd, struct linux_dirent *lde, unsigned int count)
+int sys_getdents(unsigned int fd, struct linux_dirent *lde, unsigned int count)
 {
 	int ret;
 	struct file *fp;
