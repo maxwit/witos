@@ -203,15 +203,18 @@ static int do_lookup(struct nameidata *nd, struct qstr *name,
 	struct dentry *dentry;
 
 	if ('.' == name->name[0]) {
-		if (1 == name->len)
+		// TODO: avoid running here
+		if (1 == name->len) {
+			*path = nd->path;
 			return 0;
+		}
 
 		if ('.' == name->name[1] && 2 == name->len) {
+			if (path->dentry == path->mnt->root && path->mnt->mnt_parent)
+				follow_up(&nd->path);
+
 			path->dentry = nd->path.dentry->d_parent;
 			path->mnt = nd->path.mnt;
-
-			if (path->dentry == path->mnt->root && path->mnt->mnt_parent)
-				follow_up(path);
 
 			return 0;
 		}
@@ -260,13 +263,13 @@ int path_walk(const char *path, struct nameidata *nd)
 		} while (*path && '/' != *path);
 		unit.len = path - unit.name;
 
-		if (cannot_lookup(nd->path.dentry->d_inode)) {
+		if (cannot_lookup(nd->path.dentry->d_inode)) { // right here?
 			GEN_DBG("dentry \"%s\" cannot lookup! i_op = %p\n",
 				nd->path.dentry->d_name.name, nd->path.dentry->d_inode->i_op);
 			return -ENOTDIR;
 		}
 
-		GEN_DBG("searching \"%s\"\n", path);
+		GEN_DBG("searching \"%s\"\n", unit.name);
 		ret = do_lookup(nd, &unit, &next);
 		if (ret < 0)
 			return ret;
@@ -287,7 +290,7 @@ static int __dentry_open(struct dentry *dir, struct file *fp)
 
 	fp->f_op = inode->i_fop;
 	if (!fp->f_op) {
-		GEN_DBG("No fops for %s!\n", dir->d_name.name);
+		GEN_DBG("No fops for \"%s\"!\n", dir->d_name.name);
 		return -ENODEV;
 	}
 

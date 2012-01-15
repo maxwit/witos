@@ -216,7 +216,6 @@ ram_write(struct file *fp, const void *buff, size_t size, loff_t *off)
 static struct dentry *
 ram_lookup(struct inode *parent, struct dentry *dentry, struct nameidata *nd)
 {
-	assert(0);
 	nd->ret = -ENOENT;
 	return NULL;
 }
