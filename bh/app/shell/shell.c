@@ -700,15 +700,15 @@ static inline int shell_init(void)
 
 	for (i = 0; i < APP_HIST_DEPTH; i++)
 		g_cmd_stack.stack[i] = NULL;
-
 	g_cmd_stack.hist = 0;
 
-	// check HOME and set CWD
+	// always check the HOME
 	if (conf_get_attr("HOME", home) < 0) {
 		strcpy(home, "/");
 		conf_add_attr("HOME", home);
 	}
 
+	// and set CWD
 	return chdir(home);
 }
 

@@ -22,8 +22,6 @@ struct dirent {
 	char           d_name[256]; /* filename */
 };
 
-DIR *opendir(const char *name);
-
-struct dirent *readdir(DIR *dir);
-
-int closedir(DIR *dir);
+DIR *GAPI opendir(const char *name);
+struct dirent * GAPI readdir(DIR *dir);
+int GAPI closedir(DIR *dir);

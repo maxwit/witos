@@ -160,7 +160,6 @@ long sys_mkdir(const char *name, unsigned int /*fixme*/ mode)
 	unit.len = strlen(name);
 
 	de = d_alloc(nd.path.dentry, &unit);
-GEN_DBG("de = 0x%p (%s)\n", de, de->d_name.name);
 
 	ret = vfs_mkdir(nd.path.dentry->d_inode, de, mode | S_IFDIR);
 	if (ret < 0) {

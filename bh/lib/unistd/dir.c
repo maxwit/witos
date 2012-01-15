@@ -8,10 +8,7 @@
 #include <assert.h>
 #include <fs/fs.h>
 
-// static char g_cwd[PATH_MAX];
-
-// fixme
-int chdir(const char *path)
+int GAPI chdir(const char *path)
 {
 	long ret;
 
@@ -19,7 +16,7 @@ int chdir(const char *path)
 	return ret;
 }
 
-char *getcwd(char *buff, size_t size)
+char * GAPI getcwd(char *buff, size_t size)
 {
 	long ret;
 	size_t max_size = min(size, PATH_MAX);
@@ -33,7 +30,7 @@ char *getcwd(char *buff, size_t size)
 	return buff;
 }
 
-char *get_current_dir_name()
+char * GAPI get_current_dir_name()
 {
 	int ret;
 	char cwd[PATH_MAX];
@@ -46,7 +43,7 @@ char *get_current_dir_name()
 	return strdup(cwd);
 }
 
-DIR *opendir(const char *name)
+DIR * GAPI opendir(const char *name)
 {
 	int fd;
 	DIR *dir;
@@ -64,7 +61,7 @@ DIR *opendir(const char *name)
 	return dir;
 }
 
-struct dirent *readdir(DIR *dir)
+struct dirent * GAPI readdir(DIR *dir)
 {
 	int ret;
 	struct dirent *de;
@@ -89,7 +86,7 @@ struct dirent *readdir(DIR *dir)
 	return de;
 }
 
-int closedir(DIR *dir)
+int GAPI closedir(DIR *dir)
 {
 	assert(dir);
 
@@ -97,4 +94,9 @@ int closedir(DIR *dir)
 	free(dir);
 
 	return 0;
+}
+
+int GAPI mkdir(const char *name, unsigned int /*fixme*/ mode)
+{
+	return sys_mkdir(name, mode);
 }

@@ -36,7 +36,8 @@ struct file_system_type *file_system_type_get(const char *name)
 	return NULL;
 }
 
-int GAPI mount(const char *type, unsigned long flags,
+
+int sys_mount(const char *type, unsigned long flags,
 	const char *bdev_name, const char *path)
 {
 	int ret;
@@ -108,6 +109,12 @@ L2:
 	//
 L1:
 	return ret;
+}
+
+int GAPI mount(const char *type, unsigned long flags,
+	const char *bdev_name, const char *path)
+{
+	return sys_mount(type, flags, bdev_name, path);
 }
 
 int GAPI umount(const char *mnt)

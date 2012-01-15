@@ -1,1 +1,1 @@
-obj-y += ramdir.o
+obj-y += ramfs.o

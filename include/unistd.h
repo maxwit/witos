@@ -4,8 +4,10 @@
 
 #define PATH_MAX   256
 
-int chdir(const char *path);
+int GAPI chdir(const char *path);
 
-char *getcwd(char *buff, size_t size);
+char * GAPI getcwd(char *buff, size_t size);
 
-char *get_current_dir_name();
+char * GAPI get_current_dir_name();
+
+int GAPI mkdir(const char *name, unsigned int mode);

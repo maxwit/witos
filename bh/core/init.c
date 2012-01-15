@@ -1,9 +1,12 @@
 #include <stdio.h>
 #include <init.h>
 #include <errno.h>
-#include <syscalls.h>
+#include <delay.h>
+#include <dirent.h>
+#include <unistd.h>
 #include <fcntl.h> // for mount(), fixme
 // fixme: to be removed!
+#include <syscalls.h>
 #include <shell.h>
 #include <uart/uart.h>
 #include <font/font.h>
@@ -55,14 +58,9 @@ static int __INIT__ system_init(void)
 
 	printf("(g-bios initialization finished.)\n");
 
-	// show system information
-	printf("%s\n", banner);
-
 	return 0;
 }
 
-// fixme: by sysconfig
-#ifdef CONFIG_AUTO_BOOT
 static void __INIT__ auto_boot(void)
 {
 	int time_out = 3;
@@ -93,7 +91,58 @@ static void __INIT__ auto_boot(void)
 
 	exec(ARRAY_ELEM_NUM(argv), argv);
 }
-#endif
+
+static int __INIT__ mount_root()
+{
+	int ret;
+
+	ret = sys_mount("tmpfs", MS_ROOT | MS_NODEV, NULL, "/");
+	if (ret < 0) {
+		printf("Fetal error: fail to mount rootfs! (errno = %d)\n", ret);
+		return ret;
+	}
+
+	sys_mkdir("/dev", 0755);
+	//
+
+	sys_mkdir("/tmp", 0755); // if needed
+
+	return 0;
+}
+
+// TODO:
+// 1. introduce a to-be-mounted queue, not scanning the whole dir
+// 2. run as a delay work thread
+int bdev_check_and_mount()
+{
+	int ret;
+	DIR *dir;
+	struct dirent *entry;
+	static char vol = 'd';
+	char mnt[3] = "/\0\0";
+
+	dir = opendir("/dev");
+	if (!dir) {
+		printf("cannot access /dev\n");
+		return -ENODEV;
+	}
+
+	while ((entry = readdir(dir))) {
+		mnt[1] = vol++;
+		printf("mounting %s -> %s\n", entry->d_name, mnt);
+		ret = mkdir(mnt, 0755);
+		if (ret < 0) {
+			// ...
+			continue;
+		}
+
+		mount("ext2", 0, entry->d_name, mnt);
+	}
+
+	closedir(dir);
+
+	return 0;
+}
 
 int main(void)
 {
@@ -107,27 +156,28 @@ int main(void)
 		putchar('\n');
 	}
 
-	system_init();
-
-	ret = mount("tmpfs", MS_ROOT | MS_NODEV, NULL, "/");
-	if (ret < 0) {
-		printf("Fetal error: fail to mount rootfs! (errno = %d)\n", ret);
+	ret = system_init();
+	if (ret < 0)
 		return ret;
-	}
 
-	sys_mkdir("/dev", 0755);
-	sys_mkdir("/tmp", 0755);
-	sys_mkdir("/d", 0755);
-
-	mount("ext2", 0, "mmcblk0", "/d");
+	ret = mount_root();
+	if (ret < 0)
+		return ret;
 
 	conf_store();
 
-#ifdef CONFIG_AUTO_BOOT
-	auto_boot();
-#endif
+	// TODO: show more information of system
+	printf("%s\n", banner);
 
-	shell();
+	bdev_check_and_mount();
+
+	if (0)
+		auto_boot();
+
+	while (1) {
+		// printf("Enter g-bios Shell.\n");
+		shell();
+	}
 
 	return -EINVAL;
 }
