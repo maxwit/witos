@@ -30,7 +30,8 @@ struct file_system_type {
 	const char *name;
 	struct file_system_type *next;
 
-	struct dentry *(*mount)(struct file_system_type *, unsigned long, const char *);
+	struct dentry *(*mount)(struct file_system_type *, unsigned long,
+						const char *);
 	void (*umount)(struct super_block *);
 };
 
@@ -118,6 +119,7 @@ struct inode_operations {
 	int (*create) (struct inode *, struct dentry *, int, struct nameidata *);
 	int (*mkdir) (struct inode *, struct dentry *, int);
 	int (*rmdir) (struct inode *, struct dentry *);
+	int (*mknod)(struct inode *, struct dentry *, int);
 };
 
 struct inode {
@@ -188,3 +190,6 @@ void get_fs_pwd(struct path *);
 
 int path_walk(const char *path, struct nameidata *nd);
 int follow_up(struct path *path);
+
+int vfs_mkdir(struct inode *dir, struct dentry *dentry, int mode);
+int vfs_mknod(struct inode *dir, struct dentry *dentry, int mode);

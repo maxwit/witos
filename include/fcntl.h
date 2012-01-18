@@ -26,6 +26,6 @@ loff_t GAPI lseek(int fd, loff_t offset, int whence);
 #define MS_ROOT     (1 << 0)
 #define MS_NODEV    (1 << 1)
 
-int GAPI mount(const char *, unsigned long, const char *, const char *);
+int GAPI mount(const char *, const char *, const char *, unsigned long);
 
 int GAPI umount(const char *mnt);

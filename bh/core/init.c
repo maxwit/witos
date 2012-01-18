@@ -96,16 +96,18 @@ static int __INIT__ mount_root()
 {
 	int ret;
 
-	ret = sys_mount("tmpfs", MS_ROOT | MS_NODEV, NULL, "/");
+	ret = sys_mount(NULL, "/", "ramfs", MS_ROOT | MS_NODEV);
 	if (ret < 0) {
 		printf("Fetal error: fail to mount rootfs! (errno = %d)\n", ret);
 		return ret;
 	}
 
-	sys_mkdir("/dev", 0755);
-	//
+	ret = sys_mkdir("/tmp", 0755); // if needed
+	// if ret < 0 ...
 
-	sys_mkdir("/tmp", 0755); // if needed
+	ret = sys_mkdir(DEV_ROOT, 0755);
+	// if ret < 0 ...
+	ret = sys_mount(NULL, DEV_ROOT, "devfs", MS_NODEV);
 
 	return 0;
 }
@@ -136,7 +138,7 @@ int bdev_check_and_mount()
 			continue;
 		}
 
-		mount("ext2", 0, entry->d_name, mnt);
+		mount(entry->d_name, mnt, "ext2", 0);
 	}
 
 	closedir(dir);

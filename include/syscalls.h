@@ -1,6 +1,7 @@
 #pragma once
 
-long sys_mount(const char *, unsigned long, const char *, const char *);
+int sys_mount(const char *dev_name, const char *path,
+		const char *type, unsigned long flags);
 long sys_getcwd(char *buf, unsigned long size);
 long sys_chdir(const char *filename);
 struct linux_dirent;

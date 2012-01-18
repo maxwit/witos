@@ -6,6 +6,7 @@
 #include <malloc.h>
 #include <fs/fs.h>
 #include <drive.h> // fixme
+#include <fs/devfs.h>
 
 static DECL_INIT_LIST(g_bdev_list);
 
@@ -32,7 +33,7 @@ int block_device_register(struct block_device *bdev)
 		bdev->base, bdev->base + bdev->size, bdev->name,
 		bdev->label[0] ? bdev->label : "N/A");
 
-	// device_create(&bdev->devfs_node);
+	device_enqueue(bdev);
 
 	return 0;
 }

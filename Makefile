@@ -77,4 +77,7 @@ distclean: clean
 	@rm -vf .config include/autoconf.h
 	@echo
 
+clear:
+	@./utility/clearup.sh
+
 .PHONY: $(dir-y)

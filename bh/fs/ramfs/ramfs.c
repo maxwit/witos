@@ -8,8 +8,6 @@
 #include <dirent.h>
 #include <fs/fs.h>
 
-#define RAM_BLK_SIZE   (1 << 12)
-
 struct ramfs_super_block {
 	struct list_node *r_list;
 };
@@ -21,8 +19,7 @@ struct ramfs_inode {
 	};
 };
 
-// fixme
-static DECL_INIT_LIST(g_root_dir);
+static unsigned long g_inode_count = 1;
 
 static int ramfs_open(struct file *fp, struct inode *inode);
 static int ramfs_close(struct file *fp);
@@ -63,13 +60,16 @@ static inline struct ramfs_inode *RAM_I(struct inode *inode)
 
 static struct inode *ramfs_alloc_inode(struct super_block *sb)
 {
+	struct inode *inode;
 	struct ramfs_inode *rin;
 
 	rin = zalloc(sizeof(*rin));
 	if (!rin)
 		return NULL;
 
-	rin->vfs_inode.i_sb = sb; // fixme
+	inode = &rin->vfs_inode;
+	inode->i_sb  = sb;
+	inode->i_ino = g_inode_count++;
 
 	return &rin->vfs_inode;
 }
@@ -90,7 +90,6 @@ struct inode *ramfs_inode_create(struct super_block *sb, int mode)
 		return NULL;
 	}
 
-	inode->i_ino  = 12345;
 	inode->i_mode = mode;
 
 	// rin = RAM_I(inode);
@@ -108,6 +107,7 @@ struct inode *ramfs_inode_create(struct super_block *sb, int mode)
 	return inode;
 }
 
+#if 0
 struct inode *ramfs_iget(struct super_block *sb, unsigned long ino)
 {
 	struct inode *inode;
@@ -135,6 +135,7 @@ struct inode *ramfs_iget(struct super_block *sb, unsigned long ino)
 
 	return inode;
 }
+#endif
 
 static int ramfs_fill_super(struct super_block *sb)
 {
@@ -148,7 +149,7 @@ static int ramfs_fill_super(struct super_block *sb)
 	}
 
 	sb->s_fs_info = ramfs_sb;
-	sb->s_blksize = RAM_BLK_SIZE;
+	// sb->s_blksize = RAM_BLK_SIZE;
 
 	return 0;
 L1:
@@ -270,7 +271,7 @@ static int ramfs_mkdir(struct inode *parent, struct dentry *de, int mode)
 }
 
 static struct file_system_type ramfs_fs_type = {
-	.name   = "tmpfs",
+	.name   = "ramfs",
 	.mount  = ramfs_mount,
 	.umount = ramfs_umount,
 };

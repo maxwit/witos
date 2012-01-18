@@ -112,9 +112,20 @@ struct file *fget(unsigned int fd)
 
 int vfs_mkdir(struct inode *dir, struct dentry *dentry, int mode)
 {
-	int errno;
+	int errno = -ENOTSUPP;
 
-	errno = dir->i_op->mkdir(dir, dentry, mode);
+	if (dir->i_op->mkdir)
+		errno = dir->i_op->mkdir(dir, dentry, mode);
+
+	return errno;
+}
+
+int vfs_mknod(struct inode *dir, struct dentry *dentry, int mode)
+{
+	int errno = -ENOTSUPP;
+
+	if (dir->i_op->mknod)
+		errno = dir->i_op->mknod(dir, dentry, mode);
 
 	return errno;
 }

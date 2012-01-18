@@ -10,6 +10,7 @@
 // fixme: to be removed
 #include <net/net.h>
 #include <uart/uart.h>
+#include <fs/devfs.h>
 
 #define APP_HIST_DEPTH			    16  // should be 2**n bytes aligned.
 #define APP_ADJUST_INDEX(index)    ((index) & (APP_HIST_DEPTH - 1))
@@ -52,6 +53,7 @@ static char shell_getchar(void)
 
 		// TODO: replace with tasklet
 		ndev_poll();
+		device_monitor();
 	}
 
 	return ch;

@@ -9,6 +9,12 @@
 
 #define LINE_LEN 512
 
+#ifdef CONFIG_SYSCONFIG_DEBUG
+#define SC_DEBUG GEN_DBG
+#else
+#define SC_DEBUG(fmt, args...)
+#endif
+
 struct sysconfig {
 	char* const data;
 	bool is_dirty;
@@ -20,7 +26,7 @@ extern char _g_sysconfig[];
 extern unsigned int _g_sysconfig_len;
 
 static struct sysconfig g_config = {
-	.data = _g_sysconfig,
+.data = _g_sysconfig,
 	.is_dirty = false,
 };
 
@@ -119,7 +125,7 @@ int conf_del_attr(const char *attr)
 
 	ret = search_attr(cfg, attr);
 	if (ret < 0) {
-		DPRINT("Attribute \"%s\" is not exist, del attr error!\n", attr);
+		SC_DEBUG("Attribute \"%s\" does not exist, del attr error!\n", attr);
 		goto L1;
 	}
 
@@ -144,7 +150,7 @@ int conf_add_attr(const char *attr, const char *val)
 	cfg = _syscfg_open();
 
 	if (search_attr(cfg, attr) > 0) {
-		DPRINT("Fail to add attribute \"%s\"! (already exists)\n", attr);
+		SC_DEBUG("Fail to add attribute \"%s\"! (already exists)\n", attr);
 		ret = -EBUSY;
 		goto L1;
 	}
@@ -170,7 +176,7 @@ int conf_set_attr(const char *attr, const char *val)
 
 	ret = search_attr(cfg, attr);
 	if (ret < 0) {
-		DPRINT("Attribute \"%s\" does not exists, set attr error\n", attr);
+		SC_DEBUG("Attribute \"%s\" does not exists, set attr error\n", attr);
 		goto L1;
 	}
 
@@ -209,7 +215,7 @@ int conf_get_attr(const char *attr, char val[])
 
 	ret = search_attr(cfg, attr);
 	if (ret < 0) {
-		DPRINT("Attribute \"%s\" does not exists.\n", attr);
+		SC_DEBUG("Attribute \"%s\" does not exists.\n", attr);
 		goto L1;
 	}
 
@@ -283,7 +289,7 @@ int conf_load()
 		return -EINVAL;
 
 	cfg->size = _g_sysconfig_len;
-	DPRINT("sysconf: base = 0x%p, size = %d\n", cfg->data, cfg->size);
+	SC_DEBUG("sysconf: base = 0x%p, size = %d\n", cfg->data, cfg->size);
 
 	conf_check_default();
 
