@@ -133,15 +133,17 @@ struct vfsmount *lookup_mnt(struct path *path)
 	return NULL;
 }
 
-// fixme!
+// TODO: move to app layer
 int list_mount()
 {
 	int count = 0;
 	struct vfsmount *mnt;
 
+	printf("NO. device   mnt  type\n"
+		"-------------------------\n");
 	list_for_each_entry(mnt, &g_mount_list, mnt_hash) {
 		count++;
-		printf("%d) %-4s on %-4s type %s\n", count,
+		printf("(%d) %-8s %-4s %s\n", count,
 			mnt->dev_name ? mnt->dev_name : "none",
 			mnt->mountpoint ? mnt->mountpoint->d_name.name : "/", // fixme
 			mnt->fstype->name);

@@ -96,7 +96,8 @@ struct inode *devfs_inode_create(struct super_block *sb, int mode)
 		inode->i_op = &devfs_bdev_inode_operations;
 		inode->i_fop = &devfs_bdev_file_operations;
 	} else if (S_ISBLK(inode->i_mode)) {
-
+		inode->i_op = &devfs_bdev_inode_operations;
+		inode->i_fop = &devfs_bdev_file_operations;
 	} else if (S_ISDIR(inode->i_mode)) {
 		inode->i_op = &devfs_dir_inode_operations;
 		inode->i_fop = &devfs_dir_file_operations;
@@ -233,7 +234,7 @@ static int devfs_mknod(struct inode *dir, struct dentry *dentry, int mode)
 		return -ENODEV;
 	}
 
-	in = devfs_inode_create(dir->i_sb, mode | S_IFREG);
+	in = devfs_inode_create(dir->i_sb, mode);
 	if (!in) {
 		GEN_DBG("fail to create devfs inode!\n");
 		return -ENOMEM;

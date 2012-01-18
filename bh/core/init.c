@@ -112,40 +112,6 @@ static int __INIT__ mount_root()
 	return 0;
 }
 
-// TODO:
-// 1. introduce a to-be-mounted queue, not scanning the whole dir
-// 2. run as a delay work thread
-int bdev_check_and_mount()
-{
-	int ret;
-	DIR *dir;
-	struct dirent *entry;
-	static char vol = 'd';
-	char mnt[3] = "/\0\0";
-
-	dir = opendir("/dev");
-	if (!dir) {
-		printf("cannot access /dev\n");
-		return -ENODEV;
-	}
-
-	while ((entry = readdir(dir))) {
-		mnt[1] = vol++;
-		printf("mounting %s -> %s\n", entry->d_name, mnt);
-		ret = mkdir(mnt, 0755);
-		if (ret < 0) {
-			// ...
-			continue;
-		}
-
-		mount(entry->d_name, mnt, "ext2", 0);
-	}
-
-	closedir(dir);
-
-	return 0;
-}
-
 int main(void)
 {
 	int ret;
@@ -170,8 +136,6 @@ int main(void)
 
 	// TODO: show more information of system
 	printf("%s\n", banner);
-
-	bdev_check_and_mount();
 
 	if (0)
 		auto_boot();
