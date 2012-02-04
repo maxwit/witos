@@ -214,14 +214,17 @@ struct display *display_create(void)
 	return disp;
 }
 
-int display_config(struct display *disp,
-		int (*set_vmode)(struct display *, const struct lcd_vmode *))
+static int display_config(struct display *disp)
 {
+	int ret;
 	void *va;
 	unsigned long dma;
 	const struct lcd_vmode *vm;
 	char attr_val[CONF_VAL_LEN];
 	pixel_format_t pixel_format;
+
+	if (!disp->set_vmode)
+		return -EINVAL;
 
 	if (conf_get_attr("display.lcd.model", attr_val) < 0) {
 		DPRINT("%s(): fail to get lcd model\n", __func__);
@@ -234,17 +237,17 @@ int display_config(struct display *disp,
 		return -ENOENT;
 	}
 
-	if (conf_get_attr("display.lcd.pixel", attr_val) < 0) {
+	ret = conf_get_attr("display.lcd.pixel", attr_val);
+	if (ret < 0)
+		pixel_format = PIX_RGB24;
+	else if (!strcasecmp(attr_val, "RGB15"))
+		pixel_format = PIX_RGB15;
+	else if (!strcasecmp(attr_val, "RGB16"))
+		pixel_format = PIX_RGB16;
+	else {
 		DPRINT("%s(): fail to get lcd pixel format\n", __func__);
 		return -EINVAL;
 	}
-
-	if (strncmp(attr_val, "PIX_RGB16", sizeof(attr_val)))
-		pixel_format = PIX_RGB16;
-	else if (strncmp(attr_val, "PIX_RGB16", sizeof(attr_val)))
-		pixel_format = PIX_RGB15;
-	else
-		pixel_format = PIX_RGB24;
 
 	va = video_mem_alloc(&dma, vm, pixel_format);
 	if(va == NULL) {
@@ -258,16 +261,23 @@ int display_config(struct display *disp,
 	disp->video_mem_va = va;
 	disp->video_mem_pa = dma;
 	disp->pix_fmt      = pixel_format;
-	disp->set_vmode    = set_vmode;
 
-	set_vmode(disp, vm);
+	ret = disp->set_vmode(disp, vm);
+	// ...
 
-	return 0;
+	return ret;
 }
 
 int display_register(struct display* disp)
 {
+	int ret;
+
+	ret = display_config(disp);
+	if (ret < 0)
+		return ret;
+
 	g_system_display = disp;
+
 	return 0;
 }
 

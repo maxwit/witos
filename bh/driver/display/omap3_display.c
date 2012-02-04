@@ -1,4 +1,8 @@
+#include <io.h>
+#include <init.h>
 #include <stdio.h>
+#include <errno.h>
+#include <assert.h>
 #include <graphic/display.h>
 
 #define lcd_omap3_readl(reg) \
@@ -18,8 +22,13 @@ static int omap3_set_vmode(struct display *disp, const struct lcd_vmode *vm)
 		fmt = 0x6;
 		break;
 
+	case PIX_RGB24:
+		fmt = 0x9;
+		break;
+
 	default:
-		BUG();
+		printf("%s(): invalid pixel format (%d)!\n", __func__, disp->pix_fmt);
+		return -EINVAL;
 	}
 
 	lcd_omap3_writel(DISPC_SYSCONFIG, 1);
@@ -36,10 +45,12 @@ static int omap3_set_vmode(struct display *disp, const struct lcd_vmode *vm)
 	lcd_omap3_writel(DISPC_GFX_SIZE, (vm->height - 1) << 16 | (vm->width - 1));
 	lcd_omap3_writel(DISPC_GFX_ATTRIBUTES, fmt << 1 | 1);
 
+#if 0
 	lcd_omap3_writel(DISPC_VID0_BA0, dma);
 	lcd_omap3_writel(DISPC_VID0_POSITION, 0);
 	lcd_omap3_writel(DISPC_VID0_SIZE, vm->height << 16 | vm->width);
-	lcd_omap3_writel(DISPC_VID0_ATTRIBUTES, 3 << 5 | 6 << 1 | 1);
+	lcd_omap3_writel(DISPC_VID0_ATTRIBUTES, 3 << 5 | fmt << 1 | 1);
+#endif
 
 	lcd_omap3_writel(DISPC_CONTROL,  1 << 16 | 1 << 15 | 1 << 8 | 1 << 3 | 1);
 
@@ -51,11 +62,11 @@ static int omap3_set_vmode(struct display *disp, const struct lcd_vmode *vm)
 static int __INIT__ omap3_display_init(void)
 {
 	int ret;
-	void *va;
-	unsigned long dma;
-	const struct lcd_vmode *vm;
+	// void *va;
+	// unsigned long dma;
+	// const struct lcd_vmode *vm;
 	struct display *disp;
-	char model[CONF_VAL_LEN];
+	// char model[CONF_VAL_LEN];
 
 	// writel(VA(0x48004e00), 7);
 	// writel(VA(0x48004e10), 1);
@@ -88,9 +99,7 @@ static int __INIT__ omap3_display_init(void)
 	if (ret < 0)
 		goto error;
 #else
-	ret = display_config(disp, omap3_set_vmode);
-	if (ret < 0)
-		return ret;
+	disp->set_vmode = omap3_set_vmode;
 #endif
 
 	ret = display_register(disp);

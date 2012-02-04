@@ -79,13 +79,11 @@ static int __INIT__ s3c6410_display_init(void)
 	disp = display_create();
 	// if NULL
 
-	ret = display_config(disp, s3c6410_set_vmode);
-	if (ret < 0)
-		return ret;
+	disp->set_vmode = s3c6410_set_vmode;
 
-	display_register(disp);
+	ret = display_register(disp);
 
-	return 0;
+	return ret;
 }
 
 module_init(s3c6410_display_init);

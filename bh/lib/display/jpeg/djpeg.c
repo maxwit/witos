@@ -1,3 +1,6 @@
+#include <stdio.h>
+#include <malloc.h>
+#include <string.h>
 #include <djpeg/djpeg.h>
 
 #define WIDTHBYTES(i)    ((i + 31) / 32 * 4)
