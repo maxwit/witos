@@ -1,3 +1,7 @@
+#include <io.h>
+#include <init.h>
+#include <errno.h>
+#include <malloc.h>
 #include <flash/nand.h>
 
 static struct nand_oob_layout g_s3c24x_oob16_layout =

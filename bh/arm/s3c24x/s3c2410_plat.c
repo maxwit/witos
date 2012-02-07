@@ -1,4 +1,6 @@
+#include <io.h>
 #include <irq.h>
+#include <init.h>
 
 static int __INIT__ s3c2410_init(void)
 {

@@ -2,6 +2,7 @@
  *  comment here
  */
 
+#include <io.h>
 #include <arm/s3c24x0.h>
 
 #define s3c24x0_wdt_writel(reg, val) \

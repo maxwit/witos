@@ -1,4 +1,9 @@
+#include <init.h>
+#include <list.h>
 #include <spi.h>
+#include <malloc.h>
+#include <string.h>
+#include <errno.h>
 
 #define MAX_SPI 10
 

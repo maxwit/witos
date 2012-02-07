@@ -1,3 +1,4 @@
+#include <io.h>
 #include <irq.h>
 #include <timer.h>
 #include <arm/s3c24x0.h>

@@ -1,4 +1,7 @@
+#include <io.h>
+#include <init.h>
 #include <irq.h>
+#include <assert.h>
 
 static void s3c6410_irq_ack(__u32 irq);
 static void s3c6410_irq_mask(__u32 irq);

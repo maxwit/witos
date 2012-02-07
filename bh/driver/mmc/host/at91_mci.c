@@ -104,7 +104,7 @@ static int __INIT__ at91_mci_init(void)
 #ifdef CONFIG_AT91SAM9261
 	at91_clock_enable(PID_MCI);
 #elif defined(CONFIG_AT91SAM9263)
-#warning
+//#warning
 	at91_clock_enable(PID_MCI1);
 #endif
 

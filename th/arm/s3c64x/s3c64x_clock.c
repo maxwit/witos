@@ -1,3 +1,4 @@
+#include <io.h>
 #include <arm/s3c6410.h>
 
 // init clock, gpio, wdt, etc.

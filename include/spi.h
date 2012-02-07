@@ -1,5 +1,7 @@
 #pragma once
 
+#include <list.h>
+
 struct spi_slave;
 
 struct spi_master {

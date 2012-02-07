@@ -2,6 +2,7 @@
 #include <init.h>
 #include <stdio.h>
 #include <errno.h>
+#include <assert.h>
 #include <graphic/display.h>
 
 #define lcd_6410_readl(reg) \

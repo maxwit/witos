@@ -1,3 +1,5 @@
+#include <io.h>
+#include <delay.h>
 #include <arm/s3c24x0.h>
 #include <uart/uart.h>
 

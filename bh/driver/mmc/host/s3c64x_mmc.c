@@ -1,3 +1,7 @@
+#include <io.h>
+#include <init.h>
+#include <errno.h>
+#include <delay.h>
 #include <mmc/mmc.h>
 //#define CONFIG_MMC_DEBUG
 #ifdef CONFIG_MMC_DEBUG
@@ -261,4 +265,3 @@ static int s3c6410_mmc_init(void)
 #ifndef CONFIG_GTH
 module_init(s3c6410_mmc_init);
 #endif
-

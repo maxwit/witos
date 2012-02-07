@@ -1,7 +1,12 @@
+#include <io.h>
+#include <init.h>
 #include <timer.h>
+#include <irq.h>
+#include <assert.h>
+#include <string.h>
+#include <malloc.h>
 #include <net/net.h>
 #include <net/mii.h>
-#include <irq.h>
 
 #define EMAC_MPE       (1 << 4)
 #define EMAC_IDLE      (1 << 2)
@@ -88,6 +93,8 @@ static int at91_emac_send(struct net_device *ndev, struct sock_buff *skb)
 	ndev->stat.tx_packets++;
 
 	unlock_irq_psr(ulFlag);
+
+	return 0;
 }
 
 static int at91_emac_recv(struct net_device * ndev)
@@ -231,7 +238,7 @@ static void __INIT__ at91_emac_init(struct at91_emac *emac)
 
 static int at91_emac_set_mac(struct net_device *ndev, const __u8 mac_addr[])
 {
-	at91_emac_writel(EMAC_SA1B, *(__u32 *)ndev->mac_addr);
+	// at91_emac_writel(EMAC_SA1B, *(__u32 *)(ndev->mac_addr + 0));
 	at91_emac_writel(EMAC_SA1T, *(__u16 *)(ndev->mac_addr + 4));
 
 	return 0;

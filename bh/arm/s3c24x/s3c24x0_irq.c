@@ -1,4 +1,8 @@
+#include <io.h>
 #include <irq.h>
+#include <init.h>
+#include <stdio.h>
+#include <bitops.h>
 #include <arm/s3c24x0.h>
 
 #define EXTINT_OFF       (IRQ_EINT4 - 4)
@@ -76,13 +80,12 @@ static void s3c24x0_ext_mask(__u32 irq)
 static void s3c24x0_ext_ack(__u32 irq)
 {
 	__u32 req;
-	__u32 bit;
-
-	bit = 1UL << (irq - EXTINT_OFF);
 
 	req = readl(VA(S3C2410_EINTPEND));
-
 	writel(VA(S3C2410_EINTPEND), req);
+
+	// __u32 bit;
+	// bit = 1UL << (irq - EXTINT_OFF);
 	// writel(VA(S3C2410_EINTPEND), bit);
 
 	// fixme

@@ -1,3 +1,4 @@
+#include <io.h>
 #include <arm/s3c24x0.h>
 
 static void s3c24x_reset(void)

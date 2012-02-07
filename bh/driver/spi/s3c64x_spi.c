@@ -1,4 +1,8 @@
+#include <io.h>
 #include <spi.h>
+#include <init.h>
+#include <delay.h>
+#include <stdio.h>
 
 #define USE_PKG_CNT
 #define STEP_LEN 1

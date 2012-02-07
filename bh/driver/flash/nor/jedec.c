@@ -1,4 +1,7 @@
 #include <spi.h>
+#include <init.h>
+#include <errno.h>
+#include <stdio.h>
 
 #define JEDEC_READ_ID   0x9F
 

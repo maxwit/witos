@@ -1,3 +1,4 @@
+#include <io.h>
 #include <flash/nand.h>
 
 #define s3c24x_nfc_readl(reg) \
