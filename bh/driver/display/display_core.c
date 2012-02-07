@@ -16,7 +16,7 @@ static __u16 RGB24toRGB16(__u8 r, __u8 g, __u8 b)
 }
 #endif
 
-static void draw_logo(void * const video_buff, __u32 width, __u32 height, pixel_format_t pix_format)
+static void draw_logo(void * const video_buff, __u32 width, __u32 height, pix_fmt_t pix_format)
 {
 	int i;
 	void *vbuff = video_buff; // fixme
@@ -155,41 +155,6 @@ static void draw_logo(void * const video_buff, __u32 width, __u32 height, pixel_
 #endif
 }
 
-void *video_mem_alloc(unsigned long *phy_addr, const struct lcd_vmode *vm, pixel_format_t pix_format)
-{
-	void *buff;
-	__u32 size = vm->width * vm->height;
-
-	switch (pix_format) {
-	case PIX_RGB15:
-	case PIX_RGB16:
-		size *= 2;
-		break;
-
-	case PIX_RGB24:
-	case PIX_RGB32:
-		size *= 4;
-		break;
-
-	default:
-		BUG();
-		return NULL;
-	}
-
-	buff = dma_alloc_coherent(size, phy_addr);
-	if (NULL == buff) {
-		DPRINT("%s() line %d: no free memory (size = %d)!\n", __func__, __LINE__, size);
-		return NULL;
-	}
-
-	DPRINT("DMA: addr = 0x%08x, size = 0x%08x\n", phy_addr, size);
-
-	// fixme: move to upper layer?
-	draw_logo(buff, vm->width, vm->height, pix_format);
-
-	return buff;
-}
-
 struct display *display_create(void)
 {
 	struct display *disp;
@@ -214,19 +179,46 @@ struct display *display_create(void)
 	return disp;
 }
 
+void display_destroy(struct display *disp)
+{
+	free(disp);
+}
+
 static int display_config(struct display *disp)
+{
+	int ret;
+	char attr_val[CONF_VAL_LEN];
+
+	ret = conf_get_attr("display.lcd.pixel", attr_val);
+	if (ret < 0)
+		disp->pix_fmt = PIX_RGB16;
+	else if (!strcasecmp(attr_val, "RGB15"))
+		disp->pix_fmt = PIX_RGB15;
+	else if (!strcasecmp(attr_val, "RGB16"))
+		disp->pix_fmt = PIX_RGB16;
+	else {
+		DPRINT("%s(): fail to get lcd pixel format\n", __func__);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+int display_register(struct display* disp)
 {
 	int ret;
 	void *va;
 	unsigned long dma;
 	const struct lcd_vmode *vm;
 	char attr_val[CONF_VAL_LEN];
-	pixel_format_t pixel_format;
+	size_t size;
 
 	if (!disp->set_vmode)
 		return -EINVAL;
 
-	if (conf_get_attr("display.lcd.model", attr_val) < 0) {
+	// fixme
+	ret = conf_get_attr("display.lcd.model", attr_val);
+	if (ret < 0) {
 		DPRINT("%s(): fail to get lcd model\n", __func__);
 		return -EINVAL;
 	}
@@ -237,44 +229,45 @@ static int display_config(struct display *disp)
 		return -ENOENT;
 	}
 
-	ret = conf_get_attr("display.lcd.pixel", attr_val);
-	if (ret < 0)
-		pixel_format = PIX_RGB24;
-	else if (!strcasecmp(attr_val, "RGB15"))
-		pixel_format = PIX_RGB15;
-	else if (!strcasecmp(attr_val, "RGB16"))
-		pixel_format = PIX_RGB16;
-	else {
-		DPRINT("%s(): fail to get lcd pixel format\n", __func__);
-		return -EINVAL;
-	}
-
-	va = video_mem_alloc(&dma, vm, pixel_format);
-	if(va == NULL) {
-		printf("Fail to dma alloc \n");
-		return -ENOMEM;
-	}
-
-	DPRINT("DMA = 0x%08x, 0x%p\n", dma, va);
-
-	// disp->mmio = VA(LCD_BASE);
-	disp->video_mem_va = va;
-	disp->video_mem_pa = dma;
-	disp->pix_fmt      = pixel_format;
-
-	ret = disp->set_vmode(disp, vm);
-	// ...
-
-	return ret;
-}
-
-int display_register(struct display* disp)
-{
-	int ret;
-
 	ret = display_config(disp);
 	if (ret < 0)
 		return ret;
+
+	size = vm->width * vm->height;
+
+	switch (disp->pix_fmt) {
+	case PIX_RGB15:
+	case PIX_RGB16:
+		size *= 2;
+		break;
+
+	case PIX_RGB24:
+	case PIX_RGB32:
+		size *= 4;
+		break;
+
+	default:
+		BUG();
+	}
+
+	va = dma_alloc_coherent(size, &dma);
+	if (NULL == va) {
+		GEN_DBG("no free memory (size = %d)!\n", __func__, __LINE__, size);
+		return -ENOMEM;
+	}
+
+	DPRINT("DMA: addr = 0x%08x, size = 0x%08x\n", dma, size);
+
+	disp->video_mem_va = va;
+	disp->video_mem_pa = dma;
+
+	draw_logo(va, vm->width, vm->height, disp->pix_fmt);
+
+	ret = disp->set_vmode(disp, vm);
+	if (ret < 0)
+		return ret;
+
+	disp->video_mode = (void *)vm; // fixme
 
 	g_system_display = disp;
 

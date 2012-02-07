@@ -1,3 +1,7 @@
+#include <io.h>
+#include <init.h>
+#include <stdio.h>
+#include <errno.h>
 #include <graphic/display.h>
 
 #define INVVD         8
@@ -21,18 +25,8 @@ static inline void at91_lcdc_writel(int reg, int val)
 	writel(VA(AT91SAM926X_PA_LCDC + reg), val);
 }
 
-static int at91sam9261_lcdc_init(void)
+static int at91_set_vmode(struct display *disp, const struct lcd_vmode *vm)
 {
-	__u32 video_buff_dma;
-	__u16 *video_buff_cpu;
-	const struct lcd_vmode *vm;
-
-	vm = lcd_get_vmode_by_id(CONFIG_LCD_ID);
-	if (NULL == vm) {
-		printf("No LCD video mode matched!\n");
-		return -ENOENT;
-	}
-
 	writel(VA(AT91SAM926X_PA_PIOB + PIO_PDR), 0xffffffff);
 	writel(VA(AT91SAM926X_PA_PIOB + PIO_ASR), 0xffff);
 	writel(VA(AT91SAM926X_PA_PIOB + PIO_BSR), 0x3f << 23);
@@ -59,18 +53,35 @@ static int at91sam9261_lcdc_init(void)
 	at91_lcdc_writel(LCDFRMCFG, (vm->width - 1) << 21 | (vm->height - 1));
 	at91_lcdc_writel(LCDFIFO, 501);
 
-	video_buff_cpu = video_mem_alloc(&video_buff_dma, vm, PIX_RGB15);
-	if (video_buff_cpu == NULL) {
-		printf("Fail to dma_alloc\n");
-		return -ENOMEM;
-	}
-
-	at91_lcdc_writel(DMABADDR1, video_buff_dma);
+	at91_lcdc_writel(DMABADDR1, disp->video_mem_pa);
 	at91_lcdc_writel(DMAFRMCFG, (4 -1) << 24
 			| (vm->width * vm->height) * ((PIX_BPP +7)/8)/4);
 	at91_lcdc_writel(DMACON, 1);
 
 	at91_lcdc_writel(PWRCON, 30 << 1 | 1);
+
+	return 0;
 }
 
-module_init(at91sam9261_lcdc_init);
+static int __INIT__ at91_lcdc_init(void)
+{
+	int ret;
+	struct display *disp;
+
+	disp = display_create();
+	// if null
+
+	disp->set_vmode = at91_set_vmode;
+
+	ret = display_register(disp);
+	if (ret < 0)
+		goto error;
+
+	return 0;
+
+error:
+	display_destroy(disp);
+	return ret;
+}
+
+module_init(at91_lcdc_init);

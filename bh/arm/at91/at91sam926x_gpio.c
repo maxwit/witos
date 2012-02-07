@@ -1,3 +1,4 @@
+#include <io.h>
 
 int at91_clock_enable(int nClockID)
 {
@@ -42,4 +43,3 @@ void  at91_gpio_conf_output(__u32 nPioIdx, __u32 mask, int isPullUp)
 	writel(VA(PIO_BASE(nPioIdx) + PIO_IDR), mask);
 	writel(VA(PIO_BASE(nPioIdx) + (isPullUp ? PIO_PUER : PIO_PUDR)), mask);
 }
-

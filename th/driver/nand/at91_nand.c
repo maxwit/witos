@@ -2,6 +2,7 @@
  *  comment here
  */
 
+#include <io.h>
 #include <flash/nand.h>
 
 int at91_nand_ready(struct nand_chip *nand)

@@ -1,4 +1,6 @@
+#include <io.h>
 #include <irq.h>
+#include <init.h>
 #include <arm/at91sam926x.h>
 
 #define  PIO_IRQ_OFFSET  2
@@ -24,15 +26,12 @@ static void at91sam926x_aic_umask(__u32 irq)
 	at91_aic_writel(AIC_IECR, 1 << irq);
 }
 
-//static int	At91set_trigger(__u32, __u32);
-
 static struct int_ctrl at91sam926x_aic_intctrl =
 {
-	.ack		= at91sam926x_aic_ack,
-	.mask		= at91sam926x_aic_mask,
-	.mack    = at91sam926x_aic_mack,
-	.umask		= at91sam926x_aic_umask,
-	//	.set_trigger	= At91Aicset_trigger,
+	.ack   = at91sam926x_aic_ack,
+	.mask  = at91sam926x_aic_mask,
+	.mack  = at91sam926x_aic_mack,
+	.umask = at91sam926x_aic_umask,
 };
 
 static void at91sam926x_gpio_mask(__u32 irq)
@@ -58,7 +57,7 @@ static void at91sam926x_gpio_umask(__u32 irq)
 }
 
 static struct int_ctrl at91sam926x_gpio_intctrl = {
-	.mask   = at91sam926x_gpio_mask,
+	.mask  = at91sam926x_gpio_mask,
 	.umask = at91sam926x_gpio_umask,
 };
 

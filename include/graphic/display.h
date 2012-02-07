@@ -7,7 +7,8 @@ typedef enum {
 	PIX_RGB16,
 	PIX_RGB24,
 	PIX_RGB32,
-} pixel_format_t;
+	PIX_MAX,
+} pix_fmt_t;
 
 struct lcd_vmode {
 	const char *model;
@@ -20,13 +21,13 @@ struct lcd_vmode {
 #if 0
 struct plat_lcd_info {
 	const char *model;
-	pixel_format_t pix_format;
+	pix_fmt_t pix_format;
 };
 #endif
 
 const struct lcd_vmode *lcd_get_vmode_by_id(int lcd_id);
 const struct lcd_vmode *lcd_get_vmode_by_name(const char *model);
-void *video_mem_alloc(unsigned long *phy_addr, const struct lcd_vmode *vm, pixel_format_t pix_fmt);
+void *video_mem_alloc(unsigned long *phy_addr, const struct lcd_vmode *vm, pix_fmt_t pix_fmt);
 
 //
 struct display {
@@ -34,12 +35,13 @@ struct display {
 	void *video_mem_va;
 	__u32 video_mem_pa;
 
-	pixel_format_t pix_fmt;
+	pix_fmt_t pix_fmt;
 	struct lcd_vmode *video_mode;
 
 	int (*set_vmode)(struct display *, const struct lcd_vmode *);
 };
 
 struct display* display_create(void);
+void display_destroy(struct display *disp);
 int display_register(struct display* disp);
 struct display* get_system_display(void);

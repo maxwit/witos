@@ -1,4 +1,7 @@
+#include <io.h>
+#include <init.h>
 #include <stdio.h>
+#include <errno.h>
 #include <graphic/display.h>
 
 #define lcd_6410_readl(reg) \
@@ -52,8 +55,6 @@ static int s3c6410_set_vmode(struct display *disp, const struct lcd_vmode *vm)
 	lcd_6410_writel(VIDW00ADD1B0, (dma & 0xffffff) + vm->width * vm->height * bpp);
 	// lcd_6410_writel(VIDW00ADD2, vm->width * 4);
 
-	disp->video_mode = (struct lcd_vmode *)vm;
-
 	return 0;
 }
 
@@ -82,7 +83,13 @@ static int __INIT__ s3c6410_display_init(void)
 	disp->set_vmode = s3c6410_set_vmode;
 
 	ret = display_register(disp);
+	if (ret < 0)
+		goto error;
 
+	return 0;
+
+error:
+	display_destroy(disp);
 	return ret;
 }
 

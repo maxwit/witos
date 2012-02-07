@@ -1,4 +1,8 @@
+#include <io.h>
 #include <irq.h>
+#include <init.h>
+#include <timer.h>
+#include <stdio.h>
 #include <arm/at91sam926x.h>
 
 static int at91sam926x_pit_isr(__u32 irq, void *pDev)

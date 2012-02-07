@@ -30,7 +30,9 @@ static int __INIT__ at91sam9263_init(void)
 #ifdef CONFIG_IRQ_SUPPORT
 	at91sam926x_interrupt_init();
 
+#ifdef CONFIG_TIMER_SUPPORT
 	at91sam926x_timer_init();
+#endif
 #endif
 
 	return 0;

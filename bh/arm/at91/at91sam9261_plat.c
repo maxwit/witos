@@ -1,3 +1,5 @@
+#include <io.h>
+#include <init.h>
 #include <arm/at91sam926x.h>
 
 // fixme
@@ -24,7 +26,9 @@ static int __INIT__ at91sam9261_init(void)
 
 	at91sam926x_interrupt_init();
 
+#ifdef CONFIG_TIMER_SUPPORT
 	at91sam926x_timer_init();
+#endif
 #endif
 
 	return 0;

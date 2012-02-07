@@ -40,7 +40,9 @@ static int __INIT__ s3c2440_init(void)
 	irq_set_trigger(IRQ_EINT9, IRQ_TYPE_RISING);
 	irq_set_trigger(IRQ_EINT7, IRQ_TYPE_RISING);
 
+#ifdef CONFIG_TIMER_SUPPORT
 	s3c24x0_timer_init();
+#endif
 #endif
 
 	return 0;

@@ -1,3 +1,7 @@
+#include <io.h>
+#include <init.h>
+#include <delay.h>
+#include <stdio.h>
 #include <mmc/mmc.h>
 
 #define AT91_MCI_BASE 0xFFFA8000
@@ -23,11 +27,12 @@
 #define at91_mci_write(reg, val) \
 		writel(VA(AT91_MCI_BASE + reg), val)
 
-static int at91_mci_cmd(struct mmc_host *mmc, __u32 cmd, __u32 arg)
+static int at91_mci_cmd(struct mmc_host *mmc, __u32 cmd, __u32 arg, RESP resp)
 {
 	__u32 cmdr = cmd | MAXLAT, stat;
 
 	switch (cmd) {
+#if 0
 	case MMC_CMD2:
 		cmdr |= RSPTYP136;
 		break;
@@ -38,6 +43,7 @@ static int at91_mci_cmd(struct mmc_host *mmc, __u32 cmd, __u32 arg)
 	case MMC_CMD55:
 		cmdr |= RSPTYP48;
 		break;
+#endif
 
 	default:
 		break;
@@ -71,6 +77,7 @@ static int at91_mci_cmd(struct mmc_host *mmc, __u32 cmd, __u32 arg)
 	return 0;
 }
 
+#if 0
 static int at91_mci_isr(__u32 irq, void *at91_mci)
 {
 	__u32 stat = at91_mci_read(AT91_MCI_SR);
@@ -81,6 +88,7 @@ static int at91_mci_isr(__u32 irq, void *at91_mci)
 
 	return 0;
 }
+#endif
 
 static struct mmc_host at91_mci =
 {
@@ -102,7 +110,8 @@ static int __INIT__ at91_mci_init(void)
 
 	at91_mci_write(AT91_MCI_CR, 1);
 	val = at91_mci_read(AT91_MCI_MR);
-	val = val & ~0xff | 124;
+	val &= ~0xff;
+	val |= 124;
 	at91_mci_write(AT91_MCI_MR, val);
 	at91_mci_write(AT91_MCI_SDCR, 0);
 

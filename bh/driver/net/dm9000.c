@@ -2,6 +2,10 @@
  *  comment here
  */
 
+#include <io.h>
+#include <init.h>
+#include <stdio.h>
+#include <errno.h>
 #include <net/net.h>
 #include <net/mii.h>
 #include <irq.h>
