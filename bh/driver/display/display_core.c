@@ -229,6 +229,8 @@ int display_register(struct display* disp)
 		return -ENOENT;
 	}
 
+	printf("using panel \"%s\"(%d X %d)\n", vm->model, vm->width, vm->height);
+
 	ret = display_config(disp);
 	if (ret < 0)
 		return ret;

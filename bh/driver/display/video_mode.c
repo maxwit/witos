@@ -42,7 +42,7 @@ static const struct lcd_vmode g_lcd_vm_tab[] =
 		.hpw = 6,
 	},
 	{
-		.model  = "qemu_display",
+		.model  = "VGA",
 		.width  = 800,
 		.height = 600,
 		.pix_clk = 9000000, // fixme!!!!

@@ -1,9 +1,17 @@
 #include <io.h>
 #include <arm/omap3.h>
 
+#define OSC_SYS_CLK  MHz(26)
+#define OSC_DIV      2
+#define SYS_CLK      (OSC_SYS_CLK / SYS_CLK)
+
 int soc_init(void)
 {
 	__u32 word;
+
+	// init SP
+	word = OMAP3_SRAM_BASE + OMAP3_SRAM_SIZE;
+	asm volatile ("mov sp, %0\n\t"::"r"(word));
 
 	// disable WDT
 	writel(VA(CM_FCLKEN_WKUP), 1 << 5);
@@ -14,14 +22,8 @@ int soc_init(void)
 	while (readl(VA(WDTTIMER2 + WWPS)));
 	writel(VA(WDTTIMER2 + WSPR), 0x5555);
 
-	// init SP
-	word = OMAP3_SRAM_BASE + OMAP3_SRAM_SIZE;
-
-	asm volatile ("mov sp, %0\n\t"::"r"(word));
-
 	// System clock input selection: 26MHz
-	word = 0x3;
-	writel(VA(PRM_CLKSEL), word);
+	writel(VA(PRM_CLKSEL), 0x3);
 
 	// Input clock divider 2.
 	word = readl(VA(PRM_CLKSRC_CTRL));
@@ -29,10 +31,10 @@ int soc_init(void)
 	word |= 0x2 << 6;
 	writel(VA(PRM_CLKSRC_CTRL), word);
 
-	//	CLKOUTX2 = (SYS_CLK * M ) / ([N+1])
-	//			    13	      250	     12
-	//	MPU_CLK	=  CLKOUTX2  / M2
-	//						    1
+	//  CLKOUTX2 = (SYS_CLK * M ) / (N+1)
+	//                          13      250     12
+	//  MPU_CLK    =  CLKOUTX2  / M2
+	//                            1
 	word = readl(VA(CM_CLKSEL1_PLL_MPU));
 	word &= ~(0x7FF << 8 | 0x7F);
 	word |= 0xFA << 8 | 0xC;
@@ -50,7 +52,7 @@ int soc_init(void)
 
 	// DPLL3.
 	// fCORE_CLK  = (fSYS_CLK x M) / ((N+1) * M2)
-	// 332	                  13	 332     12      1
+	// 332                      13     332     12      1
 	word = readl(VA(CM_CLKSEL1_PLL));
 	word &= ~(0x7FF << 16);
 	word |= 0x14C << 16;
