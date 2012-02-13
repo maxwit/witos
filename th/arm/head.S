@@ -110,6 +110,7 @@ handle_reset:
 
 Lm:
 	@ SDRAM is fully functional now :)
+	bl   i2c_disp_init
 	bl   main
 	b    hang
 

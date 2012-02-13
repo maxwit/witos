@@ -264,3 +264,50 @@
 // reset
 #define PRM_BASE        0x48307200
 #define PRM_RSTCTRL        0x50
+
+#define OMAP34XX_CORE_L4_IO_BASE	0x48000000
+#define OMAP34XX_WAKEUP_L4_IO_BASE	0x48300000
+#define OMAP34XX_L4_PER			0x49000000
+#define OMAP34XX_L4_IO_BASE		OMAP34XX_CORE_L4_IO_BASE
+/* CONTROL */
+#define OMAP34XX_CTRL_BASE		(OMAP34XX_L4_IO_BASE+0x2000)
+
+/* I2C base */
+#define I2C_BASE1		0x48070000
+
+#define I2C_REV         0x00
+#define I2C_IE          0x04
+#define I2C_STAT        0x08
+#define I2C_IV          0x0c
+#define I2C_BUF         0x14
+#define I2C_CNT         0x18
+#define I2C_DATA        0x1c
+#define I2C_SYSC        0x20
+#define I2C_CON         0x24
+#define I2C_OA          0x28
+#define I2C_SA          0x2c
+#define I2C_PSC         0x30
+#define I2C_SCLL        0x34
+#define I2C_SCLH        0x38
+#define I2C_SYSTEST     0x3c
+
+#define I2C_STAT_SBD    1 << 15
+#define I2C_STAT_BB     1 << 12
+#define I2C_STAT_ROVR   1 << 11
+#define I2C_STAT_XUDF   1 << 10
+#define I2C_STAT_AAS    1 << 9
+#define I2C_STAT_GC     1 << 5
+#define I2C_STAT_XRDY   1 << 4
+#define I2C_STAT_RRDY   1 << 3
+#define I2C_STAT_ARDY   1 << 2
+#define I2C_STAT_NACK   1 << 1
+#define I2C_STAT_AL     1 << 0
+
+#define I2C_CON_EN      1 << 15
+#define I2C_CON_BE      1 << 14
+#define I2C_CON_STB     1 << 11
+#define I2C_CON_MST     1 << 10
+#define I2C_CON_TRX     1 << 9
+#define I2C_CON_XA      1 << 8
+#define I2C_CON_STP     1 << 1
+#define I2C_CON_STT     1 << 0
