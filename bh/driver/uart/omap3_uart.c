@@ -39,16 +39,6 @@ static int omap3_uart_init(void)
 	word |= 0x9;
 	writel(VA(CM_CLKSEL3_PLL), word);
 
-	word = readl(VA(CM_CLKSEL2_PLL));
-	word &= ~(0x7FF << 8 | 0x7F);
-	word |= 0x1B0 << 8 | 0xC;
-	writel(VA(CM_CLKSEL2_PLL), word);
-
-	word = readl(VA(CM_CLKEN_PLL));
-	word &= ~(0xF << 20);
-	word |= 0x37 << 16;
-	writel(VA(CM_CLKEN_PLL), word);
-
 #if (CONFIG_UART_INDEX==0)
 	// Config UART1 GPIO
 	word = readl(VA(PADCONF_UART1_TX));

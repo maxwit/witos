@@ -19,8 +19,8 @@
 #define CM_CLKSEL1_PLL        CM_CLK_REG(0xD40)
 #define CM_CLKSEL2_PLL        CM_CLK_REG(0xD44)
 #define CM_CLKSEL3_PLL      CM_CLK_REG(0xD48)
-#define CM_FCLK_EN_DSS      CM_CLK_REG(0xE00)
-#define CM_ICLK_EN_DSS      CM_CLK_REG(0xE10)
+#define CM_FCLKEN_DSS      CM_CLK_REG(0xE00)
+#define CM_ICLKEN_DSS      CM_CLK_REG(0xE10)
 #define CM_CLKSEL_DSS       CM_CLK_REG(0xE40)
 
 // fixme!

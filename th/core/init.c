@@ -11,14 +11,19 @@ extern struct loader_opt g_loader_begin[], g_loader_end[];
 
 static int load_gbios_bh(char key);
 
+int omap3_set_vmode(void);
+
 int main(void)
 {
 	int i;
 
 	read_cpu_id();
 
+	omap3_set_vmode();
+	while (1);
+
 #ifdef CONFIG_SDRAM_TESTING
-	volatile __u32 *p = (__u32 *)SDRAM_BASE;
+	volatile __u32 *p = VA(SDRAM_BASE);
 
 	while (p < (__u32 *)(SDRAM_BASE + SDRAM_SIZE)) {
 		__u32 val1 = *p, val2;

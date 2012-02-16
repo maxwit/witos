@@ -87,17 +87,18 @@ int soc_init(void)
 	word |= 0x7;
 	writel(VA(CM_CLKEN_PLL), word);
 
+	// PLL4
+	word = readl(VA(CM_CLKSEL2_PLL));
+	word &= ~(0x7FF << 8 | 0x7F);
+	word |= 0x1B0 << 8 | 0xC;
+	writel(VA(CM_CLKSEL2_PLL), word);
+
+	word = readl(VA(CM_CLKEN_PLL));
+	word &= ~(0xF << 20);
+	word |= 0x37 << 16;
+	writel(VA(CM_CLKEN_PLL), word);
+
 	//
-#if 1
-	word = readl(VA(CM_ICLKEN_WKUP));
-	word |= 3;
-	writel(VA(CM_ICLKEN_WKUP), word);
-
-	word = readl(VA(CM_FCLKEN_WKUP));
-	word |= 1;
-	writel(VA(CM_FCLKEN_WKUP), word);
-#endif
-
 	word = readl(VA(CM_CLKSEL_PER));
 	word |= 1 << 0;
 	writel(VA(CM_CLKSEL_PER), word);
