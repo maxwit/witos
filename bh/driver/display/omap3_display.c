@@ -73,8 +73,8 @@ static int __INIT__ omap3_display_init(void)
 	// if NULL
 
 	// enable clock
-	writel(VA(CM_FCLK_EN_DSS), 7);
-	writel(VA(CM_ICLK_EN_DSS), 1);
+	writel(VA(CM_FCLKEN_DSS), 7);
+	writel(VA(CM_ICLKEN_DSS), 1);
 	writel(VA(CM_CLKEN_PLL), 0x7 << 16);
 
 	// reset

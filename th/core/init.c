@@ -20,7 +20,6 @@ int main(void)
 	read_cpu_id();
 
 	omap3_set_vmode();
-	while (1);
 
 #ifdef CONFIG_SDRAM_TESTING
 	volatile __u32 *p = VA(SDRAM_BASE);
