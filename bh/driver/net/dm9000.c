@@ -236,7 +236,7 @@ static int dm9000_link_change(struct net_device *ndev)
 static int dm9000_isr(__u32 irq, void *dev)
 {
 	__u8 irq_stat, rx_stat;
-	struct net_device* ndev = dev;
+	struct net_device *ndev = dev;
 
 	irq_stat = dm9000_readb(DM9000_ISR);
 	if (0 == irq_stat)
