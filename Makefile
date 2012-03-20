@@ -1,7 +1,7 @@
 -include .config
 
 MAJOR_VER = 2
-MINOR_VER = 5
+MINOR_VER = 0
 
 TOP_DIR := $(shell pwd)
 IMG_DIR := $(CONFIG_IMAGE_PATH)
@@ -14,7 +14,7 @@ LD = $(CROSS_COMPILE)ld
 OBJDUMP = $(CROSS_COMPILE)objdump
 OBJCOPY = $(CROSS_COMPILE)objcopy
 
-CFLAGS = -ffreestanding -nostdinc -nostdlib -fno-builtin -I$(TOP_DIR)/include -include g-bios.h -D__GBIOS_VER__="$(MAJOR_VER).$(MINOR_VER)" -D__LITTLE_ENDIAN -O2 -Wall -Werror -mno-thumb-interwork -march=$(CONFIG_ARCH_VER) -mabi=aapcs-linux -mpoke-function-name
+CFLAGS = -ffreestanding -nostdinc -nostdlib -fno-builtin -I$(TOP_DIR)/include -include g-bios.h -D__GBIOS_VER__=\"$(MAJOR_VER).$(MINOR_VER)\" -D__LITTLE_ENDIAN -O2 -Wall -Werror -mno-thumb-interwork -march=$(CONFIG_ARCH_VER) -mabi=aapcs-linux -mpoke-function-name
 
 #ifeq ($(CONFIG_DEBUG),y)
 #	CFLAGS += -DCONFIG_DEBUG
@@ -22,7 +22,7 @@ CFLAGS = -ffreestanding -nostdinc -nostdlib -fno-builtin -I$(TOP_DIR)/include -i
 
 # fxime: to add "-mtune=xxx, -mfloat-abi=xxx"
 
-ASFLAGS = $(CFLAGS) -D__ASSEMBLY__
+ASFLAGS = $(CFLAGS) -D__ASSEMBLY__ # -DCONFIG_GTH
 
 LDFLAGS = -m armelf_linux_eabi
 
@@ -39,27 +39,39 @@ DEFCONFIG_LIST = $(shell cd $(DEFCONFIG_PATH) && ls *_defconfig)
 
 include build/rules/common.mk
 
-dir-y := th bh
+dir-y := arch/$(CONFIG_ARCH) mm core fs driver lib app
 
-all: $(dir-y)
+subdir-objs := $(foreach n, $(dir-y), $(n)/$(builtin-obj))
 
-$(dir-y): include/autoconf.h
-	@make $(img_build)$@
+all: include/autoconf.h $(dir-y) g-bios.bin g-bios.dis
+	@echo
 
 include/autoconf.h: .config
 	@build/generate/autoconf.py $< $@
 	@sed -i -e '/CONFIG_CROSS_COMPILE/d' -e '/CONFIG_ARCH_VER\>/d'  $@
 	@sed -i '/^$$/d' $@
 
+g-bios.bin: g-bios.elf
+	$(OBJCOPY) -O binary -S $< $@
+
+g-bios.dis: g-bios.elf
+	$(OBJDUMP) -D $< > $@
+
+g-bios.elf: $(subdir-objs)
+	$(LD) $(LDFLAGS) -T arch/$(CONFIG_ARCH)/g-bios.lds -Ttext $(CONFIG_GBH_START_MEM) $^ -o $@
+
+$(dir-y):
+	@make $(obj_build)$@
+
+.PHONY: $(dir-y)
+
 # fixme
 $(DEFCONFIG_LIST):
 	@echo "configure for board \"$(@:%_defconfig=%)\""
-	@grep -w "^sysG" $(DEFCONFIG_PATH)/$(@:%_defconfig=%_sysconfig) || echo sysG > .sysconfig && echo >> .sysconfig
-	@cat $(DEFCONFIG_PATH)/$(@:%_defconfig=%_sysconfig) >> .sysconfig
 	@./build/generate/defconfig.py $@
 	@echo
 
-install: th/g-bios-th.bin bh/g-bios-bh.bin
+install: g-bios.bin
 	@mkdir -p $(IMG_DIR)
 	@for fn in $^; do \
 		cp -v $$fn $(IMG_DIR); \
@@ -68,9 +80,9 @@ install: th/g-bios-th.bin bh/g-bios-bh.bin
 
 clean:
 	@for dir in $(dir-y); do \
-		make $(img_build)$$dir clean; \
-		rm -vf $$dir/g-bios-$$dir.*; \
+		make $(obj_build)$$dir clean; \
 	 done
+	@rm -vf g-bios.*
 	@echo
 
 distclean: clean
@@ -78,6 +90,6 @@ distclean: clean
 	@echo
 
 clear:
-	@./utility/clearup.sh
+	@./build/clearup.sh
 
 .PHONY: $(dir-y)

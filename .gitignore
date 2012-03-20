@@ -5,7 +5,7 @@ build/menuconfig/Makefile
 build/menuconfig/menuconfig
 build/menuconfig/menuconfig.pro
 build/menuconfig/moc_*.cpp
-g-bios-[tb]h.bin
+g-bios.bin
 logo.c
 confdata.c
 *.o
