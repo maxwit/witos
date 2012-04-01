@@ -4,7 +4,7 @@
 #include <platform.h>
 #include <board.h>
 
-static int __INIT__ omap3_init(void)
+static int __init omap3_init(void)
 {
 	int ret;
 	__u32 val;
@@ -45,7 +45,7 @@ static int __INIT__ omap3_init(void)
 	return ret;
 }
 
-PLAT_INIT(omap3_init);
+plat_init(omap3_init);
 
 static void omap3_reset(void)
 {

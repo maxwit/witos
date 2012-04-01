@@ -279,7 +279,7 @@ static int dm9000_poll(struct net_device *ndev)
 }
 #endif
 
-static int __INIT__ dm9000_init(void)
+static int __init dm9000_init(void)
 {
 	int ret;
 	__u16 ven_id, dev_id;

@@ -109,9 +109,9 @@ int disk_drive_register(struct disk_drive *drive)
 	return ret;
 }
 
-static int __INIT__ disk_drive_init(void)
+static int __init disk_drive_init(void)
 {
 	return 0;
 }
 
-SUBSYS_INIT(disk_drive_init);
+subsys_init(disk_drive_init);

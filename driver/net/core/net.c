@@ -804,13 +804,13 @@ bool check_ip_addr(const char *ip, int ver)
 	return false;
 }
 
-static int __INIT__ net_init(void)
+static int __init net_init(void)
 {
-	void __INIT__ socket_init(void);
+	void __init socket_init(void);
 
 	socket_init();
 	return 0;
 }
 
-SUBSYS_INIT(net_init);
+subsys_init(net_init);
 #endif

@@ -298,7 +298,7 @@ static int lan9220_set_mac(struct net_device *ndev, const __u8 *mac)
 	return 0;
 }
 
-static int __INIT__ lan9220_probe(struct lan9220_chip *lan9220, int busw32)
+static int __init lan9220_probe(struct lan9220_chip *lan9220, int busw32)
 {
 	int i;
 	__u32 id;
@@ -316,7 +316,7 @@ static int __INIT__ lan9220_probe(struct lan9220_chip *lan9220, int busw32)
 	return -ENODEV;
 }
 
-static int __INIT__ lan9220_init(struct platform_device *pdev)
+static int __init lan9220_init(struct platform_device *pdev)
 {
 	int ret, irq;
 	unsigned long mem;
@@ -387,7 +387,7 @@ static struct platform_driver lan9220_driver = {
 	.init = lan9220_init,
 };
 
-static int __INIT__ lan9220_driver_init(void)
+static int __init lan9220_driver_init(void)
 {
 	return platform_driver_register(&lan9220_driver);
 }

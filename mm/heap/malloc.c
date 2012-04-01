@@ -39,7 +39,7 @@ static void inline region_set_size(struct mem_region *region, size_t size)
 	succ_region->pre_size = size;
 }
 
-static int __INIT__ __heap_init(unsigned long start, unsigned long end)
+static int __init __heap_init(unsigned long start, unsigned long end)
 {
 	struct mem_region *first, *tail;
 
@@ -63,7 +63,7 @@ static int __INIT__ __heap_init(unsigned long start, unsigned long end)
 	return 0;
 }
 
-int __INIT__ heap_init(void)
+int __init heap_init(void)
 {
 	unsigned long heap_start, heap_end;
 #ifdef CONFIG_NORMAL_SPACE

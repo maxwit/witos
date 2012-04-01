@@ -3,7 +3,7 @@
 #include <init.h>
 #include <arm/s3c24x0.h>
 
-static int __INIT__ s3c2440_init(void)
+static int __init s3c2440_init(void)
 {
 	__u32 val;
 
@@ -49,5 +49,5 @@ static int __INIT__ s3c2440_init(void)
 	return 0;
 }
 
-PLAT_INIT(s3c2440_init);
+plat_init(s3c2440_init);
 

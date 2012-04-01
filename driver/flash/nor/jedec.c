@@ -28,7 +28,7 @@ static int read_jedec_id(struct spi_slave *spi, __u8 *rx_buf)
 	return 0;
 }
 
-static int __INIT__ nor_flash_probe(void)
+static int __init nor_flash_probe(void)
 {
 	int i;
 	__u8 jedec_id[64];

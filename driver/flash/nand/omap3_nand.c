@@ -61,7 +61,7 @@ static int omap3_nand_correct_data(struct nand_chip *nand,
 	return -EIO;
 }
 
-static int __INIT__ omap3_nand_init(struct nand_ctrl *nfc)
+static int __init omap3_nand_init(struct nand_ctrl *nfc)
 {
 	writel(VA(GPMC_BASE + SYSCONFIG), 0x10);
 	writel(VA(GPMC_BASE + IRQENABLE), 0x0);
@@ -100,7 +100,7 @@ static struct nand_oob_layout g_omap3_oob64_layout = {
 	.free_region = {{26, 38}}
 };
 
-static int __INIT__ omap3_nand_probe(void)
+static int __init omap3_nand_probe(void)
 {
 	int ret;
 	struct nand_ctrl *nfc;

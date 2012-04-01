@@ -17,7 +17,7 @@ static int s3c24x0_pwm_isr(__u32 irq, void *dev)
 
 #define TEST_INS_NUM 100000
 
-int __INIT__ s3c24x0_timer_init(void)
+int __init s3c24x0_timer_init(void)
 {
 	int ret;
 

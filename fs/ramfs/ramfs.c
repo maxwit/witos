@@ -276,7 +276,7 @@ static struct file_system_type ramfs_fs_type = {
 	.umount = ramfs_umount,
 };
 
-static int __INIT__ ramfs_init(void)
+static int __init ramfs_init(void)
 {
 	return file_system_type_register(&ramfs_fs_type);
 }

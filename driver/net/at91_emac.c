@@ -171,7 +171,7 @@ static void at91_emac_mdio_write(struct net_device *ndev, __u8 addr, __u8 reg, _
 	while (!(at91_emac_readl(EMAC_NSR) & EMAC_IDLE));
 }
 
-static int __INIT__ at91_emac_init_ring(struct at91_emac *emac)
+static int __init at91_emac_init_ring(struct at91_emac *emac)
 {
 	int i;
 	__u32 dma_buff_base;
@@ -211,7 +211,7 @@ static int __INIT__ at91_emac_init_ring(struct at91_emac *emac)
 	return 0;
 }
 
-static void __INIT__ at91_emac_init(struct at91_emac *emac)
+static void __init at91_emac_init(struct at91_emac *emac)
 {
 	__u32 conf;
 
@@ -244,7 +244,7 @@ static int at91_emac_set_mac(struct net_device *ndev, const __u8 mac_addr[])
 	return 0;
 }
 
-static int __INIT__ at91_emac_probe(void)
+static int __init at91_emac_probe(void)
 {
 	int ret;
 	struct net_device *ndev;

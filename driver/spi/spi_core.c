@@ -136,7 +136,7 @@ struct spi_slave *get_spi_slave(char *name)
 	return NULL;
 }
 
-static int __INIT__ spi_init(void)
+static int __init spi_init(void)
 {
 	int i;
 
@@ -148,4 +148,4 @@ static int __INIT__ spi_init(void)
 	return 0;
 }
 
-SUBSYS_INIT(spi_init);
+subsys_init(spi_init);

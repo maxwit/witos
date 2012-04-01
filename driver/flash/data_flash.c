@@ -591,7 +591,7 @@ void DataFlashSpiInit(void)
 	while(!(pSpi->dwSPISR & AT91C_SPI_SPIENS));
 }
 
-static int __INIT__ DataFlashProbe(void)
+static int __init DataFlashProbe(void)
 {
 	struct DataFlash stTmpDataFlash;
 	__u8 status;

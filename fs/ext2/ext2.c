@@ -732,7 +732,7 @@ static struct file_system_type ext2_fs_type = {
 	.umount = ext2_umount,
 };
 
-static int __INIT__ ext2_init(void)
+static int __init ext2_init(void)
 {
 	return file_system_type_register(&ext2_fs_type);
 }

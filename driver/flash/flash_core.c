@@ -33,7 +33,7 @@ static int g_flash_count = 0;
  *
  */
 
-static int __INIT__ flash_parse_part(struct flash_chip *host,
+static int __init flash_parse_part(struct flash_chip *host,
 						struct part_attr *part,	const char *part_def)
 {
 	int i, ret = -EINVAL, index = 0;
@@ -147,7 +147,7 @@ static size_t remove_blank_space(const char *src, char *dst, size_t size)
 	return p - dst;
 }
 
-static int __INIT__ flash_scan_part(struct flash_chip *host,
+static int __init flash_scan_part(struct flash_chip *host,
 						struct part_attr part[])
 {
 	int ret;
@@ -302,9 +302,9 @@ int flash_unregister (struct flash_chip *flash)
 	return 0;
 }
 
-static int __INIT__ flash_init(void)
+static int __init flash_init(void)
 {
 	return 0;
 }
 
-SUBSYS_INIT(flash_init);
+subsys_init(flash_init);

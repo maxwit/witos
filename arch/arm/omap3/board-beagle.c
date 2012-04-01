@@ -5,7 +5,7 @@
 #include <platform.h>
 
 #ifdef CONFIG_SMSC91X
-static int __INIT__ smsc91x_device_init(struct platform_device *pdev)
+static int __init smsc91x_device_init(struct platform_device *pdev)
 {
 	__u32 val;
 
@@ -39,7 +39,7 @@ static struct platform_device *beagle_devices[] = {
 #endif
 };
 
-static int __INIT__ beagle_init(struct board_desc *board, const struct board_id *id)
+static int __init beagle_init(struct board_desc *board)
 {
 	int i, ret;
 
@@ -52,9 +52,4 @@ static int __INIT__ beagle_init(struct board_desc *board, const struct board_id 
 	return 0;
 }
 
-static struct board_id beagle_idt[] = {
-	BOARD_ID("beagle", 1546),
-	{}
-};
-
-BOARD_DESC("beagle", beagle_idt, beagle_init);
+BOARD_DESC("beagle", 1546, beagle_init);

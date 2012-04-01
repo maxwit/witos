@@ -66,7 +66,7 @@ __u32 read_irq_num(void)
 	return at91_aic_readl(AIC_IVR);
 }
 
-static void __INIT__ at91_aic_init(void)
+static void __init at91_aic_init(void)
 {
 	int irq;
 
@@ -101,7 +101,7 @@ static void at91sam926x_gpio_irqparse(struct int_pin *ipin, __u32 irq)
 	}
 }
 
-int __INIT__ at91sam926x_interrupt_init(void)
+int __init at91sam926x_interrupt_init(void)
 {
 	__u32 i, j;
 	__u32 irq;

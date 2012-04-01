@@ -18,7 +18,7 @@ static struct spi_slave mw61_spi_slave[] = {
 };
 #endif
 
-static int __INIT__ mw61_init(void)
+static int __init mw61_init(void)
 {
 	__u32 val;
 	struct spi_slave  *spi_slave;
@@ -92,7 +92,7 @@ static int __INIT__ mw61_init(void)
 	return 0;
 }
 
-PLAT_INIT(mw61_init);
+plat_init(mw61_init);
 
 static void s3c6410_reset(void)
 {

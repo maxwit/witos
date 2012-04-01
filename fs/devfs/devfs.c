@@ -256,7 +256,7 @@ static struct file_system_type devfs_fs_type = {
 	.umount = devfs_umount,
 };
 
-static int __INIT__ devfs_init(void)
+static int __init devfs_init(void)
 {
 	return file_system_type_register(&devfs_fs_type);
 }

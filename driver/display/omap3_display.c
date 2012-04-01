@@ -63,7 +63,7 @@ static int omap3_set_vmode(struct display *disp, const struct lcd_vmode *vm)
 	return 0;
 }
 
-static int __INIT__ omap3_display_init(void)
+static int __init omap3_display_init(void)
 {
 	int ret;
 	__u32 val;

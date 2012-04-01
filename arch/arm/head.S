@@ -68,15 +68,18 @@ handle_reset:
 	ldr   pc, =skip_move
 
 skip_move:
+#ifdef CONFIG_IRQ_SUPPORT
 	@ fixme for ROM
+#ifdef INT_VECTOR_RAM_BASE
+	ldr   r0, =INT_VECTOR_RAM_BASE
+#else
 	mov   r0, #0
+#endif
 	ldr   r1, =_start
 	cmp   r1, r0
 	beq   bss_init
-#ifdef CONFIG_IRQ_SUPPORT
 	mov   r2, #(handle_reset - _start)
 #ifdef CONFIG_OMAP3
-	ldr   r0, =INT_VECTOR_RAM_BASE
 	add   r1, r1, #4
 	sub   r2, r2, #4
 #endif

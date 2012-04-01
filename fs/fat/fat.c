@@ -359,7 +359,7 @@ static struct file_system_type fat_fs_type = {
 	.lookup = fat_lookup,
 };
 
-static int __INIT__ fat_init(void)
+static int __init fat_init(void)
 {
 	return file_system_type_register(&fat_fs_type);
 }

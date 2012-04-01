@@ -53,7 +53,7 @@ static int s3c24x_set_vmode(struct display *disp, const struct lcd_vmode *vm)
 	return 0;
 }
 
-static int __INIT__ s3c24x_lcdc_init(void)
+static int __init s3c24x_lcdc_init(void)
 {
 	int ret;
 	struct display *disp;

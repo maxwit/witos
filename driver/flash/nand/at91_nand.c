@@ -5,7 +5,7 @@
 #include <flash/flash.h>
 #include <flash/nand.h>
 
-static int __INIT__ at91_nand_init(void)
+static int __init at91_nand_init(void)
 {
 	__u32 val;
 
@@ -79,7 +79,7 @@ static int at91_nand_ready(struct nand_chip *nand)
 #endif
 }
 
-static int __INIT__ at91_nand_probe(void)
+static int __init at91_nand_probe(void)
 {
 	int ret;
 	struct nand_ctrl *nfc;

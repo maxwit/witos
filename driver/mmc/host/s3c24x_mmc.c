@@ -157,7 +157,7 @@ int s3c2440_send_cmd(struct mmc_host *mmc, __u32 index, __u32 arg, RESP resp)
 
 }
 
-static int __INIT__ s3c2440_mmc_init(void)
+static int __init s3c2440_mmc_init(void)
 {
 	__u32 val;
 

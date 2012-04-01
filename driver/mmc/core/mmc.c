@@ -243,9 +243,9 @@ L1:
 	return ret;
 }
 
-static int __INIT__ mmc_init(void)
+static int __init mmc_init(void)
 {
 	return 0;
 }
 
-SUBSYS_INIT(mmc_init);
+subsys_init(mmc_init);

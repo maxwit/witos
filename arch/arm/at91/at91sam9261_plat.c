@@ -9,7 +9,7 @@
 #define CONFIG_DM9000_PIO_IRQ    PIOC
 #define CONFIG_DM9000_PIN_IRQ    (1 << 11)
 
-static int __INIT__ at91sam9261_init(void)
+static int __init at91sam9261_init(void)
 {
 	writel(VA(AT91SAM926X_PA_PMC + PMC_PCER), 0x11);
 
@@ -34,4 +34,4 @@ static int __INIT__ at91sam9261_init(void)
 	return 0;
 }
 
-PLAT_INIT(at91sam9261_init);
+plat_init(at91sam9261_init);

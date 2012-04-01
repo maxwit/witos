@@ -170,7 +170,7 @@ static int s3c6410_spi_transfer(struct spi_slave *slave)
 	return 0;
 }
 
-static int __INIT__ s3c6410_spi_init(void)
+static int __init s3c6410_spi_init(void)
 {
 	// __u32 val;
 	struct spi_master *master;
@@ -192,4 +192,4 @@ static int __INIT__ s3c6410_spi_init(void)
 	return 0;
 }
 
-POSTSUBS_INIT(s3c6410_spi_init);
+postsubs_init(s3c6410_spi_init);

@@ -95,7 +95,7 @@ static struct mmc_host at91_mci =
 	.send_cmd = at91_mci_cmd,
 };
 
-static int __INIT__ at91_mci_init(void)
+static int __init at91_mci_init(void)
 {
 	__u32 val;
 

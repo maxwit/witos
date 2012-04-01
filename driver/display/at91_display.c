@@ -63,7 +63,7 @@ static int at91_set_vmode(struct display *disp, const struct lcd_vmode *vm)
 	return 0;
 }
 
-static int __INIT__ at91_lcdc_init(void)
+static int __init at91_lcdc_init(void)
 {
 	int ret;
 	struct display *disp;

@@ -35,7 +35,7 @@ static int s3c24x_nand_calc_hwecc(struct nand_chip *nand, const __u8 *data, __u8
 static int s3c24x_nand_correct_data(struct nand_chip *nand,
 								__u8 *data, __u8 *ecc_read, __u8 *ecc_calc);
 
-static int __INIT__ s3c24x_nand_probe(void);
+static int __init s3c24x_nand_probe(void);
 
 static int s3c24x_nand_is_ready(struct nand_chip *nand)
 {
@@ -148,7 +148,7 @@ static int s3c24x_nand_init(struct nand_ctrl *nfc)
 	return 0;
 }
 
-static int __INIT__ s3c24x_nand_probe(void)
+static int __init s3c24x_nand_probe(void)
 {
 	int i, ret;
 #ifdef CONFIG_S3C2410

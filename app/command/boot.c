@@ -281,7 +281,7 @@ int main(int argc, char *argv[])
 	char config[CONF_VAL_LEN], cmd_line[512];
 	void *initrd;
 	LINUX_KERNEL_ENTRY linux_kernel;
-	const struct board_id *board;
+	const struct board_desc *board;
 	struct tag *arm_tag;
 
 	while ((opt = getopt(argc, argv, "v::h")) != -1) {

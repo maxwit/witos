@@ -5,7 +5,7 @@
 #include <platform.h>
 
 #ifdef CONFIG_LAN9220
-static int __INIT__ lan9220_device_init(struct platform_device *pdev)
+static int __init lan9220_device_init(struct platform_device *pdev)
 {
 	__u16 val;
 
@@ -51,7 +51,7 @@ static struct platform_device *evm3530_devices[] = {
 #endif
 };
 
-static int __INIT__ evm3530_init(struct board_desc *board, const struct board_id *id)
+static int __init evm3530_init(struct board_desc *board)
 {
 	int i, ret;
 
@@ -64,9 +64,4 @@ static int __INIT__ evm3530_init(struct board_desc *board, const struct board_id
 	return 0;
 }
 
-static struct board_id evm3530_idt[] = {
-	BOARD_ID("EVM3530", 1535),
-	{}
-};
-
-BOARD_DESC("evm3530", evm3530_idt, evm3530_init);
+BOARD_DESC("evm3530", 1535, evm3530_init);

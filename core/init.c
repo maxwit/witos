@@ -25,7 +25,7 @@ static const char banner[] = "\n\n" // CLRSCREEN
 #endif
 	;
 
-static int __INIT__ system_init(void)
+static int __init system_init(void)
 {
 	int count;
 	init_func_t *init_call;
@@ -61,7 +61,7 @@ static int __INIT__ system_init(void)
 	return 0;
 }
 
-static void __INIT__ auto_boot(void)
+static void __init auto_boot(void)
 {
 	int time_out = 3;
 	char *argv[] = {"boot"};
@@ -92,7 +92,7 @@ static void __INIT__ auto_boot(void)
 	exec(ARRAY_ELEM_NUM(argv), argv);
 }
 
-static int __INIT__ mount_root()
+static int __init mount_root()
 {
 	int ret;
 

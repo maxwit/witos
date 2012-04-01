@@ -150,7 +150,7 @@ static int cs89x0_poll(struct net_device *ndev)
 }
 #endif
 
-static int __INIT__ cs89x0_init(void)
+static int __init cs89x0_init(void)
 {
 	int ret;
 	__u16 ven_id, dev_id, val, line_st;

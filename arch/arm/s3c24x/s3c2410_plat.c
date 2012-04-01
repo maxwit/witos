@@ -2,7 +2,7 @@
 #include <irq.h>
 #include <init.h>
 
-static int __INIT__ s3c2410_init(void)
+static int __init s3c2410_init(void)
 {
 #ifdef CONFIG_IRQ_SUPPORT
 	s3c24x0_interrupt_init();
@@ -17,4 +17,4 @@ static int __INIT__ s3c2410_init(void)
 	return 0;
 }
 
-PLAT_INIT(s3c2410_init);
+plat_init(s3c2410_init);

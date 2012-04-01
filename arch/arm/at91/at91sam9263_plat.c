@@ -4,7 +4,7 @@
 
 #define CONFIG_PIO_PC10 (1 << 10)
 
-static int __INIT__ at91sam9263_init(void)
+static int __init at91sam9263_init(void)
 {
 	__u32 mask;
 
@@ -40,4 +40,4 @@ static int __INIT__ at91sam9263_init(void)
 	return 0;
 }
 
-PLAT_INIT(at91sam9263_init);
+plat_init(at91sam9263_init);

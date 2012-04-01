@@ -140,7 +140,7 @@ struct int_ctrl s3c6410_intctl_edge = {
 	.umask = s3c6410_irq_umask,
 };
 
-int __INIT__ s3c6410_interrupt_init(void)
+int __init s3c6410_interrupt_init(void)
 {
 	int irq_num;
 

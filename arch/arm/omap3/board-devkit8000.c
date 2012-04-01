@@ -5,7 +5,7 @@
 #include <platform.h>
 
 #ifdef CONFIG_DM9000
-static int __INIT__ dm9000_device_init(struct platform_device *pdev)
+static int __init dm9000_device_init(struct platform_device *pdev)
 {
 	writew(VA(0x480020BA), 1 << 4 | 1 << 3 | 0);
 
@@ -37,7 +37,7 @@ static struct platform_device *devkit8000_devices[] = {
 #endif
 };
 
-static int __INIT__ devkit8000_init(struct board_desc *board, const struct board_id *id)
+static int __init devkit8000_init(struct board_desc *board)
 {
 	int i, ret;
 
@@ -50,9 +50,4 @@ static int __INIT__ devkit8000_init(struct board_desc *board, const struct board
 	return 0;
 }
 
-static struct board_id devkit8000_idt[] = {
-	BOARD_ID("DevKit8000", 2330),
-	{}
-};
-
-BOARD_DESC("devkit8000", devkit8000_idt, devkit8000_init);
+BOARD_DESC("devkit8000", 2330, devkit8000_init);

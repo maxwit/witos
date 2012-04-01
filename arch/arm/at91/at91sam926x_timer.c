@@ -17,7 +17,7 @@ static int at91sam926x_pit_isr(__u32 irq, void *pDev)
 	return IRQ_HANDLED;
 }
 
-int __INIT__ at91sam926x_timer_init(void)
+int __init at91sam926x_timer_init(void)
 {
 	int ret;
 

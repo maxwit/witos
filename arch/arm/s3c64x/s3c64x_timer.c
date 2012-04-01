@@ -22,7 +22,7 @@ static int s3c6410_timer_isr(__u32 irq, void *dev)
 	return IRQ_HANDLED;
 }
 
-int __INIT__ s3c6410_timer_init(void)
+int __init s3c6410_timer_init(void)
 {
 	__u32 val;
 	int ret;

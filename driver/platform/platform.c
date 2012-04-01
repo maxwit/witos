@@ -57,9 +57,9 @@ int platform_driver_register(struct platform_driver *plat_drv)
 	return driver_register(&plat_drv->drv);
 }
 
-static int __INIT__ platform_init(void)
+static int __init platform_init(void)
 {
 	return 0;
 }
 
-SUBSYS_INIT(platform_init);
+subsys_init(platform_init);

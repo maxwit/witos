@@ -3,9 +3,9 @@
 #include <types.h>
 
 #ifdef __GBIOS_VER__
-#define __INIT__           __attribute__ ((__section__(".code.init")))
+#define __init           __attribute__ ((__section__(".code.init")))
 #else
-#define __INIT__           __attribute__((constructor))
+#define __init           __attribute__((constructor))
 #endif
 
 #define __INIT_DATA__      __attribute__ ((__section__(".data.init")))
@@ -18,21 +18,21 @@
 #define __INIT_POSTSUBS__ INIT_CALL_LEVEL(3)
 #define __INIT_DRV__      INIT_CALL_LEVEL(4)
 
-#define ARCH_INIT(func) \
+#define arch_init(func) \
 	static __USED__ __INIT_ARCH__ init_func_t __initcall_##func = func
 
-#define PLAT_INIT(func) \
+#define plat_init(func) \
 	static __USED__ __INIT_PLAT__ init_func_t __initcall_##func = func
 
-#define SUBSYS_INIT(func) \
+#define subsys_init(func) \
 	static __USED__ __INIT_SUBS__ init_func_t __initcall_##func = func
 
-#define POSTSUBS_INIT(func) \
+#define postsubs_init(func) \
 		static __USED__ __INIT_POSTSUBS__ init_func_t __initcall_##func = func
 
 #ifdef __GBIOS_VER__
 #define module_init(func) \
-	static __USED__ __INIT_DRV__  init_func_t __initcall_##func = func
+	static __USED__ __INIT_DRV__ init_func_t __initcall_##func = func
 #else
 #define module_init(func)
 #endif

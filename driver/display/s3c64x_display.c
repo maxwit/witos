@@ -59,7 +59,7 @@ static int s3c6410_set_vmode(struct display *disp, const struct lcd_vmode *vm)
 	return 0;
 }
 
-static int __INIT__ s3c6410_display_init(void)
+static int __init s3c6410_display_init(void)
 {
 	int ret;
 	__u32 val;

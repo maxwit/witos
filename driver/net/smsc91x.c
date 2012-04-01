@@ -165,7 +165,7 @@ static int smsc91x_hw_init(void)
 
 }
 
-static int __INIT__ smsc91x_init(void)
+static int __init smsc91x_init(void)
 {
 	int ret;
 	__u16 chip_id;

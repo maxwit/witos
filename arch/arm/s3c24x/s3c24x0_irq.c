@@ -313,7 +313,7 @@ static void s3c24x0_parse_ext_irq(struct int_pin *ipin, __u32 irq)
 	}
 }
 
-int __INIT__ s3c24x0_interrupt_init(void)
+int __init s3c24x0_interrupt_init(void)
 {
 	int irq;
 
