@@ -8,7 +8,7 @@
 #include <flash/flash.h>
 
 // fixme
-static inline int __flash_read(struct flash_chip *flash, void *buff, int count, int start)
+static inline int __flash_read(struct mtd_info *mtd, void *buff, int count, int start)
 {
 	int ret;
 	__u32 ret_len;
@@ -51,7 +51,7 @@ static inline int __flash_read(struct flash_chip *flash, void *buff, int count, 
 	return 0;
 }
 
-static inline ssize_t __flash_write(struct flash_chip *flash, const void *buff, __u32 count, __u32 ppos)
+static inline ssize_t __flash_write(struct mtd_info *mtd, const void *buff, __u32 count, __u32 ppos)
 {
 	int ret = 0;
 	__u32 ret_len;
@@ -137,10 +137,10 @@ static int flash_open(struct file *fp, struct inode *inode)
 {
 	void *buff;
 	size_t size;
-	struct flash_chip *flash;
+	struct mtd_info *mtd;
 	struct block_buff *blk_buf = &fp->blk_buf;
 
-	flash = NULL; // container_of(inode, struct flash_chip, bdev);
+	flash = NULL; // container_of(inode, struct mtd_info, bdev);
 	assert(flash);
 
 	if (fp->flags == O_WRONLY || fp->flags == O_RDWR) {
@@ -168,7 +168,7 @@ static int flash_open(struct file *fp, struct inode *inode)
 }
 
 
-static int __flash_erase(struct flash_chip *flash, struct erase_opt *opt)
+static int __flash_erase(struct mtd_info *mtd, struct erase_opt *opt)
 {
 	int ret;
 #if 0
@@ -212,7 +212,7 @@ static int flash_ioctl(struct file *fp, int cmd, unsigned long arg)
 {
 	int ret;
 	FLASH_CALLBACK *callback;
-	struct flash_chip *flash = fp->private_data;
+	struct mtd_info *mtd = fp->private_data;
 
 	switch (cmd) {
 	case FLASH_IOCS_OOB_MODE:
@@ -278,7 +278,7 @@ static int flash_ioctl(struct file *fp, int cmd, unsigned long arg)
 
 static ssize_t flash_read(struct file *fp, void *buff, size_t size, loff_t *off)
 {
-	struct flash_chip *flash = fp->private_data;
+	struct mtd_info *mtd = fp->private_data;
 
 	return __flash_read(flash, buff, size, fp->f_pos);
 }
@@ -298,7 +298,7 @@ static ssize_t flash_write(struct file *fp, const void *buff, size_t size, loff_
 {
 	int ret = 0;
 	__u32 buff_room, flash_pos;
-	struct flash_chip   *flash = fp->private_data;
+	struct mtd_info   *flash = fp->private_data;
 	struct block_buff   *blk_buff;
 	struct block_device *bdev = &flash->bdev;
 
@@ -392,7 +392,7 @@ static int flash_close(struct file *fp)
 	int ret = 0, rest;
 	__u32 flash_pos;
 	struct block_buff *blk_buff;
-	struct flash_chip *flash = fp->private_data;
+	struct mtd_info *mtd = fp->private_data;
 
 	blk_buff = &fp->blk_buf;
 	rest = blk_buff->blk_off - blk_buff->blk_base;

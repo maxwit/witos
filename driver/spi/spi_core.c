@@ -30,7 +30,7 @@ int spi_write_then_read(struct spi_slave *slave, __u8 *tx_buf, __u32 n_tx, __u8 
 	tx[RX].rx_buf = rx_buf;
 	tx[RX].len   = n_rx;
 
-	list_head_init(&slave->msg_qu);
+	INIT_LIST_HEAD(&slave->msg_qu);
 	list_add_tail(&tx[TX].msg_node, &slave->msg_qu);
 	list_add_tail(&tx[RX].msg_node, &slave->msg_qu);
 
@@ -46,7 +46,7 @@ struct spi_master *spi_master_alloc()
 		return NULL;
 
 	master->bus_num = -1;
-	list_head_init(&master->slave_list);
+	INIT_LIST_HEAD(&master->slave_list);
 	master->transfer = NULL;
 
 	return master;
@@ -61,7 +61,7 @@ struct spi_slave  *spi_slave_alloc()
 		return NULL;
 
 	slave->master = NULL;
-	list_head_init(&slave->msg_qu);
+	INIT_LIST_HEAD(&slave->msg_qu);
 
 	return slave;
 }

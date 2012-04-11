@@ -78,7 +78,7 @@ static int s3c6410_spi_transfer(struct spi_slave *slave)
 	__u8 *tx_buf = NULL;
 	__u32 len;
 	__u8 *rx_buf = NULL;
-	struct list_node *msg_qu = &slave->msg_qu;
+	struct list_head *msg_qu = &slave->msg_qu;
 
 	nor_chip_select();
 
@@ -162,7 +162,7 @@ static int s3c6410_spi_transfer(struct spi_slave *slave)
 		}
 
 		s3c6410_spi_reset(NULL); // fixme
-		list_del_node(msg_qu);
+		list_del(msg_qu);
 	}
 
 	nor_chip_unselect();

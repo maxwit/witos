@@ -4,6 +4,9 @@
 #include <list.h>
 #include <block.h>
 
+#define MTD_CHAR_MAJOR 90
+#define MTD_BLOCK_MAJOR 31
+
 // #define MTD_DEV_NAME_LEN    32
 
 #define MAX_FLASH_PARTS	    16
@@ -13,10 +16,10 @@
 #define FLASH_ABSENT		0
 #define FLASH_RAM			1
 #define FLASH_ROM			2
-#define FLASH_NORFLASH		3
-#define FLASH_NANDFLASH		4
-#define FLASH_DATAFLASH		6
-#define FLASH_UBIVOLUME		7
+#define MTD_NORFLASH		3
+#define MTD_NANDFLASH		4
+#define MTD_DATAFLASH		6
+#define MTD_UBIVOLUME		7
 #define FLASH_FLASH_PART   (1 << 6) // fixme
 
 enum {
@@ -34,7 +37,7 @@ enum {
 
 #define IS_FS_PART(type) (IMG_BEGIN <= (type) && (type) <= IMG_END)
 
-struct flash_chip;
+struct mtd_info;
 
 struct oob_free_region {
 	__u32 nOfOffset;
@@ -63,7 +66,7 @@ typedef struct {
 	__u32 block_index;
 } FLASH_HOOK_PARAM;
 
-typedef int (*FLASH_HOOK_FUNC)(struct flash_chip *, FLASH_HOOK_PARAM *);
+typedef int (*FLASH_HOOK_FUNC)(struct mtd_info *, FLASH_HOOK_PARAM *);
 
 typedef struct {
 	FLASH_HOOK_PARAM *args;
@@ -127,17 +130,17 @@ struct flash_info {
 	const char *bdev_label;
 };
 
-struct flash_chip {
+struct mtd_info {
 	struct block_device bdev;
 
 	union {
-		struct list_node master_node;
-		struct list_node slave_node;
+		struct list_head master_node;
+		struct list_head slave_node;
 	};
 
 	union {
-		struct list_node slave_list;
-		struct flash_chip *master;
+		struct list_head slave_list;
+		struct mtd_info *master;
 	};
 
 	int   type;
@@ -160,33 +163,33 @@ struct flash_chip {
 	FLASH_HOOK_PARAM *callback_args;
 	FLASH_HOOK_FUNC   callback_func;
 
-	int (*read)(struct flash_chip *, __u32, __u32, __u32 *, __u8 *);
-	int (*write)(struct flash_chip *, __u32, __u32 , __u32 *, const __u8 *);
-	int (*erase)(struct flash_chip *, struct erase_opt *);
+	int (*read)(struct mtd_info *, __u32, __u32, __u32 *, __u8 *);
+	int (*write)(struct mtd_info *, __u32, __u32 , __u32 *, const __u8 *);
+	int (*erase)(struct mtd_info *, struct erase_opt *);
 
-	int (*read_oob)(struct flash_chip *, __u32, struct oob_opt *);
-	int (*write_oob)(struct flash_chip *,__u32, struct oob_opt *);
+	int (*read_oob)(struct mtd_info *, __u32, struct oob_opt *);
+	int (*write_oob)(struct mtd_info *,__u32, struct oob_opt *);
 
-	int (*block_is_bad)(struct flash_chip *, __u32);
-	int (*block_mark_bad)(struct flash_chip *, __u32);
-	int (*scan_bad_block)(struct flash_chip *); // fixme: to be removed
+	int (*block_is_bad)(struct mtd_info *, __u32);
+	int (*block_mark_bad)(struct mtd_info *, __u32);
+	int (*scan_bad_block)(struct mtd_info *); // fixme: to be removed
 
 	OOB_MODE oob_mode;
 };
 
-static __u32 inline flash_write_is_align(struct flash_chip *flash, __u32 size)
+static __u32 inline flash_write_is_align(struct mtd_info *mtd, __u32 size)
 {
 	return (size + flash->write_size - 1) & ~(flash->write_size - 1);
 }
 
-static __u32 inline flash_erase_is_align(struct flash_chip *flash, __u32 size)
+static __u32 inline flash_erase_is_align(struct mtd_info *mtd, __u32 size)
 {
 	return (size + flash->erase_size - 1) & ~(flash->erase_size - 1);
 }
 
-int flash_register(struct flash_chip *flash);
+int flash_register(struct mtd_info *mtd);
 
-int flash_unregister(struct flash_chip *flash);
+int flash_unregister(struct mtd_info *mtd);
 
 typedef enum {
 	NAND_ECC_NONE,
@@ -196,6 +199,8 @@ typedef enum {
 	NAND_ECC_YAFFS2,
 } ECC_MODE;
 
-int flash_set_ecc_mode(struct flash_chip *flash, ECC_MODE newMode, ECC_MODE *pOldMode);
+int flash_set_ecc_mode(struct mtd_info *mtd, ECC_MODE newMode, ECC_MODE *pOldMode);
 
 int flash_fops_init(struct block_device *bdev);
+
+struct mtd_info *get_mtd_device(void *nil, unsigned int num);

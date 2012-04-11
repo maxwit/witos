@@ -7,9 +7,9 @@
 // #error "arch not supported yet"
 #endif
 
-typedef unsigned char  __u8, byte;
-typedef unsigned short __u16;
-typedef unsigned int   __u32;
+typedef unsigned char  __u8, u8, byte;
+typedef unsigned short __u16, u16;
+typedef unsigned int   __u32, u32;
 typedef unsigned long  size_t, loff_t;
 typedef signed int     ssize_t;
 

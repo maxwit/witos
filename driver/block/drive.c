@@ -19,7 +19,7 @@ struct msdos_part {
 	__u32 lba_size;
 };
 
-static DECL_INIT_LIST(g_master_list);
+static LIST_HEAD(g_master_list);
 
 // fixme: to support extended partion
 static int msdos_part_scan(struct disk_drive *drive, struct part_attr part_tab[])
@@ -77,7 +77,7 @@ int disk_drive_register(struct disk_drive *drive)
 
 	ret = block_device_register(&drive->bdev);
 	// if ret < 0 ...
-	list_head_init(&drive->slave_list);
+	INIT_LIST_HEAD(&drive->slave_list);
 	list_add_tail(&drive->master_node, &g_master_list);
 
 	// fixme: to support uEFI/GPT

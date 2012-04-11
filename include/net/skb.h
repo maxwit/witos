@@ -11,7 +11,7 @@ struct sock_buff {
 	__u8  *data;
 	__u16  size;
 
-	struct list_node node;
+	struct list_head node;
 	struct socket *sock;
 	struct net_device *ndev;
 	// struct sockaddr_in remote_addr;

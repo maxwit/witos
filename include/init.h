@@ -30,9 +30,16 @@
 #define postsubs_init(func) \
 		static __USED__ __INIT_POSTSUBS__ init_func_t __initcall_##func = func
 
+// fixme!
 #ifdef __GBIOS_VER__
 #define module_init(func) \
 	static __USED__ __INIT_DRV__ init_func_t __initcall_##func = func
+
+#define module_exit(nil)
+
+#define MODULE_DESCRIPTION(str)
+#define MODULE_AUTHOR(str)
+#define MODULE_LICENSE(str)
 #else
 #define module_init(func)
 #endif

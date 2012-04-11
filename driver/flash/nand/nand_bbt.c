@@ -58,7 +58,7 @@ static int read_bbt(struct nand_chip *nand,
 				int reserved_block_code)
 {
 	int ret, i, j, act = 0;
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 	__u32 retlen, len, totlen;
 	__u32 from;
 	__u8 msk = (__u8) ((1 << bits) - 1);
@@ -115,7 +115,7 @@ static int read_bbt(struct nand_chip *nand,
 
 static int read_abs_bbt(struct nand_chip *nand, __u8 *buf, struct nand_bad_blk *td, int chip)
 {
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 	struct nand_ctrl *nfc = nand->master;
 	int ret = 0, i;
 	int bits;
@@ -147,7 +147,7 @@ static int scan_read_raw(struct nand_chip *nand,
 					__u8 *buf, __u32 offs, __u32 len)
 {
 	struct oob_opt ops;
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 
 	ops.op_mode    = FLASH_OOB_RAW;
 	ops.oob_off = 0;
@@ -167,7 +167,7 @@ static int scan_write_bbt(struct nand_chip *nand,
 						)
 {
 	struct oob_opt ops;
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 
 	ops.op_mode = FLASH_OOB_PLACE;
 	ops.oob_off = 0;
@@ -185,7 +185,7 @@ static int read_abs_bbts(struct nand_chip *nand,
 						struct nand_bad_blk *md
 						)
 {
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 
 	if (td->flags & NAND_BBT_VERSION) {
 		scan_read_raw(nand,
@@ -219,7 +219,7 @@ static int scan_block_full(struct nand_chip *nand,
 						)
 {
 	int ret, j;
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 
 	ret = scan_read_raw(nand, buf, offs, readlen);
 	if (ret)
@@ -242,7 +242,7 @@ static int scan_block_fast(struct nand_chip *nand,
 {
 	struct oob_opt ops;
 	int j, ret;
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 
 	ops.oob_len = flash->oob_size;
 	ops.oob_buff  = buf;
@@ -272,7 +272,7 @@ static int scan_block_fast(struct nand_chip *nand,
 static int create_bbt(struct nand_chip *nand,
 				__u8 *buf, struct nand_bad_blk *bd, int chip)
 {
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 	struct nand_ctrl *nfc = nand->master;
 	int i, numblocks, len, scanlen;
 	int startblock;
@@ -342,7 +342,7 @@ static int create_bbt(struct nand_chip *nand,
 
 static int search_bbt(struct nand_chip *nand, __u8 *buf, struct nand_bad_blk *td)
 {
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 	struct nand_ctrl *nfc = nand->master;
 	int i, chips;
 	int startblock, block, dir;
@@ -423,7 +423,7 @@ static int write_bbt(struct nand_chip *nand,
 				struct nand_bad_blk *md,
 				int chipsel)
 {
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 	struct nand_ctrl *nfc = nand->master;
 	struct erase_opt einfo;
 	int i, j, ret, chip = 0;
@@ -705,7 +705,7 @@ static int check_create(struct nand_chip *nand, __u8 *buf, struct nand_bad_blk *
 
 static void mark_bbt_region(struct nand_chip *nand, struct nand_bad_blk *td)
 {
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 	struct nand_ctrl *nfc = nand->master;
 
 	int i, j, chips, block, nrblocks, update;
@@ -757,7 +757,7 @@ static void mark_bbt_region(struct nand_chip *nand, struct nand_bad_blk *td)
 
 int nand_scan_bad_block(struct nand_chip *nand, struct nand_bad_blk *bd)
 {
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 	int len, ret = 0;
 	__u8 *buf;
 	struct nand_bad_blk *td = nand->bbt_td;
@@ -813,7 +813,7 @@ int nand_scan_bad_block(struct nand_chip *nand, struct nand_bad_blk *bd)
 
 int nand_update_bbt(struct nand_chip *nand, __u32 offs)
 {
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 	int len, ret = 0, writeops = 0;
 	int chip, chipsel;
 	__u8 *buf;
@@ -926,7 +926,7 @@ static struct nand_bad_blk g_bbt_mirror_desc = {
 
 int nand_scan_bbt(struct nand_chip *nand)
 {
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 
 	if (nand->flags & NAND_IS_AND) {
 		if (!nand->bbt_td) {
@@ -964,7 +964,7 @@ int nand_scan_bbt(struct nand_chip *nand)
 
 int nand_is_bad_bbt(struct nand_chip *nand, __u32 offs)
 {
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 	int block;
 	__u8 ret;
 

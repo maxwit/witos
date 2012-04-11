@@ -10,13 +10,13 @@
 #include <fs/devfs.h>
 
 struct devfs_super_block {
-	struct list_node *r_list;
+	struct list_head *r_list;
 };
 
 struct devfs_inode {
 	struct inode vfs_inode;
 	struct block_device *dev;
-	struct list_node dev_node;
+	struct list_head dev_node;
 };
 
 static int devfs_bdev_open(struct file *, struct inode *);
@@ -120,7 +120,7 @@ static int devfs_fill_super(struct super_block *sb)
 	}
 
 	sb->s_fs_info = devfs_sb;
-	// sb->s_blksize = BLK_SIZE;
+	// sb->s_blocksize = BLK_SIZE;
 
 	return 0;
 L1:
@@ -152,7 +152,7 @@ static struct dentry *devfs_mount(struct file_system_type *fs_type, unsigned lon
 		return NULL;
 	}
 
-	root = d_alloc_root(in);
+	root = d_make_root(in);
 	if (!root)
 		return NULL;
 
@@ -204,7 +204,7 @@ static int devfs_readdir(struct file *fp, struct linux_dirent *dirent)
 {
 	struct dentry *de;
 	struct inode *in;
-	struct list_node *iter;
+	struct list_head *iter;
 
 	if (fp->f_pos >= fp->f_dentry->d_inode->i_size)
 		return 0;
@@ -258,7 +258,7 @@ static struct file_system_type devfs_fs_type = {
 
 static int __init devfs_init(void)
 {
-	return file_system_type_register(&devfs_fs_type);
+	return register_filesystem(&devfs_fs_type);
 }
 
 module_init(devfs_init);

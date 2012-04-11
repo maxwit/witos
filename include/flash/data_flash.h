@@ -104,7 +104,7 @@ struct DataFlashOptMsg {
 };
 
 struct DataFlash {
-	struct flash_chip parent;
+	struct mtd_info parent;
 
 	__u8	bCommand[8];
 	char	name[BLOCK_DEV_NAME_LEN];

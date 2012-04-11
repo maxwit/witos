@@ -160,7 +160,7 @@ static size_t get_dind_block(struct super_block *sb,
 static size_t get_tind_block(struct super_block *sb,
 			struct ext2_inode *inode, ssize_t start_block, __le32 block_indexs[], size_t len)
 {
-	size_t block_size = sb->s_blksize;
+	size_t block_size = sb->s_blocksize;
 	size_t index_per_block = block_size / sizeof(__le32);
 	__le32 buff[index_per_block];
 	__le32 dbuff[index_per_block];
@@ -354,14 +354,14 @@ static int ext2_fill_super(struct super_block *sb)
 #endif
 
 	sb->s_fs_info = e2_sbi;
-	sb->s_blksize = 1024 << e2_sb->s_log_block_size;
+	sb->s_blocksize = 1024 << e2_sb->s_log_block_size;
 
 	bpg = e2_sb->s_blocks_per_group;
 	group_count = (e2_sb->s_blocks_count + bpg - 1) / bpg;
 	DPRINT("super block information:\n"
 		"label = \"%s\", inode size = %d, block size = %d\n",
 		e2_sb->s_volume_name[0] ? e2_sb->s_volume_name : "<N/A>",
-		e2_sb->s_inode_size, sb->s_blksize);
+		e2_sb->s_inode_size, sb->s_blocksize);
 
 	gdt = malloc(group_count * sizeof(struct ext2_group_desc));
 	if (NULL == gdt) {
@@ -416,7 +416,7 @@ static struct dentry *ext2_mount(struct file_system_type *fs_type, unsigned long
 		return NULL;
 	}
 
-	root = d_alloc_root(in);
+	root = d_make_root(in);
 	if (!root)
 		return NULL;
 
@@ -561,7 +561,8 @@ static struct dentry *ext2_lookup(struct inode *parent, struct dentry *dentry, s
 		return NULL; // fixme!!!
 	}
 
-	dentry->d_inode = inode;
+	// dentry->d_inode = inode;
+	d_add(dentry, inode);
 	nd->ret = 0;
 
 	return dentry;
@@ -570,11 +571,11 @@ static struct dentry *ext2_lookup(struct inode *parent, struct dentry *dentry, s
 static int ext2_inode_read_block(struct inode *in, int blk_no, char *blk_buf)
 {
 	struct ext2_inode_info *e2_info = EXT2_I(in);
-	int blk_index[in->i_size / in->i_sb->s_blksize];
+	int blk_index[in->i_size / in->i_sb->s_blocksize];
 
 	get_block_indexs(in->i_sb, e2_info->i_e2in, 0, (__le32 *)blk_index, ARRAY_ELEM_NUM(blk_index));
 
-	ext2_read_block(in->i_sb, blk_buf, blk_index[blk_no], 0, in->i_sb->s_blksize);
+	ext2_read_block(in->i_sb, blk_buf, blk_index[blk_no], 0, in->i_sb->s_blocksize);
 
 	return 0;
 }
@@ -583,7 +584,7 @@ static int ext2_readdir(struct file *fp, struct linux_dirent *dirent)
 {
 	int blk_num;
 	int blk_off;
-	char buff[fp->f_dentry->d_inode->i_sb->s_blksize];
+	char buff[fp->f_dentry->d_inode->i_sb->s_blocksize];
 	struct inode *in;
 	struct ext2_dir_entry_2 *e2_de;
 
@@ -592,8 +593,8 @@ static int ext2_readdir(struct file *fp, struct linux_dirent *dirent)
 	if (fp->f_pos == in->i_size)
 		return 0;
 
-	blk_num = fp->f_pos / in->i_sb->s_blksize;
-	blk_off = fp->f_pos % in->i_sb->s_blksize;
+	blk_num = fp->f_pos / in->i_sb->s_blocksize;
+	blk_off = fp->f_pos % in->i_sb->s_blocksize;
 
 	ext2_inode_read_block(in, blk_num, buff);
 
@@ -734,7 +735,7 @@ static struct file_system_type ext2_fs_type = {
 
 static int __init ext2_init(void)
 {
-	return file_system_type_register(&ext2_fs_type);
+	return register_filesystem(&ext2_fs_type);
 }
 
 module_init(ext2_init);

@@ -76,7 +76,7 @@ static struct sock_buff *sock_recv_packet(struct socket *sock)
 {
 	__UNUSED__ __u32 psr;
 	struct sock_buff *skb;
-	struct list_node *first;
+	struct list_head *first;
 	int to = 10000; // timeout
 	int ret;
 	char key;
@@ -89,7 +89,7 @@ static struct sock_buff *sock_recv_packet(struct socket *sock)
 		ndev_poll();
 
 		lock_irq_psr(psr);
-		if (!list_is_empty(&sock->rx_qu)) {
+		if (!list_empty(&sock->rx_qu)) {
 			unlock_irq_psr(psr);
 			break;
 		}
@@ -107,7 +107,7 @@ static struct sock_buff *sock_recv_packet(struct socket *sock)
 	if (to > 0) {
 		lock_irq_psr(psr);
 		first = sock->rx_qu.next;
-		list_del_node(first);
+		list_del(first);
 		unlock_irq_psr(psr);
 
 		skb = container_of(first, struct sock_buff, node);
@@ -130,7 +130,7 @@ int qu_is_empty(int fd)
 	ndev_poll();
 
 	lock_irq_psr(psr);
-	if (!list_is_empty(&sock->rx_qu)) {
+	if (!list_empty(&sock->rx_qu)) {
 		unlock_irq_psr(psr);
 		return 0;
 	}
@@ -164,8 +164,8 @@ alloc_sock:
 	sock->seq_num = 1; // fixme
 	sock->ack_num = 0;
 	memset(sock->saddr, 0, sizeof(sock->saddr));
-	list_head_init(&sock->tx_qu);
-	list_head_init(&sock->rx_qu);
+	INIT_LIST_HEAD(&sock->tx_qu);
+	INIT_LIST_HEAD(&sock->rx_qu);
 	sock->protocol = protocol;
 
 	g_sock_fds[fd] = sock;
@@ -173,15 +173,15 @@ alloc_sock:
 	return fd;
 }
 
-static void free_skb_list(struct list_node *qu)
+static void free_skb_list(struct list_head *qu)
 {
-	struct list_node *first;
+	struct list_head *first;
 	struct sock_buff *skb;
 
-	while (!list_is_empty(qu)) {
+	while (!list_empty(qu)) {
 		first = qu->next;
 
-		list_del_node(first);
+		list_del(first);
 		skb = container_of(first, struct sock_buff, node);
 		skb_free(skb);
 	}

@@ -70,7 +70,7 @@ struct socket {
 	int type;
 	int protocol;
 	int obstruct_flags;
-	struct list_node tx_qu, rx_qu;
+	struct list_head tx_qu, rx_qu;
 	struct sockaddr_in saddr[2]; // fixme: sockaddr instead
 	enum tcp_state state;
 	// int tmp;

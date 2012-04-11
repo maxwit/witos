@@ -7,7 +7,7 @@
 #include <fs/fs.h>
 #include <fs/devfs.h>
 
-static DECL_INIT_LIST(g_device_queue);
+static LIST_HEAD(g_device_queue);
 
 int device_enqueue(struct block_device *bdev)
 {
@@ -24,12 +24,12 @@ int device_enqueue(struct block_device *bdev)
 
 static struct block_device *device_dequeue()
 {
-	struct list_node *first;
+	struct list_head *first;
 	struct block_device *bdev;
 	struct qdev_node *node;
 
 	first = g_device_queue.next;
-	list_del_node(first);
+	list_del(first);
 	node = container_of(first, struct qdev_node, dev_node);
 	bdev = node->data;
 
@@ -80,7 +80,7 @@ int device_monitor()
 
 	parent = nd.path.dentry;
 
-	while (!list_is_empty(&g_device_queue)) {
+	while (!list_empty(&g_device_queue)) {
 		struct block_device *dev;
 		struct dentry *dentry;
 

@@ -147,7 +147,7 @@ static int nand_blk_bad(struct nand_chip *nand, __u32 ofs, int getchip)
 {
 	__u16 bad;
 	int page, res = 0;
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 	struct nand_ctrl *nfc = nand->master;
 
 	page = (int)(ofs >> flash->write_shift) & nand->page_num_mask;
@@ -183,7 +183,7 @@ static int nand_mark_blk_bad(struct nand_chip *nand, __u32 ofs)
 
 	__u8 buff[2] = { 0, 0 };
 	int block, ret;
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 
 	block = (int)(ofs >> nand->bbt_erase_shift);
 	if (nand->bbt)
@@ -247,7 +247,7 @@ static void nand_command_small(struct nand_chip *nand,
 							__u32 command, int col, int row)
 {
 	int ctrl = NAND_CTRL_CLE | NAND_CTRL_CHANGE;
-	struct flash_chip    *flash = NAND_TO_FLASH(nand);
+	struct mtd_info    *flash = NAND_TO_FLASH(nand);
 	struct nand_ctrl *nfc = nand->master;
 
 	if (command == NAND_CMMD_SEQIN) {
@@ -331,7 +331,7 @@ static void nand_command_small(struct nand_chip *nand,
 static void nand_command_large(struct nand_chip *nand,
 				__u32 command, int col, int row)
 {
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 	struct nand_ctrl *nfc = nand->master;
 
 	if (command == NAND_CMMD_READOOB) {
@@ -454,7 +454,7 @@ static int nand_wait(struct nand_chip *nand)
 
 static int nand_read_page_raw(struct nand_chip *nand, __u8 *buff)
 {
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 	struct nand_ctrl *nfc = nand->master;
 
 	nfc->read_buff(nfc, buff, flash->write_size);
@@ -465,7 +465,7 @@ static int nand_read_page_raw(struct nand_chip *nand, __u8 *buff)
 
 static int nand_read_page_swecc(struct nand_chip *nand, __u8 *buff)
 {
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 	struct nand_ctrl *nfc = nand->master;
 	int i;
 	__u8 *p;
@@ -511,7 +511,7 @@ static int nand_read_page_swecc(struct nand_chip *nand, __u8 *buff)
 
 static void nand_write_page_swecc(struct nand_chip *nand, const __u8 *buff)
 {
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 	struct nand_ctrl *nfc = nand->master;
 	int i;
 	const __u8 *p;
@@ -536,7 +536,7 @@ static void nand_write_page_swecc(struct nand_chip *nand, const __u8 *buff)
 
 static void nand_write_page_hwecc(struct nand_chip *nand, const __u8 *buff)
 {
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 	struct nand_ctrl *nfc = nand->master;
 
 	const __u8 *p;
@@ -568,7 +568,7 @@ static void nand_write_page_hwecc(struct nand_chip *nand, const __u8 *buff)
 
 static int nand_read_page_hwecc(struct nand_chip *nand, __u8 *buff)
 {
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 	struct nand_ctrl *nfc = nand->master;
 
 	int i;
@@ -669,7 +669,7 @@ static int nand_read_by_opt(struct nand_chip *nand, __u32 from, struct oob_opt *
 	__u32 oobreadlen;
 	__u8 *oob_buf, *buff;
 	int page, real_page;
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 	struct nand_ctrl *nfc = nand->master;
 	struct ecc_stats stats;
 
@@ -759,7 +759,7 @@ static int nand_read(struct nand_chip *nand,
 				__u32 from, __u32 len, __u32 *retlen, __u8 *buff)
 {
 	int ret;
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 
 	if (from + len > flash->chip_size) {
 		DPRINT("%s(): read range beyond flash chip size!\n", __func__);
@@ -784,7 +784,7 @@ static int nand_read(struct nand_chip *nand,
 
 static int nand_read_oob_std(struct nand_chip *nand, int page, int sndcmd)
 {
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 	struct nand_ctrl *nfc = nand->master;
 
 	if (sndcmd) {
@@ -799,7 +799,7 @@ static int nand_read_oob_std(struct nand_chip *nand, int page, int sndcmd)
 
 static int nand_write_oob_std(struct nand_chip *nand, int page)
 {
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 	struct nand_ctrl *nfc = nand->master;
 
 	int status = 0;
@@ -819,7 +819,7 @@ static int nand_write_oob_std(struct nand_chip *nand, int page)
 static int nand_do_read_oob(struct nand_chip *nand, __u32 from, struct oob_opt *opt)
 {
 	int page, real_page, chipnr, sndcmd = 1;
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 	struct nand_ctrl *nfc = nand->master;
 	int blkcheck = (1 << (nand->phy_erase_shift - flash->write_shift)) - 1;
 	int readlen = opt->oob_len;
@@ -898,7 +898,7 @@ static int nand_read_oob(struct nand_chip *nand, __u32 from, struct oob_opt *opt
 {
 
 	int ret = -ENOTSUPP;
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 
 	opt->ret_len = 0;
 
@@ -929,7 +929,7 @@ out:
 
 static void nand_write_page_raw(struct nand_chip *nand, const __u8 *buff)
 {
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 	struct nand_ctrl *nfc = nand->master;
 
 	nfc->write_buff(nfc, buff, flash->write_size);
@@ -993,7 +993,7 @@ static int nand_write_by_opt(struct nand_chip *nand, long to, struct oob_opt *op
 	__u32 write_len;
 	__u8 *buff, *oob_buf;
 	__u32 page_buff_offset;
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 	struct nand_ctrl *nfc = nand->master;
 
 	buff = opt->data_buff;
@@ -1107,7 +1107,7 @@ static int nand_write(struct nand_chip *nand,
 				__u32 to, __u32 len, __u32 *retlen, const __u8 *buff)
 {
 	int ret;
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 
 	if (to + len > flash->chip_size) {
 		printf("%s(): error @ line %d. range error!\n", __func__, __LINE__);
@@ -1133,7 +1133,7 @@ static int nand_write(struct nand_chip *nand,
 static int nand_do_write_oob(struct nand_chip *nand, __u32 to, struct oob_opt *opt)
 {
 	int page, status, len;
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 	struct nand_ctrl *nfc = nand->master;
 
 	DPRINT("%s(): to = 0x%08x, len = %i\n",
@@ -1194,7 +1194,7 @@ static int nand_do_write_oob(struct nand_chip *nand, __u32 to, struct oob_opt *o
 
 static int nand_write_oob(struct nand_chip *nand, __u32 to, struct oob_opt *opt)
 {
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 	int ret;
 
 	opt->ret_len = 0;
@@ -1238,7 +1238,7 @@ int nand_erase(struct nand_chip *nand, struct erase_opt *opt)
 {
 	int page_index, erase_count;
 	int status, nPagesPerBlock, ret, chipnr = nand->bus_idx; // fixme!
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 	struct nand_ctrl *nfc = nand->master;
 
 	int rewrite_bbt[NAND_MAX_CHIPS]={0};
@@ -1380,7 +1380,7 @@ erase_exit:
 
 static int nand_blk_is_bad(struct nand_chip *nand, __u32 offs)
 {
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 
 	if (offs > flash->chip_size)
 		return -EINVAL;
@@ -1426,7 +1426,7 @@ struct nand_ctrl *nand_ctrl_new(void)
 	if (NULL == nfc)
 		return NULL;
 
-	list_head_init(&nfc->nand_list);
+	INIT_LIST_HEAD(&nfc->nand_list);
 
 	nfc->chip_delay     = 5;
 	nfc->slaves         = 0;
@@ -1462,7 +1462,7 @@ static int probe_nand_chip(struct nand_chip *nand)
 {
 // #define BUFF_IDR
 	int i;
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 	struct nand_ctrl *nfc = nand->master;
 
 	nfc->select_chip(nand, true);
@@ -1543,7 +1543,7 @@ static int probe_nand_chip(struct nand_chip *nand)
 	return -ENODEV;
 }
 
-static int flash2nand_read(struct flash_chip *flash,
+static int flash2nand_read(struct mtd_info *mtd,
 				__u32 from, __u32 len, __u32 *retlen, __u8 *buff)
 {
 	struct nand_chip *nand = FLASH_TO_NAND(flash);
@@ -1551,7 +1551,7 @@ static int flash2nand_read(struct flash_chip *flash,
 	return nand_read(nand, from, len, retlen, buff);
 }
 
-static int flash2nand_write(struct flash_chip *flash,
+static int flash2nand_write(struct mtd_info *mtd,
 				__u32 to, __u32 len, __u32 *retlen, const __u8 *buff)
 {
 	struct nand_chip *nand = FLASH_TO_NAND(flash);
@@ -1559,14 +1559,14 @@ static int flash2nand_write(struct flash_chip *flash,
 	return nand_write(nand, to, len, retlen, buff);
 }
 
-static int flash2nand_erase(struct flash_chip *flash, struct erase_opt *instr)
+static int flash2nand_erase(struct mtd_info *mtd, struct erase_opt *instr)
 {
 	struct nand_chip *nand = FLASH_TO_NAND(flash);
 
 	return nand_erase(nand, instr);
 }
 
-static int flash2nand_read_oob(struct flash_chip *flash,
+static int flash2nand_read_oob(struct mtd_info *mtd,
 				__u32 from, struct oob_opt *opt)
 {
 	struct nand_chip *nand = FLASH_TO_NAND(flash);
@@ -1574,7 +1574,7 @@ static int flash2nand_read_oob(struct flash_chip *flash,
 	return nand_read_oob(nand, from, opt);
 }
 
-static int flash2nand_write_oob(struct flash_chip *flash,
+static int flash2nand_write_oob(struct mtd_info *mtd,
 				__u32 to,	struct oob_opt *opt)
 {
 	struct nand_chip *nand = FLASH_TO_NAND(flash);
@@ -1582,21 +1582,21 @@ static int flash2nand_write_oob(struct flash_chip *flash,
 	return nand_write_oob(nand, to, opt);
 }
 
-static int flash2nand_block_is_bad(struct flash_chip *flash, __u32 offs)
+static int flash2nand_block_is_bad(struct mtd_info *mtd, __u32 offs)
 {
 	struct nand_chip *nand = FLASH_TO_NAND(flash);
 
 	return nand_blk_is_bad(nand, offs);
 }
 
-static int flash2nand_block_mark_bad(struct flash_chip *flash, __u32 ofs)
+static int flash2nand_block_mark_bad(struct mtd_info *mtd, __u32 ofs)
 {
 	struct nand_chip *nand = FLASH_TO_NAND(flash);
 
 	return nand_block_mark_bad(nand, ofs);
 }
 
-static int flash2nand_block_scan_bad_block(struct flash_chip *flash)
+static int flash2nand_block_scan_bad_block(struct mtd_info *mtd)
 {
 	struct nand_chip *nand = FLASH_TO_NAND(flash);
 	struct nand_ctrl  *nfc  = nand->master;
@@ -1607,7 +1607,7 @@ static int flash2nand_block_scan_bad_block(struct flash_chip *flash)
 static struct nand_chip *new_nand_chip(struct nand_ctrl *master, int bus_id)
 {
 	struct nand_chip *nand;
-	struct flash_chip *flash;
+	struct mtd_info *mtd;
 
 	nand = zalloc(sizeof(struct nand_chip));
 
@@ -1623,7 +1623,7 @@ static struct nand_chip *new_nand_chip(struct nand_ctrl *master, int bus_id)
 
 	list_add_tail(&nand->nand_node, &master->nand_list);
 
-	flash->type = FLASH_NANDFLASH;
+	flash->type = MTD_NANDFLASH;
 	flash->bad_allow = true;
 
 	flash->read  = flash2nand_read;
@@ -1642,9 +1642,9 @@ static struct nand_chip *new_nand_chip(struct nand_ctrl *master, int bus_id)
 
 static void delete_nand_chip(struct nand_chip *nand)
 {
-	// struct flash_chip *flash;
+	// struct mtd_info *mtd;
 
-	list_del_node(&nand->nand_node);
+	list_del(&nand->nand_node);
 
 	// flash = NAND_TO_FLASH(nand);
 	// fixme: free all buffer.
@@ -1728,7 +1728,7 @@ L1:
 	return old_mode;
 }
 
-int flash_set_ecc_mode(struct flash_chip *flash, ECC_MODE new_mode, ECC_MODE *old_mode)
+int flash_set_ecc_mode(struct mtd_info *mtd, ECC_MODE new_mode, ECC_MODE *old_mode)
 {
 	struct nand_chip *nand = FLASH_TO_NAND(flash);
 
@@ -1769,7 +1769,7 @@ not_found:
 int nand_register(struct nand_chip *nand)
 {
 	int i, ret;
-	struct flash_chip *flash;
+	struct mtd_info *mtd;
 	struct nand_ctrl *nfc;
 	char vendor_name[64];
 	char chip_size[32], block_size[32], write_size[32];

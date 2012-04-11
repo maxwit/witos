@@ -201,7 +201,7 @@ struct nand_ctrl {
 
 	const char *name;
 
-	struct list_node nand_list;
+	struct list_head nand_list;
 };
 
 #define NAND_MFR_TOSHIBA    0x98
@@ -279,7 +279,7 @@ struct nand_chip {
 	int (*nand_ready)(struct nand_chip *);
 	void *(*read_buff)(struct nand_chip *, void *, size_t);
 #else
-	struct flash_chip parent;
+	struct mtd_info parent;
 	struct nand_ctrl *master;
 
 	__u32  device_id;
@@ -309,6 +309,6 @@ struct nand_chip {
 	__u32 bus_idx;
 	const char *name; // id or just name?
 
-	struct list_node nand_node;
+	struct list_head nand_node;
 #endif
 };

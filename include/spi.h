@@ -7,19 +7,19 @@ struct spi_slave;
 struct spi_master {
 	char *name;
 	int bus_num;
-	struct list_node slave_list;
+	struct list_head slave_list;
 	int (*transfer)(struct spi_slave *);
 };
 
 struct spi_slave {
 	char *name;
-	struct list_node slave_node;
+	struct list_head slave_node;
 	struct spi_master *master;
-	struct list_node msg_qu;
+	struct list_head msg_qu;
 };
 
 struct spi_trans_msg {
-	struct list_node msg_node;
+	struct list_head msg_node;
 	__u8 *tx_buf;
 	__u8 *rx_buf;
 	__u32 len;

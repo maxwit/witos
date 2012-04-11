@@ -33,7 +33,7 @@ struct link_status {
 struct net_device {
 	const char *chip_name;
 	char ifx_name[NET_NAME_LEN];
-	struct list_node ndev_node;
+	struct list_head ndev_node;
 
 	//
 	__u32 ip;
@@ -53,7 +53,7 @@ struct net_device {
 
 	// PHY
 	__u32 phy_mask;
-	struct list_node phy_list;
+	struct list_head phy_list;
 	__u16 (*mdio_read)(struct net_device *ndev, __u8 addr, __u8 reg);
 	void (*mdio_write)(struct net_device *ndev, __u8 addr, __u8 reg, __u16 val);
 };
@@ -76,7 +76,7 @@ static inline int ndev_poll()
 void ndev_link_change(struct net_device *ndev);
 
 // fix the following 2 APIs
-struct list_node *ndev_get_list(void);
+struct list_head *ndev_get_list(void);
 struct net_device *ndev_get_first();
 
 #define NIOC_GET_IP     1

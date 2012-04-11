@@ -9,10 +9,10 @@
 #include <net/ndev.h>
 #include <net/mii.h>
 
-static DECL_INIT_LIST(g_ndev_list);
+static LIST_HEAD(g_ndev_list);
 static int ndev_count = 0;
 
-struct list_node *ndev_get_list(void)
+struct list_head *ndev_get_list(void)
 {
 	return &g_ndev_list;
 }
@@ -21,7 +21,7 @@ struct list_node *ndev_get_list(void)
 struct net_device *net_get_dev(const char *ifx)
 {
 	struct net_device *ndev;
-	struct list_node *iter;
+	struct list_head *iter;
 
 	list_for_each(iter, ndev_get_list())
 	{
@@ -143,8 +143,8 @@ struct net_device *ndev_new(size_t chip_size)
 	snprintf(ndev->ifx_name, NET_NAME_LEN, "eth%d", ndev_count);
 	ndev_count++;
 
-	list_head_init(&ndev->ndev_node);
-	list_head_init(&ndev->phy_list);
+	INIT_LIST_HEAD(&ndev->ndev_node);
+	INIT_LIST_HEAD(&ndev->phy_list);
 
 	return ndev;
 }
@@ -153,7 +153,7 @@ struct net_device *ndev_new(size_t chip_size)
 int ndev_poll()
 {
 	int ret = -ENODEV;
-	struct list_node *iter;
+	struct list_head *iter;
 
 	list_for_each(iter, &g_ndev_list) {
 		struct net_device *ndev;
@@ -169,7 +169,7 @@ int ndev_poll()
 
 struct net_device *ndev_get_first()
 {
-	struct list_node *first = g_ndev_list.next;
+	struct list_head *first = g_ndev_list.next;
 
 	if (!first)
 		return NULL;

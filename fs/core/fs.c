@@ -44,8 +44,8 @@ struct dentry *__d_alloc(struct super_block *sb, const struct qstr *str)
 
 	de->d_sb = sb;
 	de->d_parent = de;
-	list_head_init(&de->d_child);
-	list_head_init(&de->d_subdirs);
+	INIT_LIST_HEAD(&de->d_child);
+	INIT_LIST_HEAD(&de->d_subdirs);
 
 	de->d_name.len = str->len;
 	if (str->len >= DNAME_INLINE_LEN) {
@@ -64,7 +64,7 @@ struct dentry *__d_alloc(struct super_block *sb, const struct qstr *str)
 	return de;
 }
 
-struct dentry * d_alloc_root(struct inode *root_inode)
+struct dentry *d_make_root(struct inode *root_inode)
 {
 	struct dentry *root_dir = NULL;
 
@@ -81,7 +81,21 @@ struct dentry * d_alloc_root(struct inode *root_inode)
 
 void dput(struct dentry *dentry)
 {
-	list_del_node(&dentry->d_child);
+	list_del(&dentry->d_child);
+}
+
+struct inode *iget(struct super_block *sb, unsigned long ino)
+{
+	struct inode *inode;
+	// TODO: search
+
+	inode = zalloc(sizeof(*inode)); // fixme
+	// if null
+
+	inode->i_sb = sb;
+	inode->i_ino = ino;
+
+	return inode;
 }
 
 int get_unused_fd()
@@ -175,7 +189,7 @@ long sys_mkdir(const char *name, unsigned int /*fixme*/ mode)
 	ret = vfs_mkdir(nd.path.dentry->d_inode, de, mode | S_IFDIR);
 	if (ret < 0) {
 		// fixme: use d_free() instead
-		list_del_node(&de->d_child);
+		list_del(&de->d_child);
 		free(de);
 	}
 

@@ -85,7 +85,7 @@ static int __init mw61_init(void)
 
 	spi_slave  = get_spi_slave("w25x_nor_flash");
 	spi_master = get_spi_master("s3c6410_spi0");
-	list_head_init(&spi_master->slave_list);
+	INIT_LIST_HEAD(&spi_master->slave_list);
 	spi_slave_attach(spi_master, spi_slave);
 #endif
 

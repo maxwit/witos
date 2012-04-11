@@ -4,6 +4,10 @@
 #include <list.h>
 #include <block.h>
 
+/* fs/block_dev.c */
+#define BDEVNAME_SIZE	32	/* Largest string for a blockdev identifier */
+#define BDEVT_SIZE	10	/* Largest string for MAJ:MIN for blkdev */
+
 struct vfsmount;
 struct super_block;
 struct inode;
@@ -35,7 +39,7 @@ struct file_system_type {
 	void (*umount)(struct super_block *);
 };
 
-int file_system_type_register(struct file_system_type *);
+int register_filesystem(struct file_system_type *);
 
 struct file_system_type *file_system_type_get(const char *);
 
@@ -45,7 +49,7 @@ struct vfsmount {
 	struct vfsmount *mnt_parent;
 	struct dentry *mountpoint;
 	struct file_system_type *fstype;
-	struct list_node mnt_hash;
+	struct list_head mnt_hash;
 };
 
 struct block_buff {
@@ -122,6 +126,22 @@ struct inode_operations {
 	int (*mknod)(struct inode *, struct dentry *, int);
 };
 
+#define I_DIRTY_SYNC		(1 << 0)
+#define I_DIRTY_DATASYNC	(1 << 1)
+#define I_DIRTY_PAGES		(1 << 2)
+#define __I_NEW			3
+#define I_NEW			(1 << __I_NEW)
+#define I_WILL_FREE		(1 << 4)
+#define I_FREEING		(1 << 5)
+#define I_CLEAR			(1 << 6)
+#define __I_SYNC		7
+#define I_SYNC			(1 << __I_SYNC)
+#define I_REFERENCED		(1 << 8)
+#define __I_DIO_WAKEUP		9
+#define I_DIO_WAKEUP		(1 << I_DIO_WAKEUP)
+
+#define I_DIRTY (I_DIRTY_SYNC | I_DIRTY_DATASYNC | I_DIRTY_PAGES)
+
 struct inode {
 	unsigned long i_ino;
 	loff_t        i_size;
@@ -129,6 +149,8 @@ struct inode {
 	struct super_block            *i_sb;
 	const struct inode_operations *i_op;
 	const struct file_operations  *i_fop;
+	void *i_private;
+	unsigned long i_state;
 };
 
 #define DNAME_INLINE_LEN 36
@@ -139,7 +161,7 @@ struct dentry {
 	struct inode *d_inode;
 	struct super_block *d_sb;
 	struct dentry *d_parent;
-	struct list_node d_subdirs, d_child;
+	struct list_head d_subdirs, d_child;
 	// int d_type; // fixme
 };
 
@@ -147,9 +169,16 @@ struct dentry *__d_alloc(struct super_block *sb, const struct qstr *str);
 
 struct dentry *d_alloc(struct dentry *parent, const struct qstr *str);
 
-struct dentry * d_alloc_root(struct inode *root_inode);
+struct dentry *d_make_root(struct inode *root_inode);
 
 void dput(struct dentry *dentry);
+
+static inline void d_add(struct dentry *dentry, struct inode *inode)
+{
+	dentry->d_inode = inode;
+}
+
+struct inode *iget(struct super_block *sb, unsigned long ino);
 
 // copy from Linux man page
 struct linux_dirent {
@@ -165,10 +194,12 @@ int filldir(struct linux_dirent *, const char * name, int namlen, loff_t offset,
 		   unsigned long ino, unsigned int type);
 
 struct super_block {
-	__u32 s_blksize;
+	__u32 s_blocksize;
 	struct block_device *s_bdev;
 	struct dentry *s_root;
 	void *s_fs_info;
+	void *driver_context;
+	unsigned long s_magic;
 };
 
 struct super_block *sget(struct file_system_type *type, void *data);

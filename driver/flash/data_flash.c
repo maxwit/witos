@@ -21,17 +21,17 @@ static struct part_attr g_defDataFlashParts[] =
 
 static int DataFlashSpiEnable(__u32);
 
-static int DataFlashSpiOps(struct flash_chip *);
+static int DataFlashSpiOps(struct mtd_info *);
 
-static int DataFlashStatus(struct flash_chip *, __u8 *);
+static int DataFlashStatus(struct mtd_info *, __u8 *);
 
-static int DataFlashWaitReady(struct flash_chip *);
+static int DataFlashWaitReady(struct mtd_info *);
 
-static int DataFlashErase(struct flash_chip *, struct erase_opt *);
+static int DataFlashErase(struct mtd_info *, struct erase_opt *);
 
-static int DataFlashWrite(struct flash_chip *, __u32, __u32, __u32 *, const __u8 *);
+static int DataFlashWrite(struct mtd_info *, __u32, __u32, __u32 *, const __u8 *);
 
-static int DataFlashRead(struct flash_chip *, __u32, __u32, __u32 *, __u8 *);
+static int DataFlashRead(struct mtd_info *, __u32, __u32, __u32 *, __u8 *);
 
 static int DataFlashAdd(const char *, __u32, __u32, __u32);
 
@@ -55,7 +55,7 @@ static int DataFlashSpiEnable(__u32 ulCS)
 	return 0;
 }
 
-static int DataFlashSpiOps(struct flash_chip *flash)
+static int DataFlashSpiOps(struct mtd_info *mtd)
 {
 	struct DataFlash *pDataflash = container_of(flash, struct DataFlash, parent);
 	__u32 ulTimeout;
@@ -108,7 +108,7 @@ static int DataFlashSpiOps(struct flash_chip *flash)
 	return 0;
 }
 
-static int DataFlashStatus(struct flash_chip *flash, __u8 *pbStatus)
+static int DataFlashStatus(struct mtd_info *mtd, __u8 *pbStatus)
 {
 	struct DataFlash *pDataFlash = container_of(flash, struct DataFlash, parent);
 	__u8 *pCmd;
@@ -130,7 +130,7 @@ static int DataFlashStatus(struct flash_chip *flash, __u8 *pbStatus)
 	return 0;
 }
 
-static int DataFlashWaitReady(struct flash_chip *flash)
+static int DataFlashWaitReady(struct mtd_info *mtd)
 {
 	struct DataFlash *pDataFlash = container_of(flash, struct DataFlash, parent);
 	int	ret;
@@ -152,7 +152,7 @@ static int DataFlashWaitReady(struct flash_chip *flash)
 	return 0;
 }
 
-static int DataFlashErase(struct flash_chip *flash, struct erase_opt *pErsOp)
+static int DataFlashErase(struct mtd_info *mtd, struct erase_opt *pErsOp)
 {
 	struct DataFlash *pDataFlash = container_of(flash, struct DataFlash, parent);
 	__u32 blocksize = pDataFlash->block_size, nLen = pErsOp->len;
@@ -223,7 +223,7 @@ static int DataFlashErase(struct flash_chip *flash, struct erase_opt *pErsOp)
 	return 0;
 }
 
-static int DataFlashWrite(struct flash_chip *flash, __u32 to, __u32 len,
+static int DataFlashWrite(struct mtd_info *mtd, __u32 to, __u32 len,
 							   __u32 *retlen, const __u8 *buf)
 {
 	struct DataFlash *pDataFlash = container_of(flash, struct DataFlash, parent);
@@ -355,7 +355,7 @@ static int DataFlashWrite(struct flash_chip *flash, __u32 to, __u32 len,
 	return status;
 }
 
-static int DataFlashRead(struct flash_chip *flash, __u32 from, __u32 len,
+static int DataFlashRead(struct mtd_info *mtd, __u32 from, __u32 len,
 			__u32 *retlen, __u8 *buf)
 {
 	struct DataFlash *pDataFlash = container_of(flash, struct DataFlash, parent);
@@ -438,7 +438,7 @@ static int DataFlashRead(struct flash_chip *flash, __u32 from, __u32 len,
 	return status;
 }
 
-static int DataFlashReadOOB(struct flash_chip *flash, __u32 ulLen, struct oob_opt *pOps)
+static int DataFlashReadOOB(struct mtd_info *mtd, __u32 ulLen, struct oob_opt *pOps)
 {
 	flash = flash;
 	ulLen  = ulLen;
@@ -447,7 +447,7 @@ static int DataFlashReadOOB(struct flash_chip *flash, __u32 ulLen, struct oob_op
 	return 0;
 }
 
-static int DataFlashWriteOOB(struct flash_chip *flash, __u32 ulLen, struct oob_opt *pOps)
+static int DataFlashWriteOOB(struct mtd_info *mtd, __u32 ulLen, struct oob_opt *pOps)
 {
 	flash = flash;
 	ulLen  = ulLen;
@@ -456,7 +456,7 @@ static int DataFlashWriteOOB(struct flash_chip *flash, __u32 ulLen, struct oob_o
 	return 0;
 }
 
-static int DataFlashIsBad(struct flash_chip *flash, __u32 nAddr)
+static int DataFlashIsBad(struct mtd_info *mtd, __u32 nAddr)
 {
 	flash = flash;
 	nAddr  = nAddr;
@@ -464,7 +464,7 @@ static int DataFlashIsBad(struct flash_chip *flash, __u32 nAddr)
 	return 0;
 }
 
-static int DataFlashMarkBad(struct flash_chip *flash, __u32 nAddr)
+static int DataFlashMarkBad(struct mtd_info *mtd, __u32 nAddr)
 {
 	flash = flash;
 	nAddr  = nAddr;
@@ -475,7 +475,7 @@ static int DataFlashMarkBad(struct flash_chip *flash, __u32 nAddr)
 static int DataFlashAdd(const char *pszName, __u32 nPages, __u32 page_size, __u32 nPageOffset)
 {
 	struct DataFlash *pDataFlash;
-	struct flash_chip	 *flash;
+	struct mtd_info	 *flash;
 	__u32 ulRet;
 	struct part_info *pt_info;
 	__u32 nMbrLen;
@@ -495,7 +495,7 @@ static int DataFlashAdd(const char *pszName, __u32 nPages, __u32 page_size, __u3
 	strcpy(pDataFlash->name, pszName);
 	strcpy(flash->name, pDataFlash->name);	// fixme : how to name this flash
 
-	flash->type = FLASH_DATAFLASH;
+	flash->type = MTD_DATAFLASH;
 
 	//flash->chip_size    = nPages * pDataFlash->page_size;
 	flash->chip_size    = nPages * page_size;

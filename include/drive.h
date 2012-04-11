@@ -12,12 +12,12 @@ struct disk_drive {
 	int (*put_block)(struct disk_drive *drive, int start, const void *buff);
 
 	union {
-		struct list_node master_node;
-		struct list_node slave_node;
+		struct list_head master_node;
+		struct list_head slave_node;
 	};
 
 	union {
-		struct list_node slave_list;
+		struct list_head slave_list;
 		struct disk_drive *master;
 	};
 };

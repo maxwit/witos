@@ -37,7 +37,7 @@ struct block_device {
 
 	const struct file_operations *fops;
 
-	struct list_node bdev_node;
+	struct list_head bdev_node;
 };
 
 int block_device_register(struct block_device *bdev);

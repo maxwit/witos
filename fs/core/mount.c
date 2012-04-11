@@ -7,9 +7,9 @@
 #include <fs/fs.h>
 
 static struct file_system_type *fs_type_list;
-static DECL_INIT_LIST(g_mount_list);
+static LIST_HEAD(g_mount_list);
 
-int file_system_type_register(struct file_system_type *fstype)
+int register_filesystem(struct file_system_type *fstype)
 {
 	struct file_system_type **p;
 

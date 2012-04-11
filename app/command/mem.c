@@ -10,7 +10,7 @@
 struct heap_region {
 	__u32 pre_size;
 	__u32 curr_size;
-	struct list_node ln_mem_region;
+	struct list_head ln_mem_region;
 };
 
 #define MEM_DUMP_BASE_PRINT(base, p) do {\
@@ -327,7 +327,7 @@ static int mem_copy_move(int argc, char *argv[])
 static int mem_free(int argc, char *argv[])
 {
 	int sum_curr_size = 0;
-	struct list_node *heap_head, *iter;
+	struct list_head *heap_head, *iter;
 	struct heap_region *curr_region;
 	int ch;
 	int ret = 0;

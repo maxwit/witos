@@ -191,7 +191,7 @@ struct flash_parterase_param {
 	struct process_bar *pBar;
 };
 
-static int flash_parterase_process(struct flash_chip *flash, FLASH_HOOK_PARAM *pParam)
+static int flash_parterase_process(struct mtd_info *mtd, FLASH_HOOK_PARAM *pParam)
 {
 	struct flash_parterase_param *pErInfo;
 
@@ -246,7 +246,7 @@ static int scanbb(int argc, char *argv[])
 		goto L2;
 	}
 
-	if (FLASH_NANDFLASH != flash_val.type) {
+	if (MTD_NANDFLASH != flash_val.type) {
 		goto L2;
 	}
 

@@ -9,7 +9,7 @@
 #include <fs/fs.h>
 
 struct ramfs_super_block {
-	struct list_node *r_list;
+	struct list_head *r_list;
 };
 
 struct ramfs_inode {
@@ -149,7 +149,7 @@ static int ramfs_fill_super(struct super_block *sb)
 	}
 
 	sb->s_fs_info = ramfs_sb;
-	// sb->s_blksize = RAM_BLK_SIZE;
+	// sb->s_blocksize = RAM_BLK_SIZE;
 
 	return 0;
 L1:
@@ -179,7 +179,7 @@ static struct dentry *ramfs_mount(struct file_system_type *fs_type, unsigned lon
 		return NULL;
 	}
 
-	root = d_alloc_root(in);
+	root = d_make_root(in);
 	if (!root)
 		return NULL;
 
@@ -231,7 +231,7 @@ static int ramfs_readdir(struct file *fp, struct linux_dirent *dirent)
 {
 	struct dentry *de;
 	struct inode *in;
-	struct list_node *iter;
+	struct list_head *iter;
 
 	if (fp->f_pos >= fp->f_dentry->d_inode->i_size)
 		return 0;
@@ -278,7 +278,7 @@ static struct file_system_type ramfs_fs_type = {
 
 static int __init ramfs_init(void)
 {
-	return file_system_type_register(&ramfs_fs_type);
+	return register_filesystem(&ramfs_fs_type);
 }
 
 module_init(ramfs_init);
