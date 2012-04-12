@@ -72,7 +72,7 @@ int sys_mount(const char *dev_name, const char *path,
 		return -ENOENT;
 	}
 
-	root = fstype->mount(fstype, flags, dev_name);
+	root = fstype->mount(fstype, flags, dev_name, NULL);
 	if (!root) {
 		DPRINT("fail to mount %s!\n", dev_name);
 		ret = -EIO; // fixme!

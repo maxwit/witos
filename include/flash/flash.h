@@ -22,6 +22,11 @@
 #define MTD_UBIVOLUME		7
 #define FLASH_FLASH_PART   (1 << 6) // fixme
 
+#define MTD_WRITEABLE		0x400	/* Device is writeable */
+#define MTD_BIT_WRITEABLE	0x800	/* Single bits can be flipped */
+#define MTD_NO_ERASE		0x1000	/* No erase necessary */
+#define MTD_POWERUP_LOCK	0x2000	/* Always locked after reset */
+
 enum {
 	FLASH_IOCG_INFO,
 	FLASH_IOCS_OOB_MODE,

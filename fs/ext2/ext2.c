@@ -386,47 +386,41 @@ L1:
 	return ret;
 }
 
-static struct dentry *ext2_mount(struct file_system_type *fs_type, unsigned long flags, const char *bdev_name)
+static int ext2_read_super(struct super_block *sb, void *data, int flags)
 {
 	int ret;
-	struct dentry *root;
 	struct inode *in;
-	struct super_block *sb;
-	struct block_device *bdev;
-
-	bdev = bdev_get(bdev_name);
-	if (NULL == bdev) {
-		DPRINT("fail to open block device \"%s\"!\n", bdev_name);
-		return NULL;
-	}
-
-	sb = sget(fs_type, bdev);
-	if (!sb)
-		return NULL;
+	struct dentry *root;
 
 	ret = ext2_fill_super(sb);
 	if (ret < 0) {
 		// ...
-		return NULL;
+		return ret;
 	}
 
 	in = ext2_iget(sb, 2);
 	if (!in) {
 		// ...
-		return NULL;
+		return -EINVAL;
 	}
 
 	root = d_make_root(in);
 	if (!root)
-		return NULL;
+		return EINVAL;
 
 	sb->s_root = root;
 
-	return root;
+	return 0;
+}
+
+static struct dentry *ext2_mount(struct file_system_type *fs,
+			    int flags, const char *dev_name, void *data)
+{
+	return mount_bdev(fs, flags, dev_name, data, ext2_read_super);
 }
 
 // fixme
-static void ext2_umount(struct super_block *sb)
+static void ext2_kill_sb(struct super_block *sb)
 {
 }
 
@@ -728,9 +722,9 @@ error:
 #endif
 
 static struct file_system_type ext2_fs_type = {
-	.name   = "ext2",
-	.mount  = ext2_mount,
-	.umount = ext2_umount,
+	.name    = "ext2",
+	.mount   = ext2_mount,
+	.kill_sb = ext2_kill_sb,
 };
 
 static int __init ext2_init(void)

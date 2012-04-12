@@ -23,6 +23,32 @@ struct super_block *sget(struct file_system_type *type, void *data)
 	return sb;
 }
 
+struct dentry *mount_bdev(struct file_system_type *fs_type,
+	int flags, const char *dev_name, void *data,
+	int (*fill_super)(struct super_block *, void *, int))
+{
+	int ret;
+	struct super_block *sb;
+	struct block_device *bdev;
+
+	bdev = bdev_get(dev_name);
+	if (NULL == bdev) {
+		DPRINT("fail to open block device \"%s\"!\n", dev_name);
+		return NULL;
+	}
+
+	sb = sget(fs_type, bdev);
+	if (!sb)
+		return NULL;
+
+	ret = fill_super(sb, data, 0);
+	if (ret < 0)
+		return NULL;
+
+	return sb->s_root;
+}
+
+
 struct dentry *d_alloc(struct dentry *parent, const struct qstr *str)
 {
 	struct dentry *de = __d_alloc(parent->d_sb, str);
