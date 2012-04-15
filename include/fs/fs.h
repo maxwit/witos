@@ -8,6 +8,7 @@
 #define BDEVNAME_SIZE	32	/* Largest string for a blockdev identifier */
 #define BDEVT_SIZE	10	/* Largest string for MAJ:MIN for blkdev */
 
+#define MS_ROOT     (1 << 0) // fixme!!
 #define MS_RDONLY	 1	/* Mount read-only */
 #define MS_NOSUID	 2	/* Ignore suid and sgid bits */
 #define MS_NODEV	 4	/* Disallow access to device special files */
@@ -107,6 +108,7 @@ struct file_operations {
 	int (*readdir)(struct file *, struct linux_dirent *);
 };
 
+// describe an opened file
 struct file {
 	loff_t f_pos;
 	unsigned int flags;
@@ -190,6 +192,7 @@ struct inode {
 
 #define DNAME_INLINE_LEN 36
 
+// directory entry
 struct dentry {
 	struct qstr d_name;
 	char d_iname[DNAME_INLINE_LEN];
@@ -259,3 +262,6 @@ int follow_up(struct path *path);
 
 int vfs_mkdir(struct inode *dir, struct dentry *dentry, int mode);
 int vfs_mknod(struct inode *dir, struct dentry *dentry, int mode);
+
+struct dentry *mount_bdev(struct file_system_type *, int, const char *,
+	void *, int (*fill_super)(struct super_block *, void *, int));

@@ -1710,8 +1710,6 @@ static const struct address_space_operations yaffs_file_address_operations = {
 	.write_end = yaffs_write_end,
 };
 
-
-
 static const struct inode_operations yaffs_file_inode_operations = {
 	.setattr = yaffs_setattr,
 	.setxattr = yaffs_setxattr,

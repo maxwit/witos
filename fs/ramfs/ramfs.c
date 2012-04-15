@@ -156,7 +156,8 @@ L1:
 	return ret;
 }
 
-static struct dentry *ramfs_mount(struct file_system_type *fs_type, unsigned long flags, const char *bdev_name)
+static struct dentry *ramfs_mount(struct file_system_type *fs_type, int flags,
+	const char *bdev_name, void *data)
 {
 	int ret;
 	struct dentry *root;
@@ -271,9 +272,9 @@ static int ramfs_mkdir(struct inode *parent, struct dentry *de, int mode)
 }
 
 static struct file_system_type ramfs_fs_type = {
-	.name   = "ramfs",
-	.mount  = ramfs_mount,
-	.umount = ramfs_umount,
+	.name    = "ramfs",
+	.mount   = ramfs_mount,
+	.kill_sb = ramfs_umount,
 };
 
 static int __init ramfs_init(void)

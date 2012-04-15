@@ -184,12 +184,12 @@ struct mtd_info {
 
 static __u32 inline flash_write_is_align(struct mtd_info *mtd, __u32 size)
 {
-	return (size + flash->write_size - 1) & ~(flash->write_size - 1);
+	return (size + mtd->write_size - 1) & ~(mtd->write_size - 1);
 }
 
 static __u32 inline flash_erase_is_align(struct mtd_info *mtd, __u32 size)
 {
-	return (size + flash->erase_size - 1) & ~(flash->erase_size - 1);
+	return (size + mtd->erase_size - 1) & ~(mtd->erase_size - 1);
 }
 
 int flash_register(struct mtd_info *mtd);

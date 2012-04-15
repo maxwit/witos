@@ -48,7 +48,6 @@ struct dentry *mount_bdev(struct file_system_type *fs_type,
 	return sb->s_root;
 }
 
-
 struct dentry *d_alloc(struct dentry *parent, const struct qstr *str)
 {
 	struct dentry *de = __d_alloc(parent->d_sb, str);

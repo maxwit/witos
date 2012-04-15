@@ -127,7 +127,8 @@ L1:
 	return ret;
 }
 
-static struct dentry *devfs_mount(struct file_system_type *fs_type, unsigned long flags, const char *bdev_name)
+static struct dentry *devfs_mount(struct file_system_type *fs_type,
+	int flags, const char *bdev_name, void *data)
 {
 	int ret;
 	struct dentry *root;
@@ -162,7 +163,7 @@ static struct dentry *devfs_mount(struct file_system_type *fs_type, unsigned lon
 }
 
 // fixme
-static void devfs_umount(struct super_block *sb)
+static void devfs_kill_sb(struct super_block *sb)
 {
 }
 
@@ -251,9 +252,9 @@ static int devfs_mknod(struct inode *dir, struct dentry *dentry, int mode)
 }
 
 static struct file_system_type devfs_fs_type = {
-	.name   = "devfs",
-	.mount  = devfs_mount,
-	.umount = devfs_umount,
+	.name    = "devfs",
+	.mount   = devfs_mount,
+	.kill_sb = devfs_kill_sb,
 };
 
 static int __init devfs_init(void)

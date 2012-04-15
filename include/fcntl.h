@@ -23,8 +23,8 @@ int GAPI ioctl(int fd, int cmd, ...);
 loff_t GAPI lseek(int fd, loff_t offset, int whence);
 
 // fixme
-#define MS_ROOT     (1 << 0)
-#define MS_NODEV    (1 << 1)
+// #define MS_ROOT     (1 << 0)
+// #define MS_NODEV    (1 << 1)
 
 int GAPI mount(const char *, const char *, const char *, unsigned long);
 
