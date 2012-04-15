@@ -2,7 +2,7 @@
 #include <errno.h>
 #include <string.h>
 #include <malloc.h>
-#include <flash/flash.h>
+#include <mtd/mtd.h>
 #include <flash/nand.h>
 
 static int check_pattern(__u8 *buf, int len, int paglen, struct nand_bad_blk *td)

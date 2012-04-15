@@ -1,5 +1,5 @@
 #include <flash/data_flash.h>
-#include <flash/flash.h>
+#include <mtd/mtd.h>
 #include <bitops.h>
 #include <arm/at91sam926x.h>
 

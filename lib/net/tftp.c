@@ -12,7 +12,7 @@
 #include <net/tftp.h>
 #include <net/socket.h>
 #include <fs/fs.h>
-#include <flash/flash.h>
+#include <mtd/mtd.h>
 
 #define TFTP_DEBUG
 

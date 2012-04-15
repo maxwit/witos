@@ -5,7 +5,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <net/net.h>
-#include <flash/flash.h>
+#include <mtd/mtd.h>
 
 #define LINE_LEN 512
 

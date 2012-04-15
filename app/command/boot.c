@@ -12,7 +12,7 @@
 #include <net/net.h>
 #include <net/tftp.h>
 #include <uart/uart.h>
-#include <flash/flash.h>
+#include <mtd/mtd.h>
 
 #define KERNEL_MAX_SIZE   (CONFIG_HEAP_SIZE / 4)
 

@@ -5,7 +5,7 @@
 #include <assert.h>
 #include <string.h>
 #include <bitops.h>
-#include <flash/flash.h>
+#include <mtd/mtd.h>
 #include <flash/nand.h>
 
 #define BBT_PAGE_MASK	0xffffff3f

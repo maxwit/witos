@@ -2,7 +2,7 @@
 #include <init.h>
 #include <malloc.h>
 #include <errno.h>
-#include <flash/flash.h>
+#include <mtd/mtd.h>
 #include <flash/nand.h>
 
 static int __init at91_nand_init(void)

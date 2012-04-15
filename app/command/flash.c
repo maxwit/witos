@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <fcntl.h>
-#include <flash/flash.h>
+#include <mtd/mtd.h>
 
 static int flash_str_to_val(char * str, __u32 * val, char *unit)
 {

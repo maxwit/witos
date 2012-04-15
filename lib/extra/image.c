@@ -2,7 +2,7 @@
 #include <errno.h>
 #include <string.h>
 #include <image.h>
-#include <flash/flash.h>
+#include <mtd/mtd.h>
 
 typedef struct {
 	unsigned chunkId:20;

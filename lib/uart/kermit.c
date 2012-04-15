@@ -5,7 +5,7 @@
 #include <fs/fs.h>
 #include <image.h>
 #include <fcntl.h>
-#include <flash/flash.h>
+#include <mtd/mtd.h>
 #include <uart/uart.h>
 #include <uart/kermit.h>
 

@@ -6,7 +6,7 @@
 #include <uart/ymodem.h>
 #include <uart/kermit.h>
 #include <uart/uart.h>
-#include <flash/flash.h>
+#include <mtd/mtd.h>
 
 static int uart_load(int argc, char *argv[])
 {

@@ -38,23 +38,13 @@
 #include <linux/version.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
-#include <linux/slab.h>
 #include <linux/init.h>
 #include <linux/fs.h>
-#include <linux/proc_fs.h>
-#include <linux/pagemap.h>
 #include <linux/mtd/mtd.h>
 #include <linux/interrupt.h>
 #include <linux/string.h>
 #include <linux/ctype.h>
-#include <linux/namei.h>
-#include <linux/exportfs.h>
-#include <linux/kthread.h>
 #include <linux/delay.h>
-#include <linux/freezer.h>
-#include <asm/div64.h>
-#include <linux/statfs.h>
-#include <linux/uaccess.h>
 #include <linux/mtd/mtd.h>
 
 #include "yportenv.h"

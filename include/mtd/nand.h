@@ -119,7 +119,7 @@ void *nand_read_page(struct nand_chip *, __u32, void *);
 
 #else
 
-#include <flash/flash.h>
+#include <mtd/mtd.h>
 
 typedef enum {
 	FL_READY,

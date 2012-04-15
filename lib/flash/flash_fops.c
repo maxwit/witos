@@ -5,7 +5,7 @@
 #include <assert.h>
 #include <fcntl.h>
 #include <fs/fs.h>
-#include <flash/flash.h>
+#include <mtd/mtd.h>
 
 // fixme
 static inline int __flash_read(struct mtd_info *mtd, void *buff, int count, int start)

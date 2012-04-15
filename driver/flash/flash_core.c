@@ -4,7 +4,7 @@
 #include <errno.h>
 #include <string.h>
 #include <malloc.h>
-#include <flash/flash.h>
+#include <mtd/mtd.h>
 
 static LIST_HEAD(g_master_list);
 static int g_flash_count = 0;

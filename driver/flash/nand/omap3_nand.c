@@ -3,7 +3,7 @@
 #include <delay.h>
 #include <errno.h>
 #include <malloc.h>
-#include <flash/flash.h>
+#include <mtd/mtd.h>
 #include <flash/nand.h>
 
 static int omap3_nand_ready(struct nand_chip *nand)

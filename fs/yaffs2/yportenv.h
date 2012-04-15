@@ -19,16 +19,12 @@
 // #include <linux/version.h>
 #include <linux/kernel.h>
 #include <linux/mm.h>
-#include <linux/sched.h>
 #include <linux/string.h>
-#include <linux/slab.h>
-#include <linux/vmalloc.h>
-#include <linux/xattr.h>
 #include <linux/list.h>
 #include <linux/types.h>
 #include <linux/fs.h>
-#include <linux/stat.h>
-#include <linux/sort.h>
+// #include <linux/stat.h>
+// #include <linux/sort.h>
 #include <linux/bitops.h>
 
 /*  These type wrappings are used to support Unicode names in WinCE. */
