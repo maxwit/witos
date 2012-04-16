@@ -4,7 +4,7 @@
 #include <block.h>
 #include <assert.h>
 #include <malloc.h>
-#include <fs/fs.h>
+#include <fs.h>
 #include <drive.h> // fixme
 #include <fs/devfs.h>
 

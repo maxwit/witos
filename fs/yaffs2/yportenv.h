@@ -16,16 +16,16 @@
 #ifndef __YPORTENV_LINUX_H__
 #define __YPORTENV_LINUX_H__
 
-// #include <linux/version.h>
-#include <linux/kernel.h>
-#include <linux/mm.h>
-#include <linux/string.h>
-#include <linux/list.h>
-#include <linux/types.h>
-#include <linux/fs.h>
-// #include <linux/stat.h>
-// #include <linux/sort.h>
-#include <linux/bitops.h>
+// #include <version.h>
+#include <kernel.h>
+#include <mm.h>
+#include <string.h>
+#include <list.h>
+#include <types.h>
+#include <fs.h>
+// #include <stat.h>
+// #include <sort.h>
+#include <bitops.h>
 
 /*  These type wrappings are used to support Unicode names in WinCE. */
 #define YCHAR char

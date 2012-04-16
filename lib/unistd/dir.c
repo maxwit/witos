@@ -6,7 +6,7 @@
 #include <string.h>
 #include <malloc.h>
 #include <assert.h>
-#include <fs/fs.h>
+#include <fs.h>
 
 int GAPI chdir(const char *path)
 {

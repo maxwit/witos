@@ -513,8 +513,8 @@ static int DataFlashAdd(const char *pszName, __u32 nPages, __u32 page_size, __u3
 	flash->bad_allow   = false;
 	flash->read_oob    = DataFlashReadOOB;
 	flash->write_oob   = DataFlashWriteOOB;
-	flash->block_is_bad   = DataFlashIsBad;
-	flash->block_mark_bad = DataFlashMarkBad;
+	flash->block_isbad   = DataFlashIsBad;
+	flash->block_markbad = DataFlashMarkBad;
 
 	flash->callback_func  = NULL;
 	flash->callback_args  = NULL;

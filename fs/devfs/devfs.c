@@ -6,7 +6,7 @@
 #include <assert.h>
 #include <block.h>
 #include <dirent.h>
-#include <fs/fs.h>
+#include <fs.h>
 #include <fs/devfs.h>
 
 struct devfs_super_block {

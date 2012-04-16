@@ -35,17 +35,17 @@
  * NB There are two variants of Linux VFS glue code. This variant supports
  * a single version and should not include any multi-version code.
  */
-#include <linux/version.h>
-#include <linux/kernel.h>
-#include <linux/module.h>
-#include <linux/init.h>
-#include <linux/fs.h>
-#include <linux/mtd/mtd.h>
-#include <linux/interrupt.h>
-#include <linux/string.h>
-#include <linux/ctype.h>
-#include <linux/delay.h>
-#include <linux/mtd/mtd.h>
+#include <version.h>
+#include <kernel.h>
+#include <module.h>
+#include <init.h>
+#include <fs.h>
+#include <mtd/mtd.h>
+// #include <interrupt.h>
+#include <string.h>
+#include <ctype.h>
+#include <delay.h>
+#include <mtd/mtd.h>
 
 #include "yportenv.h"
 #include "yaffs_trace.h"
@@ -63,13 +63,10 @@ unsigned int yaffs_gc_control = 1;
 unsigned int yaffs_bg_enable = 1;
 unsigned int yaffs_auto_select = 1;
 
-/* Module Parameters */
-module_param(yaffs_trace_mask, uint, 0644);
-module_param(yaffs_wr_attempts, uint, 0644);
-module_param(yaffs_auto_checkpoint, uint, 0644);
-module_param(yaffs_gc_control, uint, 0644);
-module_param(yaffs_bg_enable, uint, 0644);
-module_param(yaffs_auto_select, uint, 0644);
+static inline void bdevname(struct block_device *bdev, char buff[])
+{
+	strcpy(buff, bdev->name);
+}
 
 #define yaffs_devname(sb, buf)	bdevname(sb->s_bdev, buf)
 
@@ -77,7 +74,9 @@ static uint32_t YCALCBLOCKS(uint64_t partition_size, uint32_t block_size)
 {
 	uint64_t result = partition_size;
 
-	do_div(result, block_size);
+	// do_div(result, block_size);
+	result /= block_size;
+
 	return (uint32_t) result;
 }
 
@@ -88,7 +87,7 @@ static uint32_t YCALCBLOCKS(uint64_t partition_size, uint32_t block_size)
 #define yaffs_super_to_dev(sb)	((struct yaffs_dev *)sb->s_fs_info)
 
 #define update_dir_time(dir) do {\
-			(dir)->i_ctime = (dir)->i_mtime = CURRENT_TIME; \
+			/* (dir)->i_ctime = (dir)->i_mtime = CURRENT_TIME; */ \
 		} while (0)
 
 
@@ -167,9 +166,8 @@ static int yaffs_mknod(struct inode *dir, struct dentry *dentry, int mode,
 	struct yaffs_dev *dev;
 	struct yaffs_obj *parent = yaffs_inode_to_obj(dir);
 	int error;
-	uid_t uid = current->cred->fsuid;
-	gid_t gid =
-	    (dir->i_mode & S_ISGID) ? dir->i_gid : current->cred->fsgid;
+	uid_t uid = 1000;
+	gid_t gid = 1000;
 
 	if ((dir->i_mode & S_ISGID) && S_ISDIR(mode))
 		mode |= S_ISGID;
@@ -200,9 +198,7 @@ static int yaffs_mknod(struct inode *dir, struct dentry *dentry, int mode,
 	default:
 		/* Special (socket, fifo, device...) */
 		yaffs_trace(YAFFS_TRACE_OS, "yaffs_mknod: making special");
-		obj =
-		    yaffs_create_special(parent, dentry->d_name.name, mode, uid,
-					 gid, old_encode_dev(rdev));
+		// TODO: restore the code here
 		break;
 	case S_IFREG:		/* file          */
 		yaffs_trace(YAFFS_TRACE_OS, "yaffs_mknod: making file");
@@ -230,7 +226,7 @@ static int yaffs_mknod(struct inode *dir, struct dentry *dentry, int mode,
 
 	inode = yaffs_get_inode(dir->i_sb, mode, rdev, obj);
 	d_instantiate(dentry, inode);
-	update_dir_time(dir);
+	// update_dir_time(dir);
 	yaffs_trace(YAFFS_TRACE_OS,
 		"yaffs_mknod created object %d count = %d",
 		obj->obj_id, atomic_read(&inode->i_count));
@@ -254,18 +250,20 @@ static int yaffs_create(struct inode *dir, struct dentry *dentry, int mode,
 	return yaffs_mknod(dir, dentry, mode | S_IFREG, 0);
 }
 
+#define set_nlink(inode, count)  do { (inode)->i_nlink = (count); } while(0)
+
 static int yaffs_link(struct dentry *old_dentry, struct inode *dir,
 		      struct dentry *dentry)
 {
 	struct inode *inode = old_dentry->d_inode;
 	struct yaffs_obj *obj = NULL;
 	struct yaffs_obj *link = NULL;
-	struct yaffs_dev *dev;
+	// struct yaffs_dev *dev;
 
 	yaffs_trace(YAFFS_TRACE_OS, "yaffs_link");
 
 	obj = yaffs_inode_to_obj(inode);
-	dev = obj->my_dev;
+	// dev = obj->my_dev;
 
 
 	if (!S_ISDIR(inode->i_mode))	/* Don't link directories */
@@ -296,11 +294,10 @@ static int yaffs_symlink(struct inode *dir, struct dentry *dentry,
 			 const char *symname)
 {
 	struct yaffs_obj *obj;
-	struct yaffs_dev *dev;
+	// struct yaffs_dev *dev;
 	struct inode *inode;
-	uid_t uid = current->cred->fsuid;
-	gid_t gid =
-	    (dir->i_mode & S_ISGID) ? dir->i_gid : current->cred->fsgid;
+	uid_t uid = 1000;
+	gid_t gid = 1000;
 
 	yaffs_trace(YAFFS_TRACE_OS, "yaffs_symlink");
 
@@ -312,7 +309,7 @@ static int yaffs_symlink(struct inode *dir, struct dentry *dentry,
 				YAFFS_MAX_ALIAS_LENGTH)
 		return -ENAMETOOLONG;
 
-	dev = yaffs_inode_to_obj(dir)->my_dev;
+	// dev = yaffs_inode_to_obj(dir)->my_dev;
 	obj = yaffs_create_symlink(yaffs_inode_to_obj(dir), dentry->d_name.name,
 				   S_IFLNK | S_IRWXUGO, uid, gid, symname);
 
@@ -334,7 +331,7 @@ static struct dentry *yaffs_lookup(struct inode *dir, struct dentry *dentry,
 {
 	struct yaffs_obj *obj;
 	struct inode *inode = NULL;
-	struct yaffs_dev *dev = yaffs_inode_to_obj(dir)->my_dev;
+	// struct yaffs_dev *dev = yaffs_inode_to_obj(dir)->my_dev;
 
 	yaffs_trace(YAFFS_TRACE_OS,
 		"yaffs_lookup for %d:%s",
@@ -457,62 +454,13 @@ static int yaffs_rename(struct inode *old_dir, struct dentry *old_dentry,
 
 static int yaffs_setattr(struct dentry *dentry, struct iattr *attr)
 {
-	struct inode *inode = dentry->d_inode;
-	int error = 0;
-	struct yaffs_dev *dev;
-	int result;
-
-	yaffs_trace(YAFFS_TRACE_OS,
-		"yaffs_setattr of object %d",
-		yaffs_inode_to_obj(inode)->obj_id);
-
-	/* Fail if a requested resize >= 2GB */
-	if (attr->ia_valid & ATTR_SIZE && (attr->ia_size >> 31))
-		error = -EINVAL;
-
-	if (!error)
-		error = inode_change_ok(inode, attr);
-
-	if (!error) {
-		setattr_copy(inode, attr);
-		yaffs_trace(YAFFS_TRACE_OS, "inode_setattr called");
-		if (attr->ia_valid & ATTR_SIZE) {
-			truncate_setsize(inode, attr->ia_size);
-			inode->i_blocks = (inode->i_size + 511) >> 9;
-		}
-		dev = yaffs_inode_to_obj(inode)->my_dev;
-		if (attr->ia_valid & ATTR_SIZE) {
-			yaffs_trace(YAFFS_TRACE_OS, "resize to %d(%x)",
-					   (int)(attr->ia_size),
-					   (int)(attr->ia_size));
-		}
-
-		result = yaffs_set_attribs(yaffs_inode_to_obj(inode), attr);
-		if (result != YAFFS_OK)
-			error = -EPERM;
-	}
-
-	yaffs_trace(YAFFS_TRACE_OS, "yaffs_setattr done returning %d", error);
-
-	return error;
+	return 0;
 }
 
 static int yaffs_setxattr(struct dentry *dentry, const char *name,
 		   const void *value, size_t size, int flags)
 {
-	struct inode *inode = dentry->d_inode;
-	int error;
-	struct yaffs_dev *dev;
-	struct yaffs_obj *obj = yaffs_inode_to_obj(inode);
-
-	yaffs_trace(YAFFS_TRACE_OS, "yaffs_setxattr of object %d", obj->obj_id);
-
-	dev = obj->my_dev;
-	error = yaffs_set_xattrib(obj, name, value, size, flags);
-
-	yaffs_trace(YAFFS_TRACE_OS, "yaffs_setxattr done returning %d", error);
-
-	return error;
+	return 0;
 }
 
 static ssize_t yaffs_getxattr(struct dentry *dentry, const char *name,
@@ -1954,18 +1902,18 @@ static struct super_block *yaffs_internal_read_super(int yaffs_version,
 	yaffs_trace(YAFFS_TRACE_OS, " writeoob %p", mtd->write_oob);
 	yaffs_trace(YAFFS_TRACE_OS, " block_isbad %p", mtd->block_isbad);
 	yaffs_trace(YAFFS_TRACE_OS, " block_markbad %p", mtd->block_markbad);
-	yaffs_trace(YAFFS_TRACE_OS, " writesize %d", mtd->writesize);
-	yaffs_trace(YAFFS_TRACE_OS, " oobsize %d", mtd->oobsize);
-	yaffs_trace(YAFFS_TRACE_OS, " erasesize %d", mtd->erasesize);
-	yaffs_trace(YAFFS_TRACE_OS, " size %lld", mtd->size);
+	yaffs_trace(YAFFS_TRACE_OS, " write_size %d", mtd->write_size);
+	yaffs_trace(YAFFS_TRACE_OS, " oob_size %d", mtd->oob_size);
+	yaffs_trace(YAFFS_TRACE_OS, " erase_size %d", mtd->erase_size);
+	yaffs_trace(YAFFS_TRACE_OS, " size %lld", mtd->chip_size);
 
-	if (yaffs_auto_select && yaffs_version == 1 && mtd->writesize >= 2048) {
+	if (yaffs_auto_select && yaffs_version == 1 && mtd->write_size >= 2048) {
 		yaffs_trace(YAFFS_TRACE_ALWAYS, "auto selecting yaffs2");
 		yaffs_version = 2;
 	}
 
 	if (yaffs_auto_select && yaffs_version == 2 && !options.inband_tags &&
-		mtd->writesize == 512) {
+		mtd->write_size == 512) {
 		yaffs_trace(YAFFS_TRACE_ALWAYS, "auto selecting yaffs1");
 		yaffs_version = 1;
 	}
@@ -1982,8 +1930,8 @@ static struct super_block *yaffs_internal_read_super(int yaffs_version,
 			return NULL;
 		}
 
-		if ((mtd->writesize < YAFFS_MIN_YAFFS2_CHUNK_SIZE ||
-		     mtd->oobsize < YAFFS_MIN_YAFFS2_SPARE_SIZE) &&
+		if ((mtd->write_size < YAFFS_MIN_YAFFS2_CHUNK_SIZE ||
+		     mtd->oob_size < YAFFS_MIN_YAFFS2_SPARE_SIZE) &&
 		    !options.inband_tags) {
 			yaffs_trace(YAFFS_TRACE_ALWAYS,
 				"MTD device does not have the right page sizes");
@@ -1999,8 +1947,8 @@ static struct super_block *yaffs_internal_read_super(int yaffs_version,
 			return NULL;
 		}
 
-		if (mtd->writesize < YAFFS_BYTES_PER_CHUNK ||
-		    mtd->oobsize != YAFFS_BYTES_PER_SPARE) {
+		if (mtd->write_size < YAFFS_BYTES_PER_CHUNK ||
+		    mtd->oob_size != YAFFS_BYTES_PER_SPARE) {
 			yaffs_trace(YAFFS_TRACE_ALWAYS,
 				"MTD device does not support have the right page sizes");
 			return NULL;
@@ -2053,7 +2001,7 @@ static struct super_block *yaffs_internal_read_super(int yaffs_version,
 
 	/* Set up the memory size parameters.... */
 
-	n_blocks = YCALCBLOCKS(mtd->size,
+	n_blocks = YCALCBLOCKS(mtd->chip_size,
 			(YAFFS_CHUNKS_PER_BLOCK * YAFFS_BYTES_PER_CHUNK));
 
 	param->start_block = 0;
@@ -2088,11 +2036,11 @@ static struct super_block *yaffs_internal_read_super(int yaffs_version,
 		param->bad_block_fn = nandmtd2_mark_block_bad;
 		param->query_block_fn = nandmtd2_query_block;
 		yaffs_dev_to_lc(dev)->spare_buffer =
-				kmalloc(mtd->oobsize, GFP_NOFS);
+				kmalloc(mtd->oob_size, GFP_NOFS);
 		param->is_yaffs2 = 1;
-		param->total_bytes_per_chunk = mtd->writesize;
-		param->chunks_per_block = mtd->erasesize / mtd->writesize;
-		n_blocks = YCALCBLOCKS(mtd->size, mtd->erasesize);
+		param->total_bytes_per_chunk = mtd->write_size;
+		param->chunks_per_block = mtd->erase_size / mtd->write_size;
+		n_blocks = YCALCBLOCKS(mtd->chip_size, mtd->erase_size);
 
 		param->start_block = 0;
 		param->end_block = n_blocks - 1;

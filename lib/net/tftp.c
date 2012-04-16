@@ -11,7 +11,7 @@
 #include <net/net.h>
 #include <net/tftp.h>
 #include <net/socket.h>
-#include <fs/fs.h>
+#include <fs.h>
 #include <mtd/mtd.h>
 
 #define TFTP_DEBUG

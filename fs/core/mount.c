@@ -4,7 +4,7 @@
 #include <malloc.h>
 #include <fcntl.h>
 #include <assert.h>
-#include <fs/fs.h>
+#include <fs.h>
 
 static struct file_system_type *fs_type_list;
 static LIST_HEAD(g_mount_list);

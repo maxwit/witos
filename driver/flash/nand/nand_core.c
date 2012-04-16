@@ -1400,7 +1400,7 @@ static int nand_block_mark_bad(struct nand_chip *nand, __u32 ofs)
 		return ret;
 	}
 
-	return nfc->block_mark_bad(nand, ofs);
+	return nfc->block_markbad(nand, ofs);
 }
 
 static void nand_cmd_ctrl(struct nand_chip *nand, int arg, unsigned int ctrl)
@@ -1440,7 +1440,7 @@ struct nand_ctrl *nand_ctrl_new(void)
 	nfc->read_byte      = nand_read_u8;
 	nfc->read_word      = nand_read_u16ex;  // fixme: remove it
 	nfc->block_bad      = nand_blk_bad;
-	nfc->block_mark_bad = nand_mark_blk_bad;
+	nfc->block_markbad = nand_mark_blk_bad;
 	nfc->write_buff     = nand_write_buff;
 	nfc->read_buff      = nand_read_buff;
 	nfc->verify_buff    = nand_verify_buff;
@@ -1633,8 +1633,8 @@ static struct nand_chip *new_nand_chip(struct nand_ctrl *master, int bus_id)
 	mtd->read_oob  = flash2nand_read_oob;
 	mtd->write_oob = flash2nand_write_oob;
 
-	mtd->block_is_bad   = flash2nand_block_is_bad;
-	mtd->block_mark_bad = flash2nand_block_mark_bad;
+	mtd->block_isbad   = flash2nand_block_is_bad;
+	mtd->block_markbad = flash2nand_block_mark_bad;
 	mtd->scan_bad_block = flash2nand_block_scan_bad_block;
 
 	return nand;

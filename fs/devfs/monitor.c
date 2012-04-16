@@ -4,7 +4,7 @@
 #include <string.h>
 #include <block.h>
 #include <syscalls.h>
-#include <fs/fs.h>
+#include <fs.h>
 #include <fs/devfs.h>
 
 static LIST_HEAD(g_device_queue);

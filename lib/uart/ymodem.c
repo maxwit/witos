@@ -2,7 +2,7 @@
 #include <loader.h>
 #include <stdio.h>
 #include <string.h>
-#include <fs/fs.h>
+#include <fs.h>
 #include <image.h>
 #include <fcntl.h>
 #include <mtd/mtd.h>

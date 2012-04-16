@@ -5,7 +5,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include <random.h> // fixme: to be removed
-#include <fs/fs.h>
+#include <fs.h>
 #include <net/net.h>
 
 // DHCP opcode

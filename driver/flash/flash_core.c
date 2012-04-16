@@ -215,14 +215,14 @@ static int part_block_is_bad(struct mtd_info *slave, __u32 off)
 {
 	struct mtd_info *master = slave->master;
 
-	return master->block_is_bad(master, slave->bdev.base + off);
+	return master->block_isbad(master, slave->bdev.base + off);
 }
 
 static int part_block_mark_bad(struct mtd_info *slave, __u32 off)
 {
 	struct mtd_info *master = slave->master;
 
-	return master->block_mark_bad(master, slave->bdev.base + off);
+	return master->block_markbad(master, slave->bdev.base + off);
 }
 
 int flash_register(struct mtd_info *mtd)
@@ -278,8 +278,8 @@ int flash_register(struct mtd_info *mtd)
 			slave->erase = part_erase;
 			slave->read_oob  = part_read_oob;
 			slave->write_oob = part_write_oob;
-			slave->block_is_bad   = part_block_is_bad;
-			slave->block_mark_bad = part_block_mark_bad;
+			slave->block_isbad   = part_block_is_bad;
+			slave->block_markbad = part_block_mark_bad;
 			slave->scan_bad_block = mtd->scan_bad_block; // fixme
 
 			list_add_tail(&slave->slave_node, &mtd->slave_list);

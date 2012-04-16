@@ -8,7 +8,7 @@
 #include <fcntl.h>
 #include <linux.h>
 #include <board.h>
-#include <fs/fs.h>
+#include <fs.h>
 #include <net/net.h>
 #include <net/tftp.h>
 #include <uart/uart.h>

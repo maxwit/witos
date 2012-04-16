@@ -1,6 +1,6 @@
 #include <errno.h>
 #include <string.h>
-#include <fs/fs.h>
+#include <fs.h>
 
 int filldir(struct linux_dirent *lde, const char *name, int size, loff_t offset,
 		   unsigned long ino, unsigned int type)

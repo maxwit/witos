@@ -4,7 +4,7 @@
 #include <malloc.h>
 #include <assert.h>
 #include <fcntl.h>
-#include <fs/fs.h>
+#include <fs.h>
 #include <mtd/mtd.h>
 
 // fixme

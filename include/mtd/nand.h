@@ -170,7 +170,7 @@ struct nand_ctrl {
 	int   (*verify_buff)(struct nand_ctrl *, const __u8 *, int);
 	void  (*select_chip)(struct nand_chip *, bool);
 	int   (*block_bad)(struct nand_chip *, __u32, int);
-	int   (*block_mark_bad)(struct nand_chip *, __u32);
+	int   (*block_markbad)(struct nand_chip *, __u32);
 	void  (*cmd_ctrl)(struct nand_chip *, int, unsigned int);
 	int   (*flash_ready)(struct nand_chip *);
 	void  (*command)(struct nand_chip * nand, __u32 cmd, int col, int row);

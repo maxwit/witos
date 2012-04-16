@@ -6,7 +6,7 @@
 #include <delay.h>
 #include <net/net.h>
 #include <net/skb.h>
-#include <fs/fs.h>
+#include <fs.h>
 #include <uart/uart.h> // fixme: to be removed
 
 #define MAX_SOCK_NUM  32

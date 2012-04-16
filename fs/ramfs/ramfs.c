@@ -6,7 +6,7 @@
 #include <assert.h>
 #include <block.h>
 #include <dirent.h>
-#include <fs/fs.h>
+#include <fs.h>
 
 struct ramfs_super_block {
 	struct list_head *r_list;

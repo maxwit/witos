@@ -175,8 +175,8 @@ struct mtd_info {
 	int (*read_oob)(struct mtd_info *, __u32, struct oob_opt *);
 	int (*write_oob)(struct mtd_info *,__u32, struct oob_opt *);
 
-	int (*block_is_bad)(struct mtd_info *, __u32);
-	int (*block_mark_bad)(struct mtd_info *, __u32);
+	int (*block_isbad)(struct mtd_info *, __u32);
+	int (*block_markbad)(struct mtd_info *, __u32);
 	int (*scan_bad_block)(struct mtd_info *); // fixme: to be removed
 
 	OOB_MODE oob_mode;

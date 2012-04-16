@@ -1,6 +1,6 @@
 #pragma once
 
-#include <fs/fs.h>
+#include <fs.h>
 
 /*
  * Structure of a blocks group descriptor

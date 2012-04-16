@@ -10,7 +10,7 @@
 #include <shell.h>
 #include <uart/uart.h>
 #include <font/font.h>
-#include <fs/fs.h> // fixme: to be removed
+#include <fs.h> // fixme: to be removed
 
 static const char banner[] = "\n\n" // CLRSCREEN
 	"\t+---------------------------------+\n"

@@ -2,7 +2,7 @@
 #include <errno.h>
 #include <string.h>
 #include <types.h>
-#include <fs/fs.h>
+#include <fs.h>
 #include <fs/fat.h>
 #include <drive.h>
 

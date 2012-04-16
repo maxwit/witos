@@ -3,7 +3,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <sys/stat.h>
-#include <linux/types.h>
+#include <types.h>
 
 #define MKFOURCC(a, b, c, d)  (((a) << 24) | (b) << 16 | ((c) << 8) | (d))
 #define DBG_STR_LEN           128

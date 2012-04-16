@@ -1,7 +1,7 @@
 #include <malloc.h>
 #include <errno.h>
 #include <string.h>
-#include <fs/fs.h>
+#include <fs.h>
 
 #define MAX_FDS 256
 
@@ -281,4 +281,9 @@ long sys_getcwd(char *buff, unsigned long size)
 	}
 
 	return count;
+}
+
+void d_instantiate(struct dentry *entry, struct inode * inode)
+{
+	entry->d_inode = inode;
 }

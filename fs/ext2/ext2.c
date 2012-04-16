@@ -6,7 +6,7 @@
 #include <assert.h>
 #include <block.h>
 #include <dirent.h>
-#include <fs/fs.h>
+#include <fs.h>
 #include <fs/ext2_fs.h>
 #include <fs/ext2.h>
 

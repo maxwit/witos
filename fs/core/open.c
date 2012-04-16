@@ -4,7 +4,7 @@
 #include <malloc.h>
 #include <fcntl.h>
 #include <assert.h>
-#include <fs/fs.h>
+#include <fs.h>
 
 struct vfsmount *lookup_mnt(struct path *path);
 
