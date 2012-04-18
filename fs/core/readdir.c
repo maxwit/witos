@@ -32,6 +32,6 @@ int sys_getdents(unsigned int fd, struct linux_dirent *lde, unsigned int count)
 	if (!fp->f_op->readdir)
 		return -ENOTSUPP;
 
-	ret = fp->f_op->readdir(fp, lde);
+	ret = fp->f_op->readdir(fp, lde, filldir);
 	return ret;
 }

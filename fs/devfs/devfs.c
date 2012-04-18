@@ -36,7 +36,8 @@ static const struct file_operations devfs_bdev_file_operations = {
 
 static struct dentry *devfs_lookup(struct inode *, struct dentry *,
 	struct nameidata *);
-static int devfs_mknod(struct inode *, struct dentry *, int);
+
+static int devfs_mknod(struct inode *, struct dentry *, int, dev_t);
 
 static const struct inode_operations devfs_dir_inode_operations = {
 	.lookup = devfs_lookup,
@@ -44,7 +45,7 @@ static const struct inode_operations devfs_dir_inode_operations = {
 };
 
 static int devfs_opendir(struct file *, struct inode *);
-static int devfs_readdir(struct file *, struct linux_dirent *);
+static int devfs_readdir(struct file *, void *, filldir_t);
 
 static const struct file_operations devfs_dir_file_operations = {
 	.open    = devfs_opendir,
@@ -201,7 +202,7 @@ static int devfs_opendir(struct file *fp, struct inode *inode)
 	return 0;
 }
 
-static int devfs_readdir(struct file *fp, struct linux_dirent *dirent)
+static int devfs_readdir(struct file *fp, void *dirent, filldir_t filldir)
 {
 	struct dentry *de;
 	struct inode *in;
@@ -220,10 +221,11 @@ static int devfs_readdir(struct file *fp, struct linux_dirent *dirent)
 	fp->private_data = iter->next;
 	fp->f_pos++;
 
-	return dirent->d_reclen;
+	return 0;
 }
 
-static int devfs_mknod(struct inode *dir, struct dentry *dentry, int mode)
+static int devfs_mknod(struct inode *dir, struct dentry *dentry,
+	int mode, dev_t dev)
 {
 	struct inode *in;
 	struct devfs_inode *din;

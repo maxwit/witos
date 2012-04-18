@@ -98,6 +98,7 @@ struct block_buff {
 };
 
 struct linux_dirent;
+typedef int (*filldir_t)(void *, const char *, int, loff_t, u64, unsigned);
 
 struct file_operations {
 	int (*open)(struct file *, struct inode *);
@@ -106,7 +107,7 @@ struct file_operations {
 	ssize_t (*write)(struct file *, const void *, size_t, loff_t *);
 	int (*ioctl)(struct file *, int, unsigned long);
 	loff_t (*lseek)(struct file *, loff_t, int);
-	int (*readdir)(struct file *, struct linux_dirent *);
+	int (*readdir)(struct file *, void *, filldir_t);
 };
 
 // describe an opened file
@@ -118,6 +119,7 @@ struct file {
 	struct dentry *f_dentry;
 	// struct vfsmount *vfsmnt;
 	struct block_buff blk_buf; // for block device, to be removed!
+	u64   f_version;
 	void *private_data;
 };
 
@@ -162,12 +164,28 @@ struct file {
 #define S_IWUGO		(S_IWUSR|S_IWGRP|S_IWOTH)
 #define S_IXUGO		(S_IXUSR|S_IXGRP|S_IXOTH)
 
+struct iattr {
+	unsigned int ia_valid;
+};
+
 struct inode_operations {
 	struct dentry *(*lookup)(struct inode *, struct dentry *, struct nameidata *);
-	int (*create) (struct inode *, struct dentry *, int, struct nameidata *);
-	int (*mkdir) (struct inode *, struct dentry *, int);
-	int (*rmdir) (struct inode *, struct dentry *);
-	int (*mknod)(struct inode *, struct dentry *, int);
+	int (*create) (struct inode *, struct dentry *, umode_t, struct nameidata *);
+	int (*link) (struct dentry *,struct inode *,struct dentry *);
+	int (*unlink) (struct inode *,struct dentry *);
+	int (*symlink) (struct inode *,struct dentry *,const char *);
+	int (*mkdir) (struct inode *,struct dentry *,umode_t);
+	int (*rmdir) (struct inode *,struct dentry *);
+	int (*mknod) (struct inode *,struct dentry *, int, dev_t);
+	int (*rename) (struct inode *, struct dentry *,
+			struct inode *, struct dentry *);
+	void (*truncate) (struct inode *);
+	int (*setattr) (struct dentry *, struct iattr *);
+	int (*setxattr) (struct dentry *, const char *,const void *,size_t,int);
+	ssize_t (*getxattr) (struct dentry *, const char *, void *, size_t);
+	ssize_t (*listxattr) (struct dentry *, char *, size_t);
+	int (*removexattr) (struct dentry *, const char *);
+	void (*truncate_range)(struct inode *, loff_t, loff_t);
 };
 
 #define I_DIRTY_SYNC		(1 << 0)
@@ -186,12 +204,29 @@ struct inode_operations {
 
 #define I_DIRTY (I_DIRTY_SYNC | I_DIRTY_DATASYNC | I_DIRTY_PAGES)
 
+/* Inode flags - they have nothing to superblock flags now */
+
+#define S_SYNC		1	/* Writes are synced at once */
+#define S_NOATIME	2	/* Do not update access times */
+#define S_APPEND	4	/* Append-only file */
+#define S_IMMUTABLE	8	/* Immutable file */
+#define S_DEAD		16	/* removed, but still open directory */
+#define S_NOQUOTA	32	/* Inode is not counted to quota */
+#define S_DIRSYNC	64	/* Directory modifications are synchronous */
+#define S_NOCMTIME	128	/* Do not update file c/mtime */
+#define S_SWAPFILE	256	/* Do not truncate: swapon got its bmaps */
+#define S_PRIVATE	512	/* Inode is fs-internal */
+#define S_IMA		1024	/* Inode has an associated IMA struct */
+#define S_AUTOMOUNT	2048	/* Automount/referral quasi-directory */
+#define S_NOSEC		4096	/* no suid or xattr security attributes */
+
 struct inode {
 	unsigned long i_ino;
 	loff_t        i_size;
 	__u32         i_mode;
 	int           i_nlink;
 	int           i_count;
+	int           i_version;
 
 	uid_t			i_uid;
 	gid_t			i_gid;
@@ -207,7 +242,19 @@ struct inode {
 	struct timespec		i_atime;
 	struct timespec		i_mtime;
 	struct timespec		i_ctime;
+
+	blkcnt_t i_blocks;
 };
+
+#define DT_UNKNOWN	0
+#define DT_FIFO		1
+#define DT_CHR		2
+#define DT_DIR		4
+#define DT_BLK		6
+#define DT_REG		8
+#define DT_LNK		10
+#define DT_SOCK		12
+#define DT_WHT		14
 
 #define DNAME_INLINE_LEN 36
 
@@ -251,13 +298,16 @@ int filldir(struct linux_dirent *, const char * name, int namlen, loff_t offset,
 		   unsigned long ino, unsigned int type);
 
 struct super_block {
-	__u32 s_blocksize;
+	__u32 s_blocksize;	
+	unsigned char s_blocksize_bits;
+	unsigned long s_flags;
 	struct block_device *s_bdev;
 	struct dentry *s_root;
 	void *s_fs_info;
 	void *driver_context;
 	unsigned long s_magic;
 	dev_t s_dev;
+	unsigned char s_dirt;
 };
 
 struct super_block *sget(struct file_system_type *type, void *data);
@@ -286,8 +336,20 @@ int vfs_mknod(struct inode *dir, struct dentry *dentry, int mode);
 struct dentry *mount_bdev(struct file_system_type *, int, const char *,
 	void *, int (*fill_super)(struct super_block *, void *, int));
 
-struct iattr {
-	unsigned int ia_valid;
-};
-
 void d_instantiate(struct dentry *entry, struct inode * inode);
+
+static inline void inode_dec_link_count(struct inode *inode)
+{
+	inode->i_nlink--;
+}
+
+// fixme: to be moved
+static inline u16 old_encode_dev(dev_t dev)
+{
+	return (MAJOR(dev) << 8) | MINOR(dev);
+}
+
+static inline dev_t old_decode_dev(u16 val)
+{
+	return MKDEV((val >> 8) & 255, val & 255);
+}

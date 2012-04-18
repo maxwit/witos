@@ -9,17 +9,17 @@
 
 typedef unsigned char  __u8, u8, byte, uint8_t;
 typedef unsigned short __u16, u16, uint16_t;
-typedef unsigned int   __u32, u32, uint32_t;
-typedef unsigned long  size_t, loff_t;
+typedef unsigned int   __u32, u32, uint32_t, umode_t;
+typedef unsigned long  size_t, loff_t, blkcnt_t;
 typedef signed int     ssize_t;
-typedef unsigned long long uint64_t;
+typedef unsigned long long uint64_t, u64;
 
 // fixme
 typedef unsigned short __le16;
 typedef unsigned int   __le32;
 
 typedef unsigned int dev_t, uid_t, gid_t;
-typedef long __kernel_time_t;
+typedef long __kernel_time_t, time_t;
 
 typedef enum {false, true} bool;
 

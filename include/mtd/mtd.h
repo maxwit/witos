@@ -135,7 +135,9 @@ struct flash_info {
 	const char *bdev_label;
 };
 
-struct mtd_info {
+struct mtd_info {	
+	uint32_t flags;
+
 	struct block_device bdev;
 
 	union {
