@@ -4,7 +4,7 @@
 #include <errno.h>
 #include <malloc.h>
 #include <mtd/mtd.h>
-#include <flash/nand.h>
+#include <mtd/nand.h>
 
 static int omap3_nand_ready(struct nand_chip *nand)
 {

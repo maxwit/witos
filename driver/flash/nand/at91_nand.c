@@ -3,7 +3,7 @@
 #include <malloc.h>
 #include <errno.h>
 #include <mtd/mtd.h>
-#include <flash/nand.h>
+#include <mtd/nand.h>
 
 static int __init at91_nand_init(void)
 {

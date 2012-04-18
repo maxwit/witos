@@ -6,7 +6,7 @@
 #include <string.h>
 #include <bitops.h>
 #include <mtd/mtd.h>
-#include <flash/nand.h>
+#include <mtd/nand.h>
 
 #define BBT_PAGE_MASK	0xffffff3f
 
