@@ -3172,8 +3172,6 @@ static void yaffs_check_obj_details_loaded(struct yaffs_obj *in)
 	struct yaffs_obj_hdr *oh;
 	struct yaffs_dev *dev;
 	struct yaffs_ext_tags tags;
-	int result;
-	int alloc_failed = 0;
 
 	if (!in || !in->lazy_loaded || in->hdr_chunk < 1)
 		return;
@@ -3182,7 +3180,7 @@ static void yaffs_check_obj_details_loaded(struct yaffs_obj *in)
 	in->lazy_loaded = 0;
 	buf = yaffs_get_temp_buffer(dev);
 
-	result = yaffs_rd_chunk_tags_nand(dev, in->hdr_chunk, buf, &tags);
+	yaffs_rd_chunk_tags_nand(dev, in->hdr_chunk, buf, &tags);
 	oh = (struct yaffs_obj_hdr *)buf;
 
 	in->yst_mode = oh->yst_mode;
@@ -3192,8 +3190,6 @@ static void yaffs_check_obj_details_loaded(struct yaffs_obj *in)
 	if (in->variant_type == YAFFS_OBJECT_TYPE_SYMLINK) {
 		in->variant.symlink_variant.alias =
 		    yaffs_clone_str(oh->alias);
-		if (!in->variant.symlink_variant.alias)
-			alloc_failed = 1;	/* Not returned */
 	}
 	yaffs_release_temp_buffer(dev, buf);
 }
@@ -3281,7 +3277,6 @@ int yaffs_update_oh(struct yaffs_obj *in, const YCHAR *name, int force,
 	struct yaffs_dev *dev = in->my_dev;
 	int prev_chunk_id;
 	int ret_val = 0;
-	int result = 0;
 	int new_chunk_id;
 	struct yaffs_ext_tags new_tags;
 	struct yaffs_ext_tags old_tags;
@@ -3305,7 +3300,7 @@ int yaffs_update_oh(struct yaffs_obj *in, const YCHAR *name, int force,
 	prev_chunk_id = in->hdr_chunk;
 
 	if (prev_chunk_id > 0) {
-		result = yaffs_rd_chunk_tags_nand(dev, prev_chunk_id,
+		yaffs_rd_chunk_tags_nand(dev, prev_chunk_id,
 						  buffer, &old_tags);
 
 		yaffs_verify_oh(in, oh, &old_tags, 0);
@@ -4449,6 +4444,8 @@ int yaffs_get_obj_name(struct yaffs_obj *obj, YCHAR *name, int buffer_size)
 			result = yaffs_rd_chunk_tags_nand(obj->my_dev,
 							  obj->hdr_chunk,
 							  buffer, NULL);
+			if (result < 0)
+				printf("%s() line %d: result = %d\n", __func__, __LINE__, result);
 		}
 		yaffs_load_name_from_oh(obj->my_dev, name, oh->name,
 					buffer_size);

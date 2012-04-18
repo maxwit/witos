@@ -15,6 +15,10 @@ struct list_head {
 #define list_for_each(iter, head) \
 	for (iter = (head)->next; iter != (head); iter = iter->next)
 
+#define list_for_each_safe(pos, n, head) \
+			for (pos = (head)->next, n = pos->next; pos != (head); \
+				pos = n, n = pos->next)
+
 #define list_for_each_entry(pos, head, member) \
 	for (pos = container_of((head)->next, typeof(*pos), member); \
 		&pos->member != (head); \

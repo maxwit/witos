@@ -15,10 +15,10 @@
 
 #include "yaffs_mtdif.h"
 
-#include "linux/mtd/mtd.h"
-#include "linux/types.h"
-#include "linux/time.h"
-#include "linux/mtd/nand.h"
+#include <mtd/mtd.h>
+#include <types.h>
+#include <time.h>
+#include <mtd/nand.h>
 
 #include "yaffs_linux.h"
 

@@ -10,9 +10,9 @@
 typedef unsigned char  __u8, u8, byte, uint8_t;
 typedef unsigned short __u16, u16, uint16_t;
 typedef unsigned int   __u32, u32, uint32_t, umode_t;
-typedef unsigned long  size_t, loff_t, blkcnt_t;
+typedef unsigned long  size_t, blkcnt_t;
 typedef signed int     ssize_t;
-typedef unsigned long long uint64_t, u64;
+typedef unsigned long long uint64_t, u64, loff_t;
 
 // fixme
 typedef unsigned short __le16;
