@@ -270,6 +270,8 @@ static void yaffs_handle_chunk_wr_error(struct yaffs_dev *dev, int nand_chunk,
 	yaffs_skip_rest_of_block(dev);
 }
 
+#define abs(n) ((n) > 0 ? (n) : -(n))
+
 /*
  * Verification code
  */
@@ -319,9 +321,8 @@ static int yaffs_check_chunk_erased(struct yaffs_dev *dev, int nand_chunk)
 	int retval = YAFFS_OK;
 	u8 *data = yaffs_get_temp_buffer(dev);
 	struct yaffs_ext_tags tags;
-	int result;
 
-	result = yaffs_rd_chunk_tags_nand(dev, nand_chunk, data, &tags);
+	yaffs_rd_chunk_tags_nand(dev, nand_chunk, data, &tags);
 
 	if (tags.ecc_result > YAFFS_ECC_RESULT_NO_ERROR)
 		retval = YAFFS_FAIL;
@@ -347,9 +348,8 @@ static int yaffs_verify_chunk_written(struct yaffs_dev *dev,
 	int retval = YAFFS_OK;
 	struct yaffs_ext_tags temp_tags;
 	u8 *buffer = yaffs_get_temp_buffer(dev);
-	int result;
 
-	result = yaffs_rd_chunk_tags_nand(dev, nand_chunk, buffer, &temp_tags);
+	yaffs_rd_chunk_tags_nand(dev, nand_chunk, buffer, &temp_tags);
 	if (memcmp(buffer, data, dev->data_bytes_per_chunk) ||
 	    temp_tags.obj_id != tags->obj_id ||
 	    temp_tags.chunk_id != tags->chunk_id ||
@@ -1483,7 +1483,6 @@ static struct yaffs_cache *yaffs_grab_chunk_cache(struct yaffs_dev *dev)
 	struct yaffs_obj *the_obj;
 	int usage;
 	int i;
-	int pushout;
 
 	if (dev->param.n_caches < 1)
 		return NULL;
@@ -1504,7 +1503,6 @@ static struct yaffs_cache *yaffs_grab_chunk_cache(struct yaffs_dev *dev)
 		the_obj = dev->cache[0].object;
 		usage = -1;
 		cache = NULL;
-		pushout = -1;
 
 		for (i = 0; i < dev->param.n_caches; i++) {
 			if (dev->cache[i].object &&
@@ -1514,7 +1512,6 @@ static struct yaffs_cache *yaffs_grab_chunk_cache(struct yaffs_dev *dev)
 				usage = dev->cache[i].last_use;
 				the_obj = dev->cache[i].object;
 				cache = &dev->cache[i];
-				pushout = i;
 			}
 		}
 
@@ -1885,8 +1882,9 @@ static int yaffs_new_obj_id(struct yaffs_dev *dev)
 		if (1 || dev->obj_bucket[bucket].count > 0) {
 			list_for_each(i, &dev->obj_bucket[bucket].list) {
 				/* If there is already one in the list */
-				if (i && list_entry(i, struct yaffs_obj,
-						    hash_link)->obj_id == n) {
+				struct yaffs_obj *yobj;
+				yobj = list_entry(i, struct yaffs_obj, hash_link);
+				if (i && yobj->obj_id == n) {
 					found = 0;
 				}
 			}

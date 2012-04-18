@@ -21,5 +21,5 @@ struct list_head *get_heap_head_list(void);
 #define kmalloc(s, f) malloc(s)
 #define kfree(p) free(p)
 
-#define vmalloc(s, f) malloc(s)
+#define vmalloc(s) malloc(s)
 #define vfree(p) free(p)

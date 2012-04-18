@@ -26,6 +26,7 @@
 // #include <stat.h>
 // #include <sort.h>
 #include <bitops.h>
+#include <malloc.h>
 
 /*  These type wrappings are used to support Unicode names in WinCE. */
 #define YCHAR char

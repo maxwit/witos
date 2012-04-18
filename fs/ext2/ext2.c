@@ -35,7 +35,7 @@ static const struct file_operations ext2_reg_file_operations = {
 	.write = ext2_write,
 };
 
-static int ext2_readdir(struct file *, struct linux_dirent *);
+static int ext2_readdir(struct file *fp, void *dirent, filldir_t filldir);
 
 static const struct file_operations ext2_dir_file_operations = {
 	.readdir = ext2_readdir,
@@ -574,7 +574,7 @@ static int ext2_inode_read_block(struct inode *in, int blk_no, char *blk_buf)
 	return 0;
 }
 
-static int ext2_readdir(struct file *fp, struct linux_dirent *dirent)
+static int ext2_readdir(struct file *fp, void *dirent, filldir_t filldir)
 {
 	int blk_num;
 	int blk_off;

@@ -2108,7 +2108,7 @@ static struct super_block *yaffs_internal_read_super(int yaffs_version,
 
 	yaffs_trace(YAFFS_TRACE_OS,
 		"yaffs_readpage_nolock at %lld, size %08x",
-		(long long)pos,
+		(long long)/*pos*/0,
 		(unsigned)PAGE_CACHE_SIZE);
 	/* Release lock before yaffs_get_inode() */
 

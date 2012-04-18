@@ -16,6 +16,7 @@
 #ifndef __YAFFS_GETBLOCKINFO_H__
 #define __YAFFS_GETBLOCKINFO_H__
 
+#include <assert.h>
 #include "yaffs_guts.h"
 #include "yaffs_trace.h"
 

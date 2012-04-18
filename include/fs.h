@@ -174,7 +174,7 @@ struct inode_operations {
 	int (*link) (struct dentry *,struct inode *,struct dentry *);
 	int (*unlink) (struct inode *,struct dentry *);
 	int (*symlink) (struct inode *,struct dentry *,const char *);
-	int (*mkdir) (struct inode *,struct dentry *,umode_t);
+	int (*mkdir) (struct inode *,struct dentry *, umode_t);
 	int (*rmdir) (struct inode *,struct dentry *);
 	int (*mknod) (struct inode *,struct dentry *, int, dev_t);
 	int (*rename) (struct inode *, struct dentry *,
@@ -294,8 +294,10 @@ struct linux_dirent {
 	unsigned char  d_type; // fixme
 };
 
+/**
 int filldir(struct linux_dirent *, const char * name, int namlen, loff_t offset,
 		   unsigned long ino, unsigned int type);
+*/
 
 struct super_block {
 	__u32 s_blocksize;	

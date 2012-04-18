@@ -38,7 +38,7 @@ static const struct file_operations ramfs_reg_file_operations = {
 
 static struct dentry *ramfs_lookup(struct inode *parent, struct dentry *dentry,
 	struct nameidata *nd);
-static int ramfs_mkdir(struct inode *, struct dentry *, int);
+static int ramfs_mkdir(struct inode *, struct dentry *, umode_t);
 
 static const struct inode_operations ramfs_dir_inode_operations = {
 	.lookup = ramfs_lookup,
@@ -46,7 +46,7 @@ static const struct inode_operations ramfs_dir_inode_operations = {
 };
 
 static int ramfs_opendir(struct file *fp, struct inode *inode);
-static int ramfs_readdir(struct file *, struct linux_dirent *);
+static int ramfs_readdir(struct file *, void *, filldir_t);
 
 static const struct file_operations ramfs_dir_file_operations = {
 	.open    = ramfs_opendir,
@@ -228,7 +228,7 @@ static int ramfs_opendir(struct file *fp, struct inode *inode)
 	return 0;
 }
 
-static int ramfs_readdir(struct file *fp, struct linux_dirent *dirent)
+static int ramfs_readdir(struct file *fp, void *dirent, filldir_t filldir)
 {
 	struct dentry *de;
 	struct inode *in;
@@ -247,10 +247,10 @@ static int ramfs_readdir(struct file *fp, struct linux_dirent *dirent)
 	fp->private_data = iter->next;
 	fp->f_pos++;
 
-	return dirent->d_reclen;
+	return 0;
 }
 
-static int ramfs_mkdir(struct inode *parent, struct dentry *de, int mode)
+static int ramfs_mkdir(struct inode *parent, struct dentry *de, umode_t mode)
 {
 	struct inode *inode;
 

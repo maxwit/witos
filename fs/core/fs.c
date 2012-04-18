@@ -164,7 +164,7 @@ int vfs_mknod(struct inode *dir, struct dentry *dentry, int mode)
 	int errno = -ENOTSUPP;
 
 	if (dir->i_op->mknod)
-		errno = dir->i_op->mknod(dir, dentry, mode);
+		errno = dir->i_op->mknod(dir, dentry, mode, 0);
 
 	return errno;
 }

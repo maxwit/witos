@@ -2,10 +2,11 @@
 #include <string.h>
 #include <fs.h>
 
-int filldir(struct linux_dirent *lde, const char *name, int size, loff_t offset,
-		   unsigned long ino, unsigned int type)
+int filldir(void *de, const char *name, int size, loff_t offset,
+		   u64 ino, unsigned type)
 {
 	size_t reclen;
+	struct linux_dirent *lde = de;
 
 	lde->d_ino  = ino;
 	lde->d_off  = offset;
