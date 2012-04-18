@@ -3,7 +3,7 @@
 #include <string.h>
 #include <malloc.h>
 #include <mtd/mtd.h>
-#include <flash/nand.h>
+#include <mtd/nand.h>
 
 static int check_pattern(__u8 *buf, int len, int paglen, struct nand_bad_blk *td)
 {

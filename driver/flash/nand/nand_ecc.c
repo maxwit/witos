@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <flash/nand.h>
+#include <mtd/nand.h>
 
 /*
  * invparity is a 256 byte table that contains the odd parity
