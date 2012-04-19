@@ -93,29 +93,47 @@ typedef struct {
 #define EDF_JFFS2      (1 << 0)
 #define EDF_ALLOWBB    (1 << 8)
 
-struct erase_opt {
+struct erase_info {
+	struct mtd_info *mtd;
+	uint64_t addr;
+	uint64_t len;
+	uint64_t fail_addr;
+	u_long time;
+	u_long retries;
+	unsigned dev;
+	unsigned cell;
+	void (*callback) (struct erase_info *self);
+	u_long priv;
+	u_char state;
+	struct erase_info *next;
+	__u32 flags; // fixme
+};
+
+#if 0
+struct erase_info {
 	__u32 estart;
 	__u32 esize;
 	__u32 flags;
 	__u32 fail_addr; // fail_at, faddr
 	__u8  estate;
 };
+#endif
 
 typedef enum {
 	FLASH_OOB_PLACE,
-	FLASH_OOB_AUTO,
+	MTD_OPS_AUTO_OOB,
 	FLASH_OOB_RAW,
 } OOB_MODE;
 
-struct oob_opt {
-	__u8  *data_buff;
-	__u8  *oob_buff;
-	__u32  data_len;
-	__u32  oob_len;
-	__u32  ret_len;
-	__u32  oob_ret_len;
-	__u32  oob_off;
-	OOB_MODE  op_mode;
+struct mtd_oob_ops {
+	unsigned int	mode;
+	size_t		len;
+	size_t		retlen;
+	size_t		ooblen;
+	size_t		oobretlen;
+	uint32_t	ooboffs;
+	uint8_t		*datbuf;
+	uint8_t		*oobbuf;
 };
 
 struct image_info {
@@ -133,6 +151,21 @@ struct flash_info {
 	size_t bdev_base;
 	size_t bdev_size;
 	const char *bdev_label;
+};
+
+#define MTD_MAX_OOBFREE_ENTRIES_LARGE	32
+#define MTD_MAX_ECCPOS_ENTRIES_LARGE	448
+
+struct nand_oobfree {
+	__u32 offset;
+	__u32 length;
+};
+
+struct nand_ecclayout {
+	__u32 eccbytes;
+	__u32 eccpos[MTD_MAX_ECCPOS_ENTRIES_LARGE];
+	__u32 oobavail;
+	struct nand_oobfree oobfree[MTD_MAX_OOBFREE_ENTRIES_LARGE];
 };
 
 struct mtd_info {	
@@ -170,18 +203,20 @@ struct mtd_info {
 	FLASH_HOOK_PARAM *callback_args;
 	FLASH_HOOK_FUNC   callback_func;
 
-	int (*read)(struct mtd_info *, __u32, __u32, __u32 *, __u8 *);
+	int (*read)(struct mtd_info *, __u32, __u32, size_t *, __u8 *);
 	int (*write)(struct mtd_info *, __u32, __u32 , __u32 *, const __u8 *);
-	int (*erase)(struct mtd_info *, struct erase_opt *);
+	int (*erase)(struct mtd_info *, struct erase_info *);
 
-	int (*read_oob)(struct mtd_info *, __u32, struct oob_opt *);
-	int (*write_oob)(struct mtd_info *,__u32, struct oob_opt *);
+	int (*read_oob)(struct mtd_info *, __u32, struct mtd_oob_ops *);
+	int (*write_oob)(struct mtd_info *,__u32, struct mtd_oob_ops *);
 
 	int (*block_isbad)(struct mtd_info *, __u32);
 	int (*block_markbad)(struct mtd_info *, __u32);
 	int (*scan_bad_block)(struct mtd_info *); // fixme: to be removed
 
 	OOB_MODE oob_mode;
+	//
+	struct nand_ecclayout *ecclayout;
 };
 
 static __u32 inline flash_write_is_align(struct mtd_info *mtd, __u32 size)

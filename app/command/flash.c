@@ -433,7 +433,7 @@ static int erase(int argc, char *argv[])
 	__u32 erase_flags = EDF_NORMAL;
 	int fd;
 	struct flash_info flash_val;
-	struct erase_opt eopt;
+	struct erase_info eopt;
 	char bdev_name[BLOCK_DEV_NAME_LEN];
 
 	while ((ch = getopt(argc, argv, "a:l:p::c:f")) != -1) {
@@ -529,8 +529,8 @@ static int erase(int argc, char *argv[])
 	printf("[0x%08x : 0x%08x]\n", start, size);
 
 	memset(&eopt, 0, sizeof(eopt));
-	eopt.esize = size;
-	eopt.estart = start;
+	eopt.len = size;
+	eopt.addr = start;
 	eopt.flags = erase_flags;
 
 	ret = ioctl(fd, FLASH_IOC_ERASE, &eopt);

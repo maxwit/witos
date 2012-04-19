@@ -30,10 +30,10 @@
 #include "yaffs_packedtags1.h"
 #include "yaffs_tagscompat.h"	/* for yaffs_calc_tags_ecc */
 #include "yaffs_linux.h"
-#include "linux/kernel.h"
-#include "linux/version.h"
-#include "linux/types.h"
-#include "linux/mtd/mtd.h"
+#include <kernel.h>
+#include <version.h>
+#include <types.h>
+#include <mtd/mtd.h>
 
 /* Write a chunk (page) of data to NAND.
  *
@@ -292,7 +292,6 @@ int nandmtd1_query_block(struct yaffs_dev *dev, int block_no,
 	struct yaffs_ext_tags etags;
 	int state = YAFFS_BLOCK_STATE_DEAD;
 	int seqnum = 0;
-	int retval;
 
 	/* We don't yet have a good place to test for MTD config prerequists.
 	 * Do it here as we are called during the initial scan.
@@ -300,7 +299,7 @@ int nandmtd1_query_block(struct yaffs_dev *dev, int block_no,
 	if (nandmtd1_test_prerequists(dev, mtd) != YAFFS_OK)
 		return YAFFS_FAIL;
 
-	retval = nandmtd1_read_chunk_tags(dev, chunk_num, NULL, &etags);
+	nandmtd1_read_chunk_tags(dev, chunk_num, NULL, &etags);
 	etags.block_bad = (mtd->block_isbad) (mtd, addr);
 	if (etags.block_bad) {
 		yaffs_trace(YAFFS_TRACE_BAD_BLOCKS,

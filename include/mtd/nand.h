@@ -242,7 +242,7 @@ struct nand_vendor_name {
 int nand_scan_bbt(struct nand_chip *nand);
 int nand_update_bbt(struct nand_chip *nand, __u32 offs);
 int nand_is_bad_bbt(struct nand_chip *nand, __u32 offs);
-int nand_erase(struct nand_chip *nand, struct erase_opt *opt);
+int nand_erase(struct nand_chip *nand, struct erase_info *opt);
 
 #define NAND_BBP_LARGE        0
 #define NAND_BBP_SMALL        5
@@ -295,7 +295,7 @@ struct nand_chip {
 
 	int  bad_blk_oob_pos;
 
-	struct oob_opt opt;
+	struct mtd_oob_ops opt;
 
 	__u8 *bbt;
 	__u8 *oob_buf;

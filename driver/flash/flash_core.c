@@ -172,7 +172,7 @@ static int __init flash_scan_part(struct mtd_info *host,
 }
 
 static int part_read(struct mtd_info *slave,
-				__u32 from, __u32 len, __u32 *retlen, __u8 *buff)
+				__u32 from, __u32 len, size_t *retlen, __u8 *buff)
 {
 	struct mtd_info *master = slave->master;
 
@@ -187,16 +187,16 @@ static int part_write(struct mtd_info *slave,
 	return master->write(master, slave->bdev.base + to, len, retlen, buff);
 }
 
-static int part_erase(struct mtd_info *slave, struct erase_opt *opt)
+static int part_erase(struct mtd_info *slave, struct erase_info *opt)
 {
 	struct mtd_info *master = slave->master;
 
-	opt->estart += slave->bdev.base;
+	opt->addr += slave->bdev.base;
 	return master->erase(master, opt);
 }
 
 static int part_read_oob(struct mtd_info *slave,
-				__u32 from, struct oob_opt *ops)
+				__u32 from, struct mtd_oob_ops *ops)
 {
 	struct mtd_info *master = slave->master;
 
@@ -204,7 +204,7 @@ static int part_read_oob(struct mtd_info *slave,
 }
 
 static int part_write_oob(struct mtd_info *slave,
-				__u32 to,	struct oob_opt *opt)
+				__u32 to,	struct mtd_oob_ops *opt)
 {
 	struct mtd_info *master = slave->master;
 

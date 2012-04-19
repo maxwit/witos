@@ -11,24 +11,24 @@
 static inline int __flash_read(struct mtd_info *mtd, void *buff, int count, int start)
 {
 	int ret;
-	__u32 ret_len;
+	size_t ret_len;
 
 	if (FLASH_OOB_RAW == mtd->oob_mode) {
-		struct oob_opt opt;
+		struct mtd_oob_ops opt;
 
-		memset(&opt, 0, sizeof(struct oob_opt));
-		opt.op_mode   = FLASH_OOB_RAW;
-		opt.data_buff = buff;
-		opt.data_len  = count;
+		memset(&opt, 0, sizeof(struct mtd_oob_ops));
+		opt.mode   = FLASH_OOB_RAW;
+		opt.datbuf = buff;
+		opt.len  = count;
 
 		ret = mtd->read_oob(mtd, start, &opt);
 
-		// *start += opt.ret_len;
+		// *start += opt.retlen;
 
 		if (ret < 0)
 			return ret;
 
-		return opt.ret_len;
+		return opt.retlen;
 	} else {
 		ret = mtd->read(mtd, start, count, &ret_len, buff);
 
@@ -55,44 +55,44 @@ static inline ssize_t __flash_write(struct mtd_info *mtd, const void *buff, __u3
 {
 	int ret = 0;
 	__u32 ret_len;
-	struct oob_opt opt;
+	struct mtd_oob_ops opt;
 	__u32 size = 0;
 	__u8 *buff_ptr = (__u8 *)buff;
 
 	switch (mtd->oob_mode) {
 	case FLASH_OOB_RAW:
-		memset(&opt, 0, sizeof(struct oob_opt));
-		opt.op_mode   = FLASH_OOB_RAW;
-		opt.data_len  = count;
-		opt.data_buff = (__u8 *)buff;
-		opt.oob_len   = mtd->oob_size;
+		memset(&opt, 0, sizeof(struct mtd_oob_ops));
+		opt.mode   = FLASH_OOB_RAW;
+		opt.len  = count;
+		opt.datbuf = (__u8 *)buff;
+		opt.ooblen   = mtd->oob_size;
 
 		ret = mtd->write_oob(mtd, ppos, &opt);
 
 		if (ret < 0) {
 			DPRINT("%s() failed! ret = %d\n", __func__, ret);
 			return ret;
-		} else if (opt.ret_len != opt.data_len) {
+		} else if (opt.retlen != opt.len) {
 			BUG();
 		}
 
-		// *ppos += opt.ret_len;
+		// *ppos += opt.retlen;
 
-		return opt.ret_len;
+		return opt.retlen;
 
-	case FLASH_OOB_AUTO:
+	case MTD_OPS_AUTO_OOB:
 		if (count % (mtd->write_size + mtd->oob_size)) {
 			DPRINT("%s(), size invalid!\n", __func__);
 			return -EINVAL;
 		}
 
 		while (size < count) {
-			memset(&opt, 0, sizeof(struct oob_opt));
-			opt.op_mode   = FLASH_OOB_AUTO;
-			opt.data_buff = buff_ptr;
-			opt.data_len  = mtd->write_size;
-			opt.oob_buff  = buff_ptr + mtd->write_size;
-			opt.oob_len   = mtd->oob_size;
+			memset(&opt, 0, sizeof(struct mtd_oob_ops));
+			opt.mode   = MTD_OPS_AUTO_OOB;
+			opt.datbuf = buff_ptr;
+			opt.len    = mtd->write_size;
+			opt.oobbuf = buff_ptr + mtd->write_size;
+			opt.ooblen = mtd->oob_size;
 
 			ret = mtd->write_oob(mtd, ppos, &opt);
 
@@ -101,7 +101,7 @@ static inline ssize_t __flash_write(struct mtd_info *mtd, const void *buff, __u3
 				return ret;
 			}
 
-			if (opt.ret_len != opt.data_len)
+			if (opt.retlen != opt.len)
 				BUG();
 
 			ppos += mtd->write_size; // + mtd->oob_size;
@@ -168,11 +168,11 @@ static int flash_open(struct file *fp, struct inode *inode)
 }
 
 
-static int __flash_erase(struct mtd_info *mtd, struct erase_opt *opt)
+static int __flash_erase(struct mtd_info *mtd, struct erase_info *opt)
 {
 	int ret;
 #if 0
-	struct erase_opt opt;
+	struct erase_info opt;
 
 	memset(&opt, 0, sizeof(opt));
 
@@ -181,15 +181,15 @@ static int __flash_erase(struct mtd_info *mtd, struct erase_opt *opt)
 	opt.flags  = flags;
 #endif
 
-	if (opt->esize & (mtd->erase_size - 1)) {
+	if (opt->len & (mtd->erase_size - 1)) {
 #ifdef CONFIG_DEBUG
-		size_t size = opt->esize;
+		size_t size = opt->len;
 #endif
 
-		ALIGN_UP(opt->esize, mtd->erase_size);
+		ALIGN_UP(opt->len, mtd->erase_size);
 		GEN_DBG("size (0x%08x) not aligned with mtd erase size (0x%08x)!"
 			" adjusted to 0x%08x\n",
-			size, mtd->erase_size, opt->esize);
+			size, mtd->erase_size, opt->len);
 	}
 
 	ret = mtd->erase(mtd, opt);
@@ -204,7 +204,7 @@ static int __flash_erase(struct mtd_info *mtd, struct erase_opt *opt)
 
 #if 0
 IMG_YAFFS1 -> FLASH_OOB_RAW
-IMG_YAFFS2 -> FLASH_OOB_AUTO
+IMG_YAFFS2 -> MTD_OPS_AUTO_OOB
 normal -> FLASH_OOB_PLACE
 #endif
 
@@ -218,7 +218,7 @@ static int flash_ioctl(struct file *fp, int cmd, unsigned long arg)
 	case FLASH_IOCS_OOB_MODE:
 		switch (arg) {
 		case FLASH_OOB_RAW:
-		case FLASH_OOB_AUTO:
+		case MTD_OPS_AUTO_OOB:
 			fp->blk_buf.blk_size = (mtd->write_size + mtd->oob_size) << \
 									(mtd->erase_shift - mtd->write_shift);
 			break;
@@ -235,7 +235,7 @@ static int flash_ioctl(struct file *fp, int cmd, unsigned long arg)
 		break;
 
 	case FLASH_IOC_ERASE:
-		return __flash_erase(mtd, (struct erase_opt *)arg);
+		return __flash_erase(mtd, (struct erase_info *)arg);
 
 	case FLASH_IOCS_CALLBACK:
 		callback = (FLASH_CALLBACK *)arg;
@@ -331,7 +331,7 @@ static ssize_t flash_write(struct file *fp, const void *buff, size_t size, loff_
 #if 1
 			switch (mtd->oob_mode) {
 			case FLASH_OOB_RAW:
-			case FLASH_OOB_AUTO:
+			case MTD_OPS_AUTO_OOB:
 				// fixme: use macro: RATIO_TO_PAGE(n)
 				// size_adj = blk_buff->blk_size / (mtd->write_size + mtd->oob_size) << mtd->write_shift;
 				flash_pos = fp->f_pos / (mtd->write_size + mtd->oob_size) << mtd->write_shift;
@@ -359,7 +359,7 @@ static ssize_t flash_write(struct file *fp, const void *buff, size_t size, loff_
 				break;
 
 			case IMG_YAFFS2:
-				ret = flash_ioctl(mtd, FLASH_IOCS_OOB_MODE, FLASH_OOB_AUTO);
+				ret = flash_ioctl(mtd, FLASH_IOCS_OOB_MODE, MTD_OPS_AUTO_OOB);
 				break;
 
 			default:
@@ -403,7 +403,7 @@ static int flash_close(struct file *fp)
 
 		switch (mtd->oob_mode) {
 		case FLASH_OOB_RAW:
-		case FLASH_OOB_AUTO:
+		case MTD_OPS_AUTO_OOB:
 			flash_pos = fp->f_pos / (mtd->write_size + mtd->oob_size) * mtd->write_size;
 			break;
 

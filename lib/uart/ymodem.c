@@ -189,7 +189,7 @@ int ymodem_load(struct loader_opt *opt)
 					break;
 
 				case IMG_YAFFS2:
-					oob_mode = FLASH_OOB_AUTO;
+					oob_mode = MTD_OPS_AUTO_OOB;
 					break;
 
 				default:

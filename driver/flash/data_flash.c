@@ -27,7 +27,7 @@ static int DataFlashStatus(struct mtd_info *, __u8 *);
 
 static int DataFlashWaitReady(struct mtd_info *);
 
-static int DataFlashErase(struct mtd_info *, struct erase_opt *);
+static int DataFlashErase(struct mtd_info *, struct erase_info *);
 
 static int DataFlashWrite(struct mtd_info *, __u32, __u32, __u32 *, const __u8 *);
 
@@ -152,7 +152,7 @@ static int DataFlashWaitReady(struct mtd_info *mtd)
 	return 0;
 }
 
-static int DataFlashErase(struct mtd_info *mtd, struct erase_opt *pErsOp)
+static int DataFlashErase(struct mtd_info *mtd, struct erase_info *pErsOp)
 {
 	struct DataFlash *pDataFlash = container_of(flash, struct DataFlash, parent);
 	__u32 blocksize = pDataFlash->block_size, nLen = pErsOp->len;
@@ -438,7 +438,7 @@ static int DataFlashRead(struct mtd_info *mtd, __u32 from, __u32 len,
 	return status;
 }
 
-static int DataFlashReadOOB(struct mtd_info *mtd, __u32 ulLen, struct oob_opt *pOps)
+static int DataFlashReadOOB(struct mtd_info *mtd, __u32 ulLen, struct mtd_oob_ops *pOps)
 {
 	flash = flash;
 	ulLen  = ulLen;
@@ -447,7 +447,7 @@ static int DataFlashReadOOB(struct mtd_info *mtd, __u32 ulLen, struct oob_opt *p
 	return 0;
 }
 
-static int DataFlashWriteOOB(struct mtd_info *mtd, __u32 ulLen, struct oob_opt *pOps)
+static int DataFlashWriteOOB(struct mtd_info *mtd, __u32 ulLen, struct mtd_oob_ops *pOps)
 {
 	flash = flash;
 	ulLen  = ulLen;

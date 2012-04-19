@@ -59,7 +59,7 @@ static int read_bbt(struct nand_chip *nand,
 {
 	int ret, i, j, act = 0;
 	struct mtd_info *mtd = NAND_TO_FLASH(nand);
-	__u32 retlen, len, totlen;
+	size_t retlen, len, totlen;
 	__u32 from;
 	__u8 msk = (__u8) ((1 << bits) - 1);
 
@@ -146,15 +146,15 @@ static int read_abs_bbt(struct nand_chip *nand, __u8 *buf, struct nand_bad_blk *
 static int scan_read_raw(struct nand_chip *nand,
 					__u8 *buf, __u32 offs, __u32 len)
 {
-	struct oob_opt ops;
+	struct mtd_oob_ops ops;
 	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 
-	ops.op_mode    = FLASH_OOB_RAW;
-	ops.oob_off = 0;
-	ops.oob_len    = mtd->oob_size;
-	ops.oob_buff  = buf;
-	ops.data_buff  = buf;
-	ops.data_len    = len;
+	ops.mode    = FLASH_OOB_RAW;
+	ops.ooboffs = 0;
+	ops.ooblen  = mtd->oob_size;
+	ops.oobbuf  = buf;
+	ops.datbuf  = buf;
+	ops.len  = len;
 
 	return mtd->read_oob(mtd, offs, &ops);
 }
@@ -166,15 +166,15 @@ static int scan_write_bbt(struct nand_chip *nand,
 						__u8 *oob
 						)
 {
-	struct oob_opt ops;
+	struct mtd_oob_ops ops;
 	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 
-	ops.op_mode = FLASH_OOB_PLACE;
-	ops.oob_off = 0;
-	ops.oob_len = mtd->oob_size;
-	ops.data_buff = buf;
-	ops.oob_buff = oob;
-	ops.data_len = len;
+	ops.mode = FLASH_OOB_PLACE;
+	ops.ooboffs = 0;
+	ops.ooblen = mtd->oob_size;
+	ops.datbuf = buf;
+	ops.oobbuf = oob;
+	ops.len = len;
 
 	return mtd->write_oob(mtd, offs, &ops);
 }
@@ -240,15 +240,15 @@ static int scan_block_fast(struct nand_chip *nand,
 						int len
 						)
 {
-	struct oob_opt ops;
+	struct mtd_oob_ops ops;
 	int j, ret;
 	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 
-	ops.oob_len = mtd->oob_size;
-	ops.oob_buff  = buf;
-	ops.oob_off = 0;
-	ops.data_buff  = NULL;
-	ops.op_mode    = FLASH_OOB_PLACE;
+	ops.ooblen = mtd->oob_size;
+	ops.oobbuf  = buf;
+	ops.ooboffs = 0;
+	ops.datbuf  = NULL;
+	ops.mode    = FLASH_OOB_PLACE;
 
 	for (j = 0; j < len; j++) {
 		/*
@@ -425,20 +425,20 @@ static int write_bbt(struct nand_chip *nand,
 {
 	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 	struct nand_ctrl *nfc = nand->master;
-	struct erase_opt einfo;
+	struct erase_info einfo;
 	int i, j, ret, chip = 0;
 	int bits, startblock, dir, page, offs, numblocks, sft, sftmsk;
 	int nrchips, bbtoffs, pageoffs, oob_off;
 	__u8 msk[4];
 	__u8 rcode = td->reserved_block_code;
-	__u32 retlen, len = 0;
+	size_t retlen, len = 0;
 	__u32 to;
-	struct oob_opt ops;
+	struct mtd_oob_ops ops;
 
-	ops.oob_len = mtd->oob_size;
-	ops.oob_off = 0;
-	ops.data_buff = NULL;
-	ops.op_mode = FLASH_OOB_PLACE;
+	ops.ooblen = mtd->oob_size;
+	ops.ooboffs = 0;
+	ops.datbuf = NULL;
+	ops.mode = FLASH_OOB_PLACE;
 
 	if (!rcode)
 		rcode = 0xff;
@@ -533,10 +533,10 @@ write:
 					"bad block table\n");
 			}
 
-			ops.oob_len = (len >> mtd->write_shift) * mtd->oob_size;
-			ops.oob_buff = &buf[len];
+			ops.ooblen = (len >> mtd->write_shift) * mtd->oob_size;
+			ops.oobbuf = &buf[len];
 			ret = mtd->read_oob(mtd, to + mtd->write_size, &ops);
-			if (ret < 0 || ops.oob_ret_len != ops.oob_len)
+			if (ret < 0 || ops.oobretlen != ops.ooblen)
 				goto outerr;
 
 			pageoffs = page - (int)(to >> mtd->write_shift);
@@ -573,8 +573,8 @@ write:
 
 		mtd->bad_allow = 1;
 		memset(&einfo, 0, sizeof(einfo));
-		einfo.estart = (__u32)to;
-		einfo.esize  = 1 << nand->bbt_erase_shift;
+		einfo.addr = (__u32)to;
+		einfo.len  = 1 << nand->bbt_erase_shift;
 		ret = nand_erase(nand, &einfo);
 		if (ret < 0)
 			goto outerr;

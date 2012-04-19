@@ -18,10 +18,11 @@
 #include "yaffs_mtdif2.h"
 #include "yaffs_packedtags2.h"
 #include "yaffs_linux.h"
-#include "linux/mtd/mtd.h"
-#include "linux/types.h"
-#include "linux/time.h"
-#include "mtd/mtd-abi.h"
+#include <assert.h>
+#include <mtd/mtd.h>
+#include <types.h>
+#include <time.h>
+// #include "mtd/mtd-abi.h"
 
 
 /* NB For use with inband tags....
