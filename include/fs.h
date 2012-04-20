@@ -31,7 +31,6 @@
 #define BDEVNAME_SIZE	32	/* Largest string for a blockdev identifier */
 #define BDEVT_SIZE	10	/* Largest string for MAJ:MIN for blkdev */
 
-#define MS_ROOT     (1 << 0) // fixme!!
 #define MS_RDONLY	 1	/* Mount read-only */
 #define MS_NOSUID	 2	/* Ignore suid and sgid bits */
 #define MS_NODEV	 4	/* Disallow access to device special files */
@@ -318,9 +317,9 @@ struct linux_dirent {
 	unsigned long  d_ino;	  /* Inode number */
 	unsigned long  d_off;	  /* Offset to next linux_dirent */
 	unsigned short d_reclen;  /* Length of this linux_dirent */
+	unsigned char  d_type;    // fixme
 	char		   d_name[0];  /* Filename (null-terminated) */
 	/* length is actually (d_reclen - 2 - offsetof(struct linux_dirent, d_name) */
-	unsigned char  d_type; // fixme
 };
 
 /**

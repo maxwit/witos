@@ -40,14 +40,11 @@ int sys_mount(const char *dev_name, const char *path,
 		const char *type, unsigned long flags)
 {
 	int ret;
-	static bool root_mounted = false;
 	struct file_system_type *fstype;
 	struct vfsmount *mnt;
 	struct dentry *root;
 	struct nameidata nd;
-
-	if ((flags & MS_ROOT) && root_mounted == true)
-		return -EBUSY;
+	const bool is_root = ('/' == path[0] && '\0' == path[1]);
 
 	if (!(flags & MS_NODEV)) {
 		list_for_each_entry(mnt, &g_mount_list, mnt_hash) {
@@ -58,7 +55,7 @@ int sys_mount(const char *dev_name, const char *path,
 		}
 	}
 
-	if (!(flags & MS_ROOT)) {
+	if (!is_root) {
 		ret = path_walk(path, &nd); // fixme: directory only!
 		if (ret < 0) {
 			GEN_DBG("\"%s\" does NOT exist!\n");
@@ -89,7 +86,7 @@ int sys_mount(const char *dev_name, const char *path,
 	mnt->dev_name = dev_name;
 	mnt->root     = root;
 
-	if (flags & MS_ROOT) {
+	if (is_root) {
 		struct path sysroot = {.dentry = root, .mnt = mnt};
 
 		mnt->mountpoint = NULL; // fixme
