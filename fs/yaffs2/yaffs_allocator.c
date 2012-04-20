@@ -11,6 +11,7 @@
  * published by the Free Software Foundation.
  */
 
+#include <assert.h>
 #include "yaffs_allocator.h"
 #include "yaffs_guts.h"
 #include "yaffs_trace.h"

@@ -95,6 +95,7 @@ int yaffs1_scan(struct yaffs_dev *dev)
 
 			result = yaffs_rd_chunk_tags_nand(dev, chunk, NULL,
 							  &tags);
+			if (result < 0) BUG();
 
 			/* Let's have a good look at this chunk... */
 
@@ -182,6 +183,7 @@ int yaffs1_scan(struct yaffs_dev *dev)
 				result = yaffs_rd_chunk_tags_nand(dev, chunk,
 								  chunk_data,
 								  NULL);
+				if (result < 0) BUG();
 
 				oh = (struct yaffs_obj_hdr *)chunk_data;
 

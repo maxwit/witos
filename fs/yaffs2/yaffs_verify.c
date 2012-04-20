@@ -224,7 +224,6 @@ void yaffs_verify_file(struct yaffs_obj *obj)
 {
 	u32 x;
 	int required_depth;
-	int actual_depth;
 	int last_chunk;
 	u32 offset_in_chunk;
 	u32 the_chunk;
@@ -256,7 +255,7 @@ void yaffs_verify_file(struct yaffs_obj *obj)
 		required_depth++;
 	}
 
-	actual_depth = obj->variant.file_variant.top_level;
+	// actual_depth = obj->variant.file_variant.top_level;
 
 	/* Check that the chunks in the tnode tree are all correct.
 	 * We do this by scanning through the tnode tree and

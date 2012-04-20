@@ -40,7 +40,7 @@
 #define YAFFS_ROOT_MODE			0755
 #define YAFFS_LOSTNFOUND_MODE		0700
 
-#define Y_CURRENT_TIME CURRENT_TIME.tv_sec
+#define Y_CURRENT_TIME 0 // CURRENT_TIME.tv_sec
 #define Y_TIME_CONVERT(x) (x).tv_sec
 
 #define compile_time_assertion(assertion) \

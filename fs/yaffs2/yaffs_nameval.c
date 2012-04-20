@@ -26,8 +26,10 @@
  */
 
 #include "yaffs_nameval.h"
-
 #include "yportenv.h"
+
+#define XATTR_CREATE	0x1	/* set value, fail if attr already exists */
+#define XATTR_REPLACE	0x2	/* set value, fail if attr does not exist */
 
 static int nval_find(const char *xb, int xb_size, const YCHAR *name,
 		     int *exist_size)

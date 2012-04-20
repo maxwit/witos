@@ -11,6 +11,7 @@
  * published by the Free Software Foundation.
  */
 
+#include <assert.h>
 #include "yaffs_bitmap.h"
 #include "yaffs_trace.h"
 /*

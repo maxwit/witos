@@ -955,11 +955,13 @@ static inline int yaffs2_scan_chunk(struct yaffs_dev *dev,
 
 	if (summary_available) {
 		result = yaffs_summary_fetch(dev, &tags, chunk_in_block);
+		if (result < 0) BUG();
 		tags.seq_number = bi->seq_number;
 	}
 
 	if (!summary_available || tags.obj_id == 0) {
 		result = yaffs_rd_chunk_tags_nand(dev, chunk, NULL, &tags);
+		if (result < 0) BUG();
 		dev->tags_used++;
 	} else {
 		dev->summary_used++;
@@ -1340,6 +1342,10 @@ static inline int yaffs2_scan_chunk(struct yaffs_dev *dev,
 	return alloc_failed ? YAFFS_FAIL : YAFFS_OK;
 }
 
+void
+yaffs_qsort(void *aa, size_t n, size_t es,
+	int (*cmp)(const void *, const void *));
+
 int yaffs2_scan_backwards(struct yaffs_dev *dev)
 {
 	int blk;
@@ -1349,7 +1355,6 @@ int yaffs2_scan_backwards(struct yaffs_dev *dev)
 	int n_to_scan = 0;
 	enum yaffs_block_state state;
 	int c;
-	int deleted;
 	LIST_HEAD(hard_list);
 	struct yaffs_block_info *bi;
 	u32 seq_number;
@@ -1442,8 +1447,7 @@ int yaffs2_scan_backwards(struct yaffs_dev *dev)
 	yaffs_trace(YAFFS_TRACE_SCAN, "%d blocks to be sorted...", n_to_scan);
 
 	/* Sort the blocks by sequence number */
-	sort(block_index, n_to_scan, sizeof(struct yaffs_block_index),
-		   yaffs2_ybicmp, NULL);
+	yaffs_qsort(block_index, n_to_scan, sizeof(struct yaffs_block_index), yaffs2_ybicmp);
 
 	yaffs_trace(YAFFS_TRACE_SCAN, "...done");
 
@@ -1459,7 +1463,6 @@ int yaffs2_scan_backwards(struct yaffs_dev *dev)
 		/* get the block to scan in the correct order */
 		blk = block_index[block_iter].block;
 		bi = yaffs_get_block_info(dev, blk);
-		deleted = 0;
 
 		summary_available = yaffs_summary_read(dev, dev->sum_tags, blk);
 
