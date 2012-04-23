@@ -9,6 +9,7 @@
 #include <net/net.h>
 #include <net/mii.h>
 #include <irq.h>
+#include <delay.h>
 #include "dm9000.h"
 
 // TODO: support 16-bit BW
