@@ -2648,7 +2648,6 @@ static unsigned yaffs_find_gc_block(struct yaffs_dev *dev,
 	int i;
 	int iterations;
 	unsigned selected = 0;
-	int prioritised = 0;
 	int prioritised_exist = 0;
 	struct yaffs_block_info *bi;
 	int threshold;
@@ -2665,7 +2664,6 @@ static unsigned yaffs_find_gc_block(struct yaffs_dev *dev,
 				if (bi->block_state == YAFFS_BLOCK_STATE_FULL &&
 				    yaffs_block_ok_for_gc(dev, bi)) {
 					selected = i;
-					prioritised = 1;
 				}
 			}
 			bi++;
@@ -2770,12 +2768,6 @@ static unsigned yaffs_find_gc_block(struct yaffs_dev *dev,
 	}
 
 	if (selected) {
-		yaffs_trace(YAFFS_TRACE_GC,
-			"GC Selected block %d with %d free, prioritised:%d",
-			selected,
-			dev->param.chunks_per_block - dev->gc_pages_in_use,
-			prioritised);
-
 		dev->n_gc_blocks++;
 		if (background)
 			dev->bg_gcs++;
