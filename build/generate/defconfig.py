@@ -201,7 +201,6 @@ if __name__ == "__main__":
 
 	p = re.compile('defconfig')
 	fn_sys_cfg = p.sub('sysconfig', fn_def_cfg)
-	print fn_sys_cfg
 
 	if os.path.exists(fn_def_cfg):
 		os.system('cp '+ fn_sys_cfg + ' .sysconfig')
