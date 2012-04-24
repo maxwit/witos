@@ -318,13 +318,18 @@ static int __init lan9220_probe(struct lan9220_chip *lan9220, int busw32)
 
 static int __init lan9220_init(struct platform_device *pdev)
 {
-	int ret, irq;
+	int ret;
+#ifdef CONFIG_IRQ_SUPPORT
+	int irq;
+#endif
 	unsigned long mem;
 	struct net_device *ndev;
 	struct lan9220_chip *lan9220;
 
 	mem = platform_get_memory(pdev);
+#ifdef CONFIG_IRQ_SUPPORT
 	irq = platform_get_irq(pdev);
+#endif
 
 	ndev = ndev_new(sizeof(*lan9220));
 	if (NULL == ndev)
