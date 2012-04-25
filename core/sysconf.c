@@ -284,10 +284,10 @@ static int conf_check_default()
 int conf_load()
 {
 	struct sysconfig *cfg = _syscfg_get();
-
+#if 0
 	if (strncmp(GB_SYSCFG_MAGIC, (char *)cfg->data, strlen(GB_SYSCFG_MAGIC)))
 		return -EINVAL;
-
+#endif
 	cfg->size = _g_sysconfig_len;
 	SC_DEBUG("sysconf: base = 0x%p, size = %d\n", cfg->data, cfg->size);
 
