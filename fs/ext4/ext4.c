@@ -481,54 +481,7 @@ static int ext4_close(struct file *fp)
 
 static ssize_t ext4_read(struct file *fp, void *buff, size_t size, loff_t *off)
 {
-	ssize_t i, len;
-	size_t blocks;
-	size_t offset, real_size, block_size;
-	struct dentry *de = fp->f_dentry;
-	struct inode *in;
-	struct super_block *sb;
-	struct ext4_inode *e4_in;
-	struct ext4_sb_info *e4_sbi;
-
-	sb     = de->d_sb;
-	in     = de->d_inode;
-	e4_sbi = sb->s_fs_info;
-
-	e4_in = ext4_get_inode(sb, in->i_ino);
-	if (!e4_in)
-		return -ENOENT;
-
-	// fixme!!!
-	if (fp->f_pos == e4_in->i_size)
-		return 0;
-
-	block_size = 1 << (e4_sbi->e4_sb.s_log_block_size + 10);
-	char tmp_buff[block_size];
-
-	real_size = min(size, e4_in->i_size - fp->f_pos);
-
-	blocks = (real_size + (block_size - 1)) / block_size;
-	__le32 block_indexs[blocks];
-
-	get_block_indexs(sb, e4_in, fp->f_pos / block_size, block_indexs, blocks);
-
-	offset = fp->f_pos % block_size;
-	len = block_size - offset;
-
-	for(i = 0; i < blocks; i++) {
-		if(i == blocks - 1)
-			len = real_size % block_size == 0 ? block_size : (real_size % block_size);
-
-		ext4_read_block(sb, tmp_buff, block_indexs[i], offset, len);
-
-		memcpy(buff, tmp_buff, len);
-		buff += len;
-		fp->f_pos += len;
-		offset = 0;
-		len = block_size;
-	}
-
-	return real_size;
+	return 0;
 }
 
 static ssize_t ext4_write(struct file *fp, const void *buff, size_t size, loff_t *off)
@@ -576,33 +529,7 @@ static int ext4_inode_read_block(struct inode *in, int blk_no, char *blk_buf)
 
 static int ext4_readdir(struct file *fp, void *dirent, filldir_t filldir)
 {
-	int blk_num;
-	int blk_off;
-	char buff[fp->f_dentry->d_inode->i_sb->s_blocksize];
-	struct inode *in;
-	struct ext4_dir_entry_2 *e4_de;
-
-	in = fp->f_dentry->d_inode;
-
-	if (fp->f_pos == in->i_size)
-		return 0;
-
-	blk_num = fp->f_pos / in->i_sb->s_blocksize;
-	blk_off = fp->f_pos % in->i_sb->s_blocksize;
-
-	ext4_inode_read_block(in, blk_num, buff);
-
-	e4_de = (struct ext4_dir_entry_2 *)(buff + blk_off);
-
-	if (e4_de->rec_len + fp->f_pos > in->i_size)
-		return -ENODATA;
-
-	filldir(dirent, e4_de->name, e4_de->name_len, fp->f_pos /*fixme*/,
-		in->i_ino, e4_de->file_type);
-
-	fp->f_pos += e4_de->rec_len;
-
-	return e4_de->rec_len;
+	return 0;
 }
 
 extern int ck_ext4_feature(uint32_t fc,uint32_t frc,uint32_t fi);
@@ -613,6 +540,7 @@ static int ext4_check_fs_type(const char *bdev_name)
 	char buff[EXT4_SUPER_BLK_SIZE];
 	struct block_device *bdev;
 	uint32_t fc, frc, fi;
+	int ret;
 
 	bdev = bdev_get(bdev_name);
 	if (NULL == bdev) {
@@ -643,7 +571,15 @@ static int ext4_check_fs_type(const char *bdev_name)
 	fi = e4_sb->s_feature_incompat;
 	frc = e4_sb->s_feature_ro_compat;
 
-	return ck_ext4_feature(fc, frc, fi);
+
+	ret = ck_ext4_feature(fc, frc, fi);
+
+	extern void ext_sb_list(struct ext4_super_block * esb);
+	if (ret == 0) {
+		ext_sb_list(e4_sb);
+	}
+
+	return ret;
 }
 
 

@@ -729,6 +729,7 @@ static int ext2_check_fs_type(const char *bdev_name)
 	char buff[EXT2_SUPER_BLK_SIZE];
 	struct block_device *bdev;
 	uint32_t fc, frc, fi;
+	int ret;
 
 	bdev = bdev_get(bdev_name);
 	if (NULL == bdev) {
@@ -759,7 +760,14 @@ static int ext2_check_fs_type(const char *bdev_name)
 	fi = e2_sb->s_feature_incompat;
 	frc = e2_sb->s_feature_ro_compat;
 
-	return ck_ext2_feature(fc, frc, fi);
+	ret = ck_ext2_feature(fc, frc, fi);
+
+	extern void ext_sb_list(struct ext2_super_block * esb);
+	if (ret == 0) {
+		ext_sb_list(e2_sb);
+	}
+
+	return ret;
 }
 
 
