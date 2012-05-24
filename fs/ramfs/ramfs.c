@@ -247,7 +247,7 @@ static int ramfs_readdir(struct file *fp, void *dirent, filldir_t filldir)
 	fp->private_data = iter->next;
 	fp->f_pos++;
 
-	return 0;
+	return sizeof(*de);
 }
 
 static int ramfs_mkdir(struct inode *parent, struct dentry *de, umode_t mode)
@@ -258,7 +258,7 @@ static int ramfs_mkdir(struct inode *parent, struct dentry *de, umode_t mode)
 	if (!inode)
 		return -ENOMEM;
 
-	inode->i_ino = 1234; // fixme
+	// inode->i_ino = 1234; // fixme
 	inode->i_mode = mode;
 
 	inode->i_op = &ramfs_dir_inode_operations;

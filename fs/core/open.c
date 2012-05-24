@@ -44,6 +44,7 @@ static struct dentry *real_lookup(struct dentry *parent, struct qstr *unit,
 		if (nd->ret < 0) {
 			GEN_DBG("fail to lookup \"%s\" (ret = %d)!\n",
 				dentry->d_name.name, nd->ret);
+			dput(dentry);
 			return NULL;
 		}
 		if (result && result != dentry) {

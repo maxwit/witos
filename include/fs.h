@@ -95,6 +95,7 @@ struct file_system_type {
 	struct dentry *(*mount)(struct file_system_type *, int,
 						const char *, void *);
 	void (*kill_sb)(struct super_block *);
+	int (*check_fs_type)(const char *);
 };
 
 int register_filesystem(struct file_system_type *);

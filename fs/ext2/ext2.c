@@ -721,10 +721,53 @@ error:
 }
 #endif
 
+extern int ck_ext2_feature(uint32_t fc,uint32_t frc,uint32_t fi);
+static int ext2_check_fs_type(const char *bdev_name)
+{
+	struct ext2_super_block *e2_sb;
+	struct bio *bio;
+	char buff[EXT2_SUPER_BLK_SIZE];
+	struct block_device *bdev;
+	uint32_t fc, frc, fi;
+
+	bdev = bdev_get(bdev_name);
+	if (NULL == bdev) {
+		DPRINT("bdev %s not found!\n", bdev_name);
+		return -ENODEV;
+	}
+
+	bio = bio_alloc();
+	if (!bio)
+		return -ENOMEM;
+
+	bio->bdev = bdev;
+	bio->sect = 1024 / SECT_SIZE;
+	bio->size = sizeof(buff);
+	bio->data = buff;
+	submit_bio(READ, bio);
+	// TODO: check flags here
+	bio_free(bio);
+
+	e2_sb = (struct ext2_super_block *)buff;
+
+	if (0xEF53 != e2_sb->s_magic) {
+		DPRINT("%s is not \"ext2\" fs!\n", bdev_name);
+		return -EINVAL;
+	}
+
+	fc = e2_sb->s_feature_compat;
+	fi = e2_sb->s_feature_incompat;
+	frc = e2_sb->s_feature_ro_compat;
+
+	return ck_ext2_feature(fc, frc, fi);
+}
+
+
 static struct file_system_type ext2_fs_type = {
 	.name    = "ext2",
 	.mount   = ext2_mount,
 	.kill_sb = ext2_kill_sb,
+	.check_fs_type = ext2_check_fs_type,
 };
 
 static int __init ext2_init(void)

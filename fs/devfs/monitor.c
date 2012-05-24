@@ -56,7 +56,7 @@ static int bdev_mount(const char *dev_name)
 		return ret;
 	}
 
-	ret = sys_mount(dev_name, mnt, "ext2", 0); // fixme: try other fstypes
+	ret = sys_mount(dev_name, mnt, NULL, 0); // fixme: try other fstypes
 	if (ret < 0) {
 		printf("fail to mount %s (errno = %d)!\n", dev_name, ret);
 		return ret;
@@ -71,12 +71,14 @@ int device_monitor()
 {
 	int ret;
 	struct qstr name;
-	struct nameidata nd;
+	static struct nameidata nd;
 	struct dentry *parent;
 
-	ret = path_walk("/dev" /* DEV_ROOT */, &nd);
-	if (ret < 0)
-		return ret;
+	if (NULL == nd.path.dentry) {
+		ret = path_walk("/dev" /* DEV_ROOT */, &nd);
+		if (ret < 0)
+			return ret;
+	}
 
 	parent = nd.path.dentry;
 

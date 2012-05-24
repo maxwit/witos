@@ -12,7 +12,8 @@ typedef unsigned short __u16, u16, uint16_t;
 typedef unsigned int   __u32, u32, uint32_t, umode_t;
 typedef unsigned long  size_t, u_long, blkcnt_t;
 typedef signed int     ssize_t;
-typedef unsigned long long uint64_t, u64, loff_t;
+typedef unsigned long long uint64_t, u64;
+typedef unsigned long loff_t; // fixme : unsigned long long
 
 // fixme
 typedef unsigned short __le16;

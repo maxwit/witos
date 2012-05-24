@@ -27,11 +27,15 @@ int sys_getdents(unsigned int fd, struct linux_dirent *lde, unsigned int count)
 	struct file *fp;
 
 	fp = fget(fd);
-	if (!fp || !fp->f_op)
+	if (!fp || !fp->f_op) {
+		DPRINT("no fp or f_op");
 		return -ENODEV;
+	}
 
-	if (!fp->f_op->readdir)
+	if (!fp->f_op->readdir) {
+		DPRINT("no readdir function!\n");
 		return -ENOTSUPP;
+	}
 
 	ret = fp->f_op->readdir(fp, lde, filldir);
 	return ret;

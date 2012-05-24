@@ -36,6 +36,21 @@ struct file_system_type *file_system_type_get(const char *name)
 	return NULL;
 }
 
+static struct file_system_type *guess_fs_type_by_bdev(const char *bdev)
+{
+	struct file_system_type *p;
+
+	for (p = fs_type_list; p; p = p->next) {
+		if (p->check_fs_type) {
+			if (0 == p->check_fs_type(bdev))
+				return p;
+		}
+	}
+
+	return NULL;
+}
+
+
 int sys_mount(const char *dev_name, const char *path,
 		const char *type, unsigned long flags)
 {
@@ -63,7 +78,13 @@ int sys_mount(const char *dev_name, const char *path,
 		}
 	}
 
-	fstype = file_system_type_get(type);
+
+	if (NULL == type) {
+		fstype = guess_fs_type_by_bdev(dev_name);
+	} else {
+		fstype = file_system_type_get(type);
+	}
+
 	if (NULL == fstype) {
 		DPRINT("fail to find file system type %s!\n", type);
 		return -ENOENT;
