@@ -259,11 +259,69 @@ static bool is_extent(struct inode *in)
 	return false;
 }
 
+static int __extent_idx(struct ext4_extent_header *extent_header)
+{
+	// fixme
+	GEN_DBG("extent_idx not support\n");
+
+	return 0;
+}
+
 static int ext4_get_extent_blkbums(struct inode *in, size_t skip, __le32 block[], size_t nums)
 {
-	// fixme!
-	GEN_DBG("Not support extent!\n");
-	return -1;
+	struct ext4_inode *ext4_in;
+	struct ext4_inode_info *ext4_ini;
+	struct ext4_extent_header *extent_header;
+	struct ext4_extent *extent;
+	struct ext4_extent_idx *extent_idx;
+	int i;
+	int iter;
+
+	ext4_ini = EXT4_I(in);
+	ext4_in  = ext4_ini->i_e4in;
+
+	extent_header = (struct ext4_extent_header *)ext4_in->i_block;
+	if (extent_header->eh_magic != EXT4_EXT_MAGIC) {
+		GEN_DBG("check extent magic num error!\n");
+		return -EINVAL;
+	}
+
+	if (extent_header->eh_depth > 0) {
+		extent_idx = (void *)extent_header + sizeof(*extent_header);
+		for (i = 0; i < extent_header->eh_entries; i++) {
+			// ...
+			__extent_idx(extent_header);
+			extent_idx += sizeof(*extent_idx);
+		}
+
+		return 0;
+	}
+
+	extent = (void *)extent_header + sizeof(*extent_header);
+	i = 0;
+	iter = 0;
+
+	while (i < extent_header->eh_entries) {
+		size_t start = extent->ee_block;
+		size_t len   = extent->ee_len;
+		size_t addr  = extent->ee_start_lo; // fixme
+
+		while (iter < nums &&
+				(iter + skip) >= start &&
+				(iter + skip) < (start + len)) {
+			block[iter] = addr + (iter + skip - start);
+			iter++;
+		}
+
+		if (iter == nums) {
+			break;
+		}
+
+		extent += sizeof(*extent);
+		i++;
+	}
+
+	return 0;
 }
 
 static int ext4_get_blknums(struct inode *in, size_t skip, __le32 block[], size_t nums)
@@ -275,6 +333,13 @@ static int ext4_get_blknums(struct inode *in, size_t skip, __le32 block[], size_
 	// fixme
 	return get_block_indexs(in->i_sb, EXT4_I(in)->i_e4in, skip, block, nums);
 }
+
+#if 0
+static inline bool is_flex_bg(struct ext4_super_block *e4_sb)
+{
+	return (e4_sb->s_feature_incompat & EXT4_FEATURE_INCOMPAT_FLEX_BG) != 0;
+}
+#endif
 
 static struct ext4_inode *ext4_get_inode(struct super_block *sb, int ino)
 {
@@ -293,12 +358,13 @@ static struct ext4_inode *ext4_get_inode(struct super_block *sb, int ino)
 	grp_no = ino / e4_sb->s_inodes_per_group;
 	gde = &e4_sbi->gdt[grp_no];
 
+
+	e4_in = malloc(e4_sb->s_inode_size);
+	// if (NULL == e4_in) ...
+
 	ino_no = ino % e4_sb->s_inodes_per_group;
 	blk_no = ino_no / count;
 	ino_no = ino_no % count;
-
-	e4_in = malloc(e4_sb->s_inode_size);
-	// if
 
 	off = (gde->bg_inode_table_lo + blk_no) * sb->s_blocksize + ino_no * e4_sb->s_inode_size;
 	__ext4_read_buff(sb, off, e4_in, e4_sb->s_inode_size);
@@ -435,6 +501,8 @@ static int ext4_read_super(struct super_block *sb, void *data, int flags)
 		// ...
 		return ret;
 	}
+
+	GEN_DBG("\n");
 
 	in = ext4_iget(sb, 2);
 	if (!in) {
@@ -612,6 +680,9 @@ static int ext4_readdir(struct file *fp, void *dirent, filldir_t filldir)
 		return ext4_dx_readdir(fp, dirent, filldir);
 	}
 
+	if (fp->f_pos >= in->i_size)
+		return 0;
+
 	cur_blk = fp->f_pos / in->i_sb->s_blocksize;
 	offset  = fp->f_pos % in->i_sb->s_blocksize;
 
@@ -624,10 +695,11 @@ static int ext4_readdir(struct file *fp, void *dirent, filldir_t filldir)
 	__ext4_read_block(in->i_sb, blk_buff, blk_num);
 
 	ext4_de = (struct ext4_dir_entry_2 *)(blk_buff + offset);
-
 	filldir(dirent, ext4_de->name, ext4_de->name_len, ext4_de->rec_len, ext4_de->inode, ext4_de->file_type);
 
-	return 0;
+	fp->f_pos += ext4_de->rec_len;
+
+	return ext4_de->rec_len;
 }
 
 extern int ck_ext4_feature(uint32_t fc,uint32_t frc,uint32_t fi);
