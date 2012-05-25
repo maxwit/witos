@@ -54,21 +54,18 @@ static struct inode *ext4_alloc_inode(struct super_block *sb)
 	return &eii->vfs_inode;
 }
 
-static ssize_t ext4_read_block(struct super_block *sb, void *buff, int blk_no, size_t off, size_t size)
+static ssize_t __ext4_read_buff(struct super_block *sb, size_t offset, void *buff, size_t size)
 {
 	ssize_t ret, start_blk;
 	struct bio *bio;
-	struct ext4_sb_info *e4_sbi = sb->s_fs_info;
-	struct ext4_super_block *e4_sb;
 
-	e4_sb = &e4_sbi->e4_sb;
-	start_blk = blk_no << (e4_sb->s_log_block_size + 1);
+	start_blk = offset / SECT_SIZE;
 
 	bio = bio_alloc();
 	if (!bio)
 		return -ENOMEM;
 
-	bio->size = (off + size + SECT_SIZE - 1) & ~(SECT_SIZE - 1);
+	bio->size = (offset % SECT_SIZE + size + SECT_SIZE - 1) & ~(SECT_SIZE - 1);
 	bio->data = malloc(bio->size);
 	if (!bio->data) {
 		ret = -ENOMEM;
@@ -79,13 +76,18 @@ static ssize_t ext4_read_block(struct super_block *sb, void *buff, int blk_no, s
 	bio->sect = start_blk;
 	submit_bio(READ, bio);
 
-	memcpy(buff, bio->data + off, size);
+	memcpy(buff, bio->data + offset % SECT_SIZE, size);
 	ret = size;
 
 	free(bio->data);
 L1:
 	bio_free(bio);
 	return ret;
+}
+
+static ssize_t __ext4_read_block(struct super_block *sb, void *buff, int blk_no)
+{
+	return __ext4_read_buff(sb, blk_no * sb->s_blocksize, buff, sb->s_blocksize);
 }
 
 static size_t get_start_layer(size_t start_block, size_t index_per_block)
@@ -115,7 +117,7 @@ static size_t get_ind_block(struct super_block *sb,
 	if(len <= 0)
 		return 0;
 
-	ext4_read_block(sb, buff, inode->i_block[EXT4_IND_BLOCK], 0, block_size);
+	__ext4_read_block(sb, buff, inode->i_block[EXT4_IND_BLOCK]);
 
 	for(i = 0; i < len && i < index_per_block - start_block; i++)
 		block_indexs[i] = buff[i + start_block];
@@ -136,14 +138,14 @@ static size_t get_dind_block(struct super_block *sb,
 	if(len <= 0)
 		return 0;
 
-	ext4_read_block(sb, buff, inode->i_block[EXT4_DIND_BLOCK], 0, block_size);
+	__ext4_read_block(sb, buff, inode->i_block[EXT4_DIND_BLOCK]);
 
 	start_block = start_block < 0 ? 0 : start_block;
 
 	k = start_block % index_per_block;
 
 	for(j = start_block / index_per_block; j < index_per_block; j++) {
-		ext4_read_block(sb, dbuff, buff[j], 0, block_size);
+		__ext4_read_block(sb, dbuff, buff[j]);
 
 		while (i < len && k < index_per_block)
 			block_indexs[i++] = dbuff[k++];
@@ -170,17 +172,17 @@ static size_t get_tind_block(struct super_block *sb,
 	if(len <= 0)
 		return 0;
 
-	ext4_read_block(sb, buff, inode->i_block[EXT4_TIND_BLOCK], 0, block_size);
+	__ext4_read_block(sb, buff, inode->i_block[EXT4_TIND_BLOCK]);
 
 	start_block = start_block < 0 ? 0 : start_block;
 
 	h = start_block % index_per_block;
 
 	for(j = start_block / (index_per_block * index_per_block); j < index_per_block; j++) {
-		ext4_read_block(sb, dbuff, buff[j], 0, block_size);
+		__ext4_read_block(sb, dbuff, buff[j]);
 
 		for(k = start_block / index_per_block; k < index_per_block; k++) {
-			ext4_read_block(sb, tbuff, dbuff[k], 0, block_size);
+			__ext4_read_block(sb, tbuff, dbuff[k]);
 
 			for(; i < len && h < index_per_block; i++, h++)
 				block_indexs[i] = tbuff[h];
@@ -240,6 +242,40 @@ static int get_block_indexs(struct super_block *sb,
 	return i;
 }
 
+static bool is_extent(struct inode *in)
+{
+	struct ext4_sb_info *sb_info;
+	struct ext4_super_block *ext4_sb;
+	struct ext4_inode *ext4_in;
+
+	sb_info = in->i_sb->s_fs_info;
+	ext4_sb = &sb_info->e4_sb;
+	ext4_in = EXT4_I(in)->i_e4in;
+
+	if ((ext4_sb->s_feature_incompat & EXT4_FEATURE_INCOMPAT_EXTENTS) &&
+		(ext4_in->i_flags & EXT4_INODE_EXTENT))
+		return true;
+
+	return false;
+}
+
+static int ext4_get_extent_blkbums(struct inode *in, size_t skip, __le32 block[], size_t nums)
+{
+	// fixme!
+	GEN_DBG("Not support extent!\n");
+	return -1;
+}
+
+static int ext4_get_blknums(struct inode *in, size_t skip, __le32 block[], size_t nums)
+{
+	if (is_extent(in)) {
+		return ext4_get_extent_blkbums(in, skip, block, nums);
+	}
+
+	// fixme
+	return get_block_indexs(in->i_sb, EXT4_I(in)->i_e4in, skip, block, nums);
+}
+
 static struct ext4_inode *ext4_get_inode(struct super_block *sb, int ino)
 {
 	int grp_no, ino_no, blk_no, count;
@@ -247,6 +283,7 @@ static struct ext4_inode *ext4_get_inode(struct super_block *sb, int ino)
 	struct ext4_inode *e4_in;
 	struct ext4_super_block *e4_sb;
 	struct ext4_group_desc *gde;
+	size_t off;
 
 	ino--;
 	e4_sb = &e4_sbi->e4_sb;
@@ -263,7 +300,8 @@ static struct ext4_inode *ext4_get_inode(struct super_block *sb, int ino)
 	e4_in = malloc(e4_sb->s_inode_size);
 	// if
 
-	ext4_read_block(sb, e4_in, gde->bg_inode_table + blk_no, ino_no * e4_sb->s_inode_size, e4_sb->s_inode_size);
+	off = (gde->bg_inode_table_lo + blk_no) * sb->s_blocksize + ino_no * e4_sb->s_inode_size;
+	__ext4_read_buff(sb, off, e4_in, e4_sb->s_inode_size);
 
 	return e4_in;
 }
@@ -295,7 +333,7 @@ struct inode *ext4_iget(struct super_block *sb, unsigned long ino)
 
 	inode->i_ino  = ino;
 	inode->i_mode = le16_to_cpu(e4_in->i_mode);
-	inode->i_size = le32_to_cpu(e4_in->i_size);
+	inode->i_size = le32_to_cpu(e4_in->i_size_lo);
 
 	e4_ini = EXT4_I(inode);
 	e4_ini->i_e4in = e4_in; // fixme
@@ -323,6 +361,7 @@ static int ext4_fill_super(struct super_block *sb)
 	struct ext4_super_block *e4_sb;
 	struct ext4_group_desc *gdt;
 	struct bio *bio;
+	size_t off;
 
 	bio = bio_alloc();
 	if (!bio)
@@ -357,7 +396,7 @@ static int ext4_fill_super(struct super_block *sb)
 	sb->s_blocksize = 1024 << e4_sb->s_log_block_size;
 
 	bpg = e4_sb->s_blocks_per_group;
-	group_count = (e4_sb->s_blocks_count + bpg - 1) / bpg;
+	group_count = (e4_sb->s_blocks_count_lo + bpg - 1) / bpg;
 	DPRINT("super block information:\n"
 		"label = \"%s\", inode size = %d, block size = %d\n",
 		e4_sb->s_volume_name[0] ? e4_sb->s_volume_name : "<N/A>",
@@ -369,14 +408,13 @@ static int ext4_fill_super(struct super_block *sb)
 		goto L2;
 	}
 	e4_sbi->gdt = gdt;
+	off = (e4_sb->s_first_data_block + 1) * sb->s_blocksize;
 
-	ext4_read_block(sb, gdt, e4_sb->s_first_data_block + 1, 0,
-		group_count * sizeof(struct ext4_group_desc));
+	__ext4_read_buff(sb, off, gdt, group_count * sizeof(struct ext4_group_desc));
 
 	DPRINT("group descrition:\n"
 		"block groups = %d, free blocks = %d, free inodes = %d\n",
-		group_count, gdt->bg_free_blocks_count, gdt->bg_free_inodes_count);
-
+		group_count, gdt->bg_free_blocks_count_lo, gdt->bg_free_inodes_count_lo);
 
 	return 0;
 
@@ -431,7 +469,7 @@ static unsigned long ext4_inode_by_name(struct inode *inode, struct qstr *unit)
 	struct ext4_inode_info *e4_ini = EXT4_I(inode);
 	struct ext4_dir_entry_2 *e4_de;
 	struct ext4_inode *parent = e4_ini->i_e4in;
-	char buff[parent->i_size];
+	char buff[inode->i_sb->s_blocksize];
 	size_t len = 0;
 	int blocks, i;
 	size_t block_size;
@@ -439,17 +477,17 @@ static unsigned long ext4_inode_by_name(struct inode *inode, struct qstr *unit)
 	e4_sbi = sb->s_fs_info;
 	block_size = 1024 << e4_sbi->e4_sb.s_log_block_size;
 
-	blocks = (parent->i_size + block_size - 1) / block_size;
+	blocks = (parent->i_size_lo + block_size - 1) / block_size;
 	__le32 block_indexs[blocks];
 
-	get_block_indexs(sb, parent, 0, block_indexs, blocks);
+	ext4_get_blknums(inode, 0, block_indexs, blocks);
 
 	for (i = 0; i < blocks; i++) {
-		ext4_read_block(sb, buff, block_indexs[i], 0, block_size);
+		__ext4_read_block(sb, buff, block_indexs[i]);
 
 		e4_de = (struct ext4_dir_entry_2 *)buff;
 
-		while (e4_de->rec_len > 0 && len < parent->i_size && len < (i + 1) * block_size) {
+		while (e4_de->rec_len > 0 && len < parent->i_size_lo && len < (i + 1) * block_size) {
 			e4_de->name[e4_de->name_len] = '\0';
 
 			DPRINT("%s: inode = %d, e4_de size = %d, name size = %d, block = %d\n",
@@ -515,6 +553,8 @@ static struct dentry *ext4_lookup(struct inode *parent, struct dentry *dentry, s
 	return dentry;
 }
 
+
+#if 0
 static int ext4_inode_read_block(struct inode *in, int blk_no, char *blk_buf)
 {
 	struct ext4_inode_info *e4_info = EXT4_I(in);
@@ -522,13 +562,71 @@ static int ext4_inode_read_block(struct inode *in, int blk_no, char *blk_buf)
 
 	get_block_indexs(in->i_sb, e4_info->i_e4in, 0, (__le32 *)blk_index, ARRAY_ELEM_NUM(blk_index));
 
-	ext4_read_block(in->i_sb, blk_buf, blk_index[blk_no], 0, in->i_sb->s_blocksize);
+	__ext4_read_block(in->i_sb, blk_buf, blk_index[blk_no]);
+
+	return 0;
+}
+#endif
+
+static bool is_hbtree_dir(struct inode *in)
+{
+	struct ext4_sb_info *fs_info;
+	struct ext4_super_block *ext4_sb;
+	struct ext4_inode *ext4_in;
+
+	fs_info = in->i_sb->s_fs_info;
+	ext4_sb = &fs_info->e4_sb;
+	ext4_in = EXT4_I(in)->i_e4in;
+
+	if ((ext4_sb->s_feature_compat & EXT4_FEATURE_COMPAT_DIR_INDEX) &&
+		(ext4_in->i_flags & EXT4_INDEX_FL))
+		return true;
+
+	return false;
+}
+
+static int ext4_dx_readdir(struct file *fp, void *dirent, filldir_t filldir)
+{
+	// fixme
+
+	GEN_DBG("Not support dx read!\n");
 
 	return 0;
 }
 
 static int ext4_readdir(struct file *fp, void *dirent, filldir_t filldir)
 {
+	struct inode *in;
+	struct dentry *de;
+	size_t cur_blk;
+	size_t offset;
+	__le32 blk_num;
+	int ret;
+	char blk_buff[fp->f_dentry->d_sb->s_blocksize];
+	struct ext4_dir_entry_2 *ext4_de;
+
+	de = fp->f_dentry;
+	in = de->d_inode;
+
+	if (is_hbtree_dir(in)) {
+		return ext4_dx_readdir(fp, dirent, filldir);
+	}
+
+	cur_blk = fp->f_pos / in->i_sb->s_blocksize;
+	offset  = fp->f_pos % in->i_sb->s_blocksize;
+
+	ret = ext4_get_blknums(in, cur_blk, &blk_num, 1);
+	if (ret < 0) {
+		GEN_DBG("Fail to get blk num 0x%x\n", cur_blk);
+		return ret;
+	}
+
+	__ext4_read_block(in->i_sb, blk_buff, blk_num);
+
+	ext4_de = (struct ext4_dir_entry_2 *)(blk_buff + offset);
+
+	filldir(dirent, ext4_de->name, ext4_de->name_len, ext4_de->rec_len, ext4_de->inode, ext4_de->file_type);
+
 	return 0;
 }
 
@@ -574,10 +672,12 @@ static int ext4_check_fs_type(const char *bdev_name)
 
 	ret = ck_ext4_feature(fc, frc, fi);
 
+#ifdef CONFIG_DEBUG
 	extern void ext_sb_list(struct ext4_super_block * esb);
 	if (ret == 0) {
 		ext_sb_list(e4_sb);
 	}
+#endif
 
 	return ret;
 }
