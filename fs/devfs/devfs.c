@@ -221,7 +221,7 @@ static int devfs_readdir(struct file *fp, void *dirent, filldir_t filldir)
 	fp->private_data = iter->next;
 	fp->f_pos++;
 
-	return 0;
+	return 1;
 }
 
 static int devfs_mknod(struct inode *dir, struct dentry *dentry,
