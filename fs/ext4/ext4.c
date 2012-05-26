@@ -587,7 +587,54 @@ static int ext4_close(struct file *fp)
 
 static ssize_t ext4_read(struct file *fp, void *buff, size_t size, loff_t *off)
 {
-	return 0;
+	struct inode *in;
+	struct dentry *de;
+	size_t cur_blk;
+	size_t offset;
+	size_t blks;
+	__le32 blk_num[(size - 1) / fp->f_dentry->d_sb->s_blocksize + 2];
+	size_t blk_size = fp->f_dentry->d_sb->s_blocksize;
+	int ret;
+	int i = 0;
+	size_t count = 0;
+
+	de = fp->f_dentry;
+	in = de->d_inode;
+
+	if (fp->f_pos >= in->i_size)
+		return 0;
+
+	cur_blk = fp->f_pos / in->i_sb->s_blocksize;
+	offset  = fp->f_pos % in->i_sb->s_blocksize;
+
+	if (offset != 0) {
+		blks = (size - (blk_size - offset) - 1) / blk_size + 2;
+	} else {
+		blks = (size - 1) / blk_size + 1;
+	}
+
+	ret = ext4_get_blknums(in, cur_blk, blk_num, blks);
+	if (ret < 0) {
+		GEN_DBG("Fail to get blk num 0x%x\n", cur_blk);
+		return ret;
+	}
+
+	if (offset != 0) {
+		__ext4_read_buff(in->i_sb, blk_num[0] * blk_size, buff, blk_size - (offset + 1));
+		count += blk_size - (offset + 1);
+		i = 1;
+	}
+
+	for (; i < blks - 1; i++) {
+		__ext4_read_block(in->i_sb, buff + i * blk_size, blk_num[i]);
+		count += blk_size;
+	}
+
+	__ext4_read_buff(in->i_sb, blk_num[i] * blk_size, buff + count, size - count);
+
+	fp->f_pos += size;
+
+	return size;
 }
 
 static ssize_t ext4_write(struct file *fp, const void *buff, size_t size, loff_t *off)
