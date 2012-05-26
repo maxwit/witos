@@ -16,7 +16,8 @@ int filldir(void *de, const char *name, int size, loff_t offset,
 	ALIGN_UP(reclen, sizeof(long));
 	lde->d_reclen = reclen;
 
-	strcpy(lde->d_name, name);
+	memcpy(lde->d_name, name, size);
+	lde->d_name[size] = '\0';
 
 	return 0;
 }
