@@ -9,7 +9,7 @@
 
 struct host_addr {
 	struct eth_addr in_addr;
-	struct list_node node;
+	struct list_head node;
 };
 
 struct pseudo_header {
@@ -20,7 +20,7 @@ struct pseudo_header {
 	__u16 size;
 };
 
-static DECL_INIT_LIST(g_host_list);
+static LIST_HEAD(g_host_list);
 #ifdef CONFIG_DEBUG
 static const char *g_arp_desc[] = {"N/A", "Request", "Reply"};
 #endif
@@ -727,7 +727,7 @@ __u16 net_calc_checksum(const void *buff, __u32 size)
 
 struct eth_addr *getaddr(__u32 nip)
 {
-	struct list_node *iter;
+	struct list_head *iter;
 	struct host_addr *host;
 	__u32 __UNUSED__ psr;
 	__u32 *dip;

@@ -1,6 +1,8 @@
 #pragma once
 
-#include <fs/fs.h>
+#include <fs.h>
+
+#define EXT2_SUPER_BLK_SIZE 1024
 
 /*
  * Structure of a blocks group descriptor

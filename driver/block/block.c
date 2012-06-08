@@ -4,15 +4,15 @@
 #include <block.h>
 #include <assert.h>
 #include <malloc.h>
-#include <fs/fs.h>
+#include <fs.h>
 #include <drive.h> // fixme
 #include <fs/devfs.h>
 
-static DECL_INIT_LIST(g_bdev_list);
+static LIST_HEAD(g_bdev_list);
 
 struct block_device *bdev_get(const char *name)
 {
-	struct list_node *iter;
+	struct list_head *iter;
 
 	list_for_each(iter, &g_bdev_list) {
 		struct block_device *bdev;

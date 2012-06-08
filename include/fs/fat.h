@@ -1,7 +1,7 @@
 #pragma once
 
 #include <types.h>
-#include <fs/fs.h>
+#include <fs.h>
 
 struct fat_boot_sector {
 	__u8	ignored[3];

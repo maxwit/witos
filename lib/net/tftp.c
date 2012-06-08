@@ -11,8 +11,8 @@
 #include <net/net.h>
 #include <net/tftp.h>
 #include <net/socket.h>
-#include <fs/fs.h>
-#include <flash/flash.h>
+#include <fs.h>
+#include <mtd/mtd.h>
 
 #define TFTP_DEBUG
 
@@ -131,7 +131,7 @@ int tftp_download(struct tftp_opt *opt)
 				break;
 
 			case IMG_YAFFS2:
-				oob_mode = FLASH_OOB_AUTO;
+				oob_mode = MTD_OPS_AUTO_OOB;
 				break;
 
 			default:
@@ -187,7 +187,7 @@ int tftp_download(struct tftp_opt *opt)
 							break;
 
 						case IMG_YAFFS2:
-							oob_mode = FLASH_OOB_AUTO;
+							oob_mode = MTD_OPS_AUTO_OOB;
 							break;
 
 						default:

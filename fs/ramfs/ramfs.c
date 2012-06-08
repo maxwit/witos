@@ -6,10 +6,10 @@
 #include <assert.h>
 #include <block.h>
 #include <dirent.h>
-#include <fs/fs.h>
+#include <fs.h>
 
 struct ramfs_super_block {
-	struct list_node *r_list;
+	struct list_head *r_list;
 };
 
 struct ramfs_inode {
@@ -38,7 +38,7 @@ static const struct file_operations ramfs_reg_file_operations = {
 
 static struct dentry *ramfs_lookup(struct inode *parent, struct dentry *dentry,
 	struct nameidata *nd);
-static int ramfs_mkdir(struct inode *, struct dentry *, int);
+static int ramfs_mkdir(struct inode *, struct dentry *, umode_t);
 
 static const struct inode_operations ramfs_dir_inode_operations = {
 	.lookup = ramfs_lookup,
@@ -46,7 +46,7 @@ static const struct inode_operations ramfs_dir_inode_operations = {
 };
 
 static int ramfs_opendir(struct file *fp, struct inode *inode);
-static int ramfs_readdir(struct file *, struct linux_dirent *);
+static int ramfs_readdir(struct file *, void *, filldir_t);
 
 static const struct file_operations ramfs_dir_file_operations = {
 	.open    = ramfs_opendir,
@@ -149,14 +149,15 @@ static int ramfs_fill_super(struct super_block *sb)
 	}
 
 	sb->s_fs_info = ramfs_sb;
-	// sb->s_blksize = RAM_BLK_SIZE;
+	// sb->s_blocksize = RAM_BLK_SIZE;
 
 	return 0;
 L1:
 	return ret;
 }
 
-static struct dentry *ramfs_mount(struct file_system_type *fs_type, unsigned long flags, const char *bdev_name)
+static struct dentry *ramfs_mount(struct file_system_type *fs_type, int flags,
+	const char *bdev_name, void *data)
 {
 	int ret;
 	struct dentry *root;
@@ -179,7 +180,7 @@ static struct dentry *ramfs_mount(struct file_system_type *fs_type, unsigned lon
 		return NULL;
 	}
 
-	root = d_alloc_root(in);
+	root = d_make_root(in);
 	if (!root)
 		return NULL;
 
@@ -227,11 +228,11 @@ static int ramfs_opendir(struct file *fp, struct inode *inode)
 	return 0;
 }
 
-static int ramfs_readdir(struct file *fp, struct linux_dirent *dirent)
+static int ramfs_readdir(struct file *fp, void *dirent, filldir_t filldir)
 {
 	struct dentry *de;
 	struct inode *in;
-	struct list_node *iter;
+	struct list_head *iter;
 
 	if (fp->f_pos >= fp->f_dentry->d_inode->i_size)
 		return 0;
@@ -246,10 +247,10 @@ static int ramfs_readdir(struct file *fp, struct linux_dirent *dirent)
 	fp->private_data = iter->next;
 	fp->f_pos++;
 
-	return dirent->d_reclen;
+	return sizeof(*de);
 }
 
-static int ramfs_mkdir(struct inode *parent, struct dentry *de, int mode)
+static int ramfs_mkdir(struct inode *parent, struct dentry *de, umode_t mode)
 {
 	struct inode *inode;
 
@@ -257,7 +258,7 @@ static int ramfs_mkdir(struct inode *parent, struct dentry *de, int mode)
 	if (!inode)
 		return -ENOMEM;
 
-	inode->i_ino = 1234; // fixme
+	// inode->i_ino = 1234; // fixme
 	inode->i_mode = mode;
 
 	inode->i_op = &ramfs_dir_inode_operations;
@@ -271,14 +272,14 @@ static int ramfs_mkdir(struct inode *parent, struct dentry *de, int mode)
 }
 
 static struct file_system_type ramfs_fs_type = {
-	.name   = "ramfs",
-	.mount  = ramfs_mount,
-	.umount = ramfs_umount,
+	.name    = "ramfs",
+	.mount   = ramfs_mount,
+	.kill_sb = ramfs_umount,
 };
 
 static int __init ramfs_init(void)
 {
-	return file_system_type_register(&ramfs_fs_type);
+	return register_filesystem(&ramfs_fs_type);
 }
 
 module_init(ramfs_init);

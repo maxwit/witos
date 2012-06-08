@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <fcntl.h>
-#include <flash/flash.h>
+#include <mtd/mtd.h>
 
 static int flash_str_to_val(char * str, __u32 * val, char *unit)
 {
@@ -191,7 +191,7 @@ struct flash_parterase_param {
 	struct process_bar *pBar;
 };
 
-static int flash_parterase_process(struct flash_chip *flash, FLASH_HOOK_PARAM *pParam)
+static int flash_parterase_process(struct mtd_info *mtd, FLASH_HOOK_PARAM *pParam)
 {
 	struct flash_parterase_param *pErInfo;
 
@@ -246,7 +246,7 @@ static int scanbb(int argc, char *argv[])
 		goto L2;
 	}
 
-	if (FLASH_NANDFLASH != flash_val.type) {
+	if (MTD_NANDFLASH != flash_val.type) {
 		goto L2;
 	}
 
@@ -433,7 +433,7 @@ static int erase(int argc, char *argv[])
 	__u32 erase_flags = EDF_NORMAL;
 	int fd;
 	struct flash_info flash_val;
-	struct erase_opt eopt;
+	struct erase_info eopt;
 	char bdev_name[BLOCK_DEV_NAME_LEN];
 
 	while ((ch = getopt(argc, argv, "a:l:p::c:f")) != -1) {
@@ -529,8 +529,8 @@ static int erase(int argc, char *argv[])
 	printf("[0x%08x : 0x%08x]\n", start, size);
 
 	memset(&eopt, 0, sizeof(eopt));
-	eopt.esize = size;
-	eopt.estart = start;
+	eopt.len = size;
+	eopt.addr = start;
 	eopt.flags = erase_flags;
 
 	ret = ioctl(fd, FLASH_IOC_ERASE, &eopt);

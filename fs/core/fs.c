@@ -1,7 +1,7 @@
 #include <malloc.h>
 #include <errno.h>
 #include <string.h>
-#include <fs/fs.h>
+#include <fs.h>
 
 #define MAX_FDS 256
 
@@ -21,6 +21,31 @@ struct super_block *sget(struct file_system_type *type, void *data)
 	sb->s_bdev = data;
 
 	return sb;
+}
+
+struct dentry *mount_bdev(struct file_system_type *fs_type,
+	int flags, const char *dev_name, void *data,
+	int (*fill_super)(struct super_block *, void *, int))
+{
+	int ret;
+	struct super_block *sb;
+	struct block_device *bdev;
+
+	bdev = bdev_get(dev_name);
+	if (NULL == bdev) {
+		DPRINT("fail to open block device \"%s\"!\n", dev_name);
+		return NULL;
+	}
+
+	sb = sget(fs_type, bdev);
+	if (!sb)
+		return NULL;
+
+	ret = fill_super(sb, data, 0);
+	if (ret < 0)
+		return NULL;
+
+	return sb->s_root;
 }
 
 struct dentry *d_alloc(struct dentry *parent, const struct qstr *str)
@@ -44,8 +69,8 @@ struct dentry *__d_alloc(struct super_block *sb, const struct qstr *str)
 
 	de->d_sb = sb;
 	de->d_parent = de;
-	list_head_init(&de->d_child);
-	list_head_init(&de->d_subdirs);
+	INIT_LIST_HEAD(&de->d_child);
+	INIT_LIST_HEAD(&de->d_subdirs);
 
 	de->d_name.len = str->len;
 	if (str->len >= DNAME_INLINE_LEN) {
@@ -64,7 +89,7 @@ struct dentry *__d_alloc(struct super_block *sb, const struct qstr *str)
 	return de;
 }
 
-struct dentry * d_alloc_root(struct inode *root_inode)
+struct dentry *d_make_root(struct inode *root_inode)
 {
 	struct dentry *root_dir = NULL;
 
@@ -81,7 +106,21 @@ struct dentry * d_alloc_root(struct inode *root_inode)
 
 void dput(struct dentry *dentry)
 {
-	list_del_node(&dentry->d_child);
+	list_del(&dentry->d_child);
+}
+
+struct inode *iget(struct super_block *sb, unsigned long ino)
+{
+	struct inode *inode;
+	// TODO: search
+
+	inode = zalloc(sizeof(*inode)); // fixme
+	// if null
+
+	inode->i_sb = sb;
+	inode->i_ino = ino;
+
+	return inode;
 }
 
 int get_unused_fd()
@@ -125,7 +164,7 @@ int vfs_mknod(struct inode *dir, struct dentry *dentry, int mode)
 	int errno = -ENOTSUPP;
 
 	if (dir->i_op->mknod)
-		errno = dir->i_op->mknod(dir, dentry, mode);
+		errno = dir->i_op->mknod(dir, dentry, mode, 0);
 
 	return errno;
 }
@@ -175,7 +214,7 @@ long sys_mkdir(const char *name, unsigned int /*fixme*/ mode)
 	ret = vfs_mkdir(nd.path.dentry->d_inode, de, mode | S_IFDIR);
 	if (ret < 0) {
 		// fixme: use d_free() instead
-		list_del_node(&de->d_child);
+		list_del(&de->d_child);
 		free(de);
 	}
 
@@ -242,4 +281,9 @@ long sys_getcwd(char *buff, unsigned long size)
 	}
 
 	return count;
+}
+
+void d_instantiate(struct dentry *entry, struct inode * inode)
+{
+	entry->d_inode = inode;
 }

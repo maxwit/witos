@@ -8,11 +8,11 @@
 #include <fcntl.h>
 #include <linux.h>
 #include <board.h>
-#include <fs/fs.h>
+#include <fs.h>
 #include <net/net.h>
 #include <net/tftp.h>
 #include <uart/uart.h>
-#include <flash/flash.h>
+#include <mtd/mtd.h>
 
 #define KERNEL_MAX_SIZE   (CONFIG_HEAP_SIZE / 4)
 
@@ -124,7 +124,7 @@ static int build_command_line(char *cmd_line, size_t max_len)
 		str += sprintf(str, " ip=dhcp");
 	} else {
 		struct net_device *ndev;
-		struct list_node *list_head, *iter;
+		struct list_head *list_head, *iter;
 
 		list_head = ndev_get_list();
 		list_for_each(iter, list_head) {
@@ -183,7 +183,7 @@ static ssize_t load_image(void *dst, const char *src)
 	} else {
 #if 0
 		if (!strncmp(src, "mtdblock", 8)) {
-			struct flash_chip *flash;
+			struct mtd_info *mtd;
 
 			flash = flash_open(src);
 			if (!flash) {

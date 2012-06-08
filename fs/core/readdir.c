@@ -1,11 +1,12 @@
 #include <errno.h>
 #include <string.h>
-#include <fs/fs.h>
+#include <fs.h>
 
-int filldir(struct linux_dirent *lde, const char *name, int size, loff_t offset,
-		   unsigned long ino, unsigned int type)
+int filldir(void *de, const char *name, int size, loff_t offset,
+		   u64 ino, unsigned type)
 {
 	size_t reclen;
+	struct linux_dirent *lde = de;
 
 	lde->d_ino  = ino;
 	lde->d_off  = offset;
@@ -15,7 +16,8 @@ int filldir(struct linux_dirent *lde, const char *name, int size, loff_t offset,
 	ALIGN_UP(reclen, sizeof(long));
 	lde->d_reclen = reclen;
 
-	strcpy(lde->d_name, name);
+	memcpy(lde->d_name, name, size);
+	lde->d_name[size] = '\0';
 
 	return 0;
 }
@@ -26,12 +28,16 @@ int sys_getdents(unsigned int fd, struct linux_dirent *lde, unsigned int count)
 	struct file *fp;
 
 	fp = fget(fd);
-	if (!fp || !fp->f_op)
+	if (!fp || !fp->f_op) {
+		DPRINT("no fp or f_op");
 		return -ENODEV;
+	}
 
-	if (!fp->f_op->readdir)
+	if (!fp->f_op->readdir) {
+		DPRINT("no readdir function!\n");
 		return -ENOTSUPP;
+	}
 
-	ret = fp->f_op->readdir(fp, lde);
+	ret = fp->f_op->readdir(fp, lde, filldir);
 	return ret;
 }

@@ -3,7 +3,7 @@
 #include <block.h>
 
 struct qdev_node {
-	struct list_node dev_node;
+	struct list_head dev_node;
 	void *data;
 };
 

@@ -1,5 +1,5 @@
 #pragma once
-#include <flash/flash.h>
+#include <mtd/mtd.h>
 
 // -------- PDC_PTCR : (PDC Offset: 0x20) PDC Transfer Control Register --------
 #define AT91C_PDC_RXTEN           (0x1 <<  0) // (PDC) Receiver Transfer Enable
@@ -104,7 +104,7 @@ struct DataFlashOptMsg {
 };
 
 struct DataFlash {
-	struct flash_chip parent;
+	struct mtd_info parent;
 
 	__u8	bCommand[8];
 	char	name[BLOCK_DEV_NAME_LEN];

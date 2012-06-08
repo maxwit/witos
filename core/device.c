@@ -4,7 +4,7 @@
 int device_register(struct device *dev)
 {
 	int ret;
-	struct list_node *iter;
+	struct list_head *iter;
 	struct bus *bus = dev->bus;
 
 	// step 1:
@@ -34,7 +34,7 @@ int device_register(struct device *dev)
 int driver_register(struct driver *drv)
 {
 	int ret;
-	struct list_node *iter;
+	struct list_head *iter;
 	struct bus *bus = drv->bus;
 
 	// printf("%s() line %d\n", __func__, __LINE__);

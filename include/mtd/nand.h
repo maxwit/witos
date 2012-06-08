@@ -119,7 +119,7 @@ void *nand_read_page(struct nand_chip *, __u32, void *);
 
 #else
 
-#include <flash/flash.h>
+#include <mtd/mtd.h>
 
 typedef enum {
 	FL_READY,
@@ -170,7 +170,7 @@ struct nand_ctrl {
 	int   (*verify_buff)(struct nand_ctrl *, const __u8 *, int);
 	void  (*select_chip)(struct nand_chip *, bool);
 	int   (*block_bad)(struct nand_chip *, __u32, int);
-	int   (*block_mark_bad)(struct nand_chip *, __u32);
+	int   (*block_markbad)(struct nand_chip *, __u32);
 	void  (*cmd_ctrl)(struct nand_chip *, int, unsigned int);
 	int   (*flash_ready)(struct nand_chip *);
 	void  (*command)(struct nand_chip * nand, __u32 cmd, int col, int row);
@@ -201,7 +201,7 @@ struct nand_ctrl {
 
 	const char *name;
 
-	struct list_node nand_list;
+	struct list_head nand_list;
 };
 
 #define NAND_MFR_TOSHIBA    0x98
@@ -242,7 +242,7 @@ struct nand_vendor_name {
 int nand_scan_bbt(struct nand_chip *nand);
 int nand_update_bbt(struct nand_chip *nand, __u32 offs);
 int nand_is_bad_bbt(struct nand_chip *nand, __u32 offs);
-int nand_erase(struct nand_chip *nand, struct erase_opt *opt);
+int nand_erase(struct nand_chip *nand, struct erase_info *opt);
 
 #define NAND_BBP_LARGE        0
 #define NAND_BBP_SMALL        5
@@ -279,7 +279,7 @@ struct nand_chip {
 	int (*nand_ready)(struct nand_chip *);
 	void *(*read_buff)(struct nand_chip *, void *, size_t);
 #else
-	struct flash_chip parent;
+	struct mtd_info parent;
 	struct nand_ctrl *master;
 
 	__u32  device_id;
@@ -295,7 +295,7 @@ struct nand_chip {
 
 	int  bad_blk_oob_pos;
 
-	struct oob_opt opt;
+	struct mtd_oob_ops opt;
 
 	__u8 *bbt;
 	__u8 *oob_buf;
@@ -309,6 +309,6 @@ struct nand_chip {
 	__u32 bus_idx;
 	const char *name; // id or just name?
 
-	struct list_node nand_node;
+	struct list_head nand_node;
 #endif
 };

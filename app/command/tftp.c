@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <net/net.h>
 #include <net/tftp.h>
-#include <flash/flash.h>
+#include <mtd/mtd.h>
 
 #define PORT_LEN 6
 #define IS_ALPHBIT(c) (((c) >= 'a' && (c) <= 'z') || \

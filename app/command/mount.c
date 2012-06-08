@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <errno.h>
-#include <fs/fs.h>
+#include <fs.h>
 #include <fcntl.h>
 
 extern int list_mount();

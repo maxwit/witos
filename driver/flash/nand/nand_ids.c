@@ -1,4 +1,4 @@
-#include <flash/nand.h>
+#include <mtd/nand.h>
 
 const struct nand_desc g_nand_chip_desc[] = {
     NAND_CHIP_DESC("NAND 16MB 1.8V 8-bit",   0x33, 512, 16, 0x4000, 0),

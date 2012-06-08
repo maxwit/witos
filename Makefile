@@ -90,6 +90,6 @@ distclean: clean
 	@echo
 
 clear:
-	@./build/clearup.sh
+	@./utility/clearup.sh
 
 .PHONY: $(dir-y)

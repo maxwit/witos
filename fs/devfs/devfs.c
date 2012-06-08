@@ -6,17 +6,17 @@
 #include <assert.h>
 #include <block.h>
 #include <dirent.h>
-#include <fs/fs.h>
+#include <fs.h>
 #include <fs/devfs.h>
 
 struct devfs_super_block {
-	struct list_node *r_list;
+	struct list_head *r_list;
 };
 
 struct devfs_inode {
 	struct inode vfs_inode;
 	struct block_device *dev;
-	struct list_node dev_node;
+	struct list_head dev_node;
 };
 
 static int devfs_bdev_open(struct file *, struct inode *);
@@ -36,7 +36,8 @@ static const struct file_operations devfs_bdev_file_operations = {
 
 static struct dentry *devfs_lookup(struct inode *, struct dentry *,
 	struct nameidata *);
-static int devfs_mknod(struct inode *, struct dentry *, int);
+
+static int devfs_mknod(struct inode *, struct dentry *, int, dev_t);
 
 static const struct inode_operations devfs_dir_inode_operations = {
 	.lookup = devfs_lookup,
@@ -44,7 +45,7 @@ static const struct inode_operations devfs_dir_inode_operations = {
 };
 
 static int devfs_opendir(struct file *, struct inode *);
-static int devfs_readdir(struct file *, struct linux_dirent *);
+static int devfs_readdir(struct file *, void *, filldir_t);
 
 static const struct file_operations devfs_dir_file_operations = {
 	.open    = devfs_opendir,
@@ -120,14 +121,15 @@ static int devfs_fill_super(struct super_block *sb)
 	}
 
 	sb->s_fs_info = devfs_sb;
-	// sb->s_blksize = BLK_SIZE;
+	// sb->s_blocksize = BLK_SIZE;
 
 	return 0;
 L1:
 	return ret;
 }
 
-static struct dentry *devfs_mount(struct file_system_type *fs_type, unsigned long flags, const char *bdev_name)
+static struct dentry *devfs_mount(struct file_system_type *fs_type,
+	int flags, const char *bdev_name, void *data)
 {
 	int ret;
 	struct dentry *root;
@@ -152,7 +154,7 @@ static struct dentry *devfs_mount(struct file_system_type *fs_type, unsigned lon
 		return NULL;
 	}
 
-	root = d_alloc_root(in);
+	root = d_make_root(in);
 	if (!root)
 		return NULL;
 
@@ -162,7 +164,7 @@ static struct dentry *devfs_mount(struct file_system_type *fs_type, unsigned lon
 }
 
 // fixme
-static void devfs_umount(struct super_block *sb)
+static void devfs_kill_sb(struct super_block *sb)
 {
 }
 
@@ -200,11 +202,11 @@ static int devfs_opendir(struct file *fp, struct inode *inode)
 	return 0;
 }
 
-static int devfs_readdir(struct file *fp, struct linux_dirent *dirent)
+static int devfs_readdir(struct file *fp, void *dirent, filldir_t filldir)
 {
 	struct dentry *de;
 	struct inode *in;
-	struct list_node *iter;
+	struct list_head *iter;
 
 	if (fp->f_pos >= fp->f_dentry->d_inode->i_size)
 		return 0;
@@ -219,10 +221,11 @@ static int devfs_readdir(struct file *fp, struct linux_dirent *dirent)
 	fp->private_data = iter->next;
 	fp->f_pos++;
 
-	return dirent->d_reclen;
+	return 1;
 }
 
-static int devfs_mknod(struct inode *dir, struct dentry *dentry, int mode)
+static int devfs_mknod(struct inode *dir, struct dentry *dentry,
+	int mode, dev_t dev)
 {
 	struct inode *in;
 	struct devfs_inode *din;
@@ -251,14 +254,14 @@ static int devfs_mknod(struct inode *dir, struct dentry *dentry, int mode)
 }
 
 static struct file_system_type devfs_fs_type = {
-	.name   = "devfs",
-	.mount  = devfs_mount,
-	.umount = devfs_umount,
+	.name    = "devfs",
+	.mount   = devfs_mount,
+	.kill_sb = devfs_kill_sb,
 };
 
 static int __init devfs_init(void)
 {
-	return file_system_type_register(&devfs_fs_type);
+	return register_filesystem(&devfs_fs_type);
 }
 
 module_init(devfs_init);

@@ -6,7 +6,7 @@
 #include <assert.h>
 #include <block.h>
 #include <dirent.h>
-#include <fs/fs.h>
+#include <fs.h>
 #include <fs/ext2_fs.h>
 #include <fs/ext2.h>
 
@@ -35,7 +35,7 @@ static const struct file_operations ext2_reg_file_operations = {
 	.write = ext2_write,
 };
 
-static int ext2_readdir(struct file *, struct linux_dirent *);
+static int ext2_readdir(struct file *fp, void *dirent, filldir_t filldir);
 
 static const struct file_operations ext2_dir_file_operations = {
 	.readdir = ext2_readdir,
@@ -160,7 +160,7 @@ static size_t get_dind_block(struct super_block *sb,
 static size_t get_tind_block(struct super_block *sb,
 			struct ext2_inode *inode, ssize_t start_block, __le32 block_indexs[], size_t len)
 {
-	size_t block_size = sb->s_blksize;
+	size_t block_size = sb->s_blocksize;
 	size_t index_per_block = block_size / sizeof(__le32);
 	__le32 buff[index_per_block];
 	__le32 dbuff[index_per_block];
@@ -354,14 +354,14 @@ static int ext2_fill_super(struct super_block *sb)
 #endif
 
 	sb->s_fs_info = e2_sbi;
-	sb->s_blksize = 1024 << e2_sb->s_log_block_size;
+	sb->s_blocksize = 1024 << e2_sb->s_log_block_size;
 
 	bpg = e2_sb->s_blocks_per_group;
 	group_count = (e2_sb->s_blocks_count + bpg - 1) / bpg;
 	DPRINT("super block information:\n"
 		"label = \"%s\", inode size = %d, block size = %d\n",
 		e2_sb->s_volume_name[0] ? e2_sb->s_volume_name : "<N/A>",
-		e2_sb->s_inode_size, sb->s_blksize);
+		e2_sb->s_inode_size, sb->s_blocksize);
 
 	gdt = malloc(group_count * sizeof(struct ext2_group_desc));
 	if (NULL == gdt) {
@@ -386,47 +386,41 @@ L1:
 	return ret;
 }
 
-static struct dentry *ext2_mount(struct file_system_type *fs_type, unsigned long flags, const char *bdev_name)
+static int ext2_read_super(struct super_block *sb, void *data, int flags)
 {
 	int ret;
-	struct dentry *root;
 	struct inode *in;
-	struct super_block *sb;
-	struct block_device *bdev;
-
-	bdev = bdev_get(bdev_name);
-	if (NULL == bdev) {
-		DPRINT("fail to open block device \"%s\"!\n", bdev_name);
-		return NULL;
-	}
-
-	sb = sget(fs_type, bdev);
-	if (!sb)
-		return NULL;
+	struct dentry *root;
 
 	ret = ext2_fill_super(sb);
 	if (ret < 0) {
 		// ...
-		return NULL;
+		return ret;
 	}
 
 	in = ext2_iget(sb, 2);
 	if (!in) {
 		// ...
-		return NULL;
+		return -EINVAL;
 	}
 
-	root = d_alloc_root(in);
+	root = d_make_root(in);
 	if (!root)
-		return NULL;
+		return EINVAL;
 
 	sb->s_root = root;
 
-	return root;
+	return 0;
+}
+
+static struct dentry *ext2_mount(struct file_system_type *fs,
+			    int flags, const char *dev_name, void *data)
+{
+	return mount_bdev(fs, flags, dev_name, data, ext2_read_super);
 }
 
 // fixme
-static void ext2_umount(struct super_block *sb)
+static void ext2_kill_sb(struct super_block *sb)
 {
 }
 
@@ -561,7 +555,8 @@ static struct dentry *ext2_lookup(struct inode *parent, struct dentry *dentry, s
 		return NULL; // fixme!!!
 	}
 
-	dentry->d_inode = inode;
+	// dentry->d_inode = inode;
+	d_add(dentry, inode);
 	nd->ret = 0;
 
 	return dentry;
@@ -570,20 +565,20 @@ static struct dentry *ext2_lookup(struct inode *parent, struct dentry *dentry, s
 static int ext2_inode_read_block(struct inode *in, int blk_no, char *blk_buf)
 {
 	struct ext2_inode_info *e2_info = EXT2_I(in);
-	int blk_index[in->i_size / in->i_sb->s_blksize];
+	int blk_index[in->i_size / in->i_sb->s_blocksize];
 
 	get_block_indexs(in->i_sb, e2_info->i_e2in, 0, (__le32 *)blk_index, ARRAY_ELEM_NUM(blk_index));
 
-	ext2_read_block(in->i_sb, blk_buf, blk_index[blk_no], 0, in->i_sb->s_blksize);
+	ext2_read_block(in->i_sb, blk_buf, blk_index[blk_no], 0, in->i_sb->s_blocksize);
 
 	return 0;
 }
 
-static int ext2_readdir(struct file *fp, struct linux_dirent *dirent)
+static int ext2_readdir(struct file *fp, void *dirent, filldir_t filldir)
 {
 	int blk_num;
 	int blk_off;
-	char buff[fp->f_dentry->d_inode->i_sb->s_blksize];
+	char buff[fp->f_dentry->d_inode->i_sb->s_blocksize];
 	struct inode *in;
 	struct ext2_dir_entry_2 *e2_de;
 
@@ -592,8 +587,8 @@ static int ext2_readdir(struct file *fp, struct linux_dirent *dirent)
 	if (fp->f_pos == in->i_size)
 		return 0;
 
-	blk_num = fp->f_pos / in->i_sb->s_blksize;
-	blk_off = fp->f_pos % in->i_sb->s_blksize;
+	blk_num = fp->f_pos / in->i_sb->s_blocksize;
+	blk_off = fp->f_pos % in->i_sb->s_blocksize;
 
 	ext2_inode_read_block(in, blk_num, buff);
 
@@ -726,15 +721,66 @@ error:
 }
 #endif
 
+extern int ck_ext2_feature(uint32_t fc,uint32_t frc,uint32_t fi);
+static int ext2_check_fs_type(const char *bdev_name)
+{
+	struct ext2_super_block *e2_sb;
+	struct bio *bio;
+	char buff[EXT2_SUPER_BLK_SIZE];
+	struct block_device *bdev;
+	uint32_t fc, frc, fi;
+	int ret;
+
+	bdev = bdev_get(bdev_name);
+	if (NULL == bdev) {
+		DPRINT("bdev %s not found!\n", bdev_name);
+		return -ENODEV;
+	}
+
+	bio = bio_alloc();
+	if (!bio)
+		return -ENOMEM;
+
+	bio->bdev = bdev;
+	bio->sect = 1024 / SECT_SIZE;
+	bio->size = sizeof(buff);
+	bio->data = buff;
+	submit_bio(READ, bio);
+	// TODO: check flags here
+	bio_free(bio);
+
+	e2_sb = (struct ext2_super_block *)buff;
+
+	if (0xEF53 != e2_sb->s_magic) {
+		DPRINT("%s is not \"ext2\" fs!\n", bdev_name);
+		return -EINVAL;
+	}
+
+	fc = e2_sb->s_feature_compat;
+	fi = e2_sb->s_feature_incompat;
+	frc = e2_sb->s_feature_ro_compat;
+
+	ret = ck_ext2_feature(fc, frc, fi);
+
+	extern void ext_sb_list(struct ext2_super_block * esb);
+	if (ret == 0) {
+		ext_sb_list(e2_sb);
+	}
+
+	return ret;
+}
+
+
 static struct file_system_type ext2_fs_type = {
-	.name   = "ext2",
-	.mount  = ext2_mount,
-	.umount = ext2_umount,
+	.name    = "ext2",
+	.mount   = ext2_mount,
+	.kill_sb = ext2_kill_sb,
+	.check_fs_type = ext2_check_fs_type,
 };
 
 static int __init ext2_init(void)
 {
-	return file_system_type_register(&ext2_fs_type);
+	return register_filesystem(&ext2_fs_type);
 }
 
 module_init(ext2_init);

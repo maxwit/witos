@@ -159,7 +159,7 @@ struct mii_phy {
 	__u8  addr;
 	__u16 ven_id, dev_id;
 	struct net_device *ndev;
-	struct list_node phy_node;
+	struct list_head phy_node;
 };
 
 struct mii_phy *mii_phy_probe(struct net_device *ndev, __u8 addr);

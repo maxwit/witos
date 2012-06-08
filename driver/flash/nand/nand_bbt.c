@@ -2,8 +2,8 @@
 #include <errno.h>
 #include <string.h>
 #include <malloc.h>
-#include <flash/flash.h>
-#include <flash/nand.h>
+#include <mtd/mtd.h>
+#include <mtd/nand.h>
 
 static int check_pattern(__u8 *buf, int len, int paglen, struct nand_bad_blk *td)
 {
@@ -58,17 +58,17 @@ static int read_bbt(struct nand_chip *nand,
 				int reserved_block_code)
 {
 	int ret, i, j, act = 0;
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
-	__u32 retlen, len, totlen;
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
+	size_t retlen, len, totlen;
 	__u32 from;
 	__u8 msk = (__u8) ((1 << bits) - 1);
 
 	totlen = (num * bits) >> 3;
-	from = ((__u32) page) << flash->write_shift;
+	from = ((__u32) page) << mtd->write_shift;
 
 	while (totlen) {
 		len = min(totlen, (__u32) (1 << nand->bbt_erase_shift));
-		ret = flash->read(flash, from, len, &retlen, buf);
+		ret = mtd->read(mtd, from, len, &retlen, buf);
 
 		if (ret < 0) {
 			if (retlen != len) {
@@ -92,7 +92,7 @@ static int read_bbt(struct nand_chip *nand,
 						((offs << 2) + (act >> 1)) << nand->bbt_erase_shift
 						);
 					nand->bbt[offs + (act >> 3)] |= 0x2 << (act & 0x06);
-					flash->eccstat.bbtblocks++;
+					mtd->eccstat.bbtblocks++;
 					continue;
 				}
 
@@ -103,7 +103,7 @@ static int read_bbt(struct nand_chip *nand,
 					nand->bbt[offs + (act >> 3)] |= 0x3 << (act & 0x06);
 				else
 					nand->bbt[offs + (act >> 3)] |= 0x1 << (act & 0x06);
-				flash->eccstat.badblocks++;
+				mtd->eccstat.badblocks++;
 			}
 		}
 
@@ -115,7 +115,7 @@ static int read_bbt(struct nand_chip *nand,
 
 static int read_abs_bbt(struct nand_chip *nand, __u8 *buf, struct nand_bad_blk *td, int chip)
 {
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 	struct nand_ctrl *nfc = nand->master;
 	int ret = 0, i;
 	int bits;
@@ -127,15 +127,15 @@ static int read_abs_bbt(struct nand_chip *nand, __u8 *buf, struct nand_bad_blk *
 
 		for (i = 0; i < nfc->slaves; i++) {
 			if (chip == -1 || chip == i)
-				ret = read_bbt(nand, buf, td->pages[i], flash->chip_size >> nand->bbt_erase_shift, bits, offs, td->reserved_block_code);
+				ret = read_bbt(nand, buf, td->pages[i], mtd->chip_size >> nand->bbt_erase_shift, bits, offs, td->reserved_block_code);
 
 			if (ret)
 				return ret;
 
-			offs += flash->chip_size >> (nand->bbt_erase_shift + 2);
+			offs += mtd->chip_size >> (nand->bbt_erase_shift + 2);
 		}
 	} else {
-		ret = read_bbt(nand, buf, td->pages[0], flash->chip_size >> nand->bbt_erase_shift, bits, 0, td->reserved_block_code);
+		ret = read_bbt(nand, buf, td->pages[0], mtd->chip_size >> nand->bbt_erase_shift, bits, 0, td->reserved_block_code);
 
 		if (ret)
 			return ret;
@@ -146,17 +146,17 @@ static int read_abs_bbt(struct nand_chip *nand, __u8 *buf, struct nand_bad_blk *
 static int scan_read_raw(struct nand_chip *nand,
 					__u8 *buf, __u32 offs, __u32 len)
 {
-	struct oob_opt ops;
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_oob_ops ops;
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 
-	ops.op_mode    = FLASH_OOB_RAW;
-	ops.oob_off = 0;
-	ops.oob_len    = flash->oob_size;
-	ops.oob_buff  = buf;
-	ops.data_buff  = buf;
-	ops.data_len    = len;
+	ops.mode    = FLASH_OOB_RAW;
+	ops.ooboffs = 0;
+	ops.ooblen  = mtd->oob_size;
+	ops.oobbuf  = buf;
+	ops.datbuf  = buf;
+	ops.len  = len;
 
-	return flash->read_oob(flash, offs, &ops);
+	return mtd->read_oob(mtd, offs, &ops);
 }
 
 static int scan_write_bbt(struct nand_chip *nand,
@@ -166,17 +166,17 @@ static int scan_write_bbt(struct nand_chip *nand,
 						__u8 *oob
 						)
 {
-	struct oob_opt ops;
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_oob_ops ops;
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 
-	ops.op_mode = FLASH_OOB_PLACE;
-	ops.oob_off = 0;
-	ops.oob_len = flash->oob_size;
-	ops.data_buff = buf;
-	ops.oob_buff = oob;
-	ops.data_len = len;
+	ops.mode = FLASH_OOB_PLACE;
+	ops.ooboffs = 0;
+	ops.ooblen = mtd->oob_size;
+	ops.datbuf = buf;
+	ops.oobbuf = oob;
+	ops.len = len;
 
-	return flash->write_oob(flash, offs, &ops);
+	return mtd->write_oob(mtd, offs, &ops);
 }
 
 static int read_abs_bbts(struct nand_chip *nand,
@@ -185,24 +185,24 @@ static int read_abs_bbts(struct nand_chip *nand,
 						struct nand_bad_blk *md
 						)
 {
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 
 	if (td->flags & NAND_BBT_VERSION) {
 		scan_read_raw(nand,
 				buf,
-				td->pages[0] << flash->write_shift,
-				flash->write_size
+				td->pages[0] << mtd->write_shift,
+				mtd->write_size
 				);
-		td->version[0] = buf[flash->write_size + td->veroffs];
+		td->version[0] = buf[mtd->write_size + td->veroffs];
 		printf("Bad block table at page %d, version 0x%02X\n", td->pages[0], td->version[0]);
 	}
 
 	if (md && (md->flags & NAND_BBT_VERSION)) {
 		scan_read_raw(nand, buf,
-				md->pages[0] << flash->write_shift,
-				flash->write_size);
+				md->pages[0] << mtd->write_shift,
+				mtd->write_size);
 
-		md->version[0] = buf[flash->write_size + md->veroffs];
+		md->version[0] = buf[mtd->write_size + md->veroffs];
 		printf("Bad block table at page %d, version 0x%02X\n", md->pages[0], md->version[0]);
 	}
 
@@ -219,14 +219,14 @@ static int scan_block_full(struct nand_chip *nand,
 						)
 {
 	int ret, j;
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 
 	ret = scan_read_raw(nand, buf, offs, readlen);
 	if (ret)
 		return ret;
 
 	for (j = 0; j < len; j++, buf += scanlen) {
-		if (check_pattern(buf, scanlen, flash->write_size, bd))
+		if (check_pattern(buf, scanlen, mtd->write_size, bd))
 			return 1;
 	}
 
@@ -240,15 +240,15 @@ static int scan_block_fast(struct nand_chip *nand,
 						int len
 						)
 {
-	struct oob_opt ops;
+	struct mtd_oob_ops ops;
 	int j, ret;
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 
-	ops.oob_len = flash->oob_size;
-	ops.oob_buff  = buf;
-	ops.oob_off = 0;
-	ops.data_buff  = NULL;
-	ops.op_mode    = FLASH_OOB_PLACE;
+	ops.ooblen = mtd->oob_size;
+	ops.oobbuf  = buf;
+	ops.ooboffs = 0;
+	ops.datbuf  = NULL;
+	ops.mode    = FLASH_OOB_PLACE;
 
 	for (j = 0; j < len; j++) {
 		/*
@@ -256,14 +256,14 @@ static int scan_block_fast(struct nand_chip *nand,
 		 * handle single byte reads for 16 bit
 		 * buswidth
 		 */
-		ret = flash->read_oob(flash, offs, &ops);
+		ret = mtd->read_oob(mtd, offs, &ops);
 		if (ret)
 			return ret;
 
 		if (check_short_pattern(buf, bd))
 			return 1;
 
-		offs += flash->write_size;
+		offs += mtd->write_size;
 	}
 
 	return 0;
@@ -272,7 +272,7 @@ static int scan_block_fast(struct nand_chip *nand,
 static int create_bbt(struct nand_chip *nand,
 				__u8 *buf, struct nand_bad_blk *bd, int chip)
 {
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 	struct nand_ctrl *nfc = nand->master;
 	int i, numblocks, len, scanlen;
 	int startblock;
@@ -280,7 +280,7 @@ static int create_bbt(struct nand_chip *nand,
 	__u32 readlen;
 
 	if (bd->flags & NAND_BBT_SCANALLPAGES)
-		len = 1 << (nand->bbt_erase_shift - flash->write_shift);
+		len = 1 << (nand->bbt_erase_shift - mtd->write_shift);
 	else {
 		if (bd->flags & NAND_BBT_SCAN2NDPAGE)
 			len = 2;
@@ -294,14 +294,14 @@ static int create_bbt(struct nand_chip *nand,
 		readlen = bd->len;
 	} else {
 
-		scanlen = flash->write_size + flash->oob_size;
-		readlen = len * flash->write_size;
+		scanlen = mtd->write_size + mtd->oob_size;
+		readlen = len * mtd->write_size;
 	}
 
 	if (chip == -1) {
 		/* Note that numblocks is 2 * (real numblocks) here, see i+=2
 		 * below as it makes shifting and masking less painful */
-		numblocks = flash->chip_size >> (nand->bbt_erase_shift - 1);
+		numblocks = mtd->chip_size >> (nand->bbt_erase_shift - 1);
 		startblock = 0;
 		from = 0;
 	} else {
@@ -310,7 +310,7 @@ static int create_bbt(struct nand_chip *nand,
 				chip + 1, nfc->slaves);
 			return -EINVAL;
 		}
-		numblocks = flash->chip_size >> (nand->bbt_erase_shift - 1);
+		numblocks = mtd->chip_size >> (nand->bbt_erase_shift - 1);
 		startblock = chip * numblocks;
 		numblocks += startblock;
 		from = startblock << (nand->bbt_erase_shift - 1);
@@ -331,7 +331,7 @@ static int create_bbt(struct nand_chip *nand,
 		if (ret) {
 			nand->bbt[i >> 3] |= 0x03 << (i & 0x6);
 			printf("Bad eraseblock %d at 0x%08x\n", i >> 1, from);
-			flash->eccstat.badblocks++;
+			mtd->eccstat.badblocks++;
 		}
 
 		i += 2;
@@ -342,16 +342,16 @@ static int create_bbt(struct nand_chip *nand,
 
 static int search_bbt(struct nand_chip *nand, __u8 *buf, struct nand_bad_blk *td)
 {
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 	struct nand_ctrl *nfc = nand->master;
 	int i, chips;
 	int startblock, block, dir;
-	int scanlen = flash->write_size + flash->oob_size;
+	int scanlen = mtd->write_size + mtd->oob_size;
 	int bbtblocks;
-	int blocktopage = nand->bbt_erase_shift - flash->write_shift;
+	int blocktopage = nand->bbt_erase_shift - mtd->write_shift;
 
 	if (td->flags & NAND_BBT_LASTBLOCK) {
-		startblock = (flash->chip_size >> nand->bbt_erase_shift) - 1;
+		startblock = (mtd->chip_size >> nand->bbt_erase_shift) - 1;
 		dir = -1;
 	} else {
 		startblock = 0;
@@ -360,11 +360,11 @@ static int search_bbt(struct nand_chip *nand, __u8 *buf, struct nand_bad_blk *td
 
 	if (td->flags & NAND_BBT_PERCHIP) {
 		chips = nfc->slaves;
-		bbtblocks = flash->chip_size >> nand->bbt_erase_shift;
+		bbtblocks = mtd->chip_size >> nand->bbt_erase_shift;
 		startblock &= bbtblocks - 1;
 	} else {
 		chips = 1;
-		bbtblocks = flash->chip_size >> nand->bbt_erase_shift;
+		bbtblocks = mtd->chip_size >> nand->bbt_erase_shift;
 	}
 
 	// bits = td->flags & NAND_BBT_NRBITS_MSK;
@@ -379,17 +379,17 @@ static int search_bbt(struct nand_chip *nand, __u8 *buf, struct nand_bad_blk *td
 			int actblock = startblock + dir * block;
 			__u32 offs = actblock << nand->bbt_erase_shift;
 
-			scan_read_raw(nand, buf, offs, flash->write_size);
+			scan_read_raw(nand, buf, offs, mtd->write_size);
 
-			if (!check_pattern(buf, scanlen, flash->write_size, td)) {
+			if (!check_pattern(buf, scanlen, mtd->write_size, td)) {
 				td->pages[i] = actblock << blocktopage;
 				if (td->flags & NAND_BBT_VERSION)
-					td->version[i] = buf[flash->write_size + td->veroffs];
+					td->version[i] = buf[mtd->write_size + td->veroffs];
 
 				break;
 			}
 		}
-		startblock += flash->chip_size >> nand->bbt_erase_shift;
+		startblock += mtd->chip_size >> nand->bbt_erase_shift;
 	}
 
 	for (i = 0; i < chips; i++) {
@@ -423,28 +423,28 @@ static int write_bbt(struct nand_chip *nand,
 				struct nand_bad_blk *md,
 				int chipsel)
 {
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 	struct nand_ctrl *nfc = nand->master;
-	struct erase_opt einfo;
+	struct erase_info einfo;
 	int i, j, ret, chip = 0;
 	int bits, startblock, dir, page, offs, numblocks, sft, sftmsk;
 	int nrchips, bbtoffs, pageoffs, oob_off;
 	__u8 msk[4];
 	__u8 rcode = td->reserved_block_code;
-	__u32 retlen, len = 0;
+	size_t retlen, len = 0;
 	__u32 to;
-	struct oob_opt ops;
+	struct mtd_oob_ops ops;
 
-	ops.oob_len = flash->oob_size;
-	ops.oob_off = 0;
-	ops.data_buff = NULL;
-	ops.op_mode = FLASH_OOB_PLACE;
+	ops.ooblen = mtd->oob_size;
+	ops.ooboffs = 0;
+	ops.datbuf = NULL;
+	ops.mode = FLASH_OOB_PLACE;
 
 	if (!rcode)
 		rcode = 0xff;
 
 	if (td->flags & NAND_BBT_PERCHIP) {
-		numblocks = (int)(flash->chip_size >> nand->bbt_erase_shift);
+		numblocks = (int)(mtd->chip_size >> nand->bbt_erase_shift);
 
 		if (chipsel == -1)
 			nrchips = nfc->slaves;
@@ -453,7 +453,7 @@ static int write_bbt(struct nand_chip *nand,
 			chip = chipsel;
 		}
 	} else {
-		numblocks = (int)(flash->chip_size >> nand->bbt_erase_shift);
+		numblocks = (int)(mtd->chip_size >> nand->bbt_erase_shift);
 		nrchips = 1;
 	}
 
@@ -484,7 +484,7 @@ static int write_bbt(struct nand_chip *nand,
 				continue;
 			}
 
-			page = block << (nand->bbt_erase_shift - flash->write_shift);
+			page = block << (nand->bbt_erase_shift - mtd->write_shift);
 
 			if (!md || md->pages[chip] != page)
 				goto write;
@@ -515,12 +515,12 @@ write:
 
 		bbtoffs = chip * (numblocks >> 2);
 
-		to = ((__u32) page) << flash->write_shift;
+		to = ((__u32) page) << mtd->write_shift;
 
 		if (td->flags & NAND_BBT_SAVECONTENT) {
 			to &= ~((__u32) ((1 << nand->bbt_erase_shift) - 1));
 			len = 1 << nand->bbt_erase_shift;
-			ret = flash->read(flash, to, len, &retlen, buf);
+			ret = mtd->read(mtd, to, len, &retlen, buf);
 			if (ret < 0) {
 				if (retlen != len) {
 					printf("nand_bbt: Error reading block for writing "
@@ -533,23 +533,23 @@ write:
 					"bad block table\n");
 			}
 
-			ops.oob_len = (len >> flash->write_shift) * flash->oob_size;
-			ops.oob_buff = &buf[len];
-			ret = flash->read_oob(flash, to + flash->write_size, &ops);
-			if (ret < 0 || ops.oob_ret_len != ops.oob_len)
+			ops.ooblen = (len >> mtd->write_shift) * mtd->oob_size;
+			ops.oobbuf = &buf[len];
+			ret = mtd->read_oob(mtd, to + mtd->write_size, &ops);
+			if (ret < 0 || ops.oobretlen != ops.ooblen)
 				goto outerr;
 
-			pageoffs = page - (int)(to >> flash->write_shift);
-			offs = pageoffs << flash->write_shift;
+			pageoffs = page - (int)(to >> mtd->write_shift);
+			offs = pageoffs << mtd->write_shift;
 
 			memset(&buf[offs], 0xff, (__u32) (numblocks >> sft));
-			oob_off = len + (pageoffs * flash->oob_size);
+			oob_off = len + (pageoffs * mtd->oob_size);
 		} else {
 			len = (__u32) (numblocks >> sft);
 
-			len = (len + (flash->write_size - 1)) & ~(flash->write_size - 1);
+			len = (len + (mtd->write_size - 1)) & ~(mtd->write_size - 1);
 
-			memset(buf, 0xff, len +	(len >> flash->write_shift) * flash->oob_size);
+			memset(buf, 0xff, len +	(len >> mtd->write_shift) * mtd->oob_size);
 			offs = 0;
 			oob_off = len;
 
@@ -571,10 +571,10 @@ write:
 			}
 		}
 
-		flash->bad_allow = 1;
+		mtd->bad_allow = 1;
 		memset(&einfo, 0, sizeof(einfo));
-		einfo.estart = (__u32)to;
-		einfo.esize  = 1 << nand->bbt_erase_shift;
+		einfo.addr = (__u32)to;
+		einfo.len  = 1 << nand->bbt_erase_shift;
 		ret = nand_erase(nand, &einfo);
 		if (ret < 0)
 			goto outerr;
@@ -705,7 +705,7 @@ static int check_create(struct nand_chip *nand, __u8 *buf, struct nand_bad_blk *
 
 static void mark_bbt_region(struct nand_chip *nand, struct nand_bad_blk *td)
 {
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 	struct nand_ctrl *nfc = nand->master;
 
 	int i, j, chips, block, nrblocks, update;
@@ -713,10 +713,10 @@ static void mark_bbt_region(struct nand_chip *nand, struct nand_bad_blk *td)
 
 	if (td->flags & NAND_BBT_PERCHIP) {
 		chips = nfc->slaves;
-		nrblocks = (int)(flash->chip_size >> nand->bbt_erase_shift);
+		nrblocks = (int)(mtd->chip_size >> nand->bbt_erase_shift);
 	} else {
 		chips = 1;
-		nrblocks = (int)(flash->chip_size >> nand->bbt_erase_shift);
+		nrblocks = (int)(mtd->chip_size >> nand->bbt_erase_shift);
 	}
 
 	for (i = 0; i < chips; i++) {
@@ -724,7 +724,7 @@ static void mark_bbt_region(struct nand_chip *nand, struct nand_bad_blk *td)
 			!(td->flags & NAND_BBT_WRITE)) {
 			if (td->pages[i] == -1)
 				continue;
-			block = td->pages[i] >> (nand->bbt_erase_shift - flash->write_shift);
+			block = td->pages[i] >> (nand->bbt_erase_shift - mtd->write_shift);
 			block <<= 1;
 			oldval = nand->bbt[(block >> 3)];
 			newval = oldval | (0x2 << (block & 0x06));
@@ -747,7 +747,7 @@ static void mark_bbt_region(struct nand_chip *nand, struct nand_bad_blk *td)
 				update = 1;
 			block += 2;
 		}
-		/* If we want reserved blocks to be recorded to flash, and some
+		/* If we want reserved blocks to be recorded to mtd, and some
 		   new ones have been marked, then we need to update the stored
 		   bbts.  This should only happen once. */
 		if (update && td->reserved_block_code)
@@ -757,13 +757,13 @@ static void mark_bbt_region(struct nand_chip *nand, struct nand_bad_blk *td)
 
 int nand_scan_bad_block(struct nand_chip *nand, struct nand_bad_blk *bd)
 {
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 	int len, ret = 0;
 	__u8 *buf;
 	struct nand_bad_blk *td = nand->bbt_td;
 	struct nand_bad_blk *md = nand->bbt_md;
 
-	len = flash->chip_size >> (nand->bbt_erase_shift + 2);
+	len = mtd->chip_size >> (nand->bbt_erase_shift + 2);
 
 	nand->bbt = zalloc(len);
 	if (!nand->bbt) {
@@ -776,7 +776,7 @@ int nand_scan_bad_block(struct nand_chip *nand, struct nand_bad_blk *bd)
 	 */
 	if (!td) {
 		if ((ret = nand_memory_bbt(nand, bd))) {
-			printf("nand_bbt: Can't scan flash and build the RAM-based BBT\n");
+			printf("nand_bbt: Can't scan mtd and build the RAM-based BBT\n");
 			free(nand->bbt);
 			nand->bbt = NULL;
 		}
@@ -784,7 +784,7 @@ int nand_scan_bad_block(struct nand_chip *nand, struct nand_bad_blk *bd)
 	}
 
 	len = (1 << nand->bbt_erase_shift);
-	len += (len >> flash->write_shift) * flash->oob_size;
+	len += (len >> mtd->write_shift) * mtd->oob_size;
 	buf = malloc(len);
 	if (!buf) {
 		printf("nand_bbt: Out of memory\n");
@@ -813,7 +813,7 @@ int nand_scan_bad_block(struct nand_chip *nand, struct nand_bad_blk *bd)
 
 int nand_update_bbt(struct nand_chip *nand, __u32 offs)
 {
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 	int len, ret = 0, writeops = 0;
 	int chip, chipsel;
 	__u8 *buf;
@@ -823,10 +823,10 @@ int nand_update_bbt(struct nand_chip *nand, __u32 offs)
 	if (!nand->bbt || !td)
 		return -EINVAL;
 
-	len = flash->chip_size >> (nand->bbt_erase_shift + 2);
+	len = mtd->chip_size >> (nand->bbt_erase_shift + 2);
 
 	len = (1 << nand->bbt_erase_shift);
-	len += (len >> flash->write_shift) * flash->oob_size;
+	len += (len >> mtd->write_shift) * mtd->oob_size;
 	buf = malloc(len);
 	if (!buf) {
 		printf("nand_update_bbt: Out of memory\n");
@@ -836,7 +836,7 @@ int nand_update_bbt(struct nand_chip *nand, __u32 offs)
 	writeops = md != NULL ? 0x03 : 0x01;
 
 	if (td->flags & NAND_BBT_PERCHIP) {
-		chip = (int)(offs >> flash->chip_shift);
+		chip = (int)(offs >> mtd->chip_shift);
 		chipsel = chip;
 	} else {
 		chip = 0;
@@ -926,7 +926,7 @@ static struct nand_bad_blk g_bbt_mirror_desc = {
 
 int nand_scan_bbt(struct nand_chip *nand)
 {
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 
 	if (nand->flags & NAND_IS_AND) {
 		if (!nand->bbt_td) {
@@ -946,7 +946,7 @@ int nand_scan_bbt(struct nand_chip *nand)
 		}
 
 		if (!nand->bad_blk_patt) {
-			nand->bad_blk_patt = (flash->write_size > 512) ?
+			nand->bad_blk_patt = (mtd->write_size > 512) ?
 				&g_bbLargePageFlashBased : &g_bbSmallPageFlashBased;
 		}
 	} else {
@@ -954,7 +954,7 @@ int nand_scan_bbt(struct nand_chip *nand)
 		nand->bbt_md = NULL;
 
 		if (!nand->bad_blk_patt) {
-			nand->bad_blk_patt = (flash->write_size > 512) ?
+			nand->bad_blk_patt = (mtd->write_size > 512) ?
 				&g_bbLargePageMemBased : &g_bbSmallPageMemBased;
 		}
 	}
@@ -964,7 +964,7 @@ int nand_scan_bbt(struct nand_chip *nand)
 
 int nand_is_bad_bbt(struct nand_chip *nand, __u32 offs)
 {
-	struct flash_chip *flash = NAND_TO_FLASH(nand);
+	struct mtd_info *mtd = NAND_TO_FLASH(nand);
 	int block;
 	__u8 ret;
 
@@ -980,7 +980,7 @@ int nand_is_bad_bbt(struct nand_chip *nand, __u32 offs)
 		return ret;
 
 	case 0x02:
-		return flash->bad_allow ? 0 : 1;
+		return mtd->bad_allow ? 0 : 1;
 	}
 
 	return 1;

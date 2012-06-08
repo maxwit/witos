@@ -4,7 +4,7 @@
 #include <malloc.h>
 #include <fcntl.h>
 #include <assert.h>
-#include <fs/fs.h>
+#include <fs.h>
 
 struct vfsmount *lookup_mnt(struct path *path);
 
@@ -18,7 +18,7 @@ static inline void path_to_nameidata(const struct path *path,
 struct dentry *d_lookup(struct dentry *parent, struct qstr *unit)
 {
 	struct dentry *de;
-	struct list_node *iter;
+	struct list_head *iter;
 
 	list_for_each(iter, &parent->d_subdirs) {
 		de = container_of(iter, struct dentry, d_child);
@@ -44,6 +44,7 @@ static struct dentry *real_lookup(struct dentry *parent, struct qstr *unit,
 		if (nd->ret < 0) {
 			GEN_DBG("fail to lookup \"%s\" (ret = %d)!\n",
 				dentry->d_name.name, nd->ret);
+			dput(dentry);
 			return NULL;
 		}
 		if (result && result != dentry) {

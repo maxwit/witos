@@ -1,6 +1,6 @@
 #pragma once
 
-#include <fs/fs.h>
+#include <fs.h>
 #include <fs/ext2_fs.h>
 
 struct ext2_sb_info {

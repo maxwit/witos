@@ -4,12 +4,12 @@
 #include <malloc.h>
 #include <fcntl.h>
 #include <assert.h>
-#include <fs/fs.h>
+#include <fs.h>
 
 static struct file_system_type *fs_type_list;
-static DECL_INIT_LIST(g_mount_list);
+static LIST_HEAD(g_mount_list);
 
-int file_system_type_register(struct file_system_type *fstype)
+int register_filesystem(struct file_system_type *fstype)
 {
 	struct file_system_type **p;
 
@@ -36,29 +36,41 @@ struct file_system_type *file_system_type_get(const char *name)
 	return NULL;
 }
 
+static struct file_system_type *guess_fs_type_by_bdev(const char *bdev)
+{
+	struct file_system_type *p;
+
+	for (p = fs_type_list; p; p = p->next) {
+		if (p->check_fs_type) {
+			if (0 == p->check_fs_type(bdev))
+				return p;
+		}
+	}
+
+	return NULL;
+}
+
+
 int sys_mount(const char *dev_name, const char *path,
 		const char *type, unsigned long flags)
 {
 	int ret;
-	static bool root_mounted = false;
 	struct file_system_type *fstype;
 	struct vfsmount *mnt;
 	struct dentry *root;
 	struct nameidata nd;
-
-	if ((flags & MS_ROOT) && root_mounted == true)
-		return -EBUSY;
+	const bool is_root = ('/' == path[0] && '\0' == path[1]);
 
 	if (!(flags & MS_NODEV)) {
 		list_for_each_entry(mnt, &g_mount_list, mnt_hash) {
-			if (!strcmp(mnt->dev_name, dev_name)) {
+			if (mnt->dev_name && !strcmp(mnt->dev_name, dev_name)) {
 				GEN_DBG("device \"%s\" already mounted!\n", dev_name);
 				return -EBUSY;
 			}
 		}
 	}
 
-	if (!(flags & MS_ROOT)) {
+	if (!is_root) {
 		ret = path_walk(path, &nd); // fixme: directory only!
 		if (ret < 0) {
 			GEN_DBG("\"%s\" does NOT exist!\n");
@@ -66,13 +78,18 @@ int sys_mount(const char *dev_name, const char *path,
 		}
 	}
 
-	fstype = file_system_type_get(type);
+	if (NULL == type) {
+		fstype = guess_fs_type_by_bdev(dev_name);
+	} else {
+		fstype = file_system_type_get(type);
+	}
+
 	if (NULL == fstype) {
-		DPRINT("fail to find file system type %s!\n", type);
+		DPRINT("fail to find file system type %s!\n", type == NULL ? "" : type);
 		return -ENOENT;
 	}
 
-	root = fstype->mount(fstype, flags, dev_name);
+	root = fstype->mount(fstype, flags, dev_name, NULL);
 	if (!root) {
 		DPRINT("fail to mount %s!\n", dev_name);
 		ret = -EIO; // fixme!
@@ -89,7 +106,7 @@ int sys_mount(const char *dev_name, const char *path,
 	mnt->dev_name = dev_name;
 	mnt->root     = root;
 
-	if (flags & MS_ROOT) {
+	if (is_root) {
 		struct path sysroot = {.dentry = root, .mnt = mnt};
 
 		mnt->mountpoint = NULL; // fixme

@@ -196,7 +196,7 @@ static int dm9000_link_change(struct net_device *ndev)
 	__u16 stat;
 	struct mii_phy *phy;
 
-	if (list_is_empty(&ndev->phy_list))
+	if (list_empty(&ndev->phy_list))
 		return -EIO;
 	phy = container_of(ndev->phy_list.next, struct mii_phy, phy_node);
 

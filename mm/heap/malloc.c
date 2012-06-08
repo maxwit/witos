@@ -5,7 +5,7 @@
 #include <assert.h>
 #include <string.h>
 
-#define LIST_NODE_SIZE             WORD_ALIGN_UP(sizeof(struct list_node))
+#define LIST_NODE_SIZE             WORD_ALIGN_UP(sizeof(struct list_head))
 #define LIST_NODE_ALIGN(size)     (((size) + LIST_NODE_SIZE - 1) & ~(LIST_NODE_SIZE - 1))
 #define MIN_HEAP_LEN               1024
 #define IS_FREE(size)             (((size) & (WORD_SIZE - 1)) == 0)
@@ -14,10 +14,10 @@
 struct mem_region {
 	size_t pre_size;
 	size_t curr_size;
-	struct list_node ln_mem_region;
+	struct list_head ln_mem_region;
 };
 
-static DECL_INIT_LIST(g_free_region_list);
+static LIST_HEAD(g_free_region_list);
 
 static inline struct mem_region *get_successor(struct mem_region *region)
 {
@@ -87,7 +87,7 @@ int __init heap_init(void)
 void *malloc(size_t size)
 {
 	void *p = NULL;
-	struct list_node *iter;
+	struct list_head *iter;
 	size_t alloc_size, reset_size;
 	struct mem_region *curr_region, *succ_region;
 	unsigned long __UNUSED__ psr;
@@ -106,7 +106,7 @@ void *malloc(size_t size)
 	return NULL;
 
 do_alloc:
-	list_del_node(iter);
+	list_del(iter);
 
 	reset_size = curr_region->curr_size - alloc_size;
 
@@ -139,7 +139,7 @@ void free(void *p)
 
 	if (IS_FREE(succ_region->curr_size)) {
 		region_set_size(curr_region, GET_SIZE(curr_region) + succ_region->curr_size + DWORD_SIZE);
-		list_del_node(&succ_region->ln_mem_region);
+		list_del(&succ_region->ln_mem_region);
 	} else
 		region_set_size(curr_region, GET_SIZE(curr_region));
 
@@ -179,7 +179,7 @@ void *dma_alloc_coherent(size_t size, unsigned long *pa)
 	return va;
 }
 
-struct list_node *get_heap_head_list(void)
+struct list_head *get_heap_head_list(void)
 {
 	return &g_free_region_list;
 }

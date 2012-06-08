@@ -5,7 +5,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include <random.h> // fixme: to be removed
-#include <fs/fs.h>
+#include <fs.h>
 #include <net/net.h>
 
 // DHCP opcode
@@ -190,7 +190,7 @@ int main(int argc, char *argv[])
 	bool sync_svr = false, nic = false;
 	socklen_t addrlen;
 	struct net_device *ndev = NULL;
-	struct list_node *ndev_list, *iter;
+	struct list_head *ndev_list, *iter;
 	struct sockaddr_in remote_addr, local_addr;
 	struct dhcp_packet packet;
 

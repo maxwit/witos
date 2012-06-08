@@ -6,7 +6,7 @@
 #include <string.h>
 #include <malloc.h>
 #include <assert.h>
-#include <fs/fs.h>
+#include <fs.h>
 
 int GAPI chdir(const char *path)
 {
@@ -70,8 +70,9 @@ struct dirent * GAPI readdir(DIR *dir)
 	assert(dir);
 
 	ret = sys_getdents(dir->fd, &lde, 1); // fixme
-	if (ret <= 0)
+	if (ret <= 0) {
 		return NULL;
+	}
 
 	de = malloc(lde.d_reclen);
 	if (!de)

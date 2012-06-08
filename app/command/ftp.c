@@ -4,7 +4,7 @@
 #include <errno.h>
 #include <net/net.h>
 #include <net/socket.h>
-#include <fs/fs.h>
+#include <fs.h>
 
 #define PATH "/srv/ftp"
 #define BUF_LEN 512

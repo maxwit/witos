@@ -5,7 +5,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <net/net.h>
-#include <flash/flash.h>
+#include <mtd/mtd.h>
 
 #define LINE_LEN 512
 
@@ -310,7 +310,7 @@ int conf_store()
 	const char *fn;
 	extern char _start[];
 	struct sysconfig *cfg = _syscfg_get();
-	struct erase_opt opt;
+	struct erase_info opt;
 
 	if (!cfg->is_dirty)
 		return 0;
@@ -326,9 +326,9 @@ int conf_store()
 	conf_base = cfg->data - _start;
 
 	memset(&opt, 0, sizeof(opt));
-	opt.estart = conf_base;
-	opt.esize = cfg->size;
-	opt.flags = EDF_ALLOWBB;
+	opt.addr = conf_base;
+	opt.len = cfg->size;
+	// opt.flags = EDF_ALLOWBB;
 
 	ret = ioctl(fd, FLASH_IOC_ERASE, &opt);
 	if (ret < 0)

@@ -2,7 +2,7 @@
 #include <errno.h>
 #include <string.h>
 #include <types.h>
-#include <fs/fs.h>
+#include <fs.h>
 #include <fs/fat.h>
 #include <drive.h>
 
@@ -361,7 +361,7 @@ static struct file_system_type fat_fs_type = {
 
 static int __init fat_init(void)
 {
-	return file_system_type_register(&fat_fs_type);
+	return register_filesystem(&fat_fs_type);
 }
 
 module_init(fat_init);

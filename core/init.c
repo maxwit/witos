@@ -10,6 +10,7 @@
 #include <shell.h>
 #include <uart/uart.h>
 #include <font/font.h>
+#include <fs.h> // fixme: to be removed
 
 static const char banner[] = "\n\n" // CLRSCREEN
 	"\t+---------------------------------+\n"
@@ -96,7 +97,7 @@ static int __init mount_root()
 {
 	int ret;
 
-	ret = sys_mount(NULL, "/", "ramfs", MS_ROOT | MS_NODEV);
+	ret = sys_mount(NULL, "/", "ramfs", MS_NODEV);
 	if (ret < 0) {
 		printf("Fetal error: fail to mount rootfs! (errno = %d)\n", ret);
 		return ret;

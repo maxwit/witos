@@ -116,7 +116,7 @@ static int lan9220_hw_init(struct net_device *ndev)
 #ifdef CONFIG_IRQ_SUPPORT
 	lan9220_writel(lan9220, INT_EN, lan9220->int_mask);
 
-	if (list_is_empty(&ndev->phy_list))
+	if (list_empty(&ndev->phy_list))
 		return -EIO;
 	phy = container_of(ndev->phy_list.next, struct mii_phy, phy_node);
 	ndev->mdio_write(ndev, phy->addr,
@@ -211,7 +211,7 @@ static int lan9220_link_change(struct net_device *ndev)
 	__u16 reg_src, reg_bms;
 	struct mii_phy *phy;
 
-	if (list_is_empty(&ndev->phy_list))
+	if (list_empty(&ndev->phy_list))
 		return -EIO;
 	phy = container_of(ndev->phy_list.next, struct mii_phy, phy_node);
 
@@ -318,13 +318,17 @@ static int __init lan9220_probe(struct lan9220_chip *lan9220, int busw32)
 
 static int __init lan9220_init(struct platform_device *pdev)
 {
-	int ret, irq;
+	int ret;
 	unsigned long mem;
 	struct net_device *ndev;
 	struct lan9220_chip *lan9220;
+#ifdef CONFIG_IRQ_SUPPORT
+	int irq;
+
+	irq = platform_get_irq(pdev);
+#endif
 
 	mem = platform_get_memory(pdev);
-	irq = platform_get_irq(pdev);
 
 	ndev = ndev_new(sizeof(*lan9220));
 	if (NULL == ndev)

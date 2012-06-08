@@ -86,10 +86,10 @@ int main(int argc, char *argv[])
 	__u32 flag = 0;
 	int opt;
 	struct net_device *ndev;
-	struct list_node *iter, *ndev_list;
+	struct list_head *iter, *ndev_list;
 
 	ndev_list = ndev_get_list();
-	if (list_is_empty(ndev_list)) {
+	if (list_empty(ndev_list)) {
 		printf("No net device found!\n");
 		return -ENODEV;
 	}

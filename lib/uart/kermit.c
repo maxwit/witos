@@ -2,10 +2,10 @@
 #include <errno.h>
 #include <loader.h>
 #include <stdio.h>
-#include <fs/fs.h>
+#include <fs.h>
 #include <image.h>
 #include <fcntl.h>
-#include <flash/flash.h>
+#include <mtd/mtd.h>
 #include <uart/uart.h>
 #include <uart/kermit.h>
 
@@ -206,7 +206,7 @@ int kermit_load(struct loader_opt *opt)
 					break;
 
 				case IMG_YAFFS2:
-					oob_mode = FLASH_OOB_AUTO;
+					oob_mode = MTD_OPS_AUTO_OOB;
 					break;
 
 				default:

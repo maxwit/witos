@@ -270,6 +270,7 @@ ENTRY(__modsi3)
 
 #if 1
 
+ENTRY(__aeabi_uldivmod)
 ENTRY(__aeabi_uidivmod)
 
 	stmfd	sp!, {r0, r1, ip, lr}

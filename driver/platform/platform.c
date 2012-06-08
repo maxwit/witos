@@ -52,7 +52,7 @@ int platform_driver_register(struct platform_driver *plat_drv)
 {
 	plat_drv->drv.bus = &platform_bus;
 	plat_drv->drv.init = platform_driver_init;
-	list_head_init(&plat_drv->drv.dev_list);
+	INIT_LIST_HEAD(&plat_drv->drv.dev_list);
 
 	return driver_register(&plat_drv->drv);
 }
