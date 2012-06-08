@@ -63,7 +63,7 @@ int sys_mount(const char *dev_name, const char *path,
 
 	if (!(flags & MS_NODEV)) {
 		list_for_each_entry(mnt, &g_mount_list, mnt_hash) {
-			if (!strcmp(mnt->dev_name, dev_name)) {
+			if (mnt->dev_name && !strcmp(mnt->dev_name, dev_name)) {
 				GEN_DBG("device \"%s\" already mounted!\n", dev_name);
 				return -EBUSY;
 			}
@@ -78,7 +78,6 @@ int sys_mount(const char *dev_name, const char *path,
 		}
 	}
 
-
 	if (NULL == type) {
 		fstype = guess_fs_type_by_bdev(dev_name);
 	} else {
@@ -86,7 +85,7 @@ int sys_mount(const char *dev_name, const char *path,
 	}
 
 	if (NULL == fstype) {
-		DPRINT("fail to find file system type %s!\n", type);
+		DPRINT("fail to find file system type %s!\n", type == NULL ? "" : type);
 		return -ENOENT;
 	}
 
