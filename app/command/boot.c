@@ -14,7 +14,7 @@
 #include <uart/uart.h>
 #include <mtd/mtd.h>
 
-#define KERNEL_MAX_SIZE   (CONFIG_HEAP_SIZE / 4)
+#define KERNEL_MAX_SIZE   (CONFIG_HEAP_SIZE / 3)
 
 // fixme: for debug stage while no flash driver available
 static int build_command_line(char *cmd_line, size_t max_len)
@@ -34,7 +34,7 @@ static int build_command_line(char *cmd_line, size_t max_len)
 	ret = conf_get_attr("linux.root", config);
 	if (ret < 0) {
 		// TODO: search the root device
-		strcpy(config, "mtdblock4");
+		strcpy(config, "mmcblk0p2");
 	}
 
 	if (!strncmp(config, "/dev/", 5))
@@ -150,7 +150,7 @@ static int build_command_line(char *cmd_line, size_t max_len)
 
 	// set console
 	if (conf_get_attr("linux.console", config) < 0)
-		console = "ttyS";
+		console = "ttyO";
 	else
 		console = config;
 
@@ -368,7 +368,7 @@ int main(int argc, char *argv[])
 	ret = conf_get_attr("linux.kernel", config);
 	if (ret < 0) {
 		// set to default
-		strcpy(config, "mtdblock3"); // fixme
+		strcpy(config, "/d/zImage"); // fixme
 	}
 
 	printf("Loading Linux kernel from %s to %p ...\n", config, linux_kernel);
@@ -384,6 +384,7 @@ int main(int argc, char *argv[])
 
 	prepare();
 
+	GEN_DBG("Starting kernel. \n");
 	linux_kernel(0, board->mach_id, ATAG_BASE);
 
 error:

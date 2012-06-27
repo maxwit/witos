@@ -42,6 +42,7 @@ static int bdev_mount(const char *dev_name)
 {
 	int ret;
 	static char mnt[] = "/d";
+	struct nameidata nd;
 
 	// to be removed
 	if (!strncmp(dev_name, "/dev/mtdblock", sizeof("/dev/mtdblock") - 1) || \
@@ -49,8 +50,11 @@ static int bdev_mount(const char *dev_name)
 		return -ENOTSUPP;
 
 	GEN_DBG("mounting %s -> %s\n", dev_name, mnt);
+	ret = path_walk(mnt, &nd);
+	if (ret < 0) {
+		ret = sys_mkdir(mnt, 0777);
+	}
 
-	ret = sys_mkdir(mnt, 0777);
 	if (ret < 0) {
 		// ...
 		return ret;

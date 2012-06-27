@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <assert.h>
+#include <delay.h>
 #include <graphic/display.h>
 
 #define dss_readl(reg) \
@@ -68,6 +69,7 @@ static int __init omap3_display_init(void)
 	int ret;
 	__u32 val;
 	struct display *disp;
+	int timeout;
 
 	disp = display_create();
 	// if NULL
@@ -79,11 +81,12 @@ static int __init omap3_display_init(void)
 
 	// reset
 	dss_writel(DISPC_SYSCONFIG, 0x02);
-	while (1) {
+	timeout = 0;
+	while (timeout++ < 10) {
 		val = dss_readl(DISPC_SYSCONFIG);
 		if (!(val & 0x2))
 			break;
-		// TODO: timeout
+		udelay(1000);
 	}
 
 	// configure clock
