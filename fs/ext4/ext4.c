@@ -604,6 +604,10 @@ static ssize_t ext4_read(struct file *fp, void *buff, size_t size, loff_t *off)
 	if (fp->f_pos >= in->i_size)
 		return 0;
 
+	if (fp->f_pos + size > in->i_size) {
+		size = in->i_size - fp->f_pos;
+	}
+
 	cur_blk = fp->f_pos / in->i_sb->s_blocksize;
 	offset  = fp->f_pos % in->i_sb->s_blocksize;
 
