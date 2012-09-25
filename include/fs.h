@@ -329,7 +329,7 @@ int filldir(struct linux_dirent *, const char * name, int namlen, loff_t offset,
 */
 
 struct super_block {
-	__u32 s_blocksize;	
+	__u32 s_blocksize;
 	unsigned char s_blocksize_bits;
 	unsigned long s_flags;
 	struct block_device *s_bdev;

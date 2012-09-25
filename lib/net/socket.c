@@ -160,9 +160,11 @@ alloc_sock:
 	}
 
 	sock->type = type;
-	sock->state = TCPS_CLOSED;
-	sock->seq_num = 1; // fixme
-	sock->ack_num = 0;
+	if (SOCK_STREAM == type) { // fixme
+		sock->state = TCPS_CLOSED;
+		sock->seq_num = 1; // fixme
+		sock->ack_num = 0;
+	}
 	memset(sock->saddr, 0, sizeof(sock->saddr));
 	INIT_LIST_HEAD(&sock->tx_qu);
 	INIT_LIST_HEAD(&sock->rx_qu);
@@ -295,7 +297,6 @@ int bind(int fd, const struct sockaddr *addr, socklen_t len)
 
 	switch (addr->sa_family) {
 	case AF_INET:
-	default: // fixme: move default down
 		sa = (const struct sockaddr_in *)addr;
 
 		sin->sin_port = sa->sin_port ? sa->sin_port : htons(port_alloc(sock->type));
@@ -309,6 +310,11 @@ int bind(int fd, const struct sockaddr *addr, socklen_t len)
 		}
 
 		break;
+
+	// TODO: support other address families here
+
+	default:
+		return -ENOTSUPP;
 	}
 
 	return ret;
@@ -354,7 +360,7 @@ ssize_t sendto(int fd, const void *buff, __u32 buff_size, int flags,
 	return buff_size;
 }
 
-long recvfrom(int fd, void *buf, __u32 n, int flags,
+ssize_t recvfrom(int fd, void *buf, __u32 n, int flags,
 		struct sockaddr *src_addr, socklen_t *addrlen)
 {
 	struct socket *sock;
@@ -370,11 +376,11 @@ long recvfrom(int fd, void *buf, __u32 n, int flags,
 		return 0;
 
 	// fixme !
-	pkt_len   = skb->size <= n ? skb->size : n;
+	pkt_len = min(skb->size, n);
+	memcpy(buf, skb->data, pkt_len);
+
 	*addrlen = sizeof(struct sockaddr_in);
 	memcpy(src_addr, &sock->saddr[SA_DST], *addrlen);
-
-	memcpy(buf, skb->data, pkt_len);
 
 	skb_free(skb);
 

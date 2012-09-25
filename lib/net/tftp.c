@@ -25,7 +25,7 @@ struct tftp_packet {
 	__u8 data[0];
 } __PACKED__;
 
-static int tftp_make_req(__u8 *buff, __u16 req, const char *file_name, const char *mode)
+static inline int tftp_make_req(__u8 *buff, __u16 req, const char *file_name, const char *mode)
 {
 	int len;
 
@@ -47,7 +47,8 @@ static int tftp_make_req(__u8 *buff, __u16 req, const char *file_name, const cha
 	return len;
 }
 
-static int tftp_send_ack(const int fd, const __u16 blk, struct sockaddr_in *remote_addr)
+static inline int tftp_send_ack(const int fd, const __u16 blk,
+	struct sockaddr_in *remote_addr)
 {
 	int ret;
 	struct tftp_packet tftp_pkt;

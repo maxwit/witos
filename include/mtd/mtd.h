@@ -168,7 +168,7 @@ struct nand_ecclayout {
 	struct nand_oobfree oobfree[MTD_MAX_OOBFREE_ENTRIES_LARGE];
 };
 
-struct mtd_info {	
+struct mtd_info {
 	uint32_t flags;
 
 	struct block_device bdev;

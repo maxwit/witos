@@ -103,7 +103,7 @@ int connect(int fd, const struct sockaddr *addr, socklen_t len);
 ssize_t send(int fd, const void *buf, size_t n, int flag);
 ssize_t recv(int fd, void *buf, size_t n, int flag);
 ssize_t sendto(int fd, const void *buf, __u32 n, int flags, const struct sockaddr *dest_addr, socklen_t addrlen);
-long recvfrom(int fd, void *buf, __u32 n, int flags, struct sockaddr *src_addr, socklen_t *addrlen);
+ssize_t recvfrom(int fd, void *buf, __u32 n, int flags, struct sockaddr *src_addr, socklen_t *addrlen);
 int sk_close(int fd);
 
 #define SKIOCS_FLAGS 1

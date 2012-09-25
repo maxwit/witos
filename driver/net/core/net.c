@@ -59,7 +59,7 @@ static int pseudo_calculate_checksum(struct sock_buff *skb, __u16 *checksum)
 	return 0;
 }
 
-static void ether_send_packet(struct sock_buff *skb, const __u8 mac[], __u16 eth_type);
+static int ether_send_packet(struct sock_buff *skb, const __u8 mac[], __u16 type);
 
 struct socket *udp_search_socket(const struct udp_header *, const struct ip_header *);
 
@@ -435,7 +435,7 @@ int ip_layer_deliver(struct sock_buff *skb)
 
 	if (ip_hdr_len < IP_HDR_LEN) {
 		printf("Warning: ip_hdr head len not match\n");
-		return -1;
+		return -EINVAL;
 	}
 
 	switch(ip_hdr->up_prot) {
@@ -444,16 +444,16 @@ int ip_layer_deliver(struct sock_buff *skb)
 		udp_layer_deliver(skb, ip_hdr);
 		break;
 
+	case PROT_TCP:
+		// printf("\tTCP received!\n");
+		tcp_layer_deliver(skb, ip_hdr);
+		break;
+
 	case PROT_ICMP:
 		// printf("\n\tICMP received!\n");
 		skb->data -= ip_hdr_len;
 		skb->size += ip_hdr_len;
 		icmp_deliver(skb, ip_hdr);
-		break;
-
-	case PROT_TCP:
-		// printf("\tTCP received!\n");
-		tcp_layer_deliver(skb, ip_hdr);
 		break;
 
 	case PROT_IGMP:
@@ -475,13 +475,33 @@ int ip_layer_deliver(struct sock_buff *skb)
 	return ip_hdr->up_prot;
 }
 
+static inline int mac_fill_from_arp(__u8 mac[], __u32 nip)
+{
+	struct eth_addr *remote_addr;
+
+	remote_addr = getaddr(nip);
+	if (NULL == remote_addr) {
+		remote_addr = gethostaddr(nip);
+		if (NULL == remote_addr) {
+			const __u8 *ip = (__u8 *)&nip;
+
+			printf("%s(): host \"%d.%d.%d.%d\" not found!\n",
+				__func__, ip[0], ip[1], ip[2], ip[3]);
+
+			return -EIO;
+		}
+	}
+
+	memcpy(mac, remote_addr->mac, MAC_ADR_LEN);
+	return 0;
+}
+
 int ip_send_packet(struct sock_buff *skb, __u8 prot)
 {
-	__u8 mac[MAC_ADR_LEN];
-	__u8 *pmac = NULL;
+	int ret;
 	__u32 nip;
+	__u8 mac[MAC_ADR_LEN];
 	struct ip_header *ip_hdr;
-	struct eth_addr *remote_addr = NULL;
 	struct socket *sock = skb->sock;
 	static __u16 ip_id = 1;
 
@@ -491,7 +511,7 @@ int ip_send_packet(struct sock_buff *skb, __u8 prot)
 	ip_hdr = (struct ip_header *)skb->data;
 
 	ip_hdr->ver_len   = 0x45;
-	ip_hdr->tos       = 0;
+	ip_hdr->tos       = 0; // fixme
 	ip_hdr->total_len = htons((__u16)skb->size);
 	ip_hdr->id        = htons(ip_id); //
 	ip_hdr->flag_frag = htons(0x4000);
@@ -505,32 +525,17 @@ int ip_send_packet(struct sock_buff *skb, __u8 prot)
 
 	ip_hdr->chksum = ~net_calc_checksum(ip_hdr, IP_HDR_LEN);
 
+	//
 	nip = sock->saddr[SA_DST].sin_addr.s_addr;
-
 	if (ip_is_bcast(skb->ndev, ntohl(nip))) {
 		mac_fill_bcast(mac);
-		pmac = mac;
 	} else {
-		remote_addr = getaddr(nip);
-
-		if (NULL == remote_addr) {
-			remote_addr = gethostaddr(sock->saddr[SA_DST].sin_addr.s_addr);
-			if (NULL == remote_addr) {
-				const __u8 *ip;
-
-				ip = (const __u8 *)&sock->saddr[SA_DST].sin_addr.s_addr;
-				printf("%s(): host \"%d.%d.%d.%d\" not found!\n",
-					__func__, ip[0], ip[1], ip[2], ip[3]);
-
-				return -EIO;
-			}
-		}
-
-		pmac = remote_addr->mac;
+		ret = mac_fill_from_arp(mac, nip);
+		if (ret < 0)
+			return ret;
 	}
 
-	ether_send_packet(skb, pmac, ETH_TYPE_IP);
-	return 0;
+	return ether_send_packet(skb, mac, ETH_TYPE_IP);
 }
 
 //------------------------ ARP Layer -------------------------
@@ -578,7 +583,7 @@ static int arp_recv_packet(struct sock_buff *skb)
 
 	if (arp_pkt->prot_type != ETH_TYPE_IP) {
 		printf("\tProt Error!\n");
-		return -1;
+		return -ENOTSUPP;
 	}
 
 	memcpy(&ip, arp_pkt->src_ip, 4);
@@ -680,29 +685,34 @@ int netif_rx(struct sock_buff *skb)
 }
 
 //------------------ Send Package to Hardware -----------------
-void ether_send_packet(struct sock_buff *skb, const __u8 mac[], __u16 eth_type)
+int ether_send_packet(struct sock_buff *skb, const __u8 mac[], __u16 type)
 {
+	int ret;
 	struct ether_header *eth_head;
 	struct net_device *ndev = skb->ndev;
 
 	skb->data -= ETH_HDR_LEN;
 	skb->size += ETH_HDR_LEN;
 
+	// for assert()?
 	if (skb->data != skb->head) {
 		printf("%s(): skb len error! (data = 0x%p, head = 0x%p)\n",
 			__func__, skb->data, skb->head);
-		return;
+		return -EINVAL;
 	}
 
 	eth_head = (struct ether_header *)skb->data;
 
 	memcpy(eth_head->des_mac, mac, MAC_ADR_LEN);
 	memcpy(eth_head->src_mac, ndev->mac_addr, MAC_ADR_LEN);
-	eth_head->frame_type = eth_type;
+	eth_head->frame_type = type;
 
-	ndev->send_packet(ndev, skb);
+	ret = ndev->send_packet(ndev, skb);
+	// if ret < 0 ...
 
 	skb_free(skb);
+
+	return ret;
 }
 
 __u16 net_calc_checksum(const void *buff, __u32 size)
@@ -735,8 +745,7 @@ struct eth_addr *getaddr(__u32 nip)
 
 	lock_irq_psr(psr);
 
-	list_for_each(iter, &g_host_list)
-	{
+	list_for_each(iter, &g_host_list) {
 		host = container_of(iter, struct host_addr, node);
 
 		dip = (__u32 *)host->in_addr.ip;

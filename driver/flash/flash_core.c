@@ -310,7 +310,7 @@ struct mtd_info *get_mtd_device(void *nil, unsigned int num)
 
 	list_for_each_entry(master, &g_master_list, master_node)
 		list_for_each(iter, &master->slave_list) {
-			if (i == num) {			
+			if (i == num) {
 				mtd = container_of(iter, struct mtd_info, slave_node);
 				return mtd;
 			}
