@@ -40,7 +40,7 @@ struct driver {
 
 	struct list_head dev_list;
 
-	int (*init)(struct device *);
+	int (*probe)(struct device *);
 };
 
 struct bus {

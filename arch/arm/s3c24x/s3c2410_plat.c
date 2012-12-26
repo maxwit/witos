@@ -2,6 +2,17 @@
 #include <irq.h>
 #include <init.h>
 
+#define CONFIG_DM9000_IRQ        IRQ_EINT7
+#define DM9000_PHYS_BASE         0x20000000
+
+static struct platform_device dm9000_device = {
+	.dev = {
+		.mem = DM9000_PHYS_BASE,
+		.irq = CONFIG_DM9000_IRQ,
+	},
+	.name = "dm9000",
+};
+
 static int __init s3c2410_init(void)
 {
 #ifdef CONFIG_IRQ_SUPPORT
@@ -13,6 +24,8 @@ static int __init s3c2410_init(void)
 	s3c24x0_timer_init();
 #endif
 #endif
+
+	platform_device_register(&dm9000_device);
 
 	return 0;
 }

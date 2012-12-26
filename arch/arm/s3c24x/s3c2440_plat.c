@@ -3,6 +3,17 @@
 #include <init.h>
 #include <arm/s3c24x0.h>
 
+#define CONFIG_DM9000_IRQ        IRQ_EINT7
+#define DM9000_PHYS_BASE         0x20000000
+
+static struct platform_device dm9000_device = {
+	.dev = {
+		.mem = DM9000_PHYS_BASE,
+		.irq = CONFIG_DM9000_IRQ,
+	},
+	.name = "dm9000",
+};
+
 static int __init s3c2440_init(void)
 {
 	__u32 val;
@@ -46,8 +57,9 @@ static int __init s3c2440_init(void)
 #endif
 #endif
 
+	platform_device_register(&dm9000_device);
+
 	return 0;
 }
 
 plat_init(s3c2440_init);
-

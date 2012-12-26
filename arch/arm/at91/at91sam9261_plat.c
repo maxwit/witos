@@ -1,5 +1,6 @@
 #include <io.h>
 #include <init.h>
+#include <platform.h>
 #include <arm/at91sam926x.h>
 
 // fixme
@@ -8,6 +9,21 @@
 
 #define CONFIG_DM9000_PIO_IRQ    PIOC
 #define CONFIG_DM9000_PIN_IRQ    (1 << 11)
+
+#if 1 // to be removed
+#define CONFIG_DM9000_IRQ        (32 + 2 * 32 + 11)
+#define DM9000_PHYS_BASE         0x30000000
+#define DM9000_INDEX_PORT        (DM9000_PHYS_BASE + 0x0)
+#define DM9000_DATA_PORT         (DM9000_PHYS_BASE + 0x4)
+#endif
+
+static struct platform_device dm9000_device = {
+	.dev = {
+		.mem = DM9000_PHYS_BASE,
+		.irq = CONFIG_DM9000_IRQ,
+	},
+	.name = "dm9000",
+};
 
 static int __init at91sam9261_init(void)
 {
@@ -30,6 +46,8 @@ static int __init at91sam9261_init(void)
 	at91sam926x_timer_init();
 #endif
 #endif
+
+	platform_device_register(&dm9000_device);
 
 	return 0;
 }

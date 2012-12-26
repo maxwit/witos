@@ -316,7 +316,7 @@ static int __init lan9220_probe(struct lan9220_chip *lan9220, int busw32)
 	return -ENODEV;
 }
 
-static int __init lan9220_init(struct platform_device *pdev)
+static int __init lan9220_probe(struct platform_device *pdev)
 {
 	int ret;
 	unsigned long mem;
@@ -388,7 +388,7 @@ static struct platform_driver lan9220_driver = {
 	.drv = {
 		.name = "SMSC LAN9220",
 	},
-	.init = lan9220_init,
+	.probe = lan9220_probe,
 };
 
 static int __init lan9220_driver_init(void)

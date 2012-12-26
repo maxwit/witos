@@ -18,6 +18,17 @@ static struct spi_slave mw61_spi_slave[] = {
 };
 #endif
 
+#define CONFIG_DM9000_IRQ        INT_EINT(7)
+#define DM9000_PHYS_BASE         0x18000000
+
+static struct platform_device dm9000_device = {
+	.dev = {
+		.mem = DM9000_PHYS_BASE,
+		.irq = CONFIG_DM9000_IRQ,
+	},
+	.name = "dm9000",
+};
+
 static int __init mw61_init(void)
 {
 	__u32 val;
@@ -88,6 +99,8 @@ static int __init mw61_init(void)
 	INIT_LIST_HEAD(&spi_master->slave_list);
 	spi_slave_attach(spi_master, spi_slave);
 #endif
+
+	platform_device_register(&dm9000_device);
 
 	return 0;
 }

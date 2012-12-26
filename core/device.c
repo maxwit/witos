@@ -20,7 +20,7 @@ int device_register(struct device *dev)
 
 			// step 3:
 			dev->drv = drv;
-			ret = drv->init(dev);
+			ret = drv->probe(dev);
 			if (!ret)
 				return 0;
 
@@ -49,7 +49,7 @@ int driver_register(struct driver *drv)
 			list_add_tail(&dev->drv_node, &drv->dev_list);
 
 			dev->drv = drv;
-			ret = drv->init(dev);
+			ret = drv->probe(dev);
 			if (ret < 0)
 				dev->drv = NULL;
 		}

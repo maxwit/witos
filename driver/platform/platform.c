@@ -13,48 +13,48 @@ static struct bus platform_bus = {
 
 static int match(struct device *dev, struct driver *drv)
 {
-	struct platform_device *plat_dev;
-	// struct platform_driver *plat_drv;
+	struct platform_device *pdev;
+	// struct platform_driver *pdrv;
 
-	plat_dev = container_of(dev, struct platform_device, dev);
-	// plat_drv = container_of(drv, struct platform_driver, drv);
+	pdev = container_of(dev, struct platform_device, dev);
+	// pdrv = container_of(drv, struct platform_driver, drv);
 
-	return !strcmp(plat_dev->name, drv->name);
+	return !strcmp(pdev->name, drv->name);
 }
 
-static int platform_driver_init(struct device *dev)
+static int platform_driver_probe(struct device *dev)
 {
-	struct platform_device *plat_dev;
-	struct platform_driver *plat_drv;
+	struct platform_device *pdev;
+	struct platform_driver *pdrv;
 
-	plat_dev = container_of(dev, struct platform_device, dev);
-	plat_drv = container_of(dev->drv, struct platform_driver, drv);
+	pdev = container_of(dev, struct platform_device, dev);
+	pdrv = container_of(dev->drv, struct platform_driver, drv);
 
-	return plat_drv->init(plat_dev);
+	return pdrv->probe(pdev);
 }
 
-int platform_device_register(struct platform_device *plat_dev)
+int platform_device_register(struct platform_device *pdev)
 {
 	int ret;
 
-	plat_dev->dev.bus = &platform_bus;
+	pdev->dev.bus = &platform_bus;
 
-	if (plat_dev->init) {
-		ret = plat_dev->init(plat_dev);
+	if (pdev->init) {
+		ret = pdev->init(pdev);
 		if (ret < 0)
 			return ret;
 	}
 
-	return device_register(&plat_dev->dev);
+	return device_register(&pdev->dev);
 }
 
-int platform_driver_register(struct platform_driver *plat_drv)
+int platform_driver_register(struct platform_driver *pdrv)
 {
-	plat_drv->drv.bus = &platform_bus;
-	plat_drv->drv.init = platform_driver_init;
-	INIT_LIST_HEAD(&plat_drv->drv.dev_list);
+	pdrv->drv.bus = &platform_bus;
+	pdrv->drv.probe = platform_driver_probe;
+	INIT_LIST_HEAD(&pdrv->drv.dev_list);
 
-	return driver_register(&plat_drv->drv);
+	return driver_register(&pdrv->drv);
 }
 
 static int __init platform_init(void)

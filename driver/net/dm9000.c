@@ -10,6 +10,7 @@
 #include <net/mii.h>
 #include <irq.h>
 #include <delay.h>
+#include <platform.h>
 #include "dm9000.h"
 
 // TODO: support 16-bit BW
@@ -20,17 +21,14 @@
 #define DM9K_INFO(args ...)
 #endif
 
-static __u8 dm9000_readb(__u8 reg)
-{
-	writeb(VA(DM9000_INDEX_PORT), reg);
-	return readb(VA(DM9000_DATA_PORT));
-}
+#define dm9000_readb(reg) \
+	(writeb(VA(DM9000_INDEX_PORT), reg), readb(VA(DM9000_DATA_PORT)))
 
-static void dm9000_writeb(__u8 reg, __u8 val)
-{
-	writeb(VA(DM9000_INDEX_PORT), reg);
-	writeb(VA(DM9000_DATA_PORT), val);
-}
+#define dm9000_writeb(reg, val) \
+do { \
+	writeb(VA(DM9000_INDEX_PORT), reg); \
+	writeb(VA(DM9000_DATA_PORT), val); \
+} while (0)
 
 static __u16 dm9000_mdio_read(struct net_device *ndev, __u8 addr, __u8 reg)
 {
@@ -280,13 +278,16 @@ static int dm9000_poll(struct net_device *ndev)
 }
 #endif
 
-static int __init dm9000_init(void)
+static int __init dm9000_probe(struct platform_device *pdev)
 {
 	int ret;
 	__u16 ven_id, dev_id;
 	__u8 rev;
 	struct net_device *ndev;
 	const char *chip_name;
+	void *mmio;
+
+	mmio = VA(pdev->dev.mem);
 
 	ven_id = (dm9000_readb(DM9000_VIDH) << 8) | dm9000_readb(DM9000_VIDL);
 	dev_id = (dm9000_readb(DM9000_PIDH) << 8) | dm9000_readb(DM9000_PIDL);
@@ -344,6 +345,18 @@ static int __init dm9000_init(void)
 	dm9000_writeb(DM9000_RCR, 1);
 
 	return ret;
+}
+
+static struct platform_driver dm9000_driver = {
+	.drv = {
+		.name = "dm9000",
+	},
+	.probe = dm9000_probe,
+};
+
+static int __init dm9000_init(void)
+{
+	return platform_driver_register(&dm9000_driver);
 }
 
 module_init(dm9000_init);

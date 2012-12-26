@@ -14,7 +14,7 @@ struct platform_driver {
 	struct driver drv;
 	// struct platform_id *idt;
 
-	int (*init)(struct platform_device *);
+	int (*probe)(struct platform_device *);
 };
 
 // fixme
