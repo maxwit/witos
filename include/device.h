@@ -11,19 +11,22 @@
 #define MINOR(dev)	((unsigned int) ((dev) & MINORMASK))
 #define MKDEV(ma,mi)	(((ma) << MINORBITS) | (mi))
 
+#define IORESOURCE_MEM 0x1
+#define IORESOURCE_IRQ 0x2
+
 struct device;
 struct driver;
 struct bus;
 
 struct resource {
-	unsigned long stat;
+	unsigned long start;
 	size_t size;
+	unsigned int flag;
 };
 
 struct device {
-	unsigned long mem;
-	// size_t size;
-	int irq;
+	struct resource *resources;
+	int res_num;
 
 	struct bus *bus;
 	struct list_head bus_node;

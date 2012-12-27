@@ -20,10 +20,29 @@ static int __init dm9000_device_init(struct platform_device *pdev)
 	return 0;
 }
 
+static struct resource dm9000_res[] = {
+	[0] = {
+		.start = 0x2c000000,
+		.size = 4,
+		.flag = IORESOURCE_MEM,
+	},
+	[1] = {
+		.start = 0x2c000400,
+		.size = 4,
+		.flag = IORESOURCE_MEM,
+	},
+#if 0
+	[2] = {
+		.start = ,
+		.size = 1,
+	},
+#endif
+};
+
 static struct platform_device dm9000_device = {
 	.dev = {
-		.mem = 0x28000000,
-		.irq = GPIO_IRQ(19),
+		.resources = dm9000_res,
+		.res_num = ARRAY_ELEM_NUM(dm9000_res),
 	},
 	.name = "dm9000",
 	.init = dm9000_device_init,

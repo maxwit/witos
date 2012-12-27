@@ -22,17 +22,23 @@
 #endif
 
 #define dm9000_readb(reg) \
-	(writeb(VA(DM9000_INDEX_PORT), reg), readb(VA(DM9000_DATA_PORT)))
+	(writeb(dm9000->index_port, reg), readb(dm9000->data_port))
 
 #define dm9000_writeb(reg, val) \
 do { \
-	writeb(VA(DM9000_INDEX_PORT), reg); \
-	writeb(VA(DM9000_DATA_PORT), val); \
+	writeb(dm9000->index_port, reg); \
+	writeb(dm9000->data_port, val); \
 } while (0)
+
+struct dm9000_chip {
+	void *index_port, *data_port;
+	int irq;
+};
 
 static __u16 dm9000_mdio_read(struct net_device *ndev, __u8 addr, __u8 reg)
 {
 	__u16 val;
+	struct dm9000_chip *dm9000 = ndev->chip;
 
 	// dm9000_writeb(DM9000_EPAR, DM9000_PHY_INTER | reg);
 	dm9000_writeb(DM9000_EPAR, (addr & 0x3) << 6 | reg);
@@ -49,6 +55,8 @@ static __u16 dm9000_mdio_read(struct net_device *ndev, __u8 addr, __u8 reg)
 
 static void dm9000_mdio_write(struct net_device *ndev, __u8 addr, __u8 reg, __u16 val)
 {
+	struct dm9000_chip *dm9000 = ndev->chip;
+
 	// dm9000_writeb(DM9000_EPAR, DM9000_PHY_INTER | reg);
 	dm9000_writeb(DM9000_EPAR, (addr & 0x3) << 6 | reg);
 	dm9000_writeb(DM9000_EPDRL, val & 0xff);
@@ -64,6 +72,7 @@ static void dm9000_mdio_write(struct net_device *ndev, __u8 addr, __u8 reg, __u1
 static int dm9000_set_mac(struct net_device *ndev, const __u8 *mac)
 {
 	int i;
+	struct dm9000_chip *dm9000 = ndev->chip;
 
 	for (i = 0; i < MAC_ADR_LEN; i++)
 		dm9000_writeb(DM9000_PAR + i, ndev->mac_addr[i]);
@@ -71,7 +80,7 @@ static int dm9000_set_mac(struct net_device *ndev, const __u8 *mac)
 	return 0;
 }
 
-static int dm9000_reset(void)
+static int dm9000_reset(struct dm9000_chip *dm9000)
 {
 	int i;
 	__u8 status;
@@ -102,6 +111,7 @@ static int dm9000_send_packet(struct net_device *ndev, struct sock_buff *skb)
 	const __u16 *tx_data;
 	__u16 tx_size;
 	__UNUSED__ __u32 flag;
+	struct dm9000_chip *dm9000 = ndev->chip;
 
 	lock_irq_psr(flag);
 
@@ -136,6 +146,7 @@ static int dm9000_recv_packet(struct net_device *ndev)
 	__u16 *rx_data;
 	__u16 rx_stat, rx_size;
 	struct sock_buff *skb;
+	struct dm9000_chip *dm9000 = ndev->chip;
 
 	while (1) {
 		dm9000_readb(DM9000_MRCMDX);
@@ -148,7 +159,7 @@ static int dm9000_recv_packet(struct net_device *ndev)
 			printf("\n%s(), line %d: wrong status = 0x%02x\n",
 				__func__, __LINE__, val);
 
-			dm9000_reset();
+			dm9000_reset(dm9000);
 			dm9000_writeb(DM9000_IMR, IMR_VAL);
 			dm9000_writeb(DM9000_RCR, 1);
 
@@ -193,6 +204,7 @@ static int dm9000_link_change(struct net_device *ndev)
 	__u8 link;
 	__u16 stat;
 	struct mii_phy *phy;
+	struct dm9000_chip *dm9000 = ndev->chip;
 
 	if (list_empty(&ndev->phy_list))
 		return -EIO;
@@ -247,6 +259,9 @@ static int dm9000_isr(__u32 irq, void *dev)
 {
 	__u8 irq_stat, rx_stat;
 	struct net_device *ndev = dev;
+	struct dm9000_chip *dm9000;
+
+	dm9000 = ndev->chip;
 
 	irq_stat = dm9000_readb(DM9000_ISR);
 	if (0 == irq_stat)
@@ -283,18 +298,34 @@ static int __init dm9000_probe(struct platform_device *pdev)
 	int ret;
 	__u16 ven_id, dev_id;
 	__u8 rev;
-	struct net_device *ndev;
+	int irq;
 	const char *chip_name;
-	void *mmio;
+	struct resource *index_res, *data_res;
+	struct net_device *ndev;
+	struct dm9000_chip *dm9000;
 
-	mmio = VA(pdev->dev.mem);
+	index_res = platform_get_mem(pdev, 0);
+	// if ...
+	data_res = platform_get_mem(pdev, 1);
+	// if ...
+	irq = platform_get_irq(pdev, 0);
+
+	ndev = ndev_new(sizeof(*dm9000));
+	if (NULL == ndev)
+		return -ENOMEM;
+
+	dm9000 = ndev->chip;
+	dm9000->index_port = VA(index_res->start);
+	dm9000->data_port = VA(data_res->start);
+	dm9000->irq = irq;
 
 	ven_id = (dm9000_readb(DM9000_VIDH) << 8) | dm9000_readb(DM9000_VIDL);
 	dev_id = (dm9000_readb(DM9000_PIDH) << 8) | dm9000_readb(DM9000_PIDL);
 
 	if (ven_id != VENDOR_ID_DAVICOM) {
 		printf("No DM9000X found! (ID = %04x:%04x)\n", ven_id, dev_id);
-		return -ENODEV;
+		ret = -ENODEV;
+		goto error_id;
 	}
 
 	rev = dm9000_readb(DM9000_REV);
@@ -317,11 +348,7 @@ static int __init dm9000_probe(struct platform_device *pdev)
 	printf("%s: Vendor ID = 0x%04x, Product ID = 0x%04x, Rev = 0x%02x.\n",
 		chip_name, ven_id, dev_id, rev);
 
-	dm9000_reset();
-
-	ndev = ndev_new(0);
-	if (NULL == ndev)
-		return -ENOMEM;
+	dm9000_reset(dm9000);
 
 	ndev->chip_name    = chip_name;
 	ndev->send_packet  = dm9000_send_packet;
@@ -332,17 +359,28 @@ static int __init dm9000_probe(struct platform_device *pdev)
 	ndev->mdio_write = dm9000_mdio_write;
 
 #ifdef CONFIG_IRQ_SUPPORT
-	ret = irq_register_isr(CONFIG_DM9000_IRQ, dm9000_isr, ndev);
+	ret = irq_register_isr(irq, dm9000_isr, ndev);
 #else
 	ndev->ndev_poll = dm9000_poll;
 #endif
 
 	ret = ndev_register(ndev);
+	if (ret < 0)
+		goto fail_reg;
 
 	// TODO:  try to manually update when RX/TX done
-	dm9000_reset();
+	dm9000_reset(dm9000);
 	dm9000_writeb(DM9000_IMR, IMR_VAL);
 	dm9000_writeb(DM9000_RCR, 1);
+
+	return 0;
+
+fail_reg:
+#ifdef CONFIG_IRQ_SUPPORT
+	// unregister_irq
+#endif
+error_id:
+	ndev_del(ndev);
 
 	return ret;
 }

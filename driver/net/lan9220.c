@@ -4,7 +4,6 @@
 #include <delay.h>
 #include <errno.h>
 #include <stdio.h>
-#include <malloc.h>
 #include <platform.h>
 #include <net/net.h>
 #include <net/mii.h>
@@ -298,7 +297,7 @@ static int lan9220_set_mac(struct net_device *ndev, const __u8 *mac)
 	return 0;
 }
 
-static int __init lan9220_probe(struct lan9220_chip *lan9220, int busw32)
+static int __init lan9220_detect(struct lan9220_chip *lan9220, int busw32)
 {
 	int i;
 	__u32 id;
@@ -319,30 +318,30 @@ static int __init lan9220_probe(struct lan9220_chip *lan9220, int busw32)
 static int __init lan9220_probe(struct platform_device *pdev)
 {
 	int ret;
-	unsigned long mem;
+	struct resource *mem;
 	struct net_device *ndev;
 	struct lan9220_chip *lan9220;
 #ifdef CONFIG_IRQ_SUPPORT
 	int irq;
 
-	irq = platform_get_irq(pdev);
+	irq = platform_get_irq(pdev, 0);
 #endif
 
-	mem = platform_get_memory(pdev);
+	mem = platform_get_mem(pdev, 0);
 
 	ndev = ndev_new(sizeof(*lan9220));
 	if (NULL == ndev)
 		return -ENOMEM;
 
 	lan9220 = ndev->chip;
-	lan9220->mmio = VA(mem);
+	lan9220->mmio = VA(mem->start);
 #ifdef CONFIG_IRQ_SUPPORT
 	lan9220->int_mask = 0xfffff07f;
 #endif
 
-	ret = lan9220_probe(lan9220, 1);
+	ret = lan9220_detect(lan9220, 1);
 	if (ret < 0) {
-		ret = lan9220_probe(lan9220, 0);
+		ret = lan9220_detect(lan9220, 0);
 		if (ret < 0) {
 			printf("LAN9X not found!\n");
 			return ret;
@@ -380,7 +379,7 @@ static int __init lan9220_probe(struct platform_device *pdev)
 
 	// TODO: deinit and unregister the ndev
 error:
-	free(ndev);
+	ndev_del(ndev);
 	return ret;
 }
 

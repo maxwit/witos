@@ -21,11 +21,24 @@ static int __init smsc91x_device_init(struct platform_device *pdev)
 	return 0;
 }
 
-// fixme
+//  fixme: __initdata
+static struct resource smsc91x_res[] = {
+	[0] = {
+		.start = 0x28000000,
+		.size = 4,
+		.flag = IORESOURCE_MEM,
+	},
+	[1] = {
+		.start = GPIO_IRQ(19),
+		.size = 1,
+		.flag = IORESOURCE_IRQ,
+	},
+};
+
 static struct platform_device smsc91x_device = {
 	.dev = {
-		.mem = 0x28000000,
-		.irq = GPIO_IRQ(19),
+		.resources = smsc91x_res,
+		.res_num = ARRAY_ELEM_NUM(smsc91x_res),
 	},
 	.name = "SMSC SMSC91X",
 	.init = smsc91x_device_init,

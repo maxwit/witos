@@ -60,6 +60,8 @@ struct net_device {
 
 struct net_device *ndev_new(size_t chip_size);
 
+void ndev_del(struct net_device *ndev);
+
 int ndev_register(struct net_device *ndev);
 
 int netif_rx(struct sock_buff *skb);

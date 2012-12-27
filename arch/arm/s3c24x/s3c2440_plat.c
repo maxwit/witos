@@ -3,13 +3,28 @@
 #include <init.h>
 #include <arm/s3c24x0.h>
 
-#define CONFIG_DM9000_IRQ        IRQ_EINT7
-#define DM9000_PHYS_BASE         0x20000000
+static struct resource dm9000_res[] = {
+	[0] = {
+		.start = 0x20000000,
+		.size = 4,
+		.flag = IORESOURCE_MEM,
+	},
+	[1] = {
+		.start = 0x20000004,
+		.size = 4,
+		.flag = IORESOURCE_MEM,
+	},
+	[2] = {
+		.start = IRQ_EINT7,
+		.size = 1,
+		.flag = IORESOURCE_IRQ,
+	},
+};
 
 static struct platform_device dm9000_device = {
 	.dev = {
-		.mem = DM9000_PHYS_BASE,
-		.irq = CONFIG_DM9000_IRQ,
+		.resources = dm9000_res,
+		.res_num = ARRAY_ELEM_NUM(dm9000_res),
 	},
 	.name = "dm9000",
 };

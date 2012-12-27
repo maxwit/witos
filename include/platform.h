@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <device.h>
 
 struct platform_id {
@@ -17,15 +18,32 @@ struct platform_driver {
 	int (*probe)(struct platform_device *);
 };
 
-// fixme
-static inline unsigned long platform_get_memory(struct platform_device *plat_dev)
+static inline struct resource *platform_get_mem(struct platform_device *pdev, int n)
 {
-	return plat_dev->dev.mem;
+	int i, j;
+
+	for (i = 0, j = 0; i < pdev->dev.res_num; i++)
+		if (pdev->dev.resources[i].flag & IORESOURCE_MEM) {
+			if (j == n)
+				return pdev->dev.resources + i;
+			j++;
+		}
+
+	return NULL;
 }
 
-static inline unsigned long platform_get_irq(struct platform_device *plat_dev)
+static inline int platform_get_irq(struct platform_device *pdev, int n)
 {
-	return plat_dev->dev.irq;
+	int i, j;
+
+	for (i = 0, j = 0; i < pdev->dev.res_num; i++)
+		if (pdev->dev.resources[i].flag & IORESOURCE_IRQ) {
+			if (j == n)
+				return pdev->dev.resources[i].start;
+			j++;
+		}
+
+	return -ENOENT;
 }
 
 int platform_device_register(struct platform_device *dev);

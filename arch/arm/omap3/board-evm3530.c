@@ -34,10 +34,24 @@ static int __init lan9220_device_init(struct platform_device *pdev)
 	return 0;
 }
 
+// fixme: __initdata
+static struct resource lan9220_res[] = {
+	[0] = {
+		.start = 0x28000000,
+		.size = 0,
+		.flag = IORESOURCE_MEM,
+	},
+	[1] = {
+		.start = GPIO_IRQ(19),
+		.size = 0,
+		.flag = IORESOURCE_IRQ,
+	},
+};
+
 static struct platform_device lan9220_device = {
 	.dev = {
-		.mem = 0x28000000,
-		.irq = GPIO_IRQ(19),
+		.resources = lan9220_res,
+		.res_num = ARRAY_ELEM_NUM(lan9220_res),
 	},
 	.name = "SMSC LAN9220",
 	.init = lan9220_device_init,

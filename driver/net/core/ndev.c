@@ -149,6 +149,12 @@ struct net_device *ndev_new(size_t chip_size)
 	return ndev;
 }
 
+void ndev_del(struct net_device *ndev)
+{
+	ndev_count--;
+	free(ndev);
+}
+
 #ifndef CONFIG_IRQ_SUPPORT
 int ndev_poll()
 {
