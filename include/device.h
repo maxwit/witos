@@ -16,7 +16,7 @@
 
 struct device;
 struct driver;
-struct bus;
+struct bus_type;
 
 struct resource {
 	unsigned long start;
@@ -28,7 +28,7 @@ struct device {
 	struct resource *resources;
 	int res_num;
 
-	struct bus *bus;
+	struct bus_type *bus;
 	struct list_head bus_node;
 
 	struct driver *drv;
@@ -38,7 +38,7 @@ struct device {
 struct driver {
 	const char *name;
 
-	struct bus *bus;
+	struct bus_type *bus;
 	struct list_head bus_node;
 
 	struct list_head dev_list;
@@ -46,7 +46,7 @@ struct driver {
 	int (*probe)(struct device *);
 };
 
-struct bus {
+struct bus_type {
 	const char *name;
 	int (*match)(struct device *, struct driver *);
 	struct list_head dev_list, drv_list;

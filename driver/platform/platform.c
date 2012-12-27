@@ -4,7 +4,7 @@
 
 static int match(struct device *dev, struct driver *drv);
 
-static struct bus platform_bus = {
+static struct bus_type platform_bus = {
 	.name     = "platform",
 	.match    = match,
 	.dev_list = HEAD_INIT(platform_bus.dev_list),

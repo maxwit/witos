@@ -5,7 +5,7 @@ int device_register(struct device *dev)
 {
 	int ret;
 	struct list_head *iter;
-	struct bus *bus = dev->bus;
+	struct bus_type *bus = dev->bus;
 
 	// step 1:
 	list_add_tail(&dev->bus_node, &bus->dev_list);
@@ -35,7 +35,7 @@ int driver_register(struct driver *drv)
 {
 	int ret;
 	struct list_head *iter;
-	struct bus *bus = drv->bus;
+	struct bus_type *bus = drv->bus;
 
 	// printf("%s() line %d\n", __func__, __LINE__);
 	list_add_tail(&drv->bus_node, &bus->drv_list);
