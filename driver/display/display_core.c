@@ -7,7 +7,9 @@
 #include <graphic/display.h>
 #include <djpeg/djpeg.h>
 
-static struct display* g_system_display;
+#define NR_DISP 4
+
+static struct display* g_system_display[NR_DISP];
 
 #ifdef CONFIG_BOOTUP_LOGO
 static __u16 RGB24toRGB16(__u8 r, __u8 g, __u8 b)
@@ -212,6 +214,7 @@ int display_register(struct display* disp)
 	const struct lcd_vmode *vm;
 	char attr_val[CONF_VAL_LEN];
 	size_t size;
+	int minor;
 
 	if (!disp->set_vmode)
 		return -EINVAL;
@@ -271,12 +274,20 @@ int display_register(struct display* disp)
 
 	disp->video_mode = (void *)vm; // fixme
 
-	g_system_display = disp;
+	for (minor = 0; minor < NR_DISP; minor++) {
+		if (!g_system_display[minor]) {
+			g_system_display[minor] = disp;
+			break;
+		}
+	}
+
+	if (NR_DISP == minor)
+		return -EBUSY;
 
 	return 0;
 }
 
 struct display* get_system_display(void)
 {
-	return g_system_display;
+	return g_system_display[0];
 }

@@ -275,6 +275,9 @@ struct inode {
 	blkcnt_t i_blocks;
 };
 
+#define iminor(i) (MINOR(i->i_rdev))
+#define imajor(i) (MAJOR(i->i_rdev))
+
 #define DT_UNKNOWN	0
 #define DT_FIFO		1
 #define DT_CHR		2

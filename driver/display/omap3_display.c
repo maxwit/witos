@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <errno.h>
 #include <assert.h>
+#include <delay.h>
+#include <platform.h>
 #include <graphic/display.h>
 
 #define dss_readl(reg) \
@@ -63,9 +65,11 @@ static int omap3_set_vmode(struct display *disp, const struct lcd_vmode *vm)
 	return 0;
 }
 
-static int __init omap3_display_init(void)
+#define OMAP_TIMEOUT 0x100
+
+static int __init omap3_disp_probe(struct platform_device *pdev)
 {
-	int ret;
+	int ret, to;
 	__u32 val;
 	struct display *disp;
 
@@ -79,12 +83,17 @@ static int __init omap3_display_init(void)
 
 	// reset
 	dss_writel(DISPC_SYSCONFIG, 0x02);
-	while (1) {
+	for (to = 0; to < OMAP_TIMEOUT; to++) {
 		val = dss_readl(DISPC_SYSCONFIG);
-		if (!(val & 0x2))
+		if (!(val & 0x2)) // fixme
 			break;
-		// TODO: timeout
+
+		udelay(0x100);
 	}
+
+	if (OMAP_TIMEOUT == to)
+		return -ETIMEDOUT;
+		// printf("%s() line %d: reset timeout!\n", __func__, __LINE__);
 
 	// configure clock
 	dss_writel(DSS_CONTROL, 1);
@@ -103,6 +112,18 @@ static int __init omap3_display_init(void)
 error:
 	display_destroy(disp);
 	return ret;
+}
+
+static struct platform_driver omap3_disp_driver = {
+	.drv = {
+		.name = "omap disp",
+	},
+	.probe = omap3_disp_probe,
+};
+
+static int __init omap3_display_init(void)
+{
+	return platform_driver_register(&omap3_disp_driver);
 }
 
 module_init(omap3_display_init);

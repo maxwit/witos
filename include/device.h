@@ -46,6 +46,7 @@ struct driver {
 	int (*probe)(struct device *);
 };
 
+// PCI, USB, AHB/APB (platform), SPI, IIC
 struct bus_type {
 	const char *name;
 	int (*match)(struct device *, struct driver *);

@@ -8,6 +8,8 @@ struct platform_id {
 struct platform_device {
 	struct device dev;
 	const char *name;
+	void *platform_data;
+
 	int (*init)(struct platform_device *); // to be removed!
 };
 

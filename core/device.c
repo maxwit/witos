@@ -37,13 +37,11 @@ int driver_register(struct driver *drv)
 	struct list_head *iter;
 	struct bus_type *bus = drv->bus;
 
-	// printf("%s() line %d\n", __func__, __LINE__);
 	list_add_tail(&drv->bus_node, &bus->drv_list);
 
 	list_for_each(iter, &bus->dev_list) {
 		struct device *dev;
 
-		// printf("%s() line %d\n", __func__, __LINE__);
 		dev = container_of(iter, struct device, bus_node);
 		if (bus->match(dev, drv)) {
 			list_add_tail(&dev->drv_node, &drv->dev_list);
