@@ -28,5 +28,10 @@ int omap3_irq_init(void);
 // fixme: move to omapfb.h
 struct omapfb_panel {
 	int width, heigth;
+	int bpp;
+
+	// fixme
+	unsigned int hfp, hbp, hpw;
+	unsigned int vfp, vbp, vpw;
 };
 #endif

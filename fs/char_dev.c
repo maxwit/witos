@@ -1,27 +1,66 @@
 #include <fs.h>
 
+#define MAX_CDEV 256
+
 struct cdev {
-	int major, minor;
-	struct file_operations *fops;
+	int minor;
 	char *name;
 	struct cdev *next;
 };
 
-int chrdev_register(int major, const struct file_operations *fops, const char *name)
+struct cdev_xx {
+	int major;
+	struct file_operations *fops;
+	struct cdev *cdev_list;
+};
+
+static struct cdev_xx *g_cdev_xx[MAX_CDEV];
+
+int register_chrdev(int major, const struct file_operations *fops, const char *name)
 {
-	struct cdev *cdev;
+	int i;
+	struct cdev_xx *xx;
 
-	cdev = zalloc(sizeof(*cdev));
-	// ...
-	cdev->fops = fops;
-	//...
+	if (!major) {
+		for (i = MAX_CDEV - 1; i > 0; i--)
+			if (!g_cdev_xx[i])
+				break;
 
-	// list_add
+		major = i;
+	}
 
-	return 0;
+	if (major <= 0 || major >= MAX_CDEV || g_cdev_xx[major])
+		return -EBUSY;
+
+	// TODO
+	xx = zalloc(sizeof(*xx));
+	// if
+
+	xx->fops = fops;
+	xx->major = major;
+
+	g_cdev_xx[major] = xx;
+
+	return major;
 }
 
-struct device *device_create(dev_t devt, const char *fmt, ...)
+int device_create(dev_t devt, const char *fmt, ...)
 {
-	return NULL;
+	int major = MAJOR(devt);
+	struct cdev *cdev, **p;
+
+	cdev = zalloc(sizeof(*cdev));
+	// ..
+
+	cdev->minor = MINOR(devt);
+	cdev->name = fmt; // fixme
+	cdev->next = NULL;
+
+	for (p = &g_cdev_xx[major]->cdev_list; *p; p = &(*p)->next)
+		if ((*p)->minor == cdev->minor)
+			return -EBUSY;
+
+	*p = cdev;
+
+	return 0;
 }

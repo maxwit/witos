@@ -5,7 +5,6 @@
 
 struct fb_var_screeninfo {
 	int xres, yres;
-	
 };
 
 struct fb_fix_screeninfo {
@@ -13,6 +12,7 @@ struct fb_fix_screeninfo {
 	size_t smem_len;
 };
 
+struct fb_info;
 
 struct fb_ops {
 	int (*fb_check_var)(struct fb_info *, struct fb_var_screeninfo *);
@@ -32,4 +32,3 @@ struct fb_info *framebuffer_alloc(size_t);
 
 int framebuffer_register(struct fb_info *);
 // framebuffer_unregister
-

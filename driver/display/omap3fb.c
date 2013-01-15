@@ -1,4 +1,5 @@
 #include <fb.h>
+#include <string.h>
 #include <platform.h>
 
 #define dss_readl(reg) \
@@ -20,23 +21,102 @@ static int omapfb_check_var(struct fb_info *fb,
 	if (var->xres != omapfb->panel->width || var->yres != omapfb->panel->height)
 		return -ENOTSUPP;
 
-	fb->var = *var;
+	fb->var.xres = var->xres;
+	fb->var.yres = var->yres;
 
 	return 0;
 }
 
 static int omapfb_set_par(struct fb_info *fb)
 {
+	__u32 val;
 	struct fb_var_screeninfo *var = &fb->var;
+	struct fb_fix_screeninfo *fix = &fb->fix;
 	struct omapfb_info *omapfb = fb->par;
+	struct omapfb_panel *pan;
 
-	dss_writel(DISPC_SIZE_LCD, (var->xres - 1) << 16 | (var->yres - 1));
+	pan = omapfb->panel;
+
+	dss_writel(DISPC_TIMING_H, pan->hbp << 20 | pan->hfp << 8 | pan->hpw);
+	dss_writel(DISPC_TIMING_V, pan->vbp << 20 | pan->vfp << 8 | pan->vpw);
+
+	// fixme
+	val = readl(VA(CM_CLKSEL_DSS));
+	val &= ~0x1F;
+	val |= CLKSEL_DSS1;
+	writel(VA(CM_CLKSEL_DSS), val);
+
+	dss_writel(DISPC_DIVISOR, 1 << 16 | 2 /* dss1_alwon_fclk / var->pix_clk */);
+	dss_writel(DISPC_SIZE_LCD, (var->yres - 1) << 16 | (var->xres - 1));
+	dss_writel(DISPC_GFX_POSITION, 0);
+	dss_writel(DISPC_GFX_SIZE, (var->yres - 1) << 16 | (var->xres - 1));
+
+	// fixme
+	switch (pan->bpp) {
+	case 16:
+		val = 0x6;
+		break;
+
+	case 24:
+		val = 0x9;
+		break;
+
+	case 32:
+		val = 0xd;
+		break;
+
+	default:
+		// printf("%s(): invalid pixel format (%d)!\n", __func__, disp->pix_fmt);
+		return -EINVAL;
+	}
+
+	dss_writel(DISPC_GFX_ATTRIBUTES, val << 1 | 1);
+
+	dss_writel(DISPC_CONTROL, 1 << 16 | 1 << 15 | 1 << 8 | 1 << 3 | 1);
+
+	return 0;
 }
+
 
 static const struct fb_ops omapfb_ops = {
 	.fb_check_var = omapfb_check_var,
 	.fb_set_par = omapfb_set_par,
 };
+
+static int omapfb_reset(struct omapfb_info *omapfb)
+{
+	int to;
+	__u32 val;
+
+	// enable clock
+	writel(VA(CM_FCLKEN_DSS), 7);
+	writel(VA(CM_ICLKEN_DSS), 1);
+	writel(VA(CM_CLKEN_PLL), 0x7 << 16);
+
+	// reset
+	dss_writel(DISPC_SYSCONFIG, 0x02);
+	for (to = 0; to < OMAP_TIMEOUT; to++) {
+		val = dss_readl(DISPC_SYSCONFIG);
+		if (!(val & 0x2)) // fixme
+			break;
+
+		udelay(0x100);
+	}
+
+	if (OMAP_TIMEOUT == to)
+		return -ETIMEDOUT;
+		// printf("%s() line %d: reset timeout!\n", __func__, __LINE__);
+
+	// configure clock
+	dss_writel(DSS_CONTROL, 1);
+
+	dss_writel(DISPC_SYSCONFIG, 1);
+	dss_writel(DISPC_CONFIG, 1 << 9 | 1 << 1);
+
+	dss_writel(DISPC_GFX_BA0, fix->smem_start);
+
+	return 0;
+}
 
 static int __init omapfb_probe(struct platform_device *pdev)
 {
@@ -44,22 +124,43 @@ static int __init omapfb_probe(struct platform_device *pdev)
 	struct fb_info *fb;
 	struct omapfb_info *omapfb;
 	struct resource *mres;
+	struct fb_fix_screeninfo *fix;
+	struct fb_var_screeninfo var;
 
 	mres = platform_get_mem(pdev, 0);
 	if (!mres)
 		return -ENODEV;
 
+	if (!pdev->platform_data)
+		return -ENODEV;
+
 	fb = framebuffer_alloc(sizeof(*omapfb));
 	// ...
 
+	fix = &fb->fix;
 	omapfb = fb->par;
 
 	omapfb->mmio = VA(mres->start);
 	omapfb->panel = pdev->platform_data;
-	if (!omapfb->panel)
-		return -ENODEV;
 
+	fix->smem_len = omapfb->panel->width * omapfb->panel->heigth * \
+					((omapfb->panel->bpp + 7) / 8);
 	fb->ops = &omapfb_ops;
+
+	fb->screenbase = dma_alloc_coherent(fix->smem_len, &fix->smem_start);
+	// if (!fb->screenbase)
+
+	ret = omapfb_reset(omapfb);
+	// ret ...
+
+	var.xres = omapfb->panel->width;
+	var.yres = omapfb->panel->heigth;
+
+	ret = fb->ops->fb_check_var(fb, &var);
+	// if ret
+
+	ret = fb->ops->fb_set_par(fb);
+	// if ret < 0 ..
 
 	ret = framebuffer_register(fb);
 	// if ret < 0 ...

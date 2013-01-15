@@ -387,3 +387,7 @@ static inline dev_t old_decode_dev(u16 val)
 {
 	return MKDEV((val >> 8) & 255, val & 255);
 }
+
+int device_create(dev_t devt, const char *fmt, ...);
+
+int register_chrdev(int major, const struct file_operations *, const char *);

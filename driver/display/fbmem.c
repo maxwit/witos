@@ -1,5 +1,10 @@
 #include <fb.h>
+#include <fs.h>
+#include <init.h>
 #include <errno.h>
+#include <string.h>
+#include <malloc.h>
+#include <graphic/display.h>
 
 #define MAX_FB   4
 #define FB_MAJOR 29
@@ -80,7 +85,21 @@ static int fb_ioctl(struct file *fp, int cmd, unsigned long arg)
 
 static loff_t fb_lseek(struct file *fp, loff_t loff, int whence)
 {
+	struct fb_info *fb = fp->private_data;
+
 	switch (whence) {
+	case SEEK_SET:
+		fp->f_pos = loff;
+		break;
+
+	case SEEK_CUR:
+		fp->f_pos += loff;
+		break;
+
+	case SEEK_END:
+		fp->f_pos = fb->fix.smem_len - loff;
+		break;
+
 	default:
 		return -ENOTSUPP;
 	}
@@ -105,9 +124,7 @@ struct fb_info *framebuffer_alloc(size_t size)
 int framebuffer_register(struct fb_info *fb)
 {
 	int i, ret;
-	const struct lcd_vmode *vm;
-	char attr_val[CONF_VAL_LEN];
-	struct fb_var_screeninfo *var;
+	struct fb_fix_screeninfo *fix = &fb->fix;
 
 	for (i = 0; i < MAX_FB; i++)
 		if (!g_fb_info[i])
@@ -118,28 +135,9 @@ int framebuffer_register(struct fb_info *fb)
 
 	g_fb_info[i] = fb;
 
-	// fixme
-	ret = conf_get_attr("display.lcd.model", attr_val);
-	if (ret < 0) {
-		DPRINT("%s(): fail to get lcd model\n", __func__);
-		return -EINVAL;
-	}
+	memset(fb->screenbase, 0x0, fix->smem_len);
 
-	vm /* var = */ = lcd_get_vmode_by_name(attr_val);
-	if (NULL == vm) {
-		printf("No LCD video mode found!\n");
-		return -ENOENT;
-	}
-
-	ret = fb->ops->fb_check_var(fb, var);
-	if (ret < 0)
-		return ret;
-
-	ret = fb->ops->fb_set_par(fb);
-	if (ret < 0)
-		return ret;
-
-	ret = device_create(MKDEV(FB_MAJOR, i), "fb%d", i);
+	device_create(MKDEV(FB_MAJOR, i), "fb%d", i);
 	// ...
 
 	return 0;
@@ -149,7 +147,7 @@ static int __init fbmem_init(void)
 {
 	int ret;
 
-	ret = chrdev_register(FB_MAJOR, &fb_fops, "fb");
+	ret = register_chrdev(FB_MAJOR, &fb_fops, "fb");
 	// ...
 
 	return ret;
