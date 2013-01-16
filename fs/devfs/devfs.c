@@ -4,7 +4,7 @@
 #include <string.h>
 #include <errno.h>
 #include <assert.h>
-#include <block.h>
+// #include <block.h>
 #include <dirent.h>
 #include <fs.h>
 #include <fs/devfs.h>
@@ -15,7 +15,7 @@ struct devfs_super_block {
 
 struct devfs_inode {
 	struct inode vfs_inode;
-	struct block_device *dev;
+	// struct block_device *dev;
 	struct list_head dev_node;
 };
 
@@ -209,8 +209,9 @@ static int devfs_readdir(struct file *fp, void *dirent, filldir_t filldir)
 static int devfs_mknod(struct inode *dir, struct dentry *dentry,
 	int mode, dev_t dev)
 {
-	struct inode *in;
-	struct devfs_inode *din;
+	// struct inode *in;
+	// struct devfs_inode *di;
+#if 0
 	struct block_device *bdev;
 
 	bdev = bdev_get(dentry->d_name.name);
@@ -225,12 +226,13 @@ static int devfs_mknod(struct inode *dir, struct dentry *dentry,
 		return -ENOMEM;
 	}
 
-	din = DEV_I(in);
-	din->dev = bdev;
+	di = DEV_I(in);
+	di->dev = bdev;
 
 	dentry->d_inode = in;
 
 	dir->i_size++;
+#endif
 
 	return 0;
 }

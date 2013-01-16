@@ -6,12 +6,12 @@
 
 struct cdev {
 	int minor;
-	const char *name;
+	// const char *name;
 	struct cdev *next;
 };
 
 struct cdev_type {
-	int major;
+	// int major;
 	const struct file_operations *fops;
 	struct cdev *cdev_list;
 };
@@ -21,7 +21,7 @@ static struct cdev_type *g_cdev_type[MAX_CDEV];
 int register_chrdev(int major, const struct file_operations *fops, const char *name)
 {
 	int i;
-	struct cdev_type *xx;
+	struct cdev_type *cdt;
 
 	if (!major) {
 		for (i = MAX_CDEV - 1; i > 0; i--)
@@ -35,13 +35,13 @@ int register_chrdev(int major, const struct file_operations *fops, const char *n
 		return -EBUSY;
 
 	// TODO
-	xx = zalloc(sizeof(*xx));
+	cdt = zalloc(sizeof(*cdt));
 	// if
 
-	xx->fops = fops;
-	xx->major = major;
+	cdt->fops = fops;
+	// cdt->major = major;
 
-	g_cdev_type[major] = xx;
+	g_cdev_type[major] = cdt;
 
 	return major;
 }
@@ -55,7 +55,7 @@ int device_create(dev_t devt, const char *fmt, ...)
 	// ..
 
 	cdev->minor = MINOR(devt);
-	cdev->name = fmt; // fixme
+	// cdev->name = fmt; // fixme
 	cdev->next = NULL;
 
 	for (p = &g_cdev_type[major]->cdev_list; *p; p = &(*p)->next)
@@ -63,6 +63,8 @@ int device_create(dev_t devt, const char *fmt, ...)
 			return -EBUSY;
 
 	*p = cdev;
+
+	dev_mknod(fmt, 0666 | S_IFCHR, devt);
 
 	return 0;
 }
@@ -80,6 +82,8 @@ int devfs_cdev_open(struct file *fp, struct inode *inode)
 	while (cdev) {
 		if (cdev->minor == minor)
 			break;
+
+		cdev = cdev->next;
 	}
 
 	if (!cdev)
@@ -90,7 +94,6 @@ int devfs_cdev_open(struct file *fp, struct inode *inode)
 		return -ENOTSUPP;
 
 	open = fp->f_op->open;
-
 	if (open)
 		return open(fp, inode);
 

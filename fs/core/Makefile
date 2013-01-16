@@ -1,1 +1,1 @@
-obj-y += mount.o open.o readdir.o fs.o
+obj-y += mount.o inode.o open.o readdir.o fs.o

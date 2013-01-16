@@ -53,7 +53,7 @@ static char shell_getchar(void)
 
 		// TODO: replace with tasklet
 		ndev_poll();
-		device_monitor();
+		// device_monitor();
 	}
 
 	return ch;

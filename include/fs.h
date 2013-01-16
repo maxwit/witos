@@ -365,7 +365,10 @@ int path_walk(const char *path, struct nameidata *nd);
 int follow_up(struct path *path);
 
 int vfs_mkdir(struct inode *dir, struct dentry *dentry, int mode);
-int vfs_mknod(struct inode *dir, struct dentry *dentry, int mode);
+int vfs_mknod(struct inode *dir, struct dentry *dentry, int mode, dev_t devt);
+
+// fixme
+int dev_mknod(const char * path,int mode,dev_t devt);
 
 struct dentry *mount_bdev(struct file_system_type *, int, const char *,
 	void *, int (*fill_super)(struct super_block *, void *, int));

@@ -33,7 +33,7 @@ int block_device_register(struct block_device *bdev)
 		bdev->base, bdev->base + bdev->size, bdev->name,
 		bdev->label[0] ? bdev->label : "N/A");
 
-	device_enqueue(bdev);
+	// device_enqueue(bdev);
 
 	return 0;
 }

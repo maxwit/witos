@@ -159,12 +159,12 @@ int vfs_mkdir(struct inode *dir, struct dentry *dentry, int mode)
 	return errno;
 }
 
-int vfs_mknod(struct inode *dir, struct dentry *dentry, int mode)
+int vfs_mknod(struct inode *dir, struct dentry *dentry, int mode, dev_t devt)
 {
 	int errno = -ENOTSUPP;
 
 	if (dir->i_op->mknod)
-		errno = dir->i_op->mknod(dir, dentry, mode, 0);
+		errno = dir->i_op->mknod(dir, dentry, mode, devt);
 
 	return errno;
 }

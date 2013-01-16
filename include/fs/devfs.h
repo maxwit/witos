@@ -8,4 +8,4 @@ struct qdev_node {
 };
 
 int device_enqueue(struct block_device *bdev);
-int device_monitor();
+// int device_monitor();
