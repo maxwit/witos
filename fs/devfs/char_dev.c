@@ -13,6 +13,7 @@ struct cdev {
 struct cdev_type {
 	// int major;
 	const struct file_operations *fops;
+	const char *name;
 	struct cdev *cdev_list;
 };
 
@@ -39,6 +40,7 @@ int register_chrdev(int major, const struct file_operations *fops, const char *n
 	// if
 
 	cdt->fops = fops;
+	cdt->name = name;
 	// cdt->major = major;
 
 	g_cdev_type[major] = cdt;

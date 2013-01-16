@@ -293,7 +293,7 @@ struct inode {
 // directory entry
 struct dentry {
 	struct qstr d_name;
-	char d_iname[DNAME_INLINE_LEN];
+	// char d_iname[DNAME_INLINE_LEN];
 	struct inode *d_inode;
 	struct super_block *d_sb;
 	struct dentry *d_parent;

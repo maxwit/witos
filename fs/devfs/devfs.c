@@ -4,7 +4,6 @@
 #include <string.h>
 #include <errno.h>
 #include <assert.h>
-// #include <block.h>
 #include <dirent.h>
 #include <fs.h>
 #include <fs/devfs.h>
@@ -15,9 +14,11 @@ struct devfs_super_block {
 
 struct devfs_inode {
 	struct inode vfs_inode;
-	// struct block_device *dev;
+	char name[FILE_NAME_SIZE];
 	struct list_head dev_node;
 };
+
+static LIST_HEAD(g_devfs_list);
 
 int devfs_bdev_open(struct file *, struct inode *);
 
@@ -63,17 +64,17 @@ static inline struct devfs_inode *DEV_I(struct inode *inode)
 static struct inode *devfs_alloc_inode(struct super_block *sb)
 {
 	struct inode *inode;
-	struct devfs_inode *rin;
+	struct devfs_inode *di;
 
-	rin = zalloc(sizeof(*rin));
-	if (!rin)
+	di = zalloc(sizeof(*di));
+	if (!di)
 		return NULL;
 
-	inode = &rin->vfs_inode;
+	inode = &di->vfs_inode;
 	inode->i_sb  = sb;
 	inode->i_ino = 1234;
 
-	return &rin->vfs_inode;
+	return &di->vfs_inode;
 }
 
 static inline struct devfs_inode *devfs_get_inode(struct super_block *sb, int ino)
@@ -84,7 +85,7 @@ static inline struct devfs_inode *devfs_get_inode(struct super_block *sb, int in
 struct inode *devfs_inode_create(struct super_block *sb, int mode)
 {
 	struct inode *inode;
-	// struct devfs_inode *rin;
+	// struct devfs_inode *di;
 
 	inode = devfs_alloc_inode(sb);
 	if (!inode) {
@@ -94,7 +95,7 @@ struct inode *devfs_inode_create(struct super_block *sb, int mode)
 
 	inode->i_mode = mode;
 
-	// rin = DEV_I(inode);
+	// di = DEV_I(inode);
 
 	if (S_ISCHR(inode->i_mode)) {
 		inode->i_op = &devfs_cdev_inode_operations;
@@ -174,7 +175,17 @@ static void devfs_kill_sb(struct super_block *sb)
 static struct dentry *
 devfs_lookup(struct inode *parent, struct dentry *dentry, struct nameidata *nd)
 {
+	struct devfs_inode *di;
+
 	nd->ret = -ENOENT;
+
+	list_for_each_entry(di, &g_devfs_list, dev_node) {
+		if (!strncmp(di->name, dentry->d_name.name, dentry->d_name.len)) {
+			dentry->d_inode = &di->vfs_inode;
+			nd->ret = 0;
+		}
+	}
+
 	return NULL;
 }
 
@@ -209,16 +220,8 @@ static int devfs_readdir(struct file *fp, void *dirent, filldir_t filldir)
 static int devfs_mknod(struct inode *dir, struct dentry *dentry,
 	int mode, dev_t dev)
 {
-	// struct inode *in;
-	// struct devfs_inode *di;
-#if 0
-	struct block_device *bdev;
-
-	bdev = bdev_get(dentry->d_name.name);
-	if (!bdev) {
-		// ...
-		return -ENODEV;
-	}
+	struct inode *in;
+	struct devfs_inode *di;
 
 	in = devfs_inode_create(dir->i_sb, mode);
 	if (!in) {
@@ -226,13 +229,15 @@ static int devfs_mknod(struct inode *dir, struct dentry *dentry,
 		return -ENOMEM;
 	}
 
+	in->i_rdev = dev;
+
 	di = DEV_I(in);
-	di->dev = bdev;
+	strncpy(di->name, dentry->d_name.name, dentry->d_name.len);
 
-	dentry->d_inode = in;
-
+	// dentry->d_inode = in;
 	dir->i_size++;
-#endif
+
+	list_add_tail(&di->dev_node, &g_devfs_list);
 
 	return 0;
 }
