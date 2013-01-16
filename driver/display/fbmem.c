@@ -1,5 +1,6 @@
 #include <fb.h>
 #include <fs.h>
+#include <fcntl.h>
 #include <init.h>
 #include <errno.h>
 #include <string.h>
@@ -123,7 +124,7 @@ struct fb_info *framebuffer_alloc(size_t size)
 
 int framebuffer_register(struct fb_info *fb)
 {
-	int i, ret;
+	int i;
 	struct fb_fix_screeninfo *fix = &fb->fix;
 
 	for (i = 0; i < MAX_FB; i++)

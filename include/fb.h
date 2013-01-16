@@ -22,7 +22,7 @@ struct fb_ops {
 struct fb_info {
 	struct fb_fix_screeninfo fix;
 	struct fb_var_screeninfo var;
-	struct fb_ops *ops;
+	const struct fb_ops *ops;
 	char *screenbase;
 	void *par;
 };

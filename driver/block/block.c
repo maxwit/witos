@@ -76,3 +76,8 @@ void submit_bio(int rw, struct bio *bio)
 		sect++;
 	}
 }
+
+int devfs_bdev_open(struct file *fp, struct inode *inode)
+{
+	return 0;
+}

@@ -1,1 +1,1 @@
-obj-y += devfs.o monitor.o
+obj-y += devfs.o char_dev.o monitor.o

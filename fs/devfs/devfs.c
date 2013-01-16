@@ -19,19 +19,22 @@ struct devfs_inode {
 	struct list_head dev_node;
 };
 
-static int devfs_bdev_open(struct file *, struct inode *);
-static int devfs_bdev_close(struct file *);
-static ssize_t devfs_bdev_read(struct file *, void *, size_t, loff_t *);
-static ssize_t devfs_bdev_write(struct file *, const void *, size_t, loff_t *);
+int devfs_bdev_open(struct file *, struct inode *);
 
 static const struct inode_operations devfs_bdev_inode_operations = {
 };
 
 static const struct file_operations devfs_bdev_file_operations = {
 	.open  = devfs_bdev_open,
-	.close = devfs_bdev_close,
-	.read  = devfs_bdev_read,
-	.write = devfs_bdev_write,
+};
+
+int devfs_cdev_open(struct file *, struct inode *);
+
+static const struct inode_operations devfs_cdev_inode_operations = {
+};
+
+static const struct file_operations devfs_cdev_file_operations = {
+	.open  = devfs_cdev_open,
 };
 
 static struct dentry *devfs_lookup(struct inode *, struct dentry *,
@@ -94,8 +97,8 @@ struct inode *devfs_inode_create(struct super_block *sb, int mode)
 	// rin = DEV_I(inode);
 
 	if (S_ISCHR(inode->i_mode)) {
-		inode->i_op = &devfs_bdev_inode_operations;
-		inode->i_fop = &devfs_bdev_file_operations;
+		inode->i_op = &devfs_cdev_inode_operations;
+		inode->i_fop = &devfs_cdev_file_operations;
 	} else if (S_ISBLK(inode->i_mode)) {
 		inode->i_op = &devfs_bdev_inode_operations;
 		inode->i_fop = &devfs_bdev_file_operations;
@@ -166,27 +169,6 @@ static struct dentry *devfs_mount(struct file_system_type *fs_type,
 // fixme
 static void devfs_kill_sb(struct super_block *sb)
 {
-}
-
-static int devfs_bdev_open(struct file *fp, struct inode *inode)
-{
-	return 0;
-}
-
-static int devfs_bdev_close(struct file *fp)
-{
-	return 0;
-}
-
-static ssize_t devfs_bdev_read(struct file *fp, void *buff, size_t size, loff_t *off)
-{
-	return 0;
-}
-
-static ssize_t
-devfs_bdev_write(struct file *fp, const void *buff, size_t size, loff_t *off)
-{
-	return 0;
 }
 
 static struct dentry *

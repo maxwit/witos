@@ -27,7 +27,7 @@ int omap3_irq_init(void);
 
 // fixme: move to omapfb.h
 struct omapfb_panel {
-	int width, heigth;
+	int width, height;
 	int bpp;
 
 	// fixme

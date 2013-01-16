@@ -1,12 +1,18 @@
 #include <fb.h>
+#include <io.h>
+#include <init.h>
 #include <string.h>
+#include <malloc.h>
 #include <platform.h>
+#include <delay.h>
 
 #define dss_readl(reg) \
 	readl(omapfb->mmio + reg)
 
 #define dss_writel(reg, val) \
 	writel(omapfb->mmio + reg, val)
+
+#define CLKSEL_DSS1 8
 
 struct omapfb_info {
 	struct omapfb_panel *panel;
@@ -31,7 +37,7 @@ static int omapfb_set_par(struct fb_info *fb)
 {
 	__u32 val;
 	struct fb_var_screeninfo *var = &fb->var;
-	struct fb_fix_screeninfo *fix = &fb->fix;
+	// struct fb_fix_screeninfo *fix = &fb->fix;
 	struct omapfb_info *omapfb = fb->par;
 	struct omapfb_panel *pan;
 
@@ -83,10 +89,12 @@ static const struct fb_ops omapfb_ops = {
 	.fb_set_par = omapfb_set_par,
 };
 
-static int omapfb_reset(struct omapfb_info *omapfb)
+static int omapfb_reset(struct fb_info *fb)
 {
+#define OMAP_TIMEOUT 0x100
 	int to;
 	__u32 val;
+	struct omapfb_info *omapfb = fb->par;
 
 	// enable clock
 	writel(VA(CM_FCLKEN_DSS), 7);
@@ -105,7 +113,6 @@ static int omapfb_reset(struct omapfb_info *omapfb)
 
 	if (OMAP_TIMEOUT == to)
 		return -ETIMEDOUT;
-		// printf("%s() line %d: reset timeout!\n", __func__, __LINE__);
 
 	// configure clock
 	dss_writel(DSS_CONTROL, 1);
@@ -113,7 +120,7 @@ static int omapfb_reset(struct omapfb_info *omapfb)
 	dss_writel(DISPC_SYSCONFIG, 1);
 	dss_writel(DISPC_CONFIG, 1 << 9 | 1 << 1);
 
-	dss_writel(DISPC_GFX_BA0, fix->smem_start);
+	dss_writel(DISPC_GFX_BA0, fb->fix.smem_start);
 
 	return 0;
 }
@@ -143,18 +150,18 @@ static int __init omapfb_probe(struct platform_device *pdev)
 	omapfb->mmio = VA(mres->start);
 	omapfb->panel = pdev->platform_data;
 
-	fix->smem_len = omapfb->panel->width * omapfb->panel->heigth * \
+	fix->smem_len = omapfb->panel->width * omapfb->panel->height * \
 					((omapfb->panel->bpp + 7) / 8);
 	fb->ops = &omapfb_ops;
 
 	fb->screenbase = dma_alloc_coherent(fix->smem_len, &fix->smem_start);
 	// if (!fb->screenbase)
 
-	ret = omapfb_reset(omapfb);
+	ret = omapfb_reset(fb);
 	// ret ...
 
 	var.xres = omapfb->panel->width;
-	var.yres = omapfb->panel->heigth;
+	var.yres = omapfb->panel->height;
 
 	ret = fb->ops->fb_check_var(fb, &var);
 	// if ret
@@ -165,7 +172,7 @@ static int __init omapfb_probe(struct platform_device *pdev)
 	ret = framebuffer_register(fb);
 	// if ret < 0 ...
 
-	return 0;
+	return ret;
 }
 
 static struct platform_driver omapfb_driver = {
