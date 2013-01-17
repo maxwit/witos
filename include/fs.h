@@ -199,22 +199,10 @@ struct iattr {
 
 struct inode_operations {
 	struct dentry *(*lookup)(struct inode *, struct dentry *, struct nameidata *);
-	int (*create) (struct inode *, struct dentry *, umode_t, struct nameidata *);
-	int (*link) (struct dentry *,struct inode *,struct dentry *);
-	int (*unlink) (struct inode *,struct dentry *);
-	int (*symlink) (struct inode *,struct dentry *,const char *);
-	int (*mkdir) (struct inode *,struct dentry *, umode_t);
-	int (*rmdir) (struct inode *,struct dentry *);
-	int (*mknod) (struct inode *,struct dentry *, int, dev_t);
-	int (*rename) (struct inode *, struct dentry *,
-			struct inode *, struct dentry *);
-	void (*truncate) (struct inode *);
-	int (*setattr) (struct dentry *, struct iattr *);
-	int (*setxattr) (struct dentry *, const char *,const void *,size_t,int);
-	ssize_t (*getxattr) (struct dentry *, const char *, void *, size_t);
-	ssize_t (*listxattr) (struct dentry *, char *, size_t);
-	int (*removexattr) (struct dentry *, const char *);
-	void (*truncate_range)(struct inode *, loff_t, loff_t);
+	int (*create)(struct inode *, struct dentry *, umode_t, struct nameidata *);
+	int (*mkdir)(struct inode *,struct dentry *, umode_t);
+	int (*rmdir)(struct inode *,struct dentry *);
+	int (*mknod)(struct inode *,struct dentry *, int, dev_t);
 };
 
 #define I_DIRTY_SYNC		(1 << 0)
@@ -293,7 +281,7 @@ struct inode {
 // directory entry
 struct dentry {
 	struct qstr d_name;
-	// char d_iname[DNAME_INLINE_LEN];
+	char d_iname[DNAME_INLINE_LEN];
 	struct inode *d_inode;
 	struct super_block *d_sb;
 	struct dentry *d_parent;

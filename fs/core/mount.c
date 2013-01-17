@@ -127,8 +127,8 @@ L1:
 	return ret;
 }
 
-int GAPI mount(const char *source, const char *target,
-			const char *type, unsigned long flags)
+int GAPI mount(const char *source, const char *target, const char *type,
+	unsigned long flags)
 {
 	return sys_mount(source, target, type, flags);
 }

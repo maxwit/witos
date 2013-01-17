@@ -95,7 +95,8 @@ static void __init auto_boot(void)
 
 static int __init mount_root()
 {
-	int ret;
+	int i, ret;
+	const char *dir[] = {"/tmp", DEV_ROOT};
 
 	ret = sys_mount(NULL, "/", "ramfs", MS_NODEV);
 	if (ret < 0) {
@@ -103,11 +104,14 @@ static int __init mount_root()
 		return ret;
 	}
 
-	ret = sys_mkdir("/tmp", 0755); // if needed
-	// if ret < 0 ...
+	for (i = 0; i < ARRAY_ELEM_NUM(dir); i++) {
+		ret = sys_mkdir(dir[i], 0755);
+		if (ret < 0) {
+			printf("fail to create %s!\n", dir[i]);
+			return ret;
+		}
+	}
 
-	ret = sys_mkdir(DEV_ROOT, 0755);
-	// if ret < 0 ...
 	ret = sys_mount(NULL, DEV_ROOT, "devfs", MS_NODEV);
 
 	return 0;
