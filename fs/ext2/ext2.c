@@ -13,7 +13,7 @@
 #define MAX_MNT_LEN 256
 #define SECT_SIZE   (1 << 9) // fixme
 
-static struct dentry *ext2_lookup(struct inode *parent, struct dentry *dentry,
+static int ext2_lookup(struct inode *parent, struct dentry *dentry,
 						struct nameidata *nd);
 
 static const struct inode_operations ext2_reg_inode_operations = {
@@ -536,7 +536,7 @@ static ssize_t ext2_write(struct file *fp, const void *buff, size_t size, loff_t
 	return 0;
 }
 
-static struct dentry *ext2_lookup(struct inode *parent, struct dentry *dentry, struct nameidata *nd)
+static int ext2_lookup(struct inode *parent, struct dentry *dentry, struct nameidata *nd)
 {
 	unsigned long ino;
 	struct inode *inode;
@@ -544,22 +544,19 @@ static struct dentry *ext2_lookup(struct inode *parent, struct dentry *dentry, s
 	ino = ext2_inode_by_name(parent, &dentry->d_name);
 	if (!ino) {
 		// ...
-		nd->ret = -ENOENT;
-		return NULL;
+		return -ENOENT;
 	}
 
 	inode = ext2_iget(parent->i_sb, ino);
 	if (!inode) {
 		// ...
-		nd->ret = -EIO;
-		return NULL; // fixme!!!
+		return -EIO; // fixme!!!
 	}
 
 	// dentry->d_inode = inode;
 	d_add(dentry, inode);
-	nd->ret = 0;
 
-	return dentry;
+	return 0;
 }
 
 static int ext2_inode_read_block(struct inode *in, int blk_no, char *blk_buf)

@@ -36,7 +36,7 @@ static const struct file_operations ramfs_reg_file_operations = {
 	.write = ramfs_write,
 };
 
-static struct dentry *ramfs_lookup(struct inode *parent, struct dentry *dentry,
+static int ramfs_lookup(struct inode *parent, struct dentry *dentry,
 	struct nameidata *nd);
 static int ramfs_mkdir(struct inode *, struct dentry *, umode_t);
 
@@ -215,11 +215,10 @@ ramfs_write(struct file *fp, const void *buff, size_t size, loff_t *off)
 	return 0;
 }
 
-static struct dentry *
+static int
 ramfs_lookup(struct inode *parent, struct dentry *dentry, struct nameidata *nd)
 {
-	nd->ret = -ENOENT;
-	return NULL;
+	return 0;
 }
 
 static int ramfs_opendir(struct file *fp, struct inode *inode)

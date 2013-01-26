@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <assert.h>
 #include <fs.h>
+#include <init.h>
 
 static struct file_system_type *fs_type_list;
 static LIST_HEAD(g_mount_list);
@@ -24,7 +25,7 @@ int register_filesystem(struct file_system_type *fstype)
 	return 0;
 }
 
-struct file_system_type *file_system_type_get(const char *name)
+struct file_system_type *get_fs_type(const char *name)
 {
 	struct file_system_type *p;
 
@@ -36,54 +37,13 @@ struct file_system_type *file_system_type_get(const char *name)
 	return NULL;
 }
 
-static struct file_system_type *guess_fs_type_by_bdev(const char *bdev)
+static int do_mount(const char *type, unsigned long flags, const char *dev_name,
+	struct vfsmount *vfsmnt)
 {
-	struct file_system_type *p;
-
-	for (p = fs_type_list; p; p = p->next) {
-		if (p->check_fs_type) {
-			if (0 == p->check_fs_type(bdev))
-				return p;
-		}
-	}
-
-	return NULL;
-}
-
-
-int sys_mount(const char *dev_name, const char *path,
-		const char *type, unsigned long flags)
-{
-	int ret;
-	struct file_system_type *fstype;
-	struct vfsmount *mnt;
 	struct dentry *root;
-	struct nameidata nd;
-	const bool is_root = ('/' == path[0] && '\0' == path[1]);
+	struct file_system_type *fstype;
 
-	if (!(flags & MS_NODEV)) {
-		list_for_each_entry(mnt, &g_mount_list, mnt_hash) {
-			if (mnt->dev_name && !strcmp(mnt->dev_name, dev_name)) {
-				GEN_DBG("device \"%s\" already mounted!\n", dev_name);
-				return -EBUSY;
-			}
-		}
-	}
-
-	if (!is_root) {
-		ret = path_walk(path, &nd); // fixme: directory only!
-		if (ret < 0) {
-			GEN_DBG("\"%s\" does NOT exist!\n");
-			return ret;
-		}
-	}
-
-	if (NULL == type) {
-		fstype = guess_fs_type_by_bdev(dev_name);
-	} else {
-		fstype = file_system_type_get(type);
-	}
-
+	fstype = get_fs_type(type);
 	if (NULL == fstype) {
 		DPRINT("fail to find file system type %s!\n", type == NULL ? "" : type);
 		return -ENOENT;
@@ -92,38 +52,109 @@ int sys_mount(const char *dev_name, const char *path,
 	root = fstype->mount(fstype, flags, dev_name, NULL);
 	if (!root) {
 		DPRINT("fail to mount %s!\n", dev_name);
-		ret = -EIO; // fixme!
-		goto L1;
+		return -EIO; // fixme!
 	}
 
-	mnt = zalloc(sizeof(*mnt));
-	if (NULL == mnt) {
-		ret = -ENOMEM;
-		goto L2;
+	vfsmnt->root = root;
+	vfsmnt->fstype = fstype;
+	vfsmnt->dev_name = dev_name;
+
+	return 0;
+}
+
+static int add_mount(struct mount *mnt, struct path *path,
+	unsigned int flags)
+{
+	// int ret;
+	// struct mount *mnt;
+
+#if 0
+	if (!(flags & MS_NODEV)) {
+		list_for_each_entry(mnt, &g_mount_list, mnt_hash) {
+			if (mnt->dev_name && !strcmp(mnt->dev_name, dev_name)) {
+				GEN_DBG("device \"%s\" already mounted!\n", dev_name);
+				return -EBUSY;
+			}
+		}
 	}
+#endif
 
-	mnt->fstype   = fstype;
-	mnt->dev_name = dev_name;
-	mnt->root     = root;
-
-	if (is_root) {
-		struct path sysroot = {.dentry = root, .mnt = mnt};
-
-		mnt->mountpoint = NULL; // fixme
-		mnt->mnt_parent = NULL;
-		set_fs_root(&sysroot);
-		set_fs_pwd(&sysroot); // now?
-	} else {
-		mnt->mountpoint = nd.path.dentry;
-		mnt->mnt_parent = nd.path.mnt;
-	}
+	mnt->mountpoint = path->dentry;
+	mnt->mnt_parent = path->mnt;
 
 	list_add_tail(&mnt->mnt_hash, &g_mount_list);
 
 	return 0;
-L2:
-	//
+}
+
+int sys_mount(const char *dev_name, const char *path,
+		const char *type, unsigned long flags)
+{
+	int ret;
+	struct nameidata nd;
+	struct mount *mnt;
+
+	if (NULL == type)
+		return -EINVAL;
+
+	ret = path_walk(path, &nd); // fixme: directory only!
+	if (ret < 0) {
+		GEN_DBG("\"%s\" does NOT exist!\n");
+		return ret;
+	}
+
+	mnt = zalloc(sizeof(*mnt));
+	if (NULL == mnt)
+		return -ENOMEM;
+
+	ret = do_mount(type, flags, dev_name, &mnt->vfsmnt);
+	if (ret < 0)
+		goto L1;
+
+	ret = add_mount(mnt, &nd.path, flags);
+	if (ret < 0)
+		goto L1;
+
+	return 0;
+
 L1:
+	free(mnt);
+	return ret;
+}
+
+int __init mount_root(const char *dev_name, const char *type,
+	unsigned long flags)
+{
+	int ret;
+	struct mount *mnt;
+	struct path path, sysroot;
+
+	if (NULL == type)
+		return -EINVAL;
+
+	mnt = zalloc(sizeof(*mnt));
+	if (NULL == mnt)
+		return -ENOMEM;
+
+	ret = do_mount(type, flags, dev_name, &mnt->vfsmnt);
+	if (ret < 0)
+		goto L1;
+
+	path.dentry = NULL;
+	path.mnt = NULL;
+	ret = add_mount(mnt, &path, flags);
+	if (ret < 0)
+		goto L1;
+
+	sysroot.dentry = mnt->vfsmnt.root;
+	sysroot.mnt = mnt;
+	set_fs_root(&sysroot);
+	set_fs_pwd(&sysroot);
+
+	return 0;
+
+L1:
+	free(mnt);
 	return ret;
 }
 
@@ -138,9 +169,9 @@ int GAPI umount(const char *mnt)
 	return 0;
 }
 
-struct vfsmount *lookup_mnt(struct path *path)
+struct mount *lookup_mnt(struct path *path)
 {
-	struct vfsmount *mnt;
+	struct mount *mnt;
 
 	list_for_each_entry(mnt, &g_mount_list, mnt_hash) {
 		if (mnt->mountpoint == path->dentry)
@@ -154,16 +185,16 @@ struct vfsmount *lookup_mnt(struct path *path)
 int list_mount()
 {
 	int count = 0;
-	struct vfsmount *mnt;
+	struct mount *mnt;
 
 	printf("NO. device   mnt  type\n"
 		"-------------------------\n");
 	list_for_each_entry(mnt, &g_mount_list, mnt_hash) {
 		count++;
 		printf("(%d) %-8s %-4s %s\n", count,
-			mnt->dev_name ? mnt->dev_name : "none",
+			mnt->vfsmnt.dev_name ? mnt->vfsmnt.dev_name : "none",
 			mnt->mountpoint ? mnt->mountpoint->d_name.name : "/", // fixme
-			mnt->fstype->name);
+			mnt->vfsmnt.fstype->name);
 	}
 
 	return count;

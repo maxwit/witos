@@ -6,7 +6,7 @@
 #include <assert.h>
 #include <fs.h>
 
-struct vfsmount *lookup_mnt(struct path *path);
+struct mount *lookup_mnt(struct path *path);
 
 static inline void path_to_nameidata(const struct path *path,
 					struct nameidata *nd)
@@ -30,41 +30,45 @@ struct dentry *d_lookup(struct dentry *parent, struct qstr *unit)
 	return NULL;
 }
 
-static struct dentry *real_lookup(struct dentry *parent, struct qstr *unit,
-		     struct nameidata *nd)
+static int real_lookup(struct dentry *parent, struct qstr *unit,
+		     struct nameidata *nd, struct dentry **result)
 {
-	struct inode *dir = parent->d_inode;
 	struct dentry *dentry = d_alloc(parent, unit);
 
 	if (dentry) {
-		struct dentry *result;
+		int ret;
+		struct inode *dir = parent->d_inode;
 
-		nd->ret = -ENOENT;
-		result = dir->i_op->lookup(dir, dentry, nd);
-		if (nd->ret < 0) {
+		ret = dir->i_op->lookup(dir, dentry, nd);
+		if (ret < 0) {
 			GEN_DBG("fail to lookup \"%s\" (ret = %d)!\n",
-				dentry->d_name.name, nd->ret);
+				dentry->d_name.name, ret);
 			dput(dentry);
-			return NULL;
+			return ret;
 		}
+
+#if 0
 		if (result && result != dentry) {
 			GEN_DBG("%s -> %s\n", dentry->d_name.name, result->d_name.name);
 			dput(dentry);
 			dentry = result;
 		}
+#endif
+
+		*result = dentry;
 	}
 
-	return dentry;
+	return 0;
 }
 
 int __follow_mount(struct path *path)
 {
-	struct vfsmount *mnt;
+	struct mount *mnt;
 
 	mnt = lookup_mnt(path);
 	if (mnt) {
 		path->mnt = mnt;
-		path->dentry = mnt->root;
+		path->dentry = mnt->vfsmnt.root;
 	}
 
 	return 0;
@@ -81,7 +85,7 @@ int follow_up(struct path *path)
 static int do_lookup(struct nameidata *nd, struct qstr *name,
 		     struct path *path)
 {
-	struct vfsmount *mnt = nd->path.mnt;
+	struct mount *mnt = nd->path.mnt;
 	struct dentry *dentry;
 
 	if ('.' == name->name[0]) {
@@ -92,7 +96,7 @@ static int do_lookup(struct nameidata *nd, struct qstr *name,
 		}
 
 		if ('.' == name->name[1] && 2 == name->len) {
-			if (path->dentry == path->mnt->root && path->mnt->mnt_parent)
+			if (path->dentry == path->mnt->vfsmnt.root && path->mnt->mnt_parent)
 				follow_up(&nd->path);
 
 			path->dentry = nd->path.dentry->d_parent;
@@ -104,9 +108,11 @@ static int do_lookup(struct nameidata *nd, struct qstr *name,
 
 	dentry = d_lookup(nd->path.dentry, name);
 	if (!dentry) {
-		dentry = real_lookup(nd->path.dentry, name, nd);
-		if (!dentry)
-			return nd->ret;
+		int ret;
+
+		ret = real_lookup(nd->path.dentry, name, nd, &dentry);
+		if (ret < 0)
+			return ret;
 	}
 
 	path->mnt = mnt;
@@ -193,7 +199,7 @@ static int sys_open(const char *path, int flags, int mode)
 {
 	int fd, ret;
 	struct file *fp;
-	struct nameidata nd = {.ret = 0};
+	struct nameidata nd;
 
 	fd = get_unused_fd();
 	if (fd < 0)

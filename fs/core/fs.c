@@ -245,7 +245,7 @@ long sys_getcwd(char *buff, unsigned long size)
 	get_fs_root(&root);
 
 	while (cwd.dentry != root.dentry) {
-		if (cwd.dentry == cwd.mnt->root) {
+		if (cwd.dentry == cwd.mnt->vfsmnt.root) {
 			follow_up(&cwd);
 			continue; // yes, we'd jump to next loop
 		}

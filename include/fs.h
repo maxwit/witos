@@ -66,7 +66,7 @@
  */
 #define MS_RMT_MASK	(MS_RDONLY|MS_SYNCHRONOUS|MS_MANDLOCK|MS_I_VERSION)
 
-struct vfsmount;
+struct mount;
 struct super_block;
 struct inode;
 struct dentry;
@@ -78,14 +78,13 @@ struct qstr {
 };
 
 struct path {
-	struct vfsmount *mnt;
+	struct mount *mnt;
 	struct dentry *dentry;
 };
 
 struct nameidata {
 	struct path path;
-	// unsigned int flags;
-	int ret;
+	unsigned int flag;
 };
 
 struct file_system_type {
@@ -100,14 +99,18 @@ struct file_system_type {
 
 int register_filesystem(struct file_system_type *);
 
-struct file_system_type *file_system_type_get(const char *);
+struct file_system_type *get_fs_type(const char *);
 
 struct vfsmount {
-	const char *dev_name;
 	struct dentry *root;
-	struct vfsmount *mnt_parent;
-	struct dentry *mountpoint;
 	struct file_system_type *fstype;
+	const char *dev_name;
+};
+
+struct mount {
+	struct mount *mnt_parent;
+	struct dentry *mountpoint;
+	struct vfsmount vfsmnt;
 	struct list_head mnt_hash;
 };
 
@@ -139,7 +142,7 @@ struct file {
 	// unsigned int mode;
 	const struct file_operations *f_op;
 	struct dentry *f_dentry;
-	// struct vfsmount *vfsmnt;
+	// struct mount *vfsmnt;
 	struct block_buff blk_buf; // for block device, to be removed!
 	u64   f_version;
 	void *private_data;
@@ -198,7 +201,7 @@ struct iattr {
 };
 
 struct inode_operations {
-	struct dentry *(*lookup)(struct inode *, struct dentry *, struct nameidata *);
+	int (*lookup)(struct inode *, struct dentry *, struct nameidata *);
 	int (*create)(struct inode *, struct dentry *, umode_t, struct nameidata *);
 	int (*mkdir)(struct inode *,struct dentry *, umode_t);
 	int (*rmdir)(struct inode *,struct dentry *);

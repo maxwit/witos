@@ -93,12 +93,15 @@ static void __init auto_boot(void)
 	exec(ARRAY_ELEM_NUM(argv), argv);
 }
 
-static int __init mount_root()
+int __init mount_root(const char *dev_name, const char *type,
+	unsigned long flags);
+
+static int __init populate_rootfs()
 {
 	int i, ret;
 	const char *dir[] = {"/tmp", DEV_ROOT};
 
-	ret = sys_mount(NULL, "/", "ramfs", MS_NODEV);
+	ret = mount_root(NULL, "ramfs", MS_NODEV);
 	if (ret < 0) {
 		printf("Fetal error: fail to mount rootfs! (errno = %d)\n", ret);
 		return ret;
@@ -114,7 +117,7 @@ static int __init mount_root()
 
 	ret = sys_mount(NULL, DEV_ROOT, "devfs", MS_NODEV);
 
-	return 0;
+	return ret;
 }
 
 int main(void)
@@ -133,7 +136,7 @@ int main(void)
 	if (ret < 0)
 		return ret;
 
-	ret = mount_root();
+	ret = populate_rootfs();
 	if (ret < 0)
 		return ret;
 

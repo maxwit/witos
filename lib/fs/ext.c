@@ -164,7 +164,7 @@ struct ext_super_block {
 
 static bool system_supports_ext2()
 {
-	return file_system_type_get("ext2") == NULL ? false : true;
+	return get_fs_type("ext2") == NULL ? false : true;
 }
 
 void ext_sb_list(struct ext_super_block *esb)

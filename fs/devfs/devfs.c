@@ -38,7 +38,7 @@ static const struct file_operations devfs_cdev_file_operations = {
 	.open  = devfs_cdev_open,
 };
 
-static struct dentry *devfs_lookup(struct inode *, struct dentry *,
+static int devfs_lookup(struct inode *, struct dentry *,
 	struct nameidata *);
 
 static int devfs_mknod(struct inode *, struct dentry *, int, dev_t);
@@ -172,21 +172,19 @@ static void devfs_kill_sb(struct super_block *sb)
 {
 }
 
-static struct dentry *
-devfs_lookup(struct inode *parent, struct dentry *dentry, struct nameidata *nd)
+static int devfs_lookup(struct inode *parent, struct dentry *dentry,
+	struct nameidata *nd)
 {
 	struct devfs_inode *di;
-
-	nd->ret = -ENOENT;
 
 	list_for_each_entry(di, &g_devfs_list, dev_node) {
 		if (!strncmp(di->name, dentry->d_name.name, dentry->d_name.len)) {
 			dentry->d_inode = &di->vfs_inode;
-			nd->ret = 0;
+			return 0;
 		}
 	}
 
-	return NULL;
+	return -ENOENT;
 }
 
 static int devfs_opendir(struct file *fp, struct inode *inode)
