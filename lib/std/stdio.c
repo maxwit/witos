@@ -519,8 +519,3 @@ int snprintf(char *buf, size_t size, const char *fmt, ...)
 
 	return printed;
 }
-
-int fflush(int fd)
-{
-	return 0;
-}

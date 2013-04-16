@@ -25,8 +25,6 @@ int sprintf(char *, const char *, ...);
 
 int snprintf(char *, size_t, const char *, ...);
 
-int fflush(int);
-
 // right here?
 #ifdef CONFIG_DEBUG
 #define DPRINT(fmt, args ...) \

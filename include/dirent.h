@@ -4,9 +4,6 @@
 
 #define MAX_DENT_NAME_SIZE  256
 
-// g-bios system standard directory
-#define DEV_ROOT   "/dev"
-
 typedef unsigned long ino_t;
 
 typedef struct {

@@ -57,14 +57,12 @@ int ymodem_load(struct loader_opt *opt)
 	int fd_bdev = 0;
 	image_t img_type = IMG_MAX;
 
-#ifndef CONFIG_GTH
 	if (!opt->load_addr) {
 		__u8 data[1024];
 
 		curr_addr = data;
 	}
 	else
-#endif
 	{
 		curr_addr = opt->load_addr;
 	}
@@ -72,13 +70,11 @@ int ymodem_load(struct loader_opt *opt)
 	go_set_addr((__u32 *)curr_addr);
 
 	opt->load_size = 0;
-#ifndef CONFIG_GTH
-		if (opt->dst) {
-			fd_bdev = open(opt->dst, O_WRONLY);
-			if (fd_bdev < 0)
-				return fd_bdev;
-		}
-#endif
+	if (opt->dst) {
+		fd_bdev = open(opt->dst, O_WRONLY);
+		if (fd_bdev < 0)
+			return fd_bdev;
+	}
 
 	while (1) {
 		uart_send_byte('C');
@@ -102,7 +98,6 @@ int ymodem_load(struct loader_opt *opt)
 	blk_num[0] = uart_recv_byte();
 	blk_num[1] = uart_recv_byte();
 
-#ifndef CONFIG_GTH
 	for (count = 0; count < size; count++) {
 		ret = uart_recv_byte_timeout((__u8 *)opt->file_name + count, MODEM_TIMEOUT);
 
@@ -119,7 +114,6 @@ int ymodem_load(struct loader_opt *opt)
 
 #ifdef CONFIG_DEBUG
 	printf("loading \'%s\'\n", opt->file_name);
-#endif
 #endif
 
 	uart_clear_buff();
@@ -177,7 +171,6 @@ int ymodem_load(struct loader_opt *opt)
 		ret = uart_recv_byte_timeout(&crc[0], MODEM_TIMEOUT);
 		ret = uart_recv_byte_timeout(&crc[1], MODEM_TIMEOUT);
 
-#ifndef CONFIG_GTH
 		if (opt->dst) {
 			if (img_type == IMG_MAX) {
 				OOB_MODE oob_mode;
@@ -208,10 +201,7 @@ int ymodem_load(struct loader_opt *opt)
 		}
 
 		if (opt->load_addr)
-#endif
-		{
 			curr_addr += count;
-		}
 
 		uart_send_byte(ACK);
 
@@ -221,17 +211,14 @@ int ymodem_load(struct loader_opt *opt)
 
 L1:
 	modem_end_rx();
-
 	ret = opt->load_size;
-error:
 
-#ifndef CONFIG_GTH
+error:
 	if (opt->dst) {
 		close(fd_bdev);
 	}
-#endif
+
 	return ret;
 }
 
-REGISTER_LOADER(y, ymodem_load, "Y-modem");
 

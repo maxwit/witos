@@ -99,7 +99,7 @@ int __init mount_root(const char *dev_name, const char *type,
 static int __init populate_rootfs()
 {
 	int i, ret;
-	const char *dir[] = {"/tmp", DEV_ROOT};
+	const char *dir[] = {"/tmp", "/dev", "/boot"};
 
 	ret = mount_root(NULL, "ramfs", MS_NODEV);
 	if (ret < 0) {
@@ -115,7 +115,11 @@ static int __init populate_rootfs()
 		}
 	}
 
-	ret = sys_mount(NULL, DEV_ROOT, "devfs", MS_NODEV);
+	ret = sys_mount(NULL, "/dev", "devfs", MS_NODEV);
+	// if ...
+
+	// ret = sys_mount("mmcblk0p1", "/boot", "vfat", 0);
+	// if ...
 
 	return ret;
 }

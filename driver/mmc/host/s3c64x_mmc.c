@@ -235,11 +235,8 @@ static int s3c6410_send_cmd(struct mmc_host *mmc, __u32 index, __u32 arg, RESP r
 
 	return 0;
 }
-#ifdef CONFIG_GTH
-int mmc_init(void)
-#else
+
 static int s3c6410_mmc_init(void)
-#endif
 {
 	//uval = readl(VA(MMC0_BASE + CAPAREG));
 	//MMC_PRINT("CAPAREG = 0x%x\n", uval);
@@ -262,6 +259,4 @@ static int s3c6410_mmc_init(void)
 	return 0;
 }
 
-#ifndef CONFIG_GTH
 module_init(s3c6410_mmc_init);
-#endif

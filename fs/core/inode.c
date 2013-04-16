@@ -10,7 +10,7 @@ int dev_mknod(const char *path, int mode, dev_t devt)
 	struct nameidata nd;
 	struct dentry *parent, *dentry;
 
-	ret = path_walk("/dev" /* DEV_ROOT */, &nd);
+	ret = path_walk("/dev", &nd);
 	if (ret < 0)
 		return ret;
 

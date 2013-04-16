@@ -67,13 +67,10 @@ int kermit_load(struct loader_opt *opt)
 	int fd = -1 /* fixme!!! */ , ret, i;
 	image_t img_type = IMG_MAX;
 
-#ifndef CONFIG_GTH
 	if (!opt->load_addr) {
 		__u8 data[KERM_BUF_LEN];
 		curr_addr = data;
-	} else
-#endif
-	{
+	} else {
 		curr_addr = opt->load_addr;
 	}
 
@@ -81,13 +78,11 @@ int kermit_load(struct loader_opt *opt)
 
 	opt->load_size = 0;
 
-#ifndef CONFIG_GTH
 	if (opt->dst) {
 		fd = open(opt->dst, O_WRONLY);
 		if (fd < 0)
 			return fd;
 	}
-#endif
 
 	do {
 		while (MARK_START != uart_recv_byte());
@@ -194,7 +189,6 @@ int kermit_load(struct loader_opt *opt)
 		if (curr_char != KERM_KEY_TERM)
 			goto error;
 
-#ifndef CONFIG_GTH
 		if (opt->dst) {
 			if (img_type == IMG_MAX) {
 				OOB_MODE oob_mode;
@@ -225,10 +219,7 @@ int kermit_load(struct loader_opt *opt)
 		}
 
 		if (opt->load_addr)
-#endif
-		{
 			curr_addr += count;
-		}
 
 		opt->load_size += count;
 
@@ -239,14 +230,9 @@ int kermit_load(struct loader_opt *opt)
 	return opt->load_size;
 
 error:
-
-#ifndef CONFIG_GTH
-	if (opt->dst) {
+	if (opt->dst)
 		close(fd);
-	}
-#endif
 
 	return -EFAULT;
 }
 
-REGISTER_LOADER(k, kermit_load, "Kermit");

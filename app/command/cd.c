@@ -10,7 +10,7 @@ static int get_bdev_by_index(int index, char name[], size_t size)
 	DIR *dir;
 	struct dirent *de;
 
-	dir = opendir(DEV_ROOT);
+	dir = opendir("/dev");
 	if (!dir)
 		return -ENOENT;
 

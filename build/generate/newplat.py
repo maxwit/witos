@@ -24,17 +24,12 @@ def create_defconfig(arch, soc):
 	os.write(fd, 'CONFIG_' + soc.upper() + ' = y\n' \
 				'CONFIG_ARCH = ' + arch + '\n' \
 				'CONFIG_ARCH_VER = ' + soc_info_lists[2] + '\n' \
-				'CONFIG_LOADER_MENU = y\n' \
 				'CONFIG_IRQ_SUPPORT = y\n' \
 				'\n' \
 				'CONFIG_CROSS_COMPILE = arm-maxwit-linux-gnueabi-\n' \
 				'\n' \
-				'CONFIG_LOADER_MENU = y\n' \
-				'CONFIG_GTH_WRITE = y\n' \
 				'\n' \
-				'CONFIG_GTH_START_MEM = ' + soc_info_lists[3] + '\n' \
-				'CONFIG_GBH_START_MEM = ' + soc_info_lists[4] + '\n' \
-				'CONFIG_GBH_START_BLK = 1\n' \
+				'CONFIG_START_MEM = ' + soc_info_lists[4] + '\n' \
 				'\n' \
 				'# Flash\n' \
 				'CONFIG_NAND = y\n' \

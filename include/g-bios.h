@@ -16,14 +16,3 @@
 
 #define VA(x) ((void *)(x))
 #endif
-
-#ifdef CONFIG_GTH
-#ifndef __ASSEMBLY__
-int cpu_init(void);
-int soc_init(void);
-int uart_init(void);
-int mem_init(void);
-unsigned long read_cpu_id(void);
-void hang(char err);
-#endif
-#endif

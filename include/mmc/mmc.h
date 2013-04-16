@@ -2,10 +2,6 @@
 
 #include <drive.h>
 
-#ifdef CONFIG_GTH
-int mmc_init(void);
-#endif
-
 #define MMC_GO_IDLE_STATE         0   /* bc                          */
 #define MMC_SEND_OP_COND          1   /* bcr  [31:0] OCR         R3  */
 #define MMC_ALL_SEND_CID          2   /* bcr                     R2  */

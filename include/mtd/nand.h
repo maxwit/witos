@@ -88,36 +88,18 @@
 #define LP_OPTIONS16 (LP_OPTIONS | NAND_BUSWIDTH_16)
 
 struct nand_desc {
-#ifdef CONFIG_GTH
-	int   id;
-	__u32 size;
-#else
 	const char *name;
 	int   id;
 	__u32 write_size;
 	__u32 chip_size;
 	__u32 erase_size;
-#endif
 	__u32 flags;
 };
 
-#ifdef CONFIG_GTH
-#define NAND_CHIP_DESC(n, i, w, c, e, f) \
-	{.id = i, .size = (c) << 20 | (w), .flags = f}
-#else
 #define NAND_CHIP_DESC(n, i, w, c, e, f) \
 	{.name = n, .id = i, .write_size = w, .chip_size = c, .erase_size = e, .flags = f}
-#endif
 
 struct nand_chip;
-
-#ifdef CONFIG_GTH
-
-int nand_init(struct nand_chip *);
-int nand_probe(struct nand_chip *);
-void *nand_read_page(struct nand_chip *, __u32, void *);
-
-#else
 
 #include <mtd/mtd.h>
 
@@ -265,20 +247,8 @@ struct nand_ctrl *nand_ctrl_new(void);
 struct nand_chip *nand_probe(struct nand_ctrl *nfc, int bus_idx);
 
 int nand_register(struct nand_chip * nand);
-#endif
 
 struct nand_chip {
-#ifdef CONFIG_GTH
-	void *cmmd_port;
-	void *addr_port;
-	void *data_port;
-
-	size_t write_size;
-	size_t chip_size;
-
-	int (*nand_ready)(struct nand_chip *);
-	void *(*read_buff)(struct nand_chip *, void *, size_t);
-#else
 	struct mtd_info parent;
 	struct nand_ctrl *master;
 
@@ -310,5 +280,4 @@ struct nand_chip {
 	const char *name; // id or just name?
 
 	struct list_head nand_node;
-#endif
 };
