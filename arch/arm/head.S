@@ -24,13 +24,12 @@ _start:
 	.word handle_fiq
 
 g_board_config:
-	.word 0  @ base
+	.word _start - CONFIG_HEAD_SIZE  @ base
 	.word 0  @ size
 
 handle_reset:
-	str   r0, g_board_config
-	cmp   r1, #0x2000
-	movgt r1, #0x2000
+	cmp   r1, #CONFIG_HEAD_SIZE
+	movgt r1, #CONFIG_HEAD_SIZE
 	str   r1, g_board_config + 4
 
 	mov   r4, r0
@@ -39,7 +38,7 @@ handle_reset:
 #ifdef CONFIG_NORMAL_SPACE
 	ldr   r0, =(_end + CONFIG_HEAP_SIZE + CONFIG_STACK_SIZE)
 #else
-	ldr   r0, =(_start - CONFIG_HEAP_SIZE)
+	ldr   r0, =(_start - CONFIG_HEAD_SIZE - CONFIG_HEAP_SIZE)
 #endif
 
 	msr   cpsr, #(ARM_MODE_UND | ARM_INT_MASK)
@@ -64,18 +63,16 @@ handle_reset:
 	ldr   r0, =_start
 	adr   r1, _start
 	cmp   r0, r1
-	beq   skip_move
-
-	@ addr = r4 + r0 - r1
-	sub   r2, r0, r1
-	add   r4, r4, r2
-	str   r4, g_board_config
+	beq   move_config
 #if 0
 	ldr   r2, [r1, #GBH_SIZE_OFFSET]
 #else
-	add   r3, r5, r4
-	sub   r2, r3, r1
+	add   r2, r5, r4
+	sub   r2, r2, r1
 #endif
+	@ update r4 before memove
+	add   r4, r4, r0
+	sub   r4, r4, r1
 	@ fixme
 	bl    memmove
 #ifdef CONFIG_DEBUG
@@ -88,17 +85,17 @@ handle_reset:
 	mov   r0, #'\r'
 	bl	  uart_send_byte
 #endif
-	ldr   pc, =skip_move
+	ldr   pc, =move_config
 
-skip_move:
-	adr   r0, _start
-	sub   r0, r0, #0x2000
+move_config:
+	ldr   r0, g_board_config
+	cmp   r0, r4
+	beq   int_init
 	mov   r1, r4
 	mov   r2, r5
 	bl    memmove
-	mov   r1, #0
-	strb  r1, [r0, r5]
 
+int_init:
 @ fixme
 #ifdef CONFIG_IRQ_SUPPORT
 	@ fixme for ROM

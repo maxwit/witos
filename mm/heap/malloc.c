@@ -74,7 +74,7 @@ int __init heap_init(void)
 #else
 	extern unsigned long _start[];
 
-	heap_end   = (unsigned long)_start;
+	heap_end   = (unsigned long)_start - CONFIG_HEAD_SIZE;
 	heap_start = heap_end - CONFIG_HEAP_SIZE;
 #endif
 

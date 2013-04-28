@@ -102,7 +102,7 @@ static int __init populate_rootfs()
 	int i, ret;
 	const char *fstab[][3] = {{"none", "/dev", "devfs"},
 						// {"mmcblk0p1", "/boot", "vfat"},
-						// {"mmcblk0p2", "/data", "ext2"}
+						{"mmcblk0p2", "/data", "ext2"}
 						};
 
 	ret = mount_root(NULL, "ramfs", MS_NODEV);
@@ -124,10 +124,10 @@ static int __init populate_rootfs()
 			ret = sys_mount(fstab[i][0], fstab[i][1], fstab[i][2], 0);
 
 		if (ret < 0) {
-			printf("\"mount %s %s %s\" failed, error = %d\n",
+			printf("Warning: \"mount %s %s %s\" failed (error = %d)\n",
 				fstab[i][0], fstab[i][1], fstab[i][2], ret);
 
-			goto L1;
+			// goto L1;
 		}
 	}
 
@@ -142,8 +142,10 @@ int main(void)
 	int ret;
 
 	ret = conf_check();
-	if (ret < 0)
+	if (ret < 0) {
 		printf("Warning: fail to initialize system configuration!\n");
+		return ret;
+	}
 
 	ret = system_init();
 	if (ret < 0)

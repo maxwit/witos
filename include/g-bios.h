@@ -6,7 +6,8 @@
 #warning "depricated"
 #endif
 
-#define MKFOURCC(a, b, c, d)    (((a) << 24) | (b) << 16 | ((c) << 8) | (d))
+// fixme!
+#define CONFIG_HEAD_SIZE 0x2000
 
 // fixme
 #define FILE_NAME_SIZE   256

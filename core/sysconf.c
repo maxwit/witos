@@ -26,8 +26,8 @@ static struct sysconfig *_syscfg_open()
 	extern unsigned long g_board_config[];
 	static struct sysconfig syscfg;
 
-	syscfg.data = (char *)g_board_config[0],
-	syscfg.size = g_board_config[1],
+	syscfg.data = (char *)g_board_config[0];
+	syscfg.size = g_board_config[1];
 	syscfg.offset = 0;
 
 	return &syscfg;
@@ -95,9 +95,8 @@ static int search_attr(struct sysconfig *cfg, const char *str)
 	int ret;
 
 	while ((ret = _syscfg_read_line(cfg, line, LINE_LEN)) >= 0) {
-		if (_is_attr_string(str, line)) {
+		if (_is_attr_string(str, line))
 			return ret;
-		}
 	}
 
 	return -ENODATA;
@@ -285,9 +284,8 @@ int conf_list_attr()
 
 	cfg = _syscfg_open();
 
-	while (_syscfg_read_line(cfg, line, sizeof(line)) >= 0) {
+	while (_syscfg_read_line(cfg, line, sizeof(line)) >= 0)
 		printf("%s\n", line);
-	}
 
 	_syscfg_close(cfg);
 

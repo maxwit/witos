@@ -203,9 +203,17 @@ if __name__ == "__main__":
 	fn_sys_cfg = p.sub('sysconfig', fn_def_cfg)
 	print fn_sys_cfg
 
-	if os.path.exists(fn_def_cfg):
+	if os.path.exists(fn_sys_cfg):
 		os.system('cp '+ fn_sys_cfg + ' .sysconfig')
 	else:
 		os.system('rm .sysconfig')
 
 	parse_sysconfig('.sysconfig')
+
+	fn_mac_cfg = p.sub('board.inf', fn_def_cfg)
+	print fn_mac_cfg
+
+	if os.path.exists(fn_mac_cfg):
+		os.system('cp '+ fn_mac_cfg + ' .sysconfig')
+	else:
+		os.system('rm .sysconfig')
