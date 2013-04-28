@@ -3,6 +3,7 @@
  */
 
 	.global _start
+	.global g_board_config
 
 _start:
 	b     handle_reset
@@ -22,7 +23,19 @@ _start:
 	.word handle_irq
 	.word handle_fiq
 
+g_board_config:
+	.word 0  @ base
+	.word 0  @ size
+
 handle_reset:
+	str   r0, g_board_config
+	cmp   r1, #0x2000
+	movgt r1, #0x2000
+	str   r1, g_board_config + 4
+
+	mov   r4, r0
+	mov   r5, r1
+
 #ifdef CONFIG_NORMAL_SPACE
 	ldr   r0, =(_end + CONFIG_HEAP_SIZE + CONFIG_STACK_SIZE)
 #else
@@ -52,7 +65,17 @@ handle_reset:
 	adr   r1, _start
 	cmp   r0, r1
 	beq   skip_move
+
+	@ addr = r4 + r0 - r1
+	sub   r2, r0, r1
+	add   r4, r4, r2
+	str   r4, g_board_config
+#if 0
 	ldr   r2, [r1, #GBH_SIZE_OFFSET]
+#else
+	add   r3, r5, r4
+	sub   r2, r3, r1
+#endif
 	@ fixme
 	bl    memmove
 #ifdef CONFIG_DEBUG
@@ -68,6 +91,15 @@ handle_reset:
 	ldr   pc, =skip_move
 
 skip_move:
+	adr   r0, _start
+	sub   r0, r0, #0x2000
+	mov   r1, r4
+	mov   r2, r5
+	bl    memmove
+	mov   r1, #0
+	strb  r1, [r0, r5]
+
+@ fixme
 #ifdef CONFIG_IRQ_SUPPORT
 	@ fixme for ROM
 #ifdef INT_VECTOR_RAM_BASE

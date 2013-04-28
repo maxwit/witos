@@ -235,8 +235,7 @@ static int tftp_get_file(int argc, char **argv)
 		}
 	}
 
-	if (false == mem_only)
-		conf_store();
+	// if (false == mem_only) conf_store();
 
 	return ret;
 }

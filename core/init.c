@@ -4,6 +4,7 @@
 #include <delay.h>
 #include <dirent.h>
 #include <unistd.h>
+#include <string.h>
 #include <fcntl.h> // for mount(), fixme
 // fixme: to be removed!
 #include <syscalls.h>
@@ -99,28 +100,40 @@ int __init mount_root(const char *dev_name, const char *type,
 static int __init populate_rootfs()
 {
 	int i, ret;
-	const char *dir[] = {"/tmp", "/dev", "/boot"};
+	const char *fstab[][3] = {{"none", "/dev", "devfs"},
+						// {"mmcblk0p1", "/boot", "vfat"},
+						// {"mmcblk0p2", "/data", "ext2"}
+						};
 
 	ret = mount_root(NULL, "ramfs", MS_NODEV);
 	if (ret < 0) {
-		printf("Fetal error: fail to mount rootfs! (errno = %d)\n", ret);
+		printf("Fetal error: fail to mount rootfs! (error = %d)\n", ret);
 		return ret;
 	}
 
-	for (i = 0; i < ARRAY_ELEM_NUM(dir); i++) {
-		ret = sys_mkdir(dir[i], 0755);
+	for (i = 0; i < ARRAY_ELEM_NUM(fstab); i++) {
+		ret = sys_mkdir(fstab[i][1], 0755);
 		if (ret < 0) {
-			printf("fail to create %s!\n", dir[i]);
-			return ret;
+			printf("fail to create %s! error = %d\n", fstab[i][1], ret);
+			goto L1;
+		}
+
+		if (!strcmp(fstab[i][0], "none"))
+			ret = sys_mount(NULL, fstab[i][1], fstab[i][2], MS_NODEV);
+		else
+			ret = sys_mount(fstab[i][0], fstab[i][1], fstab[i][2], 0);
+
+		if (ret < 0) {
+			printf("\"mount %s %s %s\" failed, error = %d\n",
+				fstab[i][0], fstab[i][1], fstab[i][2], ret);
+
+			goto L1;
 		}
 	}
 
-	ret = sys_mount(NULL, "/dev", "devfs", MS_NODEV);
-	// if ...
+	return 0;
 
-	// ret = sys_mount("mmcblk0p1", "/boot", "vfat", 0);
-	// if ...
-
+L1:
 	return ret;
 }
 
@@ -128,13 +141,9 @@ int main(void)
 {
 	int ret;
 
-	ret = conf_load();
-	if (ret < 0) {
-		printf("Warning: fail to initialize system configuration!\n"
-			"Trying reset to default!\n");
-		conf_reset();
-		putchar('\n');
-	}
+	ret = conf_check();
+	if (ret < 0)
+		printf("Warning: fail to initialize system configuration!\n");
 
 	ret = system_init();
 	if (ret < 0)
@@ -143,8 +152,6 @@ int main(void)
 	ret = populate_rootfs();
 	if (ret < 0)
 		return ret;
-
-	conf_store();
 
 	// TODO: show more information of system
 	printf("%s\n", banner);

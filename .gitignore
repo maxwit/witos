@@ -5,7 +5,6 @@ g-bios.bin
 g-bios.dis
 g-bios.elf
 logo.c
-confdata.c
 *.o
 *.pdf
 *.pyc

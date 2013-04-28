@@ -108,9 +108,11 @@ int main(int argc, char *argv[])
 			return -EINVAL;
 	}
 
+#if 0
 	ret = conf_store();
 	if (ret < 0)
 		printf("Fail to save sysconf (ret = %d)!\n", ret);
+#endif
 
 	return ret;
 }

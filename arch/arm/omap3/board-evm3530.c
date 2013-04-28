@@ -66,6 +66,7 @@ static struct resource oampfb_res[] = {
 	},
 };
 
+// fixme
 static struct omapfb_panel evm_panel = {1280, 800};
 
 static struct platform_device omapfb_device = {

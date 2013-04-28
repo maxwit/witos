@@ -341,7 +341,7 @@ int main(int argc, char *argv[])
 
 	if (sync_svr) {
 		net_set_server_ip(packet.siaddr);
-		conf_store();
+		// conf_store();
 	}
 
 	ip_to_str(ip_str, remote_addr.sin_addr.s_addr);

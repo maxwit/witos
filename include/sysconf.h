@@ -1,7 +1,7 @@
 #pragma once
 
 #define GB_SYSCFG_VER    7
-#define GB_SYSCFG_MAGIC  "sysG"
+#define GB_SYSCFG_MAGIC  "[board config]"
 
 #define __SYSCONF__ __attribute__ ((__section__(".gsect_sysconfig")))
 
@@ -26,11 +26,9 @@
 #define CONF_ATTR_LEN 128
 
 // API list
-int conf_load(void);
-void conf_reset(void);
+int conf_check(void);
 int conf_get_attr(const char *attr, char val[]);
 int conf_set_attr(const char *attr, const char *val);
 int conf_add_attr(const char *attr, const char *val);
 int conf_del_attr(const char *attr);
 int conf_list_attr(void);
-int conf_store(void);

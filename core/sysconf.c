@@ -16,33 +16,21 @@
 #endif
 
 struct sysconfig {
-	char* const data;
-	bool is_dirty;
+	char *data;
 	size_t size;
 	int offset;
 };
 
-extern char _g_sysconfig[];
-extern unsigned int _g_sysconfig_len;
-
-static struct sysconfig g_config = {
-.data = _g_sysconfig,
-	.is_dirty = false,
-};
-
-static struct sysconfig *_syscfg_get()
-{
-	return &g_config;
-}
-
 static struct sysconfig *_syscfg_open()
 {
-	struct sysconfig *cfg;
+	extern unsigned long g_board_config[];
+	static struct sysconfig syscfg;
 
-	cfg = _syscfg_get();
-	cfg->offset = 0;
+	syscfg.data = (char *)g_board_config[0],
+	syscfg.size = g_board_config[1],
+	syscfg.offset = 0;
 
-	return cfg;
+	return &syscfg;
 }
 
 static int _syscfg_close(struct sysconfig *cfg)
@@ -67,7 +55,7 @@ static int _syscfg_read_line(struct sysconfig *cfg, char line[], size_t line_len
 	if (size == 0)
 		return -ENODATA;
 
-	for (i = 0; i < size && i < line_len; i++) {
+	for (i = 0; i < size && i < line_len - 1; i++) {
 		if (base[i] == '\n')
 			break;
 
@@ -115,6 +103,7 @@ static int search_attr(struct sysconfig *cfg, const char *str)
 	return -ENODATA;
 }
 
+#if 0
 int conf_del_attr(const char *attr)
 {
 	struct sysconfig *cfg;
@@ -135,7 +124,6 @@ int conf_del_attr(const char *attr)
 
 	cfg->size -= len;
 
-	cfg->is_dirty = true;
 L1:
 	_syscfg_close(cfg);
 
@@ -156,8 +144,6 @@ int conf_add_attr(const char *attr, const char *val)
 	}
 
 	cfg->size += sprintf(cfg->data + cfg->offset, "%s = %s\n", attr, val);
-
-	cfg->is_dirty = true;
 
 L1:
 	_syscfg_close(cfg);
@@ -193,13 +179,27 @@ int conf_set_attr(const char *attr, const char *val)
 
 	memcpy(cfg->data + cfg->offset - old_len, line, new_len);
 
-	cfg->is_dirty = true;
-
 L1:
 	_syscfg_close(cfg);
 
 	return ret;
 }
+#else
+int conf_add_attr(const char *attr, const char *val)
+{
+	return 0;
+}
+
+int conf_set_attr(const char *attr, const char *val)
+{
+	return 0;
+}
+
+int conf_del_attr(const char *attr)
+{
+	return 0;
+}
+#endif
 
 // TODO: add ex version:
 // int conf_get_attr_ex(char val[], const char *fmt, ...)
@@ -245,6 +245,7 @@ L1:
 	return ret < 0 ? ret : 0;
 }
 
+#if 0
 // fixme
 static inline void conf_check_add(const char *attr, const char *val)
 {
@@ -253,98 +254,28 @@ static inline void conf_check_add(const char *attr, const char *val)
 	if (conf_get_attr(attr, str) < 0)
 		conf_add_attr(attr, val);
 }
+#endif
 
-static int conf_check_default()
+// fixme: move to init.c and add __init
+int conf_check()
 {
-#ifdef CONFIG_SERVER_IP
-	conf_check_add("net.server", CONFIG_SERVER_IP);
-#endif
+	int sz;
+	struct sysconfig *cfg;
+	char line[sizeof(GB_SYSCFG_MAGIC) + 1];
 
-#ifdef CONFIG_LOCAL_IP
-	conf_check_add("net.eth0.address", CONFIG_LOCAL_IP);
-#endif
+	cfg = _syscfg_open();
+	if (!cfg)
+		return -ENOENT;
 
-#ifdef CONFIG_NET_MASK
-	conf_check_add("net.eth0.netmask", CONFIG_NET_MASK);
-#endif
-
-#ifdef CONFIG_MAC_ADDR
-	conf_check_add("net.eth0.mac", CONFIG_MAC_ADDR);
-#endif
-
-#if 0
-#ifdef CONFIG_CONSOLE_NAME
-	conf_check_add("console", CONFIG_CONSOLE_NAME);
-#endif
-#endif
-
-	return 0;
-}
-
-int conf_load()
-{
-	struct sysconfig *cfg = _syscfg_get();
-
-	if (strncmp(GB_SYSCFG_MAGIC, (char *)cfg->data, strlen(GB_SYSCFG_MAGIC)))
+	sz = _syscfg_read_line(cfg, line, sizeof(line));
+	if (sz <= 0 || strcmp(GB_SYSCFG_MAGIC, line))
 		return -EINVAL;
 
-	cfg->size = _g_sysconfig_len;
 	SC_DEBUG("sysconf: base = 0x%p, size = %d\n", cfg->data, cfg->size);
 
-	conf_check_default();
+	_syscfg_close(cfg);
 
 	return 0;
-}
-
-const char *__get_config_file(void)
-{
-	// fixme
-	return "mtdblock2";
-}
-
-// fixme: to support other storage, such as MMC, ATA, ...
-int conf_store()
-{
-	int ret, fd;
-	size_t conf_base;
-	const char *fn;
-	extern char _start[];
-	struct sysconfig *cfg = _syscfg_get();
-	struct erase_info opt;
-
-	if (!cfg->is_dirty)
-		return 0;
-
-	fn = __get_config_file();
-
-	fd = open(fn, O_WRONLY);
-	if (fd < 0) {
-		printf("Fail to open flash!\n");
-		return fd;
-	}
-
-	conf_base = cfg->data - _start;
-
-	memset(&opt, 0, sizeof(opt));
-	opt.addr = conf_base;
-	opt.len = cfg->size;
-	// opt.flags = EDF_ALLOWBB;
-
-	ret = ioctl(fd, FLASH_IOC_ERASE, &opt);
-	if (ret < 0)
-		goto L1;
-
-	lseek(fd, conf_base, SEEK_SET);
-
-	ret = write(fd, cfg->data, cfg->size);
-	if (ret < 0)
-		goto L1;
-
-	cfg->is_dirty = false;
-
-L1:
-	close(fd);
-	return ret;
 }
 
 int conf_list_attr()
@@ -358,17 +289,7 @@ int conf_list_attr()
 		printf("%s\n", line);
 	}
 
+	_syscfg_close(cfg);
+
 	return 0;
-}
-
-void conf_reset(void)
-{
-	struct sysconfig *cfg = _syscfg_get();
-
-	strcpy((char *)cfg->data, GB_SYSCFG_MAGIC); // fixme: use write_line() instead
-	cfg->size = 4;
-
-	conf_check_default();
-
-	cfg->is_dirty = true;
 }

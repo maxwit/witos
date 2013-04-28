@@ -182,7 +182,7 @@ int main(int argc, char *argv[])
 			conf_set_attr("net.eth0.mac", mac_str);
 		}
 
-		conf_store();
+		// conf_store();
 	}
 
 	show_net_info(ndev);
