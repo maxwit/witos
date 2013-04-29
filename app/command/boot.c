@@ -437,14 +437,37 @@ int main(int argc, char *argv[])
 
 	tag = begin_setup_atag(VA(ATAG_BASE));
 
-	p += sprintf(p, "console=ttyO%d ", CONFIG_UART_INDEX);
-	p += sprintf(p, "root=/dev/mmcblk0p2");
+	p += sprintf(p, "console=ttyO%d", CONFIG_UART_INDEX);
+	p += sprintf(p, " root=/dev/mmcblk0p2");
+	p += sprintf(p, " mem=64M");
 
 	tag = setup_cmdline_atag(tag, cmd_line);
 
 	end_setup_atag(tag);
 
+	printf("%s: mach = %d, commad line = %s\n",
+		__FILE__, board->mach_id, cmd_line);
+
+#if 1
 	linux_kernel(0, board->mach_id, ATAG_BASE);
+#else
+	{
+		int fd;
+
+		fd = open("/data/boot/board.inf", O_RDONLY);
+		if (fd < 0) {
+			printf("%s line %d\n", __FILE__, __LINE__);
+			return -1;
+		}
+
+		size = read(fd, (char *)linux_kernel + size, 512);
+
+		close(fd);
+
+		printf("board.inf size = %d\n", size);
+		linux_kernel((unsigned int)linux_kernel + size, size, ATAG_BASE);
+	}
+#endif
 
 	return -ENOEXEC;
 }

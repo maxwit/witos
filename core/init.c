@@ -100,7 +100,7 @@ int __init mount_root(const char *dev_name, const char *type,
 static int __init populate_rootfs()
 {
 	int i, ret;
-	const char *fs;
+	const char *device;
 	unsigned long flags;
 	// fixme
 	const char *fstab[][3] = {{"none", "/dev", "devfs"},
@@ -122,14 +122,13 @@ static int __init populate_rootfs()
 		}
 
 		flags = 0;
+		device = fstab[i][0];
 		if (!strcmp(fstab[i][0], "none")) {
-			fs = NULL;
+			device = NULL;
 			flags |= MS_NODEV;
-		} else {
-			fs = fstab[i][0];
 		}
 
-		ret = sys_mount(fs, fstab[i][1], fstab[i][2], flags);
+		ret = sys_mount(device, fstab[i][1], fstab[i][2], flags);
 		if (ret < 0) {
 			printf("Warning: \"mount %s %s %s\" failed (error = %d)\n",
 				fstab[i][0], fstab[i][1], fstab[i][2], ret);
@@ -163,8 +162,7 @@ int main(void)
 	// TODO: show more information of system
 	printf("%s\n", banner);
 
-	if (0)
-		auto_boot();
+	auto_boot();
 
 	while (1) {
 		// printf("Enter g-bios Shell.\n");
