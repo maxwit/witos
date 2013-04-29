@@ -200,12 +200,17 @@ struct iattr {
 	struct timespec	ia_ctime;
 };
 
+struct kstat {
+	loff_t size;
+};
+
 struct inode_operations {
 	int (*lookup)(struct inode *, struct dentry *, struct nameidata *);
 	int (*create)(struct inode *, struct dentry *, umode_t, struct nameidata *);
 	int (*mkdir)(struct inode *,struct dentry *, umode_t);
 	int (*rmdir)(struct inode *,struct dentry *);
 	int (*mknod)(struct inode *,struct dentry *, int, dev_t);
+	int (*getattr) (struct vfsmount *, struct dentry *, struct kstat *);
 };
 
 #define I_DIRTY_SYNC		(1 << 0)

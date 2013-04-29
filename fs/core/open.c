@@ -303,7 +303,7 @@ loff_t GAPI lseek(int fd, loff_t offset, int whence)
 	struct file *fp;
 
 	fp = fget(fd);
-	if (!fp)
+	if (!fp || !fp->f_op->lseek)
 		return -ENOENT;
 
 	if (fp->f_op->lseek)
@@ -322,6 +322,22 @@ loff_t GAPI lseek(int fd, loff_t offset, int whence)
 	default:
 		return -EINVAL;
 	}
+
+	return 0;
+}
+
+int GAPI fstat(int fd, struct stat *stat)
+{
+	struct file *fp;
+	struct inode *inode;
+
+	fp = fget(fd);
+	if (!fp)
+		return -ENOENT;
+
+	inode = fp->f_dentry->d_inode;
+
+	stat->st_size = inode->i_size;
 
 	return 0;
 }

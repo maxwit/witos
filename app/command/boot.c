@@ -3,16 +3,18 @@
 #include <malloc.h>
 #include <assert.h>
 #include <stdio.h>
-#include <image.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <linux.h>
 #include <board.h>
 #include <fs.h>
+
+#if 0
 #include <net/net.h>
 #include <net/tftp.h>
 #include <uart/uart.h>
 #include <mtd/mtd.h>
+#include <image.h>
 
 #define KERNEL_MAX_SIZE   (CONFIG_HEAP_SIZE / 4)
 
@@ -80,7 +82,7 @@ static int build_command_line(char *cmd_line, size_t max_len)
 				type = image_type_detect(image_buff, sizeof(image_buff));
 				switch (type) {
 				case IMG_YAFFS1:
-					fstype = "yafs";
+					fstype = "yaffs";
 					break;
 
 				case IMG_YAFFS2:
@@ -223,42 +225,42 @@ static ssize_t load_image(void *dst, const char *src)
 	return ret;
 }
 
-static int show_boot_args(struct tag *arm_tag)
+static int show_boot_args(struct tag *tag)
 {
 	int i = 0;
 
-	while (ATAG_NONE != arm_tag->hdr.tag) {
+	while (ATAG_NONE != tag->hdr.tag) {
 		printf("[ATAG %d] ", i);
 
-		switch (arm_tag->hdr.tag) {
+		switch (tag->hdr.tag) {
 		case ATAG_CORE:
 			printf("ATAG Begin\n");
 			break;
 
 		case ATAG_CMDLINE:
-			printf("Command Line\n%s\n", arm_tag->u.cmdline.cmdline);
+			printf("Command Line\n%s\n", tag->u.cmdline.cmdline);
 			break;
 
 		case ATAG_MEM:
 			printf("Memory\n(0x%08x, 0x%08x)\n",
-				arm_tag->u.mem.start, arm_tag->u.mem.size);
+				tag->u.mem.start, tag->u.mem.size);
 			break;
 
 		case ATAG_INITRD2:
 			printf("Initrd\n");
-			if (arm_tag->u.initrd.size)
+			if (tag->u.initrd.size)
 				printf("(0x%08x, 0x%08x)\n",
-					arm_tag->u.initrd.start, arm_tag->u.initrd.size);
+					tag->u.initrd.start, tag->u.initrd.size);
 			else
-				printf("%s (to be loaded)\n", (char *)arm_tag->u.initrd.start);
+				printf("%s (to be loaded)\n", (char *)tag->u.initrd.start);
 			break;
 
 		default:
-			printf("Invalid ATAG 0x%08x @ 0x%08x!\n", arm_tag->hdr.tag, arm_tag);
+			printf("Invalid ATAG 0x%08x @ 0x%08x!\n", tag->hdr.tag, tag);
 			return -EINVAL;
 		}
 
-		arm_tag = tag_next(arm_tag);
+		tag = tag_next(tag);
 		i++;
 	}
 
@@ -282,7 +284,7 @@ int main(int argc, char *argv[])
 	void *initrd;
 	LINUX_KERNEL_ENTRY linux_kernel;
 	const struct board_desc *board;
-	struct tag *arm_tag;
+	struct tag *tag;
 
 	while ((opt = getopt(argc, argv, "v::h")) != -1) {
 		switch (opt) {
@@ -311,7 +313,7 @@ int main(int argc, char *argv[])
 		printf("Board: name = \"%s\", ID = %d (0x%x)\n",
 			board->name, board->mach_id, board->mach_id);
 
-	arm_tag = begin_setup_atag(VA(ATAG_BASE));
+	tag = begin_setup_atag(VA(ATAG_BASE));
 
 	// parse command line
 	ret = conf_get_attr("linux.cmdline", config);
@@ -320,17 +322,17 @@ int main(int argc, char *argv[])
 	else
 		strcpy(cmd_line, config); // fixme: strncpy()
 
-	arm_tag = setup_cmdline_atag(arm_tag, cmd_line);
+	tag = setup_cmdline_atag(tag, cmd_line);
 
 	// setup mem tag
 	if (strstr(cmd_line, "mem=") == NULL)
-		arm_tag = setup_mem_atag(arm_tag);
+		tag = setup_mem_atag(tag);
 
 	// load initrd
 	ret = conf_get_attr("linux.initrd", config);
 	if (ret >= 0) {
 		if (BA_STOP == verbose) {
-			arm_tag = setup_initrd_atag(arm_tag, config, 0);
+			tag = setup_initrd_atag(tag, config, 0);
 		} else {
 			initrd = malloc(MB(8)); // fixme
 			if (!initrd) {
@@ -345,12 +347,12 @@ int main(int argc, char *argv[])
 			}
 
 			// TODO: check the initrd.img
-			arm_tag = setup_initrd_atag(arm_tag, initrd, ret);
+			tag = setup_initrd_atag(tag, initrd, ret);
 		}
 	}
 
 	// tag end
-	end_setup_atag(arm_tag);
+	end_setup_atag(tag);
 
 	if (verbose != BA_SLIENT) {
 		show_boot_args(VA(ATAG_BASE));
@@ -390,3 +392,60 @@ error:
 	GEN_DBG("boot failed! error = %d\n", ret);
 	return ret;
 }
+#else
+int main(int argc, char *argv[])
+{
+	int img_fd, ret;
+	struct stat st;
+	ssize_t size;
+	const char *img_fn = "/data/boot/zImage";
+	LINUX_KERNEL_ENTRY linux_kernel;
+	const struct board_desc *board;
+	struct tag *tag;
+	char cmd_line[1024], *p = cmd_line;
+
+	img_fd = open(img_fn, O_RDONLY);
+	if (img_fd < 0) {
+		printf("fail to open %s\n", img_fn);
+		return img_fd;
+	}
+
+	ret = fstat(img_fd, &st);
+	if (ret < 0) {
+		printf("%s line %d\n", __FILE__, __LINE__);
+		close(img_fd);
+		return ret;
+	}
+
+	linux_kernel = (LINUX_KERNEL_ENTRY)(SDRAM_BASE + 0x8000);
+
+	// ...
+	size = read(img_fd, linux_kernel, st.st_size);
+	if (size < 0) {
+		printf("%s line %d\n", __FILE__, __LINE__);
+		close(img_fd);
+		return size;
+	}
+
+	close(img_fd);
+
+	board = board_get_active();
+	if (!board) {
+		printf("not active board found!\n");
+		return -ENODEV;
+	}
+
+	tag = begin_setup_atag(VA(ATAG_BASE));
+
+	p += sprintf(p, "console=ttyO%d ", CONFIG_UART_INDEX);
+	p += sprintf(p, "root=/dev/mmcblk0p2");
+
+	tag = setup_cmdline_atag(tag, cmd_line);
+
+	end_setup_atag(tag);
+
+	linux_kernel(0, board->mach_id, ATAG_BASE);
+
+	return -ENOEXEC;
+}
+#endif

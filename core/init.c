@@ -100,6 +100,9 @@ int __init mount_root(const char *dev_name, const char *type,
 static int __init populate_rootfs()
 {
 	int i, ret;
+	const char *fs;
+	unsigned long flags;
+	// fixme
 	const char *fstab[][3] = {{"none", "/dev", "devfs"},
 						// {"mmcblk0p1", "/boot", "vfat"},
 						{"mmcblk0p2", "/data", "ext2"}
@@ -118,16 +121,18 @@ static int __init populate_rootfs()
 			goto L1;
 		}
 
-		if (!strcmp(fstab[i][0], "none"))
-			ret = sys_mount(NULL, fstab[i][1], fstab[i][2], MS_NODEV);
-		else
-			ret = sys_mount(fstab[i][0], fstab[i][1], fstab[i][2], 0);
+		flags = 0;
+		if (!strcmp(fstab[i][0], "none")) {
+			fs = NULL;
+			flags |= MS_NODEV;
+		} else {
+			fs = fstab[i][0];
+		}
 
+		ret = sys_mount(fs, fstab[i][1], fstab[i][2], flags);
 		if (ret < 0) {
 			printf("Warning: \"mount %s %s %s\" failed (error = %d)\n",
 				fstab[i][0], fstab[i][1], fstab[i][2], ret);
-
-			// goto L1;
 		}
 	}
 

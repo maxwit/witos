@@ -6,6 +6,10 @@
 #define O_WRONLY   2
 #define O_RDWR     3
 
+struct stat {
+	size_t st_size;
+};
+
 int GAPI open(const char *name, int flags, ...);
 
 int GAPI close(int fd);
@@ -21,6 +25,8 @@ int GAPI ioctl(int fd, int cmd, ...);
 #define SEEK_CUR   3
 
 loff_t GAPI lseek(int fd, loff_t offset, int whence);
+
+int GAPI fstat(int fd, struct stat *stat);
 
 int GAPI mount(const char *, const char *, const char *, unsigned long);
 
