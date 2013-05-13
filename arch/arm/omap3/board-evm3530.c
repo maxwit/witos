@@ -58,6 +58,7 @@ static struct platform_device lan9220_device = {
 };
 #endif
 
+#ifdef CONFIG_DISPLAY_OMAP3
 static struct resource oampfb_res[] = {
 	[0] = {
 		.start = DSS_BASE,
@@ -78,13 +79,16 @@ static struct platform_device omapfb_device = {
 	.init = NULL,
 	.platform_data = &evm_panel,
 };
+#endif
 
 // fixme: __INITDATA__
 static struct platform_device *evm3530_devices[] = {
 #ifdef CONFIG_LAN9220
 	&lan9220_device,
 #endif
+#ifdef CONFIG_DISPLAY_OMAP3
 	&omapfb_device,
+#endif
 };
 
 static int __init evm3530_init(struct board_desc *board)

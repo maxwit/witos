@@ -1,7 +1,0 @@
-net.eth0.address = 10.0.0.58
-net.eth0.gateway = 10.0.0.1
-net.eth0.netmask = 255.255.255.0
-net.server = 10.0.0.1
-
-linux.root = /dev/mtdblock4
-linux.console = ttyO

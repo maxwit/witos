@@ -69,8 +69,9 @@ $(dir-y):
 $(DEFCONFIG_LIST):
 	@echo "configure for board \"$(@:%_defconfig=%)\""
 	@./build/generate/defconfig.py $@
-	@cp ./build/configs/arm/$(@:%_defconfig=%)_board.inf .board.inf
 	@echo
+
+#@cp -v ./build/configs/arm/$(@:%_defconfig=%)_board.inf board.inf
 
 install: g-bios.bin
 	@mkdir -p $(IMG_DIR)

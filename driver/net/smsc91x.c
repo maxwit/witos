@@ -176,7 +176,7 @@ static int __init smsc91x_init(void)
 
 	chip_id = smsc91x_read(0xa);
 	if (chip_id != SMSC91C111_ID) {
-		printf("SMSC91X Ethernet not found!\n");
+		printf("SMSC91X Ethernet not found! ID read = 0x%04x\n", chip_id);
 		return -ENODEV;
 	}
 

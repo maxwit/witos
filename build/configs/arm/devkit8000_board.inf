@@ -1,3 +1,4 @@
+[board config]
 board.id = devkit8000
 
 linux.root = /dev/mtdblock4

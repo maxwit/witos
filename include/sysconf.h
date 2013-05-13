@@ -3,8 +3,6 @@
 #define GB_SYSCFG_VER    7
 #define GB_SYSCFG_MAGIC  "[board config]"
 
-#define __SYSCONF__ __attribute__ ((__section__(".gsect_sysconfig")))
-
 // End of the file
 #define EOF 0xFF
 

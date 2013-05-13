@@ -15,8 +15,10 @@ static int __init smsc91x_device_init(struct platform_device *pdev)
 	val |= 0x1;
 	writel(VA(GPMC_CONFIG1(1)), val);
 
-	val = 0x8 << 8 | 0x1 << 6 | 0x8;
+#if 0
+	val = 0xF << 8 | 0x1 << 6; // | 0x8;
 	writel(VA(GPMC_CONFIG7(1)), val);
+#endif
 
 	return 0;
 }
@@ -24,7 +26,7 @@ static int __init smsc91x_device_init(struct platform_device *pdev)
 //  fixme: __initdata
 static struct resource smsc91x_res[] = {
 	[0] = {
-		.start = 0x28000000,
+		.start = 0x28000000, // fixme
 		.size = 4,
 		.flag = IORESOURCE_MEM,
 	},

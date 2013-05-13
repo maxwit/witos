@@ -151,7 +151,6 @@ def parse_sysconfig(sys_cfg_file):
 		sysconfig['net.eth0.mac'] = '10:' + str(mac1) + ':' + str(mac2) + ':' + \
 							str(mac3) + ':' + str(mac4) + ':' + str(mac5)
 
-
 	for x in sysconfig:
 		sys_cfg_fd.write(x + ' = ' + sysconfig[x] + '\n')
 
@@ -200,20 +199,11 @@ if __name__ == "__main__":
 	fd_dot_cfg.close()
 
 	p = re.compile('defconfig')
-	fn_sys_cfg = p.sub('sysconfig', fn_def_cfg)
-	print fn_sys_cfg
+	fn_sys_cfg = p.sub('board.inf', fn_def_cfg)
 
 	if os.path.exists(fn_sys_cfg):
-		os.system('cp '+ fn_sys_cfg + ' .sysconfig')
+		os.system('cp -v '+ fn_sys_cfg + ' board.inf')
 	else:
-		os.system('rm .sysconfig')
+		os.system('rm board.inf')
 
-	parse_sysconfig('.sysconfig')
-
-	fn_mac_cfg = p.sub('board.inf', fn_def_cfg)
-	print fn_mac_cfg
-
-	if os.path.exists(fn_mac_cfg):
-		os.system('cp '+ fn_mac_cfg + ' .sysconfig')
-	else:
-		os.system('rm .sysconfig')
+	# parse_sysconfig('board.inf')

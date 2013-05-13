@@ -1,7 +1,7 @@
 include/autoconf.h
 .config
 .sysconfig
-.board.inf
+board.inf
 g-bios.bin
 g-bios.dis
 g-bios.elf
