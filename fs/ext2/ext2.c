@@ -413,14 +413,14 @@ static int ext2_read_super(struct super_block *sb, void *data, int flags)
 	return 0;
 }
 
-static struct dentry *ext2_mount(struct file_system_type *fs,
+struct dentry *ext2_mount(struct file_system_type *fs,
 			    int flags, const char *dev_name, void *data)
 {
 	return mount_bdev(fs, flags, dev_name, data, ext2_read_super);
 }
 
 // fixme
-static void ext2_kill_sb(struct super_block *sb)
+void ext2_kill_sb(struct super_block *sb)
 {
 }
 
@@ -719,7 +719,8 @@ error:
 #endif
 
 extern int ck_ext2_feature(uint32_t fc,uint32_t frc,uint32_t fi);
-static int ext2_check_fs_type(const char *bdev_name)
+
+int ext2_check_fs_type(const char *bdev_name)
 {
 	struct ext2_super_block *e2_sb;
 	struct bio *bio;
@@ -766,7 +767,6 @@ static int ext2_check_fs_type(const char *bdev_name)
 
 	return ret;
 }
-
 
 static struct file_system_type ext2_fs_type = {
 	.name    = "ext2",

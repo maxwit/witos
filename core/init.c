@@ -78,7 +78,7 @@ static void __init auto_boot(void)
 			break;
 
 		for (index = 0; index < 10; index++) {
-			mdelay(1000);
+			mdelay(100);
 
 			if (uart_rxbuf_count()) {
 				puts("\n");
@@ -105,7 +105,7 @@ static int __init populate_rootfs()
 	// fixme
 	const char *fstab[][3] = {{"none", "/dev", "devfs"},
 						// {"mmcblk0p1", "/boot", "vfat"},
-						{"mmcblk0p2", "/data", "ext2"}
+						{"mmcblk0p2", "/data", "ext4"}
 						};
 
 	ret = mount_root(NULL, "ramfs", MS_NODEV);

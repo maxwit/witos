@@ -397,7 +397,7 @@ int main(int argc, char *argv[])
 {
 	int img_fd, ret;
 	struct stat st;
-	ssize_t size;
+	ssize_t size, len = 0;
 	const char *img_fn = "/data/boot/zImage";
 	LINUX_KERNEL_ENTRY linux_kernel;
 	const struct board_desc *board;
@@ -420,12 +420,33 @@ int main(int argc, char *argv[])
 	linux_kernel = (LINUX_KERNEL_ENTRY)(SDRAM_BASE + 0x8000);
 
 	// ...
+#if 1
+	while (len < st.st_size) {
+		size = read(img_fd, (void *)linux_kernel + len, KB(8));
+		if (size < 0) {
+			printf("%s line %d\n", __FILE__, __LINE__);
+			close(img_fd);
+			return size;
+		} else if (size == 0) {
+			break;
+		}
+
+		len += size;
+		printf("loading %s ... %d of %d bytes\r", img_fn, len, st.st_size);
+	}
+
+	if (len > 0)
+		printf("\n");
+#else
 	size = read(img_fd, linux_kernel, st.st_size);
 	if (size < 0) {
 		printf("%s line %d\n", __FILE__, __LINE__);
 		close(img_fd);
 		return size;
 	}
+
+	printf("loading %s ... %d of %d bytes\n", img_fn, size, st.st_size);
+#endif
 
 	close(img_fd);
 
@@ -438,15 +459,19 @@ int main(int argc, char *argv[])
 	tag = begin_setup_atag(VA(ATAG_BASE));
 
 	p += sprintf(p, "console=ttyO%d", CONFIG_UART_INDEX);
-	p += sprintf(p, " root=/dev/mmcblk0p2");
-	p += sprintf(p, " mem=128M");
+	p += sprintf(p, " mem=64M");
+	p += sprintf(p, " ip=192.168.0.6:%s:%s:255.255.255.0:maxwit.com:eth0:off", argv[1], argv[1]);
+	if (argc > 1)
+		p += sprintf(p, " root=/dev/nfs rw nfsroot=%s:/maxwit/image/rootfs", argv[1]);
+	else
+		p += sprintf(p, " root=/dev/mmcblk0p2");
 
 	tag = setup_cmdline_atag(tag, cmd_line);
 
 	end_setup_atag(tag);
 
-	printf("%s: mach = %d, commad line = %s\n",
-		__FILE__, board->mach_id, cmd_line);
+	printf("%s: board = %s (id = %d), commad line = \"%s\"\n",
+		argv[0], board->name, board->mach_id, cmd_line);
 
 	linux_kernel(0, board->mach_id, ATAG_BASE);
 
