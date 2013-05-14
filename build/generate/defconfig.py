@@ -60,16 +60,16 @@ def traverse(node):
 			for n in lst:
 				traverse(n)
 
-def get_ip_address(ifname):
-	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
-	try:
-		local_ip = fcntl.ioctl(s.fileno(), 0x8915, # SIOCGIFADDR
-					struct.pack('256s', ifname[:15]))
-	except IOError:
-		return "10.0.0.1"
-
-	return socket.inet_ntoa(local_ip[20:24])
+#def get_ip_address(ifname):
+#	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+#
+#	try:
+#		local_ip = fcntl.ioctl(s.fileno(), 0x8915, # SIOCGIFADDR
+#					struct.pack('256s', ifname[:15]))
+#	except IOError:
+#		return "10.0.0.1"
+#
+#	return socket.inet_ntoa(local_ip[20:24])
 
 def parse_config(fn):
 	try:
@@ -90,17 +90,6 @@ def get_attr(substr, fd):
 			return elem[1]
 	return None
 
-#fixme
-def get_active_nic():
-	return "eth0"
-
-#fixme
-def get_net_mask(nic):
-	return "255.255.255.0"
-
-def generate_netmask(ip):
-	return "255.255.255.0"
-
 def parse_sysconfig(sys_cfg_file):
 	sysconfig = {}
 	try:
@@ -108,38 +97,6 @@ def parse_sysconfig(sys_cfg_file):
 	except:
 		print 'fail to open "%s"' % sys_cfg_file
 		exit(1)
-
-	attr = get_attr('net.eth0.method', sys_cfg_fd)
-	if attr == "dhcp":
-		return
-
-	attr = get_attr('net.server', sys_cfg_fd);
-	if attr == None:
-		nic = get_active_nic()
-		sysconfig['net.server'] = get_ip_address(nic)
-		server = sysconfig['net.server'];
-		def_netmask = get_net_mask(nic)
-	else:
-		server = attr
-
-	attr = get_attr('net.eth0.netmask', sys_cfg_fd)
-	if attr == None:
-		if def_netmask <> None:
-			sysconfig['net.eth0.netmask'] = def_netmask
-		else:
-			sysconfig['net.eth0.netmask'] = generate_netmask(server)
-
-	attr = get_attr('net.eth0.address', sys_cfg_fd)
-	if attr == None:
-		address = server
-		while address == server:
-			address = server.rsplit('.', 1)[0] + '.' + str(random.randint(1, 254))
-
-		sysconfig['net.eth0.address'] = address
-
-	attr = get_attr('net.eth0.gateway', sys_cfg_fd)
-	if attr == None:
-		sysconfig['net.eth0.gateway'] = server
 
 	attr = get_attr('net.eth0.mac', sys_cfg_fd)
 	if attr == None:
@@ -206,4 +163,4 @@ if __name__ == "__main__":
 	else:
 		os.system('rm board.inf')
 
-	# parse_sysconfig('board.inf')
+	parse_sysconfig('board.inf')

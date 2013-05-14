@@ -1,6 +1,5 @@
 [board config]
 board.id = beagle
-net.eth0.mac = 10:55:ae:8c:7b:41
 display.lcd.model = P043F1A4
 display.lcd.pixel_format = PIX_RGB16
 flash.nand.ecc_mode = NAND_ECC_NONE

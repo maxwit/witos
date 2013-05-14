@@ -4,7 +4,7 @@ MAJOR_VER = 2
 MINOR_VER = 0
 
 TOP_DIR := $(shell pwd)
-IMG_DIR := $(CONFIG_IMAGE_PATH)
+DESTDIR ?= $(CONFIG_IMAGE_PATH)
 
 CROSS_COMPILE = $(CONFIG_CROSS_COMPILE:"%"=%)
 
@@ -43,12 +43,12 @@ dir-y := arch/$(CONFIG_ARCH) mm core fs driver lib app
 
 subdir-objs := $(foreach n, $(dir-y), $(n)/$(builtin-obj))
 
-all: include/autoconf.h $(dir-y) g-bios.bin g-bios.dis
+all: g-bios.bin g-bios.dis
 	@echo
 
 include/autoconf.h: .config
 	@build/generate/autoconf.py $< $@
-	@sed -i -e '/CONFIG_CROSS_COMPILE/d' -e '/CONFIG_ARCH_VER\>/d'  $@
+	@sed -i -e '/CONFIG_CROSS_COMPILE/d' -e '/CONFIG_ARCH_VER\>/d' $@
 	@sed -i '/^$$/d' $@
 
 g-bios.bin: g-bios.elf
@@ -57,26 +57,26 @@ g-bios.bin: g-bios.elf
 g-bios.dis: g-bios.elf
 	$(OBJDUMP) -D $< > $@
 
-g-bios.elf: $(subdir-objs)
-	$(LD) $(LDFLAGS) -T arch/$(CONFIG_ARCH)/g-bios.lds -Ttext $(CONFIG_START_MEM) $^ -o $@
+g-bios.elf: include/autoconf.h $(dir-y)
+	$(LD) $(LDFLAGS) -T arch/$(CONFIG_ARCH)/g-bios.lds -Ttext $(CONFIG_START_MEM) $(subdir-objs) -o $@
 
 $(dir-y):
 	@make $(obj_build)$@
 
 .PHONY: $(dir-y)
 
-# fixme
+# fixme: not generate board.inf here
 $(DEFCONFIG_LIST):
 	@echo "configure for board \"$(@:%_defconfig=%)\""
 	@./build/generate/defconfig.py $@
 	@echo
 
-#@cp -v ./build/configs/arm/$(@:%_defconfig=%)_board.inf board.inf
+# @cp -v ./build/configs/arm/$(@:%_defconfig=%)_board.inf board.inf
 
-install: g-bios.bin
-	@mkdir -p $(IMG_DIR)
+install: g-bios.bin board.inf
+	@mkdir -p $(DESTDIR)
 	@for fn in $^; do \
-		cp -v $$fn $(IMG_DIR); \
+		cp -v $$fn $(DESTDIR); \
 	done
 	@echo
 
@@ -89,6 +89,7 @@ clean:
 
 distclean: clean
 	@rm -vf .config include/autoconf.h
+	@rm -vf board.inf
 	@echo
 
 clear:
