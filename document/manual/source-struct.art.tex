@@ -131,7 +131,7 @@ boot  flash  led  Makefile  memory  misc  net  serial  shell  sysconf
 目前g-bios仅支持arm体系结构的处理器，因此仅有arm目录。
 \begin{lstlisting}[language={SH},numbers=none]
 $ ls /g-bios/bh/arm/
-arm_heap.c  at91sam926x  exception.c  g-bios-bh.lds  head.S  lib  Makefile  omap3530  s3c24x0  s3c6410  udelay.S
+arm_heap.c  at91sam926x  exception.c  g-bios.lds  head.S  lib  Makefile  omap3530  s3c24x0  s3c6410  udelay.S
 \end{lstlisting}
 
 \begin{equation*}
@@ -141,7 +141,7 @@ arm_heap.c  at91sam926x  exception.c  g-bios-bh.lds  head.S  lib  Makefile  omap
 	&\text{arm\_heap.c：heap init} \\
 	&\text{at91sam926x} \\
 	&\text{exception.c：exception handle} \\
-	&\text{g-bios-bh.lds：编译bh所需的链接脚本。} \\
+	&\text{g-bios.lds：编译bh所需的链接脚本。} \\
 	&\text{head.S：stage 2入口} \\
 	&\text{lib：arm体系结构相关库文件} \\
 	&\text{Makefile}\\

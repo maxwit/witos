@@ -11,7 +11,7 @@ S3C64XX and S5P as cases
 \begin{enumerate}
 \item make devkit8000\_defconfig
 \item make
-\item make install将g-bios-th.bin以及g-bios-bh.bin拷贝到默认目录/var/lib/tftpboot下
+\item make install将witrom.bin以及g-bios.bin拷贝到默认目录/var/lib/tftpboot下
 \item 将SD卡插入PC，创建一个fat32分区，并将其设置为启动分区，具体步骤如下：
  \begin{enumerate}
   \item 依据读卡器的不同，sd卡插入后会在dev目录下产生sdb或者mmcblk0文件，执行如下命令sudo fdisk /dev/sdb或者/dev/mmcblk0
@@ -28,7 +28,7 @@ S3C64XX and S5P as cases
   \item 按下q键退出fdisk
   \item 执行如下命令：sudo mkfs.vfat /dev/sdb1或者/dev/mmcblk0p1，将分区格式成FAT32
  \end{enumerate}
-\item 将sd卡上的FAT32分区mount到pc上后，将g-bios-th.bin拷贝到sd的FAT32分区上，并将其改名为MLO文件
+\item 将sd卡上的FAT32分区mount到pc上后，将witrom.bin拷贝到sd的FAT32分区上，并将其改名为MLO文件
 \item umount sd卡
 \end{enumerate}
 从SD卡启动方法如下：

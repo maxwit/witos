@@ -108,7 +108,7 @@ def usage():
 	print '	' + sys.argv[0] + ' th.bin bh.bin -o flash.img'
 	print '	' + sys.argv[0] + ' th.bin bh.bin -o flash.img -p 2048'
 
-# 512K(g-bios-th)
+# 512K(witrom)
 def get_val(p):
 	string = p.split('(')[0]
 	K = 1024

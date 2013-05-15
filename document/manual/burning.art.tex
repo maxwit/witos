@@ -48,7 +48,7 @@ g-bios上半部主要是Load下半部，为下半部服务。Load BH的方式有
 		\centering
 		\includegraphics[width=0.8\textwidth]{image/min_05.eps}
 		\end{figure}
-	\item 输入/var/lib/tftpboot/g-bios-bh.bin。回车。此处输入的为g-bios-bh.bin文件的路径，可视具体情况更改。
+	\item 输入/var/lib/tftpboot/g-bios.bin。回车。此处输入的为g-bios.bin文件的路径，可视具体情况更改。
 		\begin{figure}[H]
 		\centering
 		\includegraphics[width=0.8\textwidth]{image/min_06.eps}
@@ -81,7 +81,7 @@ C-kermit>c (`回车`)
 \includegraphics[width=5in]{image/step2.eps}
 \end{figure}
 
-\noindent{}注：g-bios的上半部会自动检测Flash上是否已烧录下半部g-bios-bh.bin，若下半部已烧录则直接从Flash上将下半部Load到Sdram并运行，若未烧录则如上图所示，提示下半部未烧录，并需要通过从串口Load下半部并启动。下半部支持通过网络和串口两种方式烧录指定文件到Flash中。也在上半部启动过程中按任意键启动串口Load的功能.
+\noindent{}注：g-bios的上半部会自动检测Flash上是否已烧录下半部g-bios.bin，若下半部已烧录则直接从Flash上将下半部Load到Sdram并运行，若未烧录则如上图所示，提示下半部未烧录，并需要通过从串口Load下半部并启动。下半部支持通过网络和串口两种方式烧录指定文件到Flash中。也在上半部启动过程中按任意键启动串口Load的功能.
 
 \noindent{}第三步，选择``k''回车, 然后同时按下``CTRL''和``\textbackslash''键, 再按下``c''\\
 
@@ -91,7 +91,7 @@ C-kermit>c (`回车`)
 \end{figure}
 
 \begin{lstlisting}[language=bash,numbers=none]
-C-Kermit> send g-bios-bh.bin
+C-Kermit> send g-bios.bin
 \end{lstlisting}
 进入g-bios下半部的启动界面，按任意键进入g-bios的命令行，否则g-bios将会自动load kernel并启动（如图）
 

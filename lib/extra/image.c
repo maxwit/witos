@@ -100,12 +100,12 @@ static bool check_yaffs1_image(const void *imagebuf)
 image_t image_type_detect(const void *data, size_t size)
 {
 	if (GTH_MAGIC == *(const __u32 *)(data + GTH_MAGIC_OFFSET)) {
-		GEN_DBG("g-bios-th image\n");
+		GEN_DBG("witrom image\n");
 		return IMG_GTH;
 	}
 
 	if (GBH_MAGIC == *(const __u32 *)(data + GBH_MAGIC_OFFSET)) {
-		GEN_DBG("g-bios-bh image\n");
+		GEN_DBG("g-bios image\n");
 		return IMG_GBH;
 	}
 

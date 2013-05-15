@@ -109,16 +109,16 @@ if __name__ == "__main__":
 	fs_type = sys.argv[1]
 	sd_image_name = sys.argv[2]
 
-	if os.path.exists("g-bios-th.bin"):
-		th_image = "g-bios-th.bin"
+	if os.path.exists("witrom.bin"):
+		th_image = "witrom.bin"
 	else:
-		print "g-bios-th.bin does not exists"
+		print "witrom.bin does not exists"
 		sys.exit()
 
-	if os.path.exists("g-bios-bh.bin"):
-		bh_image = "g-bios-bh.bin"
+	if os.path.exists("g-bios.bin"):
+		bh_image = "g-bios.bin"
 	else:
-		print "g-bios-bh.bin does not exists"
+		print "g-bios.bin does not exists"
 		sys.exit()
 
 	if os.path.exists(sd_image_name):
