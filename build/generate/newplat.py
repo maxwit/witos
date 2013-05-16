@@ -26,7 +26,7 @@ def create_defconfig(arch, soc):
 				'CONFIG_ARCH_VER = ' + soc_info_lists[2] + '\n' \
 				'CONFIG_IRQ_SUPPORT = y\n' \
 				'\n' \
-				'CONFIG_CROSS_COMPILE = arm-maxwit-linux-gnueabi-\n' \
+				'CONFIG_CROSS_COMPILE = arm-linux-\n' \
 				'\n' \
 				'\n' \
 				'CONFIG_START_MEM = ' + soc_info_lists[4] + '\n' \

@@ -3,7 +3,7 @@
 	<choice name="ARCH" default="ARM">
 		<config name="ARM" bool="y">
 			<!--config name="ARCH" string="ARM"/-->
-			<config name="CORSS_COMPILE" string="arm-maxwit-linux-gnueabi-"/>
+			<config name="CORSS_COMPILE" string="arm-linux-"/>
 			<choice name="PLAT">
 				<config name="AT91SAM9261" bool="y">
 					<config name="ARCH_VER" string="armv5te"/>
