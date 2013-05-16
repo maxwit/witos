@@ -460,11 +460,13 @@ int main(int argc, char *argv[])
 
 	p += sprintf(p, "console=ttyO%d", CONFIG_UART_INDEX);
 	p += sprintf(p, " mem=64M");
-	p += sprintf(p, " ip=192.168.0.6:%s:%s:255.255.255.0:maxwit.com:eth0:off", argv[1], argv[1]);
-	if (argc > 1)
+	if (argc > 1) {
+		p += sprintf(p, " ip=192.168.0.6:%s:%s:255.255.255.0:maxwit.com:eth0:off", argv[1], argv[1]);
 		p += sprintf(p, " root=/dev/nfs rw nfsroot=%s:/maxwit/image/rootfs", argv[1]);
-	else
+	} else {
+		// p += sprintf(p, " ip=dhcp");
 		p += sprintf(p, " root=/dev/mmcblk0p2");
+	}
 
 	tag = setup_cmdline_atag(tag, cmd_line);
 
