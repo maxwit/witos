@@ -4,7 +4,7 @@ include .config
 
 path := $(patsubst %/,%,$(path))
 
-cmd_dir := app/command
+cmd_dir := command
 
 # check if $(path) is the sub directory of app
 # ifeq ($(patsubst $(cmd_dir)%,$(cmd_dir),$(path)),$(cmd_dir))

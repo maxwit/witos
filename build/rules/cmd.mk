@@ -12,7 +12,7 @@ tmp_dir := /tmp
 dst_src = $(tmp_dir)/$^
 cmd_name = $(patsubst $(path)/%.c,%,$^)
 
-CFLAGS += -include shell.h
+CFLAGS += -include shell.h -include task.h
 
 %.o: %.c
 	@cp --parents $^ $(tmp_dir)

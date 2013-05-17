@@ -39,7 +39,7 @@ DEFCONFIG_LIST = $(shell cd $(DEFCONFIG_PATH) && ls *_defconfig)
 
 include build/rules/common.mk
 
-dir-y := arch/$(CONFIG_ARCH) mm core fs driver lib app
+dir-y := arch/$(CONFIG_ARCH) mm core fs driver lib shell command
 
 subdir-objs := $(foreach n, $(dir-y), $(n)/$(builtin-obj))
 

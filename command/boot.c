@@ -224,8 +224,9 @@ static ssize_t load_image(void *dst, const char *src)
 
 	return ret;
 }
+#endif
 
-static int show_boot_args(struct tag *tag)
+static int show_atags(const struct tag *tag)
 {
 	int i = 0;
 
@@ -276,6 +277,7 @@ static inline int prepare()
 	return 0;
 }
 
+#if 0
 int main(int argc, char *argv[])
 {
 	int ret = -EIO, opt;
@@ -355,7 +357,7 @@ int main(int argc, char *argv[])
 	end_setup_atag(tag);
 
 	if (verbose != BA_SLIENT) {
-		show_boot_args(VA(ATAG_BASE));
+		show_atags(VA(ATAG_BASE));
 		if (BA_STOP == verbose)
 			return 0;
 	}
@@ -395,15 +397,72 @@ error:
 #else
 int main(int argc, char *argv[])
 {
-	int img_fd, ret;
+	int img_fd;
+	int ret, opt;
 	struct stat st;
 	ssize_t size, len = 0;
-	const char *img_fn = "/data/boot/zImage";
+	const char *img_fn = "/data/boot/zImage"; // fixme
 	LINUX_KERNEL_ENTRY linux_kernel;
 	const struct board_desc *board;
-	struct tag *tag;
+	struct tag *tag, *const tag_base = VA(ATAG_BASE);
 	char cmd_line[1024], *p = cmd_line;
+	const char *nfs = NULL;
 
+	while ((opt = getopt(argc, argv, "n::h")) != -1) {
+		switch (opt) {
+		case 'n': // -n [[<ip>][:<path>]]
+			if (optarg)
+				nfs = optarg;
+			else
+				nfs = "192.168.0.106"; // fixme;
+			break;
+
+		default:
+			printf("Invalid option \'%c\'\n", opt);
+		case 'h':
+			usage();
+			return 0;
+		}
+	}
+
+	linux_kernel = (LINUX_KERNEL_ENTRY)(SDRAM_BASE + 0x8000);
+
+	board = board_get_active();
+	if (!board) {
+		printf("not active board found!\n");
+		return -ENODEV;
+	}
+
+	printf("%s: board = \"%s\" (id = %d)\n",
+		argv[0], board->name, board->mach_id);
+
+	// setup atags
+	tag = begin_setup_atag(tag_base);
+
+	p += sprintf(p, "console=ttyO%d", CONFIG_UART_INDEX);
+
+	if (nfs) {
+		p += sprintf(p, " root=/dev/nfs rw"
+					" nfsroot=%s:/maxwit/image/rootfs", nfs);
+
+		if (1) // fixme
+			p += sprintf(p, " ip=dhcp");
+		else
+			p += sprintf(p, " ip=192.168.0.6:%s:%s:255.255.255.0"
+					":maxwit.com:eth0:off", nfs, nfs);
+	} else {
+		p += sprintf(p, " root=/dev/mmcblk0p2 rootwait");
+	}
+
+	tag = setup_cmdline_atag(tag, cmd_line);
+
+	tag = setup_mem_atag(tag);
+
+	end_setup_atag(tag);
+
+	show_atags(tag_base);
+
+	// load the kernel now!
 	img_fd = open(img_fn, O_RDONLY);
 	if (img_fd < 0) {
 		printf("fail to open %s\n", img_fn);
@@ -417,17 +476,16 @@ int main(int argc, char *argv[])
 		return ret;
 	}
 
-	linux_kernel = (LINUX_KERNEL_ENTRY)(SDRAM_BASE + 0x8000);
-
 	// ...
-#if 1
 	while (len < st.st_size) {
 		size = read(img_fd, (void *)linux_kernel + len, KB(8));
-		if (size < 0) {
-			printf("%s line %d\n", __FILE__, __LINE__);
-			close(img_fd);
-			return size;
-		} else if (size == 0) {
+		if (size <= 0) {
+			if (size < 0) {
+				printf("%s line %d\n", __FILE__, __LINE__);
+				close(img_fd);
+				return size;
+			}
+
 			break;
 		}
 
@@ -437,45 +495,12 @@ int main(int argc, char *argv[])
 
 	if (len > 0)
 		printf("\n");
-#else
-	size = read(img_fd, linux_kernel, st.st_size);
-	if (size < 0) {
-		printf("%s line %d\n", __FILE__, __LINE__);
-		close(img_fd);
-		return size;
-	}
-
-	printf("loading %s ... %d of %d bytes\n", img_fn, size, st.st_size);
-#endif
 
 	close(img_fd);
 
-	board = board_get_active();
-	if (!board) {
-		printf("not active board found!\n");
-		return -ENODEV;
-	}
-
-	tag = begin_setup_atag(VA(ATAG_BASE));
-
-	p += sprintf(p, "console=ttyO%d", CONFIG_UART_INDEX);
-	p += sprintf(p, " mem=64M");
-	if (argc > 1) {
-		p += sprintf(p, " ip=192.168.0.6:%s:%s:255.255.255.0:maxwit.com:eth0:off", argv[1], argv[1]);
-		p += sprintf(p, " root=/dev/nfs rw nfsroot=%s:/maxwit/image/rootfs", argv[1]);
-	} else {
-		// p += sprintf(p, " ip=dhcp");
-		p += sprintf(p, " root=/dev/mmcblk0p2");
-	}
-
-	tag = setup_cmdline_atag(tag, cmd_line);
-
-	end_setup_atag(tag);
-
-	printf("%s: board = %s (id = %d), commad line = \"%s\"\n",
-		argv[0], board->name, board->mach_id, cmd_line);
-
-	linux_kernel(0, board->mach_id, ATAG_BASE);
+	// boot!
+	prepare();
+	linux_kernel(0, board->mach_id, (unsigned long)tag_base);
 
 	return -ENOEXEC;
 }
