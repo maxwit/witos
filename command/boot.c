@@ -238,6 +238,10 @@ static int show_atags(const struct tag *tag)
 			printf("ATAG Begin\n");
 			break;
 
+		case ATAG_NONE:
+			printf("ATAG End\n");
+			break;
+
 		case ATAG_CMDLINE:
 			printf("Command Line\n%s\n", tag->u.cmdline.cmdline);
 			break;
