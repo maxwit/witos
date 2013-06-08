@@ -165,7 +165,7 @@ int main(void)
 	auto_boot();
 
 	while (1) {
-		// printf("Enter g-bios Shell.\n");
+		printf("\nEnter g-bios Shell.\n");
 		shell();
 	}
 
