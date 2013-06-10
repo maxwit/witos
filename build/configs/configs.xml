@@ -79,7 +79,7 @@
 		<config name="MMC_AT91" bool="n"/>
 	</config>
 	<config name="NET" bool="y">
-		<config name="NFS_ROOT" string="/maxwit/target/rootfs"/>
+		<config name="NFS_ROOT" string="/maxwit/image/rootfs"/>
 		<config name="IMAGE_PATH" string="/maxwit/image"/>
 	</config>
 </config>

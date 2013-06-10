@@ -27,7 +27,7 @@ class switch(object):
 # make image class
 class nand_image:
 	def __init__ (self):
-		self.flash_image_name = ""
+		self.flash_image_name = "/maxwit/image/nand.img"
 
 		# default size
 		self.flash_page_size   = 2048
@@ -131,7 +131,7 @@ def get_val(p):
 def get_parts():
 	parts = {}
 	try:
-		sys_file = open(".sysconfig", 'r')
+		sys_file = open("board.inf", 'r')
 	except:
 		print "fail to open sysconfig"
 		exit(1)
@@ -208,8 +208,7 @@ if __name__ == "__main__":
 		print "create image ..."
 		nand_img.create()  # make image
 	else:
-		print nand_img.flash_image_name, "exists"
-		ret = raw_input("Remaster (y or n): ")
+		ret = raw_input(nand_img.flash_image_name + " exists, overwrite it? (y or n): ")
 		if ret == "y":
 			print "create image ..."
 			nand_img.create()  # make image
