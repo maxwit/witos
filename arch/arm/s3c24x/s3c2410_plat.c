@@ -1,6 +1,7 @@
 #include <io.h>
 #include <irq.h>
 #include <init.h>
+#include <platform.h>
 
 static struct resource dm9000_res[] = {
 	[0] = {
