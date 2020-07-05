@@ -16,10 +16,10 @@ def traverse(node):
 	if node.tag == 'choice':
 		lst = node.getchildren()
 
-		if config.has_key(node.attrib['name']):
+		if node.attrib['name'] in config:
 			default_node = config[node.attrib['name']]
 		else:
-			if node.attrib.has_key('default'):
+			if 'default' in node.attrib:
 				default_node = node.attrib['default']
 			else:
 				default_node = lst[0].attrib['name']
@@ -36,24 +36,24 @@ def traverse(node):
 	else:
 		dfs = True
 		if node.tag == 'config':
-			try: # if node.attrib.has_key('name'): # if -> try:
+			try: # if 'name' in node.attrib: # if -> try:
 				key = node.attrib['name']
-				if config.has_key(key) == False:
-					if node.attrib.has_key('string'):
+				if key in config:
+					if 'string' in node.attrib:
 						config[key] = '"' + node.attrib['string'] + '"'
-					elif node.attrib.has_key('bool'):
+					elif 'bool' in node.attrib:
 						if node.attrib['bool'] == "y":
 							config[key] = node.attrib['bool']
 						else:
 							dfs = False
-					elif node.attrib.has_key('int'):
+					elif 'int' in node.attrib:
 						config[key] = node.attrib['int']
 					else:
-						print 'Invalid node!'
-						print node
+						print('Invalid node!')
+						print(node)
 			except:
-				print 'Invalid node!'
-				print node
+				print('Invalid node!')
+				print(node)
 
 		if dfs == True:
 			lst = node.getchildren()
@@ -75,7 +75,7 @@ def parse_config(fn):
 	try:
 		tree = ElementTree.parse(fn)
 	except:
-		print "fail to parse " + fn + "!"
+		print("fail to parse " + fn + "!")
 		exit(1)
 
 	root = tree.getroot()
@@ -85,18 +85,15 @@ def parse_config(fn):
 
 def get_attr(substr, fd):
 	for line in fd:
-		if re.match(substr, line) <> None:
+		if re.match(substr, line) != None:
 			elem = re.split('\s*=\s*', line.replace('\n',''))
 			return elem[1]
 	return None
 
 def parse_sysconfig(sys_cfg_file):
 	sysconfig = {}
-	try:
-		sys_cfg_fd = open(sys_cfg_file, 'aw+')
-	except:
-		print 'fail to open "%s"' % sys_cfg_file
-		exit(1)
+
+	sys_cfg_fd = open(sys_cfg_file, 'w+')
 
 	attr = get_attr('net.eth0.mac', sys_cfg_fd)
 	if attr == None:
@@ -116,24 +113,19 @@ def parse_sysconfig(sys_cfg_file):
 
 if __name__ == "__main__":
 	if os.getenv('USER') == 'root':
-		print 'cannot run as root!'
+		print('cannot run as root!')
 		exit(1)
 
-	if len(sys.argv) <> 2:
-		print "Usage: ..."
+	if len(sys.argv) != 2:
+		print("Usage: ...")
 		exit(1)
 
 	fn_def_cfg = 'build/configs/arm/' + sys.argv[1]
 
-	try:
-		fd_def_cfg = open(fn_def_cfg)
-	except:
-		print 'fail to open "%s"' % fn_def_cfg
-		# parse_config("build/configs/configs.xml")
-		exit(1)
+	fd_def_cfg = open(fn_def_cfg)
 
 	for line in fd_def_cfg:
-		if re.match(r'^CONFIG_', line) <> None:
+		if re.match(r'^CONFIG_', line) != None:
 			elem = re.split('\s*=\s*', re.sub('^CONFIG_', '', line.replace('\n','')))
 			config[elem[0]] = elem[1]
 
@@ -141,13 +133,13 @@ if __name__ == "__main__":
 
 	parse_config("build/configs/configs.xml")
 
-	# print config
-	# print 'configure %s (%s).' % (config['BOARD'], config['ARCH'])
+	# print(config)
+	# print('configure %s (%s).' % (config['BOARD'], config['ARCH']))
 
 	try:
 		fd_dot_cfg = open('.config', 'w')
 	except:
-		print 'fail to open .config file'
+		print('fail to open .config file')
 		exit(1)
 
 	for x in config:

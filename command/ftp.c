@@ -457,10 +457,11 @@ int main(int argc, char *argv[])
 
 	ret = argc - 1;
 
-	if (argc >= 2 && (!strncmp(argv[ret], "user", 4)  || *(argv[ret]) == '@') )
+	if (argc >= 2 && (!strncmp(argv[ret], "user", 4)  || *(argv[ret]) == '@') ) {
 		ret = get_arg(argv[ret], &fopt);
 		if (ret < 0)
 			return ret;
+	}
 
 	while((ch = getopt(argc, argv, "f:m:v:h")) != -1) {
 

@@ -3,7 +3,7 @@
 # Usage:
 #   $0 .config autoconf.h
 
-import os, sys, string
+import os, sys
 import mw_socs
 
 def get_plat():
@@ -17,7 +17,7 @@ def get_plat():
 def generate_autoconf(dot_conf, auto_conf, plat_info):
 	fd1 = open(dot_conf, 'r')
 	fd2 = open(auto_conf, 'w')
-	plat_info = string.split(plat_info, ' ')
+	plat_info = plat_info.split()
 	plat = plat_info[0]	
 	arch = plat_info[1]
 	# check
@@ -30,7 +30,7 @@ def generate_autoconf(dot_conf, auto_conf, plat_info):
 		if length == 0:
 			break;
 		if length > 1 and str[0] != '#':
-			str = string.replace(str, ' ', '')
+			str = str.replace(' ', '')
 			str = str.split('=')
 			if len(str) == 2 and str[1] == "y\n":
 				fd2.write('#define ' + str[0] + '\n')
@@ -48,7 +48,7 @@ def generate_autoconf(dot_conf, auto_conf, plat_info):
 
 if __name__ == "__main__":
 	if len(sys.argv) != 3:
-		print "usage: " + sys.argv[0] + ' .config autoconf.h'
+		print("usage: " + sys.argv[0] + ' .config autoconf.h')
 		sys.exit()
 
 	dot_config = sys.argv[1]
@@ -56,7 +56,7 @@ if __name__ == "__main__":
 
 	plat = get_plat()
 	if plat == "null":
-		print "Platform not specified!"
+		print("Platform not specified!")
 		sys.exit()
 
 	generate_autoconf(dot_config, auto_config, plat)

@@ -24,7 +24,7 @@ CFLAGS = -ffreestanding -nostdinc -nostdlib -fno-builtin -I$(TOP_DIR)/include -i
 
 ASFLAGS = $(CFLAGS) -D__ASSEMBLY__
 
-LDFLAGS = -m armelf_linux_eabi
+# LDFLAGS = -m armelf_linux_eabi
 
 builtin-obj = built-in.o
 
