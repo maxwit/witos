@@ -2,6 +2,7 @@
 #include <list.h>
 #include <init.h>
 #include <spi.h>
+#include <platform.h>
 
 #ifdef CONFIG_SPI
 static struct spi_master mw61_spi_master[] = {
@@ -21,10 +22,29 @@ static struct spi_slave mw61_spi_slave[] = {
 #define CONFIG_DM9000_IRQ        INT_EINT(7)
 #define DM9000_PHYS_BASE         0x18000000
 
+// FIXME: to be checked
+static struct resource dm9000_res[] = {
+	[0] = {
+		.start = DM9000_PHYS_BASE,
+		.size = 4,
+		.flag = IORESOURCE_MEM,
+	},
+	[1] = {
+		.start = DM9000_PHYS_BASE + 4,
+		.size = 4,
+		.flag = IORESOURCE_MEM,
+	},
+	[2] = {
+		.start = CONFIG_DM9000_IRQ,
+		.size = 1,
+		.flag = IORESOURCE_IRQ,
+	},
+};
+
 static struct platform_device dm9000_device = {
 	.dev = {
-		.mem = DM9000_PHYS_BASE,
-		.irq = CONFIG_DM9000_IRQ,
+		.resources = dm9000_res,
+		.res_num = ARRAY_ELEM_NUM(dm9000_res),
 	},
 	.name = "dm9000",
 };
