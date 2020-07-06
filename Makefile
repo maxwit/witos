@@ -14,7 +14,7 @@ LD = $(CROSS_COMPILE)ld
 OBJDUMP = $(CROSS_COMPILE)objdump
 OBJCOPY = $(CROSS_COMPILE)objcopy
 
-CFLAGS = -ffreestanding -nostdinc -nostdlib -fno-builtin -I$(TOP_DIR)/include -include g-bios.h -D__GBIOS_VER__=\"$(MAJOR_VER).$(MINOR_VER)\" -D__LITTLE_ENDIAN -O2 -Wall -Werror -std=gnu99 -mno-thumb-interwork -march=$(CONFIG_ARCH_VER) -mabi=aapcs-linux -mpoke-function-name
+CFLAGS = -ffreestanding -nostdinc -nostdlib -fno-builtin -I$(TOP_DIR)/include -include witos.h -D__GBIOS_VER__=\"$(MAJOR_VER).$(MINOR_VER)\" -D__LITTLE_ENDIAN -O2 -Wall -Werror -std=gnu99 -mno-thumb-interwork -march=$(CONFIG_ARCH_VER) -mabi=aapcs-linux -mpoke-function-name
 
 #ifeq ($(CONFIG_DEBUG),y)
 #	CFLAGS += -DCONFIG_DEBUG
@@ -43,7 +43,7 @@ dir-y := arch/$(CONFIG_ARCH) mm core fs driver lib shell command
 
 subdir-objs := $(foreach n, $(dir-y), $(n)/$(builtin-obj))
 
-all: g-bios.bin g-bios.dis
+all: witos.bin witos.dis
 	@echo
 
 include/autoconf.h: .config
@@ -51,14 +51,14 @@ include/autoconf.h: .config
 	@sed -i -e '/CONFIG_CROSS_COMPILE/d' -e '/CONFIG_ARCH_VER\>/d' $@
 	@sed -i '/^$$/d' $@
 
-g-bios.bin: g-bios.elf
+witos.bin: witos.elf
 	$(OBJCOPY) -O binary -S $< $@
 
-g-bios.dis: g-bios.elf
+witos.dis: witos.elf
 	$(OBJDUMP) -D $< > $@
 
-g-bios.elf: include/autoconf.h $(dir-y)
-	$(LD) $(LDFLAGS) -T arch/$(CONFIG_ARCH)/g-bios.lds -Ttext $(CONFIG_START_MEM) $(subdir-objs) -o $@
+witos.elf: include/autoconf.h $(dir-y)
+	$(LD) $(LDFLAGS) -T arch/$(CONFIG_ARCH)/witos.lds -Ttext $(CONFIG_START_MEM) $(subdir-objs) -o $@
 
 $(dir-y):
 	@make $(obj_build)$@
@@ -73,7 +73,7 @@ $(DEFCONFIG_LIST):
 
 # @cp -v ./build/configs/arm/$(@:%_defconfig=%)_board.inf board.inf
 
-install: g-bios.bin board.inf
+install: witos.bin board.inf
 	@mkdir -p $(DESTDIR)
 	@for fn in $^; do \
 		cp -v $$fn $(DESTDIR); \
@@ -84,7 +84,7 @@ clean:
 	@for dir in $(dir-y); do \
 		make $(obj_build)$$dir clean; \
 	 done
-	@rm -vf g-bios.*
+	@rm -vf witos.*
 	@echo
 
 distclean: clean
