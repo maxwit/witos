@@ -2,9 +2,9 @@ include/autoconf.h
 .config
 .sysconfig
 board.inf
-g-bios.bin
-g-bios.dis
-g-bios.elf
+witos.bin
+witos.dis
+witos.elf
 logo.c
 *.o
 *.pdf

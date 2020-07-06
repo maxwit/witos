@@ -33,7 +33,7 @@ MAKEFLAGS = --no-print-directory
 export AS CC LD OBJDUMP OBJCOPY ASFLAGS CFLAGS LDFLAGS MAKEFLAGS
 export builtin-obj TOP_DIR
 
-# fixme
+# FIXME
 DEFCONFIG_PATH = build/configs/arm
 DEFCONFIG_LIST = $(shell cd $(DEFCONFIG_PATH) && ls *_defconfig)
 
@@ -43,7 +43,7 @@ dir-y := arch/$(CONFIG_ARCH) mm core fs driver lib shell command
 
 subdir-objs := $(foreach n, $(dir-y), $(n)/$(builtin-obj))
 
-all: witos.bin witos.dis
+all: witos.bin
 	@echo
 
 include/autoconf.h: .config
@@ -53,9 +53,6 @@ include/autoconf.h: .config
 
 witos.bin: witos.elf
 	$(OBJCOPY) -O binary -S $< $@
-
-witos.dis: witos.elf
-	$(OBJDUMP) -D $< > $@
 
 witos.elf: include/autoconf.h $(dir-y)
 	$(LD) $(LDFLAGS) -T arch/$(CONFIG_ARCH)/witos.lds -Ttext $(CONFIG_START_MEM) $(subdir-objs) -o $@
