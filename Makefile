@@ -46,6 +46,10 @@ subdir-objs := $(foreach n, $(dir-y), $(n)/$(builtin-obj))
 all: witos.bin
 	@echo
 
+list-defconfig:
+	@for cfg in $(DEFCONFIG_LIST); do echo $$cfg; done
+	@echo
+
 include/autoconf.h: .config
 	@build/generate/autoconf.py $< $@
 	@sed -i -e '/CONFIG_CROSS_COMPILE/d' -e '/CONFIG_ARCH_VER\>/d' $@
@@ -64,8 +68,8 @@ $(dir-y):
 
 # fixme: not generate board.inf here
 $(DEFCONFIG_LIST):
-	@echo "configure for board \"$(@:%_defconfig=%)\""
-	@./build/generate/defconfig.py $@
+	@cp -v build/configs/arm/$@ .config
+	@cp -v build/configs/arm/$(@:%_defconfig=%)_board.inf board.inf
 	@echo
 
 # @cp -v ./build/configs/arm/$(@:%_defconfig=%)_board.inf board.inf
