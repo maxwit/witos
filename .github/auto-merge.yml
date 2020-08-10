@@ -1,0 +1,9 @@
+minApprovals:
+  MEMBER: 1
+  COLLABORATOR: 1
+updateBranch: true
+mergeMethod: squash
+mergeCommitMessage: |
+  {title} (PR #{number})
+  {body}
+deleteBranchAfterMerge: true
