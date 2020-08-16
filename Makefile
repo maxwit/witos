@@ -64,7 +64,6 @@ witos.elf: include/autoconf.h $(dir-y)
 $(dir-y):
 	@make $(obj_build)$@
 
-.PHONY: $(dir-y)
 
 # fixme: not generate board.inf here
 $(DEFCONFIG_LIST):
@@ -73,6 +72,9 @@ $(DEFCONFIG_LIST):
 	@echo
 
 # @cp -v ./build/configs/arm/$(@:%_defconfig=%)_board.inf board.inf
+
+menuconfig:
+	$(MAKE) -f Makefile.kconfig $@
 
 install: witos.bin board.inf
 	@mkdir -p $(DESTDIR)
@@ -86,6 +88,7 @@ clean:
 		make $(obj_build)$$dir clean; \
 	 done
 	@rm -vf witos.*
+	@$(MAKE) -f Makefile.kconfig $@
 	@echo
 
 distclean: clean

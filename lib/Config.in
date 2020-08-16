@@ -1,0 +1,30 @@
+config CONFIG_LIB
+	bool
+	default y
+
+config CONFIG_LIB_DISPLAY
+	bool "display lib"
+
+config CONFIG_LIB_FLASH
+	bool "flash lib"
+
+config CONFIG_LIB_FS
+	bool "filesystem lib"
+
+config CONFIG_LIB_LINUX
+	bool "linux lib"
+
+config CONFIG_LIB_NET
+	bool "net lib"
+
+config CONFIG_LIB_STD
+	bool "std lib"
+
+config CONFIG_LIB_UART
+	bool "uart lib"
+
+config CONFIG_LIB_UNISTD
+	bool "unistd lib"
+
+config CONFIG_LIB_EXTRA
+	bool "extra lib"

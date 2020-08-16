@@ -1,0 +1,21 @@
+mainmenu "WitOS Configuration"
+
+menu "Processor type and features"
+source "arch/Config.in"
+endmenu
+
+menu "Device Drivers"
+source "driver/Config.in"
+endmenu
+
+menu "File systems"
+source "fs/Config.in"
+endmenu
+
+menu "System libs"
+source "lib/Config.in"
+endmenu
+
+menu "System commands"
+source "shell/Config.in"
+endmenu

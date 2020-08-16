@@ -1,0 +1,72 @@
+config CONFIG_ARCH
+	string
+	default "arm"
+
+config CONFIG_ARM
+	bool
+	default y
+
+config CONFIG_CROSS_COMPILE
+	string "cross compile"
+	default "arm-none-eabi-"
+
+config CONFIG_ARCH_VER
+	string 
+	default "armv6k" if CONFIG_ARMV6K
+	default "armv5te" if CONFIG_ARMV5TE
+
+choice
+	prompt "arm version"
+	default CONFIG_ARMV6K
+
+config CONFIG_ARMV5TE
+	bool "armv6k"
+
+config CONFIG_ARMV6K
+	bool "armv5te"
+endchoice
+
+
+config CONFIG_IRQ_SUPPORT
+	bool "irq support"
+
+
+config CONFIG_START_MEM
+	int
+	default 0x33F80000 if CONFIG_S3C2410
+	default 0x53000000 if CONFIG_S3C6410
+
+choice
+	prompt "ARCH SoC"
+	default CONFIG_S3C6410
+
+config CONFIG_S3C2410
+	bool "S3C2410 SOC"
+
+config CONFIG_S3C6410
+	bool "S3C6410 SOC"
+endchoice
+
+
+choice
+	prompt "Board"
+	default CONFIG_BOARD_MW61
+
+config CONFIG_BOARD_MW61
+	bool "S3C2410 board"
+
+config CONFIG_BOARD_MW71 
+	bool "S3C6410 board"
+
+config CONFIG_BOARD_DEVKIT8000
+	bool "devkit8000 board"
+
+config CONFIG_BOARD_MINI6410
+	bool "mini6410 board"
+
+config CONFIG_BOARD_EVM3530
+	bool "evm3530 board"
+
+config CONFIG_BOARD_BEAGLE
+	bool "beagle board"
+endchoice
