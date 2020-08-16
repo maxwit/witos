@@ -1,0 +1,13 @@
+config CONFIG_FS
+	bool
+	default y
+
+config CONFIG_EXT2
+	bool "EXT2 filesystem"
+
+config CONFIG_EXT3
+	bool "EXT3 filesystem"
+
+config CONFIG_EXT4
+	bool "EXT4 filesystem"
+

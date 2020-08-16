@@ -1,0 +1,33 @@
+config CONFIG_SHELL_CMD
+	bool
+	default y
+
+config CONFIG_SHELL_CMD_DISPLAY
+	bool "display cmd"
+
+config CONFIG_SHELL_CMD_FLASH
+	bool "flash cmd"
+
+config CONFIG_SHELL_CMD_CD
+	bool "cd cmd"
+
+config CONFIG_SHELL_CMD_CONFIG
+	bool "config cmd"
+
+config CONFIG_SHELL_CMD_GO
+	bool "go cmd"
+
+config CONFIG_SHELL_CMD_HELP
+	bool "help cmd"
+
+config CONFIG_SHELL_CMD_MEM
+	bool "mem cmd"
+
+config CONFIG_SHELL_CMD_SHELL
+	bool "shell cmd"
+
+config CONFIG_SHELL_CMD_TFTP
+	bool "tftp cmd"
+
+config CONFIG_SHELL_CMD_UART
+	bool "uart cmd"

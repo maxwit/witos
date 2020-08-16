@@ -1,0 +1,119 @@
+config CONFIG_FLASH
+	prompt "flash"
+	bool
+	default y
+
+config CONFIG_NAND
+	prompt "NAND flash"
+	bool
+	default y
+	depends on CONFIG_FLASH
+
+config CONFIG_NAND_S3C24X
+	prompt "S3C24X NAND flash"
+	bool
+	default y
+	depends on CONFIG_FLASH
+
+config CONFIG_NOR
+	prompt "Nor flash"
+	bool
+	default y
+	depends on CONFIG_FLASH
+
+config CONFIG_UART
+	prompt "uart"
+	bool
+	default y
+
+config CONFIG_UART_INDEX
+	prompt "uart index"
+	int
+	default 0
+	depends on CONFIG_UART
+
+choice
+	prompt "uart soc"
+	default CONFIG_UART_S3C64X
+	depends on CONFIG_UART
+
+config CONFIG_UART_S3C64X
+	prompt "uart s3c64x"
+	bool
+
+config CONFIG_UART_S3C24X
+	prompt "uart s3c24x"
+	bool
+
+config CONFIG_UART_OMAP3
+	prompt "uart omap3"
+	bool
+
+config CONFIG_UART_AT91
+	prompt "uart at91"
+	bool
+endchoice
+
+config CONFIG_KERMIT_SUPPORT
+	prompt "kermit support"
+	bool
+	depends on CONFIG_UART
+
+config CONFIG_YMODEM_SUPPORT
+	prompt "ymodem support"
+	bool
+	depends on CONFIG_UART
+
+config CONFIG_DISPLAY
+	prompt "display"
+	bool
+	default y
+
+config CONFIG_DISPLAY_S3C64X
+	bool "s3c64x display"
+	depends on CONFIG_DISPLAY
+
+config CONFIG_DISPLAY_S3C24X
+	bool "s3c24x display"
+	depends on CONFIG_DISPLAY
+
+config CONFIG_DISPLAY_OMAP3
+	bool "omap3 display"
+	depends on CONFIG_DISPLAY
+
+config CONFIG_DISPLAY_AT91
+	bool "at91 display"
+	depends on CONFIG_DISPLAY
+
+config CONFIG_MMC
+	prompt "mmc"
+	bool
+	default y
+
+config CONFIG_MMC_S3C64X
+	prompt "s3c64x mmc"
+	bool
+	default y
+	depends on CONFIG_MMC
+
+config CONFIG_SPI
+	prompt "spi"
+	bool
+	default y
+
+config CONFIG_SPI_S3C64X
+	prompt "s3c64x spi"
+	bool
+	default y
+	depends on CONFIG_SPI
+
+config CONFIG_NET
+	prompt "net"
+	bool
+	default y
+
+config CONFIG_DM9000
+	prompt "dm9000"
+	bool
+	default y
+	depends on CONFIG_NET
