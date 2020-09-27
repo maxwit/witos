@@ -3,6 +3,6 @@
 # Build
 
 ```shell
-make <board>_defconfig # <board> should be replaced with real board name, i.e. mw61
+make menuconfig # or make <board>_defconfig (The <board> should be replaced with real board name, i.e. hifive)
 make
 ```
