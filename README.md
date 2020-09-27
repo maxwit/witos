@@ -3,6 +3,9 @@
 # Build
 
 ```shell
-make menuconfig # or make <board>_defconfig (The <board> should be replaced with real board name, i.e. hifive)
+make menuconfig
+# or
+make <board>_defconfig (The <board> should be replaced with real board name, i.e. hifive)
+
 make
 ```
