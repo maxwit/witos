@@ -1,3 +1,4 @@
+obj-y += device.o
 dir-y += platform uart block
 
 dir-$(CONFIG_SPI) += spi
