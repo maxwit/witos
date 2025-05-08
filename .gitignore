@@ -13,3 +13,5 @@ tags
 .cproject
 .project
 .vscode/
+.config.old
+build/kconfig/output/
