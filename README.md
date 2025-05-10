@@ -1,11 +1,22 @@
-<h1> WitOS: A SM^2 (smart and small) OS for IoT.</h1>
+<h1> WitOS: A SM^2 (smart and small) OS for AIoT.</h1>
 
 # Build
 
 ```shell
 make menuconfig
 # or
-make <board>_defconfig (The <board> should be replaced with real board name, i.e. hifive)
+make <board>_defconfig # Replace <board> with a real board name, i.e. omap3530)
 
 make
 ```
+
+# Clean
+```shell
+make clean
+# or
+make distclean
+```
+
+# Discuss
+- 钉钉: 90720013148
+- QQ: 623460481
