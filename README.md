@@ -1,4 +1,6 @@
-<h1> WitOS: A SM^2 (smart and small) OS for AIoT.</h1>
+<h1> witOS</h1>
+
+A SM$^2$ (smart and small) RTOS for AIoT devices.
 
 # Build
 
