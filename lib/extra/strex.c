@@ -329,7 +329,7 @@ int ip_to_str(char buf[], const __u32 ip)
 int str_to_mac(__u8 mac[], const char *str)
 {
 	int i, j;
-	__u32 num;
+	__u32 num = 0;
 	char buf[MAC_STR_LEN];
 	char *p = buf;
 
