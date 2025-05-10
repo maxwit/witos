@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <assert.h>
 #include <fs.h>
+#include <stdarg.h>
 
 struct mount *lookup_mnt(struct path *path);
 
@@ -291,9 +292,12 @@ int sys_ioctl(int fd, int cmd, unsigned long arg)
 
 int GAPI ioctl(int fd, int cmd, ...)
 {
+	va_list args;
 	unsigned long arg;
 
-	arg = *((unsigned long *)&cmd + 1); // fixme
+	va_start(args, cmd);
+	arg = va_arg(args, unsigned long);
+	va_end(args);
 
 	return sys_ioctl(fd, cmd, arg);
 }
